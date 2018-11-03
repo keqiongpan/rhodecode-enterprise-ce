@@ -43,6 +43,7 @@ def repo_push_event(backend, user_regular):
         'repository': repo.repo_name,
         'scm': repo.scm_instance().alias,
         'config': '',
+        'repo_store': '',
         'server_url': 'http://example.com',
         'make_lock': None,
         'locked_by': [None],

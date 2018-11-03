@@ -26,7 +26,7 @@ from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib import helpers as h
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import (
-    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment)
+    PullRequest, ChangesetStatus, UserLog, Notification, ChangesetComment, Repository)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -81,20 +81,21 @@ class TestPullrequestsView(object):
         repo = backend.repo
 
         self.app.get(
-            route_path('pullrequest_new',
-                repo_name=repo.repo_name,
-                commit=repo.get_commit().raw_id),
+            route_path('pullrequest_new', repo_name=repo.repo_name,
+                       commit=repo.get_commit().raw_id),
             status=200)
 
     @pytest.mark.parametrize('pr_merge_enabled', [True, False])
-    def test_show(self, pr_util, pr_merge_enabled):
+    @pytest.mark.parametrize('range_diff', ["0", "1"])
+    def test_show(self, pr_util, pr_merge_enabled, range_diff):
         pull_request = pr_util.create_pull_request(
             mergeable=pr_merge_enabled, enable_notifications=False)
 
         response = self.app.get(route_path(
             'pullrequest_show',
             repo_name=pull_request.target_repo.scm_instance().name,
-            pull_request_id=pull_request.pull_request_id))
+            pull_request_id=pull_request.pull_request_id,
+            params={'range-diff': range_diff}))
 
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
@@ -105,9 +106,13 @@ class TestPullrequestsView(object):
         assert target_clone_url in response
 
         assert 'class="pull-request-merge"' in response
-        assert (
-            'Server-side pull request merging is disabled.'
-            in response) != pr_merge_enabled
+        if pr_merge_enabled:
+            response.mustcontain('Pull request reviewer approval is pending')
+        else:
+            response.mustcontain('Server-side pull request merging is disabled.')
+
+        if range_diff == "1":
+            response.mustcontain('Turn off: Show the diff as commit range')
 
     def test_close_status_visibility(self, pr_util, user_util, csrf_token):
         # Logout
@@ -573,11 +578,11 @@ class TestPullrequestsView(object):
         assert actions[-1].action_data['commit_ids'] == pr_commit_ids
 
         # Check post_push rcextension was really executed
-        push_calls = rhodecode.EXTENSIONS.calls['post_push']
+        push_calls = rhodecode.EXTENSIONS.calls['_push_hook']
         assert len(push_calls) == 1
         unused_last_call_args, last_call_kwargs = push_calls[0]
         assert last_call_kwargs['action'] == 'push'
-        assert last_call_kwargs['pushed_revs'] == pr_commit_ids
+        assert last_call_kwargs['commit_ids'] == pr_commit_ids
 
     def test_merge_pull_request_disabled(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request(mergeable=False)
@@ -1190,6 +1195,28 @@ class TestPullrequestsControllerDelete(object):
             status=200
         )
         assert response.body == 'true'
+
+    @pytest.mark.parametrize('url_type', [
+        'pullrequest_new',
+        'pullrequest_create',
+        'pullrequest_update',
+        'pullrequest_merge',
+    ])
+    def test_pull_request_is_forbidden_on_archived_repo(
+            self, autologin_user, backend, xhr_header, user_util, url_type):
+
+        # create a temporary repo
+        source = user_util.create_repo(repo_type=backend.alias)
+        repo_name = source.repo_name
+        repo = Repository.get_by_repo_name(repo_name)
+        repo.archived = True
+        Session().commit()
+
+        response = self.app.get(
+            route_path(url_type, repo_name=repo_name, pull_request_id=1), status=302)
+
+        msg = 'Action not supported for archived repository.'
+        assert_session_flash(response, msg)
 
 
 def assert_pull_request_status(pull_request, expected_status):

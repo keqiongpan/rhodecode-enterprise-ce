@@ -25,6 +25,13 @@
     <span style="font-weight:bold;font-size:12px;padding:.2em;${color_scheme.get(tag_type, color_scheme['default'])}">${text}</span>
 </%def>
 
+## Constants
+<%
+text_regular = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;"
+text_monospace = "'Menlo', 'Liberation Mono', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', 'andale mono', 'lucida console', monospace;"
+
+%>
+
 ## headers we additionally can set for email
 <%def name="headers()" filter="n,trim"></%def>
 
@@ -47,7 +54,7 @@ ${self.plaintext_footer()}
     <style type="text/css">
         /* Based on The MailChimp Reset INLINE: Yes. */  
         #outlook a {padding:0;} /* Force Outlook to provide a "view in browser" menu link. */
-        body{width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0;} 
+        body{width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0; font-family: ${text_regular|n}}
         /* Prevent Webkit and Windows Mobile platforms from changing default font sizes.*/ 
         .ExternalClass {width:100%;} /* Force Hotmail to display emails at full width */  
         .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {line-height: 100%;}
@@ -124,8 +131,12 @@ ${self.plaintext_footer()}
     </tr>
 </table>  
 <!-- End of wrapper table -->
-<p><a style="margin-top:15px;margin-left:1%;font-family:sans-serif;font-weight:100;font-size:11px;color:#666666;text-decoration:none;" href="${instance_url}">
+
+<div style="clear: both"></div>
+<p>
+<a style="margin-top:15px;margin-left:1%;font-weight:100;font-size:11px;color:#666666;text-decoration:none;font-family:${text_monospace} " href="${instance_url}">
     ${self.plaintext_footer()}
-</a></p>
+</a>
+</p>
 </body>
 </html>

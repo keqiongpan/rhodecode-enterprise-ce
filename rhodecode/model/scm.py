@@ -23,12 +23,9 @@ Scm model for RhodeCode
 """
 
 import os.path
-import re
-import sys
 import traceback
 import logging
 import cStringIO
-import pkg_resources
 
 from sqlalchemy import func
 from zope.cachedescriptors.property import Lazy as LazyProperty
@@ -53,6 +50,7 @@ from rhodecode.model.db import (
     Repository, CacheKey, UserFollowing, UserLog, User, RepoGroup,
     PullRequest)
 from rhodecode.model.settings import VcsSettingsModel
+from rhodecode.model.validation_schema.validators import url_validator, InvalidCloneUrl
 
 log = logging.getLogger(__name__)
 
@@ -379,29 +377,36 @@ class ScmModel(BaseModel):
         self.sa.add(repo)
         return repo
 
-    def pull_changes(self, repo, username, remote_uri=None):
+    def pull_changes(self, repo, username, remote_uri=None, validate_uri=True):
         dbrepo = self._get_repo(repo)
         remote_uri = remote_uri or dbrepo.clone_uri
         if not remote_uri:
             raise Exception("This repository doesn't have a clone uri")
 
         repo = dbrepo.scm_instance(cache=False)
-        # TODO: marcink fix this an re-enable since we need common logic
-        # for hg/git remove hooks so we don't trigger them on fetching
-        # commits from remote
         repo.config.clear_section('hooks')
+
+        try:
+            # NOTE(marcink): add extra validation so we skip invalid urls
+            # this is due this tasks can be executed via scheduler without
+            # proper validation of remote_uri
+            if validate_uri:
+                config = make_db_config(clear_session=False)
+                url_validator(remote_uri, dbrepo.repo_type, config)
+        except InvalidCloneUrl:
+            raise
 
         repo_name = dbrepo.repo_name
         try:
             # TODO: we need to make sure those operations call proper hooks !
-            repo.pull(remote_uri)
+            repo.fetch(remote_uri)
 
             self.mark_for_invalidation(repo_name)
         except Exception:
             log.error(traceback.format_exc())
             raise
 
-    def push_changes(self, repo, username, remote_uri=None):
+    def push_changes(self, repo, username, remote_uri=None, validate_uri=True):
         dbrepo = self._get_repo(repo)
         remote_uri = remote_uri or dbrepo.push_uri
         if not remote_uri:
@@ -409,6 +414,16 @@ class ScmModel(BaseModel):
 
         repo = dbrepo.scm_instance(cache=False)
         repo.config.clear_section('hooks')
+
+        try:
+            # NOTE(marcink): add extra validation so we skip invalid urls
+            # this is due this tasks can be executed via scheduler without
+            # proper validation of remote_uri
+            if validate_uri:
+                config = make_db_config(clear_session=False)
+                url_validator(remote_uri, dbrepo.repo_type, config)
+        except InvalidCloneUrl:
+            raise
 
         try:
             repo.push(remote_uri)
@@ -450,8 +465,8 @@ class ScmModel(BaseModel):
 
         # We trigger the post-push action
         hooks_utils.trigger_post_push_hook(
-            username=user.username, action='push_local', repo_name=repo_name,
-            repo_alias=repo.alias, commit_ids=[tip.raw_id])
+            username=user.username, action='push_local', hook_type='post_push',
+            repo_name=repo_name, repo_alias=repo.alias, commit_ids=[tip.raw_id])
         return tip
 
     def _sanitize_path(self, f_path):
@@ -629,6 +644,7 @@ class ScmModel(BaseModel):
             hooks_utils.trigger_post_push_hook(
                 username=user.username, action='push_local',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
+                hook_type='post_push',
                 commit_ids=[tip.raw_id])
         return tip
 
@@ -693,7 +709,7 @@ class ScmModel(BaseModel):
 
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
-                username=user.username, action='push_local',
+                username=user.username, action='push_local', hook_type='post_push',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
                 commit_ids=[tip.raw_id])
 
@@ -753,7 +769,7 @@ class ScmModel(BaseModel):
         self.mark_for_invalidation(repo.repo_name)
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
-                username=user.username, action='push_local',
+                username=user.username, action='push_local', hook_type='post_push',
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
                 commit_ids=[tip.raw_id])
         return tip

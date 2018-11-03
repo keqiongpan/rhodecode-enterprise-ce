@@ -138,6 +138,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         })
         return data
 
+    def get_recache_flag(self):
+        for flag_name in ['force_recache', 'force-recache', 'no-cache']:
+            flag_val = self.request.GET.get(flag_name)
+            if str2bool(flag_val):
+                return True
+        return False
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -212,10 +219,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def _get_diffset(self, source_repo_name, source_repo,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, file_limit,
-                     fulldiff):
+                     fulldiff, hide_whitespace_changes, diff_context):
 
         vcs_diff = PullRequestModel().get_diff(
-            source_repo, source_ref_id, target_ref_id)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes, diff_context)
 
         diff_processor = diffs.DiffProcessor(
             vcs_diff, format='newdiff', diff_limit=diff_limit,
@@ -234,6 +242,30 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         return diffset
 
+    def _get_range_diffset(self, source_scm, source_repo,
+                           commit1, commit2, diff_limit, file_limit,
+                           fulldiff, hide_whitespace_changes, diff_context):
+        vcs_diff = source_scm.get_diff(
+            commit1, commit2,
+            ignore_whitespace=hide_whitespace_changes,
+            context=diff_context)
+
+        diff_processor = diffs.DiffProcessor(
+            vcs_diff, format='newdiff', diff_limit=diff_limit,
+            file_limit=file_limit, show_full_diff=fulldiff)
+
+        _parsed = diff_processor.prepare()
+
+        diffset = codeblocks.DiffSet(
+            repo_name=source_repo.repo_name,
+            source_node_getter=codeblocks.diffset_node_getter(commit1),
+            target_node_getter=codeblocks.diffset_node_getter(commit2))
+
+        diffset = self.path_filter.render_patchset_filtered(
+            diffset, _parsed, commit1.raw_id, commit2.raw_id)
+
+        return diffset
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -249,6 +281,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+
+        # fetch global flags of ignore ws or context lines
+        diff_context = diffs.get_diff_context(self.request)
+        hide_whitespace_changes = diffs.get_diff_whitespace_flag(self.request)
+
         force_refresh = str2bool(self.request.GET.get('force_refresh'))
 
         (pull_request_latest,
@@ -265,6 +302,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 pull_request_id=pull_request_id))
 
         versions = pull_request_display_obj.versions()
+        # used to store per-commit range diffs
+        c.changes = collections.OrderedDict()
+        c.range_diff_on = self.request.GET.get('range-diff') == "1"
 
         c.at_version = at_version
         c.at_version_num = (at_version
@@ -453,14 +493,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         version_normalized = version or 'latest'
         from_version_normalized = from_version or 'latest'
 
-        cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(
-            target_repo)
+        cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(target_repo)
         cache_file_path = diff_cache_exist(
             cache_path, 'pull_request', pull_request_id, version_normalized,
-            from_version_normalized, source_ref_id, target_ref_id, c.fulldiff)
+            from_version_normalized, source_ref_id, target_ref_id,
+            hide_whitespace_changes, diff_context, c.fulldiff)
 
         caching_enabled = self._is_diff_cache_enabled(c.target_repo)
-        force_recache = str2bool(self.request.GET.get('force_recache'))
+        force_recache = self.get_recache_flag()
 
         cached_diff = None
         if caching_enabled:
@@ -471,7 +511,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 and len(cached_diff.get('commits', [])) == 5
                 and cached_diff.get('commits')[0]
                 and cached_diff.get('commits')[3])
-        if not force_recache and has_proper_commit_cache:
+
+        if not force_recache and not c.range_diff_on and has_proper_commit_cache:
             diff_commit_cache = \
                 (ancestor_commit, commit_cache, missing_requirements,
                  source_commit, target_commit) = cached_diff['commits']
@@ -527,7 +568,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     c.source_repo.repo_name, commits_source_repo,
                     source_ref_id, target_ref_id,
                     target_commit, source_commit,
-                    diff_limit, file_limit, c.fulldiff)
+                    diff_limit, file_limit, c.fulldiff,
+                    hide_whitespace_changes, diff_context)
 
                 # save cached diff
                 if caching_enabled:
@@ -546,8 +588,41 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     c.deleted_files_comments[fname]['stats'] = 0
                     c.deleted_files_comments[fname]['comments'] = list()
                     for lno, comments in per_line_comments.items():
-                        c.deleted_files_comments[fname]['comments'].extend(
-                            comments)
+                        c.deleted_files_comments[fname]['comments'].extend(comments)
+
+            # maybe calculate the range diff
+            if c.range_diff_on:
+                # TODO(marcink): set whitespace/context
+                context_lcl = 3
+                ign_whitespace_lcl = False
+
+                for commit in c.commit_ranges:
+                    commit2 = commit
+                    commit1 = commit.first_parent
+
+                    range_diff_cache_file_path = diff_cache_exist(
+                        cache_path, 'diff', commit.raw_id,
+                        ign_whitespace_lcl, context_lcl, c.fulldiff)
+
+                    cached_diff = None
+                    if caching_enabled:
+                        cached_diff = load_cached_diff(range_diff_cache_file_path)
+
+                    has_proper_diff_cache = cached_diff and cached_diff.get('diff')
+                    if not force_recache and has_proper_diff_cache:
+                        diffset = cached_diff['diff']
+                    else:
+                        diffset = self._get_range_diffset(
+                            source_scm, source_repo,
+                            commit1, commit2, diff_limit, file_limit,
+                            c.fulldiff, ign_whitespace_lcl, context_lcl
+                        )
+
+                    # save cached diff
+                    if caching_enabled:
+                        cache_diff(range_diff_cache_file_path, diffset, None)
+
+                    c.changes[commit.raw_id] = diffset
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and
@@ -607,7 +682,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         commit_cache = collections.OrderedDict()
         missing_requirements = False
         try:
-            pre_load = ["author", "branch", "date", "message"]
+            pre_load = ["author", "branch", "date", "message", "parents"]
             show_revs = pull_request_at_ver.revisions
             for rev in show_revs:
                 comm = commits_source_repo.get_commit(

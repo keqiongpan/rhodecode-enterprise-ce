@@ -237,7 +237,7 @@ class InvalidationContext(object):
                 result = heavy_compute(*args)
 
             compute_time = inv_context_manager.compute_time
-            log.debug('result computed in %.3fs' ,compute_time)
+            log.debug('result computed in %.3fs', compute_time)
 
         # To send global invalidation signal, simply run
         CacheKey.set_invalidate(invalidation_namespace)

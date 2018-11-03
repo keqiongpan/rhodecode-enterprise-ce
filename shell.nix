@@ -14,7 +14,6 @@ let
 
   enterprise-ce = import ./default.nix {
     inherit
-      pkgs
       pythonPackages
       doCheck;
   };
@@ -51,7 +50,9 @@ let
       nixFile = "${path}/default.nix";
 
       derivate = import "${nixFile}" {
-        inherit doCheck pkgs pythonPackages;
+        inherit
+          doCheck
+          pythonPackages;
       };
     in
       pkgs.lib.lists.optionals doIt (
@@ -93,7 +94,7 @@ in enterprise-ce.override (attrs: {
     export PS1="\n\[\033[1;32m\][CE-shell:\w]$\[\033[0m\] "
 
     echo "Building frontend assets"
-    ${enterprise-ce.linkNodeAndBowerPackages}
+    ${enterprise-ce.linkNodePackages}
 
     # Setup a temporary directory.
     tmp_path=$(mktemp -d)

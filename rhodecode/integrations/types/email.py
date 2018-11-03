@@ -35,7 +35,7 @@ from rhodecode.integrations.types.base import (
 
 log = logging.getLogger(__name__)
 
-repo_push_template_plaintext = Template('''
+REPO_PUSH_TEMPLATE_PLAINTEXT = Template('''
 Commits:
 
 % for commit in data['push']['commits']:
@@ -46,9 +46,7 @@ ${commit['message']}
 % endfor
 ''')
 
-## TODO (marcink): think about putting this into a file, or use base.mako email template
-
-repo_push_template_html = Template('''
+REPO_PUSH_TEMPLATE_HTML = Template('''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -283,13 +281,13 @@ def repo_push_handler(data, settings):
                 branch['name'] for branch in data['push']['branches']))
 
     email_body_plaintext = render_with_traceback(
-        repo_push_template_plaintext,
+        REPO_PUSH_TEMPLATE_PLAINTEXT,
         data=data,
         subject=subject,
         instance_url=server_url)
 
     email_body_html = render_with_traceback(
-        repo_push_template_html,
+        REPO_PUSH_TEMPLATE_HTML,
         data=data,
         subject=subject,
         instance_url=server_url)

@@ -58,13 +58,13 @@ class GitRepository(BaseRepository):
     contact = BaseRepository.DEFAULT_CONTACT
 
     def __init__(self, repo_path, config=None, create=False, src_url=None,
-                 update_after_clone=False, with_wire=None, bare=False):
+                 do_workspace_checkout=False, with_wire=None, bare=False):
 
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
         self.with_wire = with_wire
 
-        self._init_repo(create, src_url, update_after_clone, bare)
+        self._init_repo(create, src_url, do_workspace_checkout, bare)
 
         # caches
         self._commit_ids = {}
@@ -145,24 +145,36 @@ class GitRepository(BaseRepository):
             pass
         return False
 
-    def _init_repo(self, create, src_url=None, update_after_clone=False,
+    def _init_repo(self, create, src_url=None, do_workspace_checkout=False,
                    bare=False):
         if create and os.path.exists(self.path):
             raise RepositoryError(
                 "Cannot create repository at %s, location already exist"
                 % self.path)
 
+        if bare and do_workspace_checkout:
+            raise RepositoryError("Cannot update a bare repository")
         try:
-            if create and src_url:
+
+            if src_url:
+                # check URL before any actions
                 GitRepository.check_url(src_url, self.config)
-                self.clone(src_url, update_after_clone, bare)
-            elif create:
+
+            if create:
                 os.makedirs(self.path, mode=0755)
 
                 if bare:
                     self._remote.init_bare()
                 else:
                     self._remote.init()
+
+                if src_url and bare:
+                    # bare repository only allows a fetch and checkout is not allowed
+                    self.fetch(src_url, commit_ids=None)
+                elif src_url:
+                    self.pull(src_url, commit_ids=None,
+                              update_after=do_workspace_checkout)
+
             else:
                 if not self._remote.assert_correct_path():
                     raise RepositoryError(
@@ -630,49 +642,27 @@ class GitRepository(BaseRepository):
         """
         return GitInMemoryCommit(self)
 
-    def clone(self, url, update_after_clone=True, bare=False):
+    def pull(self, url, commit_ids=None, update_after=False):
         """
-        Tries to clone commits from external location.
+        Pull changes from external location. Pull is different in GIT
+        that fetch since it's doing a checkout
 
-        :param update_after_clone: If set to ``False``, git won't checkout
-          working directory
-        :param bare: If set to ``True``, repository would be cloned into
-          *bare* git repository (no working directory at all).
+        :param commit_ids: Optional. Can be set to a list of commit ids
+           which shall be pulled from the other repository.
         """
-        # init_bare and init expect empty dir created to proceed
-        if not os.path.exists(self.path):
-            os.mkdir(self.path)
-
-        if bare:
-            self._remote.init_bare()
-        else:
-            self._remote.init()
-
-        deferred = '^{}'
-        valid_refs = ('refs/heads', 'refs/tags', 'HEAD')
-
-        return self._remote.clone(
-            url, deferred, valid_refs, update_after_clone)
-
-    def pull(self, url, commit_ids=None):
-        """
-        Tries to pull changes from external location. We use fetch here since
-        pull in get does merges and we want to be compatible with hg backend so
-        pull == fetch in this case
-        """
-        self.fetch(url, commit_ids=commit_ids)
+        refs = None
+        if commit_ids is not None:
+            remote_refs = self._remote.get_remote_refs(url)
+            refs = [ref for ref in remote_refs if remote_refs[ref] in commit_ids]
+        self._remote.pull(url, refs=refs, update_after=update_after)
+        self._remote.invalidate_vcs_cache()
 
     def fetch(self, url, commit_ids=None):
         """
-        Tries to fetch changes from external location.
+        Fetch all git objects from external location.
         """
-        refs = None
-
-        if commit_ids is not None:
-            remote_refs = self._remote.get_remote_refs(url)
-            refs = [
-                ref for ref in remote_refs if remote_refs[ref] in commit_ids]
-        self._remote.fetch(url, refs=refs)
+        self._remote.sync_fetch(url, refs=commit_ids)
+        self._remote.invalidate_vcs_cache()
 
     def push(self, url):
         refs = None
@@ -778,7 +768,7 @@ class GitRepository(BaseRepository):
 
     def _local_reset(self, branch_name):
         branch_name = '{}'.format(branch_name)
-        cmd = ['reset', '--hard', branch_name]
+        cmd = ['reset', '--hard', branch_name, '--']
         self.run_git_command(cmd, fail_on_stderr=False)
 
     def _last_fetch_heads(self):

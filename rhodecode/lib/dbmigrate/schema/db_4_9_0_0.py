@@ -2352,8 +2352,8 @@ class RepoGroup(Base, BaseModel):
                 break
             if cnt == parents_recursion_limit:
                 # this will prevent accidental infinit loops
-                log.error(('more than %s parents found for group %s, stopping '
-                           'recursive parent fetching' % (parents_recursion_limit, self)))
+                log.error('more than %s parents found for group %s, stopping '
+                          'recursive parent fetching', parents_recursion_limit, self)
                 break
 
             groups.insert(0, gr)

@@ -27,8 +27,9 @@ c.template_context['default_user'] = {
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-lite.js', ver=c.rhodecode_version_hash)}"></script>
-        <link rel="import" href="${h.asset('js/rhodecode-components.html', ver=c.rhodecode_version_hash)}">
+
+        <script src="${h.asset('js/vendors/webcomponentsjs/custom-elements-es5-adapter.js', ver=c.rhodecode_version_hash)}"></script>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-bundle.js', ver=c.rhodecode_version_hash)}"></script>
         <title>${self.title()}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
@@ -49,9 +50,6 @@ c.template_context['default_user'] = {
         ## CSS definitions
         <%def name="css()">
             <link rel="stylesheet" type="text/css" href="${h.asset('css/style.css', ver=c.rhodecode_version_hash)}" media="screen"/>
-            <!--[if lt IE 9]>
-                <link rel="stylesheet" type="text/css" href="${h.asset('css/ie.css', ver=c.rhodecode_version_hash)}" media="screen"/>
-            <![endif]-->
             ## EXTRA FOR CSS
             ${self.css_extra()}
         </%def>
@@ -101,7 +99,7 @@ c.template_context['default_user'] = {
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
             ## avoide escaping the %N
-            <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode-components.js', ver=c.rhodecode_version_hash)}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
 
@@ -142,16 +140,6 @@ c.template_context['default_user'] = {
                 ${_('Please enable JavaScript to use RhodeCode Enterprise')}
             </div>
         </noscript>
-     ## IE hacks
-      <!--[if IE 7]>
-      <script>$(document.body).addClass('ie7')</script>
-      <![endif]-->
-      <!--[if IE 8]>
-      <script>$(document.body).addClass('ie8')</script>
-      <![endif]-->
-      <!--[if IE 9]>
-      <script>$(document.body).addClass('ie9')</script>
-      <![endif]-->
 
       ${next.body()}
       %if c.post_code:

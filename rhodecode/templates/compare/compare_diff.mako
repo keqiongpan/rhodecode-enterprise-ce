@@ -48,7 +48,7 @@
 
                         % if c.commit_ranges:
                         <code>
-                        r${c.source_commit.revision}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.revision}:${h.short_id(c.target_commit.raw_id)}
+                        r${c.source_commit.idx}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.idx}:${h.short_id(c.target_commit.raw_id)}
                         </code>
                         % endif
                     </h4>
@@ -128,30 +128,6 @@
                     </div>
                 </div>
               </div>
-
-              <%doc>
-              ##TODO(marcink): implement this and diff menus
-              <div class="fieldset">
-                <div class="left-label">
-                  ${_('Diff options')}:
-                </div>
-                <div class="right-content">
-                    <div class="diff-actions">
-                      <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
-                        ${_('Raw Diff')}
-                      </a>
-                       |
-                      <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
-                        ${_('Patch Diff')}
-                      </a>
-                       |
-                      <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
-                        ${_('Download Diff')}
-                      </a>
-                    </div>
-                </div>
-              </div>
-              </%doc>
 
               ## commit status form
               <div class="fieldset" id="compare_changeset_status" style="display: none; margin-bottom: -80px;">
@@ -322,7 +298,7 @@
                     <div style="padding:0 10px 10px 0px" class="pull-left"></div>
                     ## commit compare generated below
                     <%include file="compare_commits.mako"/>
-                    ${cbdiffs.render_diffset_menu()}
+                    ${cbdiffs.render_diffset_menu(c.diffset)}
                     ${cbdiffs.render_diffset(c.diffset)}
                  </div>
             % endif

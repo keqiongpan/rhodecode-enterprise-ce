@@ -115,10 +115,10 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         auth_result = _pam.authenticate(username, password, settings["service"])
 
         if not auth_result:
-            log.error("PAM was unable to authenticate user: %s" % (username, ))
+            log.error("PAM was unable to authenticate user: %s", username)
             return None
 
-        log.debug('Got PAM response %s' % (auth_result, ))
+        log.debug('Got PAM response %s', auth_result)
 
         # old attrs fetched from RhodeCode database
         default_email = "%s@%s" % (username, socket.gethostname())
@@ -157,5 +157,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             pass
 
         log.debug("pamuser: %s", user_attrs)
-        log.info('user `%s` authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs

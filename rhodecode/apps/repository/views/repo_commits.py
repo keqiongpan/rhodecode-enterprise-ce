@@ -34,7 +34,9 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
 
 from rhodecode.lib.compat import OrderedDict
-from rhodecode.lib.diffs import cache_diff, load_cached_diff, diff_cache_exist
+from rhodecode.lib.diffs import (
+    cache_diff, load_cached_diff, diff_cache_exist, get_diff_context,
+    get_diff_whitespace_flag)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 import rhodecode.lib.helpers as h
 from rhodecode.lib.utils2 import safe_unicode, str2bool
@@ -55,95 +57,7 @@ def _update_with_GET(params, request):
         params[k] += request.GET.getall(k)
 
 
-def get_ignore_ws(fid, request):
-    ig_ws_global = request.GET.get('ignorews')
-    ig_ws = filter(lambda k: k.startswith('WS'), request.GET.getall(fid))
-    if ig_ws:
-        try:
-            return int(ig_ws[0].split(':')[-1])
-        except Exception:
-            pass
-    return ig_ws_global
 
-
-def _ignorews_url(request, fileid=None):
-    _ = request.translate
-    fileid = str(fileid) if fileid else None
-    params = collections.defaultdict(list)
-    _update_with_GET(params, request)
-    label = _('Show whitespace')
-    tooltiplbl = _('Show whitespace for all diffs')
-    ig_ws = get_ignore_ws(fileid, request)
-    ln_ctx = get_line_ctx(fileid, request)
-
-    if ig_ws is None:
-        params['ignorews'] += [1]
-        label = _('Ignore whitespace')
-        tooltiplbl = _('Ignore whitespace for all diffs')
-    ctx_key = 'context'
-    ctx_val = ln_ctx
-
-    # if we have passed in ln_ctx pass it along to our params
-    if ln_ctx:
-        params[ctx_key] += [ctx_val]
-
-    if fileid:
-        params['anchor'] = 'a_' + fileid
-    return h.link_to(label, request.current_route_path(_query=params),
-                     title=tooltiplbl, class_='tooltip')
-
-
-def get_line_ctx(fid, request):
-    ln_ctx_global = request.GET.get('context')
-    if fid:
-        ln_ctx = filter(lambda k: k.startswith('C'), request.GET.getall(fid))
-    else:
-        _ln_ctx = filter(lambda k: k.startswith('C'), request.GET)
-        ln_ctx = request.GET.get(_ln_ctx[0]) if _ln_ctx else ln_ctx_global
-        if ln_ctx:
-            ln_ctx = [ln_ctx]
-
-    if ln_ctx:
-        retval = ln_ctx[0].split(':')[-1]
-    else:
-        retval = ln_ctx_global
-
-    try:
-        return int(retval)
-    except Exception:
-        return 3
-
-
-def _context_url(request, fileid=None):
-    """
-    Generates a url for context lines.
-
-    :param fileid:
-    """
-
-    _ = request.translate
-    fileid = str(fileid) if fileid else None
-    ig_ws = get_ignore_ws(fileid, request)
-    ln_ctx = (get_line_ctx(fileid, request) or 3) * 2
-
-    params = collections.defaultdict(list)
-    _update_with_GET(params, request)
-
-    if ln_ctx > 0:
-        params['context'] += [ln_ctx]
-
-    if ig_ws:
-        ig_ws_key = 'ignorews'
-        ig_ws_val = 1
-        params[ig_ws_key] += [ig_ws_val]
-
-    lbl = _('Increase context')
-    tooltiplbl = _('Increase context for all diffs')
-
-    if fileid:
-        params['anchor'] = 'a_' + fileid
-    return h.link_to(lbl, request.current_route_path(_query=params),
-                     title=tooltiplbl, class_='tooltip')
 
 
 class RepoCommitsView(RepoAppView):
@@ -162,13 +76,11 @@ class RepoCommitsView(RepoAppView):
     def _commit(self, commit_id_range, method):
         _ = self.request.translate
         c = self.load_default_context()
-        c.ignorews_url = _ignorews_url
-        c.context_url = _context_url
         c.fulldiff = self.request.GET.get('fulldiff')
 
         # fetch global flags of ignore ws or context lines
-        context_lcl = get_line_ctx('', self.request)
-        ign_whitespace_lcl = get_ignore_ws('', self.request)
+        diff_context = get_diff_context(self.request)
+        hide_whitespace_changes = get_diff_whitespace_flag(self.request)
 
         # diff_limit will cut off the whole diff if the limit is applied
         # otherwise it will just hide the big files from the front-end
@@ -245,7 +157,7 @@ class RepoCommitsView(RepoAppView):
             c.changes[commit.raw_id] = []
 
             commit2 = commit
-            commit1 = commit.parents[0] if commit.parents else EmptyCommit()
+            commit1 = commit.first_parent
 
             if method == 'show':
                 inline_comments = CommentsModel().get_inline_comments(
@@ -258,7 +170,7 @@ class RepoCommitsView(RepoAppView):
                     self.db_repo)
                 cache_file_path = diff_cache_exist(
                     cache_path, 'diff', commit.raw_id,
-                    ign_whitespace_lcl, context_lcl, c.fulldiff)
+                    hide_whitespace_changes, diff_context, c.fulldiff)
 
                 caching_enabled = self._is_diff_cache_enabled(self.db_repo)
                 force_recache = str2bool(self.request.GET.get('force_recache'))
@@ -273,8 +185,8 @@ class RepoCommitsView(RepoAppView):
                 else:
                     vcs_diff = self.rhodecode_vcs_repo.get_diff(
                         commit1, commit2,
-                        ignore_whitespace=ign_whitespace_lcl,
-                        context=context_lcl)
+                        ignore_whitespace=hide_whitespace_changes,
+                        context=diff_context)
 
                     diff_processor = diffs.DiffProcessor(
                         vcs_diff, format='newdiff', diff_limit=diff_limit,
@@ -300,7 +212,7 @@ class RepoCommitsView(RepoAppView):
                 # TODO(marcink): no cache usage here...
                 _diff = self.rhodecode_vcs_repo.get_diff(
                     commit1, commit2,
-                    ignore_whitespace=ign_whitespace_lcl, context=context_lcl)
+                    ignore_whitespace=hide_whitespace_changes, context=diff_context)
                 diff_processor = diffs.DiffProcessor(
                     _diff, format='newdiff', diff_limit=diff_limit,
                     file_limit=file_limit, show_full_diff=c.fulldiff)

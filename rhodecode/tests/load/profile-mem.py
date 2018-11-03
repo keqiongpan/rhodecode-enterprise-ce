@@ -51,7 +51,7 @@ def profile():
     try:
         process = psutil.Process(config.pid)
     except psutil.NoSuchProcess:
-        print "Process {pid} does not exist!".format(pid=config.pid)
+        print("Process {pid} does not exist!".format(pid=config.pid))
         sys.exit(1)
 
     while True:
@@ -105,7 +105,7 @@ def process_stats(process):
 
 def dump_stats(stats):
     for sample in stats:
-        print json.dumps(sample)
+        print(json.dumps(sample))
 
 
 class AppenlightClient():

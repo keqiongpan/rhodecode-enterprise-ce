@@ -5,7 +5,6 @@
 @import 'helpers';
 @import 'mixins';
 @import 'rcicons';
-@import 'fonts';
 @import 'variables';
 @import 'bootstrap-variables';
 @import 'form-bootstrap';
@@ -30,16 +29,17 @@
 
 //--- BASE ------------------//
 .noscript-error {
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 101;
-    text-align: center;
-    font-family: @text-semibold;
-    font-size: 120%;
-    color: white;
-    background-color: @alert2;
-    padding: 5px 0 5px 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 101;
+  text-align: center;
+  font-size: 120%;
+  color: white;
+  background-color: @alert2;
+  padding: 5px 0 5px 0;
+  font-weight: @text-semibold-weight;
+  font-family: @text-semibold;
 }
 
 html {
@@ -161,8 +161,9 @@ input.inline[type="file"] {
     }
 
     .error-branding {
-        font-family: @text-semibold;
-        color: @grey4;
+      color: @grey4;
+      font-weight: @text-semibold-weight;
+      font-family: @text-semibold;
     }
 
     .error_message {
@@ -214,8 +215,9 @@ input.inline[type="file"] {
         }
 
         h4 {
-            margin: 0 0 @padding;
-            font-family: @text-semibold;
+          margin: 0 0 @padding;
+          font-weight: @text-semibold-weight;
+          font-family: @text-semibold;
         }
     }
 }
@@ -349,10 +351,11 @@ ul.auth_plugins {
 // Pull Requests
 
 .pullrequests_section_head {
-	display: block;
-	clear: both;
-	margin: @padding 0;
-	font-family: @text-bold;
+  display: block;
+  clear: both;
+  margin: @padding 0;
+  font-weight: @text-bold-weight;
+  font-family: @text-bold;
 }
 
 .pr-origininfo, .pr-targetinfo {
@@ -391,14 +394,15 @@ ul.auth_plugins {
 
 
 #pr-title-input {
-    width: 72%;
-    font-size: 1em;
-    font-family: @text-bold;
-    margin: 0;
-    padding: 0 0 0 @padding/4;
-    line-height: 1.7em;
-    color: @text-color;
-    letter-spacing: .02em;
+  width: 72%;
+  font-size: 1em;
+  margin: 0;
+  padding: 0 0 0 @padding/4;
+  line-height: 1.7em;
+  color: @text-color;
+  letter-spacing: .02em;
+  font-weight: @text-bold-weight;
+  font-family: @text-bold;
 }
 
 #pullrequest_title {
@@ -471,19 +475,20 @@ ul.auth_plugins {
 
 // Server Announcement
 #server-announcement {
-    width: 95%;
-    margin: @padding auto;
-    padding: @padding;
-    border-width: 2px;
-    border-style: solid;
-    .border-radius(2px);
-    font-family: @text-bold;
+  width: 95%;
+  margin: @padding auto;
+  padding: @padding;
+  border-width: 2px;
+  border-style: solid;
+  .border-radius(2px);
+  font-weight: @text-bold-weight;
+  font-family: @text-bold;
 
-    &.info    { border-color: @alert4; background-color: @alert4-inner; }
-    &.warning { border-color: @alert3; background-color: @alert3-inner; }
-    &.error   { border-color: @alert2; background-color: @alert2-inner; }
-    &.success { border-color: @alert1; background-color: @alert1-inner; }
-    &.neutral { border-color: @grey3; background-color: @grey6; }
+  &.info    { border-color: @alert4; background-color: @alert4-inner; }
+  &.warning { border-color: @alert3; background-color: @alert3-inner; }
+  &.error   { border-color: @alert2; background-color: @alert2-inner; }
+  &.success { border-color: @alert1; background-color: @alert1-inner; }
+  &.neutral { border-color: @grey3; background-color: @grey6; }
 }
 
 // Fixed Sidebar Column
@@ -616,11 +621,6 @@ input::-moz-focus-inner { border:0; padding:0 }
 
 .permissions_boxes {
 	display: block;
-}
-
-//TODO: lisa: this should be in tables
-.show_more_col {
-    width: 20px;
 }
 
 //FORMS
@@ -1546,19 +1546,15 @@ table.integrations {
 
 .show_more {
     display: inline-block;
-    position: relative;
+    width: 0;
+    height: 0;
     vertical-align: middle;
-    width: 4px;
-    height: @basefontsize;
-
-    &:after {
-        content: "\00A0\25BE";
-        display: inline-block;
-        width:10px;
-        line-height: 5px;
-        font-size: 12px;
-        cursor: pointer;
-    }
+    content: "";
+    border: 4px solid;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    border-left-color: transparent;
+    font-size: 0;
 }
 
 .journal_more .show_more {
@@ -1568,13 +1564,6 @@ table.integrations {
         content: none;
     }
 }
-
-.open .show_more:after,
-.select2-dropdown-open .show_more:after {
-    .rotate(180deg);
-    margin-left: 4px;
-}
-
 
 .compare_view_commits .collapse_commit:after {
     cursor: pointer;
@@ -2214,9 +2203,10 @@ h3.files_location{
 		margin-left: 0.5em;
 		display: inline-block;
 
-		em{
-			font-family: @text-bold;
-		}
+		em {
+          font-weight: @text-bold-weight;
+          font-family: @text-bold;
+        }
 	}
 }
 
@@ -2250,7 +2240,6 @@ h3.files_location{
 
 div.search-feedback-items {
 	display: inline-block;
-	padding:0px 0px 0px 96px;
 }
 
 div.search-code-body {
@@ -2388,6 +2377,21 @@ table.dataTable {
     }
 }
 
+table.rctable {
+  &.permissions {
+
+    th.td-owner {
+      padding: 0;
+    }
+
+    th {
+      font-weight: normal;
+      padding: 0 5px;
+    }
+
+  }
+}
+
 
 // TODO: johbo: Fix for IE10, this avoids that we see a border
 // and padding around checkboxes and radio boxes. Move to the right place,
@@ -2443,7 +2447,7 @@ div.markup-form {
 .markup-form textarea {
     width: 100%;
     height: 100px;
-    font-family: 'Monaco', 'Courier', 'Courier New', monospace;
+    font-family: @text-monospace;
 }
 
 form.markup-form {

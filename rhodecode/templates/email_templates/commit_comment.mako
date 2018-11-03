@@ -18,12 +18,12 @@ data = {
 ${_('[mention]') if mention else ''} \
 
 % if comment_file:
-    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s` (file: `%(comment_file)s`)') % data} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`').format(**data)} ${_('in the {repo_name} repository').format(**data) |n}
 % else:
     % if status_change:
-    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s` (status: %(status)s)') % data |n} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('[status: {status}] {user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the {repo_name} repository').format(**data) |n}
     % else:
-    ${_('%(user)s left %(comment_type)s on commit `%(commit_id)s`') % data |n} ${_('in the %(repo_name)s repository') % data |n}
+    ${_('{user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the {repo_name} repository').format(**data) |n}
     % endif
 % endif
 
@@ -49,7 +49,7 @@ ${self.subject()}
 * ${_('Commit')}: ${h.show_id(commit)}
 
 %if comment_file:
-* ${_('File: %(comment_file)s on line %(comment_line)s') % data}
+* ${_('File: {comment_file} on line {comment_line}').format(**data)}
 %endif
 
 ---
@@ -79,9 +79,9 @@ data = {
     <tr><td colspan="2" style="width:100%;padding-bottom:15px;border-bottom:1px solid #dbd9da;">
 
     % if comment_file:
-        <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on commit `%(commit_id)s` (file:`%(comment_file)s`)') % data}</a> ${_('in the %(repo)s repository') % data |n}</h4>
+        <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`').format(**data)}</a> ${_('in the {repo} repository').format(**data) |n}</h4>
     % else:
-        <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s commented on commit `%(commit_id)s`') % data |n}</a> ${_('in the %(repo)s repository') % data |n}</h4>
+        <h4><a href="${commit_comment_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('{user} left a {comment_type} on commit `{commit_id}`').format(**data) |n}</a> ${_('in the {repo} repository').format(**data) |n}</h4>
     % endif
     </td></tr>
 
@@ -89,16 +89,19 @@ data = {
     <tr><td style="padding-right:20px;">${_('Description')}</td><td style="white-space:pre-wrap">${h.urlify_commit_message(commit.message, repo_name)}</td></tr>
 
     % if status_change:
-        <tr><td style="padding-right:20px;">${_('Status')}</td>
-            <td>${_('The commit status was changed to')}: ${base.status_text(status_change, tag_type=status_change_type)}</td>
+        <tr>
+            <td style="padding-right:20px;">${_('Status')}</td>
+            <td>
+                ${_('The commit status was changed to')}: ${base.status_text(status_change, tag_type=status_change_type)}
+            </td>
         </tr>
     % endif
     <tr>
         <td style="padding-right:20px;">
             % if comment_type == 'todo':
-                ${(_('TODO comment on line: %(comment_line)s') if comment_file else _('TODO comment')) % data}
+                ${(_('TODO comment on line: {comment_line}') if comment_file else _('TODO comment')).format(**data)}
             % else:
-                ${(_('Note comment on line: %(comment_line)s') if comment_file else _('Note comment')) % data}
+                ${(_('Note comment on line: {comment_line}') if comment_file else _('Note comment')).format(**data)}
             % endif
         </td>
         <td style="line-height:1.2em;white-space:pre-wrap">${h.render(comment_body, renderer=renderer_type, mentions=True)}</td></tr>

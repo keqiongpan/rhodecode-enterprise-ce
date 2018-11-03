@@ -303,6 +303,27 @@ class TestRepoForkViewTests(TestController):
         assert response.json == {u'data': [], u'draw': None,
                                  u'recordsFiltered': 0, u'recordsTotal': 0}
 
+    @pytest.mark.parametrize('url_type', [
+        'repo_fork_new',
+        'repo_fork_create'
+    ])
+    def test_fork_is_forbidden_on_archived_repo(self, backend, xhr_header, user_util, url_type):
+        user = user_util.create_user(password='qweqwe')
+        self.log_user(user.username, 'qweqwe')
+
+        # create a temporary repo
+        source = user_util.create_repo(repo_type=backend.alias)
+        repo_name = source.repo_name
+        repo = Repository.get_by_repo_name(repo_name)
+        repo.archived = True
+        Session().commit()
+
+        response = self.app.get(
+            route_path(url_type, repo_name=repo_name), status=302)
+
+        msg = 'Action not supported for archived repository.'
+        assert_session_flash(response, msg)
+
 
 class TestSVNFork(TestController):
     @pytest.mark.parametrize('route_name', [

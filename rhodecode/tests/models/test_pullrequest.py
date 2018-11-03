@@ -373,7 +373,8 @@ class TestPullRequestModel(object):
         source_ref_id = pull_request.source_ref_parts.commit_id
         target_ref_id = pull_request.target_ref_parts.commit_id
         diff = PullRequestModel()._get_diff_from_pr_or_version(
-            source_repo, source_ref_id, target_ref_id, context=6)
+            source_repo, source_ref_id, target_ref_id,
+            hide_whitespace_changes=False, diff_context=6)
         assert 'file_1' in diff.raw
 
     def test_generate_title_returns_unicode(self):
@@ -393,6 +394,7 @@ class TestIntegrationMerge(object):
     def test_merge_triggers_push_hooks(
             self, pr_util, user_admin, capture_rcextensions, merge_extras,
             extra_config):
+
         pull_request = pr_util.create_pull_request(
             approved=True, mergeable=True)
         # TODO: johbo: Needed for sqlite, try to find an automatic way for it
@@ -404,8 +406,8 @@ class TestIntegrationMerge(object):
                 pull_request, user_admin, extras=merge_extras)
 
         assert merge_state.executed
-        assert 'pre_push' in capture_rcextensions
-        assert 'post_push' in capture_rcextensions
+        assert '_pre_push_hook' in capture_rcextensions
+        assert '_push_hook' in capture_rcextensions
 
     def test_merge_can_be_rejected_by_pre_push_hook(
             self, pr_util, user_admin, capture_rcextensions, merge_extras):
@@ -471,6 +473,7 @@ def merge_extras(user_regular):
         'repository': 'fake_target_repo_name',
         'scm': 'git',
         'config': 'fake_config_ini_path',
+        'repo_store': '',
         'make_lock': None,
         'locked_by': [None, None, None],
         'server_url': 'http://test.example.com:5000',

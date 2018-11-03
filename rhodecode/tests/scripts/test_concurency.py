@@ -61,7 +61,7 @@ class Command(object):
         """
 
         command = cmd + ' ' + ' '.join(args)
-        log.debug('Executing %s' % command)
+        log.debug('Executing %s', command)
         if DEBUG:
             print(command)
         p = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, cwd=self.cwd)

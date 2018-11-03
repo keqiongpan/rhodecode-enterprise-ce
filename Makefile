@@ -1,9 +1,9 @@
 
 .PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build
 
-WEBPACK=./node_modules/webpack/bin/webpack.js
-GRUNT=grunt
 NODE_PATH=./node_modules
+WEBPACK=./node_binaries/webpack
+GRUNT=./node_binaries/grunt
 
 
 clean:

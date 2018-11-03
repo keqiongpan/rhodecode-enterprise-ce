@@ -88,7 +88,7 @@ class TestRepoCommitView(object):
         response.mustcontain('21 files changed: 943 inserted, 288 deleted')
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_id))
 
         # svn uses a different filename
@@ -133,7 +133,7 @@ class TestRepoCommitView(object):
             response.mustcontain('21 files changed: 943 inserted, 288 deleted')
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
@@ -163,7 +163,7 @@ class TestRepoCommitView(object):
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
 
         # files op files
-        response.mustcontain('File no longer present at commit: %s' %
+        response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
 
         # svn is special
@@ -293,26 +293,13 @@ Added a symlink
 """ + diffs['svn'],
     }
 
-    def _check_diff_menus(self, response, right_menu=False,):
-        # diff menus
-        for elem in ['Show File', 'Unified Diff', 'Side-by-side Diff',
-                     'Raw Diff', 'Download Diff']:
-            response.mustcontain(elem)
-
-        # right pane diff menus
-        if right_menu:
-            for elem in ['Ignore whitespace', 'Increase context',
-                         'Hide comments']:
-                response.mustcontain(elem)
-
     def _check_new_diff_menus(self, response, right_menu=False,):
-        # diff menus
-        for elem in ['Show file before', 'Show file after',
-                     'Raw diff', 'Download diff']:
+        # individual file diff menus
+        for elem in ['Show file before', 'Show file after']:
             response.mustcontain(elem)
 
         # right pane diff menus
         if right_menu:
-            for elem in ['Ignore whitespace', 'Increase context',
-                         'Hide comments']:
+            for elem in ['Hide whitespace changes', 'Toggle Wide Mode diff',
+                         'Show full context diff']:
                 response.mustcontain(elem)

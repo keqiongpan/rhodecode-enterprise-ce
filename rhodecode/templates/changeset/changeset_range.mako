@@ -3,9 +3,9 @@
 
 <%def name="title()">
     ${_('%s Commits') % c.repo_name} -
-    r${c.commit_ranges[0].revision}:${h.short_id(c.commit_ranges[0].raw_id)}
+    r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}
     ...
-    r${c.commit_ranges[-1].revision}:${h.short_id(c.commit_ranges[-1].raw_id)}
+    r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
     ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
@@ -14,9 +14,9 @@
 
 <%def name="breadcrumbs_links()">
     ${_('Commits')} -
-    r${c.commit_ranges[0].revision}:${h.short_id(c.commit_ranges[0].raw_id)}
+    r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}
     ...
-    r${c.commit_ranges[-1].revision}:${h.short_id(c.commit_ranges[-1].raw_id)}
+    r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
     ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
 </%def>
 
@@ -43,7 +43,7 @@
                 <h4>
                     ${_('Commit Range')}
                     <code>
-                    r${c.commit_ranges[0].revision}:${h.short_id(c.commit_ranges[0].raw_id)}...r${c.commit_ranges[-1].revision}:${h.short_id(c.commit_ranges[-1].raw_id)}
+                    r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}...r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
                     </code>
                 </h4>
               </span>
@@ -54,7 +54,7 @@
               ${_('Diff option')}:
             </div>
             <div class="right-content">
-              <div class="header-buttons">
+              <div class="btn btn-primary">
                 <a href="${h.route_path('repo_compare',
                 repo_name=c.repo_name,
                 source_ref_type='rev',
@@ -68,29 +68,6 @@
             </div>
           </div>
 
-         <%doc>
-         ##TODO(marcink): implement this and diff menus
-          <div class="fieldset">
-            <div class="left-label">
-              ${_('Diff options')}:
-            </div>
-            <div class="right-content">
-                <div class="diff-actions">
-                  <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
-                    ${_('Raw Diff')}
-                  </a>
-                   |
-                  <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id='?')}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
-                    ${_('Patch Diff')}
-                  </a>
-                   |
-                  <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id='?',_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
-                    ${_('Download Diff')}
-                  </a>
-                </div>
-            </div>
-          </div>
-        </%doc>
         </div> <!-- end summary-detail -->
 
     </div> <!-- end summary -->

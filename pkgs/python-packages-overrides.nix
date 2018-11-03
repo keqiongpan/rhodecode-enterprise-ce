@@ -30,8 +30,8 @@ self: super: {
 
   "beaker" = super."beaker".override (attrs: {
     patches = [
-      ./patch_beaker/patch-beaker-lock-func-debug.diff
-      ./patch_beaker/patch-beaker-metadata-reuse.diff
+      ./patches/beaker/patch-beaker-lock-func-debug.diff
+      ./patches/beaker/patch-beaker-metadata-reuse.diff
     ];
   });
 
@@ -238,6 +238,12 @@ self: super: {
     meta = {
       license = localLicenses.repoze;
     };
+  });
+
+  "supervisor" = super."supervisor".override (attrs: {
+    patches = [
+      ./patches/supervisor/patch-rlimits-old-kernel.diff
+    ];
   });
 
   # Avoid that base packages screw up the build process

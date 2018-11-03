@@ -65,13 +65,9 @@ table.dataTable {
         background-color: @grey7;
     }
 
-    .td-radio + .td-owner {
-        padding-left: 1em;
-    }
-
-
     th {
         text-align: left;
+        font-weight: @text-semibold-weight;
         font-family: @text-semibold;
     }
 
@@ -139,7 +135,7 @@ table.dataTable {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 450px;
+                max-width: 350px;
             }
         }
 
@@ -234,6 +230,8 @@ table.dataTable {
         &.expand_commit {
             padding-right: 0;
             padding-left: 1em;
+            cursor: pointer;
+            width: 20px;
         }
     }
 
@@ -327,6 +325,7 @@ table#repo_list_table {
 table.keyboard-mappings {
     th {
         text-align: left;
+        font-weight: @text-semibold-weight;
         font-family: @text-semibold;
     }
 }
@@ -372,6 +371,7 @@ table.keyboard-mappings {
 table.rctable.dl-settings {
     td {
         border: none;
+        vertical-align: baseline;
     }
 }
 
@@ -447,6 +447,8 @@ table.trending_language_tbl {
 
         &.expand_commit {
             padding-right: 0;
+            cursor: pointer;
+            width: 20px;
         }
     }
 }

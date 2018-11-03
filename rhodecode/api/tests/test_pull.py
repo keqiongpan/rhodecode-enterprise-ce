@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
-
+import mock
 import pytest
 
 from rhodecode.tests import TESTS_TMP_PATH
@@ -29,6 +29,7 @@ from rhodecode.api.tests.utils import (
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestPull(object):
+
     @pytest.mark.backends("git", "hg")
     def test_api_pull(self, backend):
         r = backend.create_repo()
@@ -37,12 +38,13 @@ class TestPull(object):
         r.clone_uri = clone_uri
 
         id_, params = build_data(self.apikey, 'pull', repoid=repo_name,)
-        response = api_call(self.app, params)
-        msg = 'Pulled from url `%s` on repo `%s`' % (
-            clone_uri, repo_name)
-        expected = {'msg': msg,
-                    'repository': repo_name}
-        assert_ok(id_, expected, given=response.body)
+        with mock.patch('rhodecode.model.scm.url_validator'):
+            response = api_call(self.app, params)
+            msg = 'Pulled from url `%s` on repo `%s`' % (
+                clone_uri, repo_name)
+            expected = {'msg': msg,
+                        'repository': repo_name}
+            assert_ok(id_, expected, given=response.body)
 
     def test_api_pull_error(self, backend):
         id_, params = build_data(

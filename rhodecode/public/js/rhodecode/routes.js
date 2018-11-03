@@ -150,6 +150,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_list_data', '/_repos', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('markup_preview', '/_markup_preview', []);
+    pyroutes.register('store_user_session_value', '/_store_session_attr', []);
     pyroutes.register('journal', '/_admin/journal', []);
     pyroutes.register('journal_rss', '/_admin/journal/rss', []);
     pyroutes.register('journal_atom', '/_admin/journal/atom', []);
@@ -227,6 +228,7 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request/%(pull_request_id)s/comment/%(comment_id)s/delete', ['repo_name', 'pull_request_id', 'comment_id']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
+    pyroutes.register('edit_repo_advanced_archive', '/%(repo_name)s/settings/advanced/archive', ['repo_name']);
     pyroutes.register('edit_repo_advanced_delete', '/%(repo_name)s/settings/advanced/delete', ['repo_name']);
     pyroutes.register('edit_repo_advanced_locking', '/%(repo_name)s/settings/advanced/locking', ['repo_name']);
     pyroutes.register('edit_repo_advanced_journal', '/%(repo_name)s/settings/advanced/journal', ['repo_name']);

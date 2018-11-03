@@ -236,7 +236,7 @@ def no_newline_id_generator(test_name):
     nicer output of progress of test
     """
     org_name = test_name
-    test_name = test_name\
+    test_name = safe_str(test_name)\
         .replace('\n', '_N') \
         .replace('\r', '_N') \
         .replace('\t', '_T') \

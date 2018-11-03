@@ -23,13 +23,14 @@ import logging
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
+from rhodecode import events
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired,
     HasRepoPermissionAny)
-from rhodecode.lib.exceptions import AttachedForksError
+from rhodecode.lib.exceptions import AttachedForksError, AttachedPullRequestsError
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib.vcs import RepositoryError
 from rhodecode.model.db import Session, UserFollowing, User, Repository
@@ -44,6 +45,13 @@ class RepoSettingsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         return c
+
+    def _get_users_with_permissions(self):
+        user_permissions = {}
+        for perm in self.db_repo.permissions():
+            user_permissions[perm.user_id] = perm
+
+        return user_permissions
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
@@ -71,6 +79,49 @@ class RepoSettingsView(RepoAppView):
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
     @view_config(
+        route_name='edit_repo_advanced_archive', request_method='POST',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+    def edit_advanced_archive(self):
+        """
+        Archives the repository. It will become read-only, and not visible in search
+        or other queries. But still visible for super-admins.
+        """
+
+        _ = self.request.translate
+
+        try:
+            old_data = self.db_repo.get_api_data()
+            RepoModel().archive(self.db_repo)
+
+            repo = audit_logger.RepoWrap(repo_id=None, repo_name=self.db_repo.repo_name)
+            audit_logger.store_web(
+                'repo.archive', action_data={'old_data': old_data},
+                user=self._rhodecode_user, repo=repo)
+
+            ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
+            h.flash(
+                _('Archived repository `%s`') % self.db_repo_name,
+                category='success')
+            Session().commit()
+        except Exception:
+            log.exception("Exception during archiving of repository")
+            h.flash(_('An error occurred during archiving of `%s`')
+                    % self.db_repo_name, category='error')
+            # redirect to advanced for more deletion options
+            raise HTTPFound(
+                h.route_path('edit_repo_advanced', repo_name=self.db_repo_name,
+                             _anchor='advanced-archive'))
+
+        # flush permissions for all users defined in permissions
+        affected_user_ids = self._get_users_with_permissions().keys()
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
+        raise HTTPFound(h.route_path('home'))
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
+    @view_config(
         route_name='edit_repo_advanced_delete', request_method='POST',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_delete(self):
@@ -80,22 +131,23 @@ class RepoSettingsView(RepoAppView):
         """
         _ = self.request.translate
         handle_forks = self.request.POST.get('forks', None)
+        if handle_forks == 'detach_forks':
+            handle_forks = 'detach'
+        elif handle_forks == 'delete_forks':
+            handle_forks = 'delete'
 
         try:
-            _forks = self.db_repo.forks.count()
-            if _forks and handle_forks:
-                if handle_forks == 'detach_forks':
-                    handle_forks = 'detach'
-                    h.flash(_('Detached %s forks') % _forks, category='success')
-                elif handle_forks == 'delete_forks':
-                    handle_forks = 'delete'
-                    h.flash(_('Deleted %s forks') % _forks, category='success')
-
             old_data = self.db_repo.get_api_data()
             RepoModel().delete(self.db_repo, forks=handle_forks)
 
-            repo = audit_logger.RepoWrap(repo_id=None,
-                                         repo_name=self.db_repo.repo_name)
+            _forks = self.db_repo.forks.count()
+            if _forks and handle_forks:
+                if handle_forks == 'detach_forks':
+                    h.flash(_('Detached %s forks') % _forks, category='success')
+                elif handle_forks == 'delete_forks':
+                    h.flash(_('Deleted %s forks') % _forks, category='success')
+
+            repo = audit_logger.RepoWrap(repo_id=None, repo_name=self.db_repo.repo_name)
             audit_logger.store_web(
                 'repo.delete', action_data={'old_data': old_data},
                 user=self._rhodecode_user, repo=repo)
@@ -114,6 +166,20 @@ class RepoSettingsView(RepoAppView):
                       'Try using {delete_or_detach} option.')
                     .format(repo=self.db_repo_name, delete_or_detach=delete_anchor),
                     category='warning')
+
+            # redirect to advanced for forks handle action ?
+            raise HTTPFound(repo_advanced_url)
+
+        except AttachedPullRequestsError:
+            repo_advanced_url = h.route_path(
+                'edit_repo_advanced', repo_name=self.db_repo_name,
+                _anchor='advanced-delete')
+            attached_prs = len(self.db_repo.pull_requests_source +
+                               self.db_repo.pull_requests_target)
+            h.flash(
+                _('Cannot delete `{repo}` it still contains {num} attached pull requests. '
+                  'Consider archiving the repository instead.').format(
+                    repo=self.db_repo_name, num=attached_prs), category='warning')
 
             # redirect to advanced for forks handle action ?
             raise HTTPFound(repo_advanced_url)

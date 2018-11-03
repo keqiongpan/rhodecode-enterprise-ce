@@ -93,16 +93,16 @@ def get_came_from(request):
     allowed_schemes = ['http', 'https']
     default_came_from = h.route_path('home')
     if parsed.scheme and parsed.scheme not in allowed_schemes:
-        log.error('Suspicious URL scheme detected %s for url %s' %
-                  (parsed.scheme, parsed))
+        log.error('Suspicious URL scheme detected %s for url %s',
+                  parsed.scheme, parsed)
         came_from = default_came_from
     elif parsed.netloc and request.host != parsed.netloc:
         log.error('Suspicious NETLOC detected %s for url %s server url '
-                  'is: %s' % (parsed.netloc, parsed, request.host))
+                  'is: %s', parsed.netloc, parsed, request.host)
         came_from = default_came_from
     elif any(bad_str in parsed.path for bad_str in ('\r', '\n')):
-        log.error('Header injection detected `%s` for url %s server url ' %
-                  (parsed.path, parsed))
+        log.error('Header injection detected `%s` for url %s server url ',
+                  parsed.path, parsed)
         came_from = default_came_from
 
     return came_from or default_came_from

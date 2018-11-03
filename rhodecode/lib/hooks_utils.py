@@ -47,7 +47,7 @@ def _get_rc_scm_extras(username, repo_name, repo_alias, action):
 
 
 def trigger_post_push_hook(
-        username, action, repo_name, repo_alias, commit_ids):
+        username, action, hook_type, repo_name, repo_alias, commit_ids):
     """
     Triggers push action hooks
 
@@ -59,6 +59,7 @@ def trigger_post_push_hook(
     """
     extras = _get_rc_scm_extras(username, repo_name, repo_alias, action)
     extras.commit_ids = commit_ids
+    extras.hook_type = hook_type
     hooks_base.post_push(extras)
 
 

@@ -1,5 +1,80 @@
+import {Polymer, html} from '@polymer/polymer/polymer-legacy';
+import '@polymer/iron-ajax/iron-ajax.js';
+
+const elemTemplate =  html`
+    <iron-ajax
+            id="ajaxConnect"
+            url=""
+            handle-as="json"
+            method="post"
+            content-type="application/json"
+            loading="{{loadingConnect}}"
+            last-response="{{connectLastResponse}}"
+            on-response="_handleConnect"
+            on-error="_handleConnectError"
+            debounce-duration="100"></iron-ajax>
+
+    <iron-ajax
+            id="ajaxDisconnect"
+            url=""
+            handle-as="json"
+            method="post"
+            content-type="application/json"
+            loading="{{loadingDisconnect}}"
+            last-response="{{_disconnectLastResponse}}"
+            on-response="_handleDisconnect"
+            debounce-duration="100"></iron-ajax>
+
+    <iron-ajax
+            id="ajaxSubscribe"
+            url=""
+            handle-as="json"
+            method="post"
+            content-type="application/json"
+            loading="{{loadingSubscribe}}"
+            last-response="{{subscribeLastResponse}}"
+            on-response="_handleSubscribe"
+            debounce-duration="100"></iron-ajax>
+
+    <iron-ajax
+            id="ajaxUnsubscribe"
+            url=""
+            handle-as="json"
+            method="post"
+            content-type="application/json"
+            loading="{{loadingUnsubscribe}}"
+            last-response="{{unsubscribeLastResponse}}"
+            on-response="_handleUnsubscribe"
+            debounce-duration="100"></iron-ajax>
+
+    <iron-ajax
+            id="ajaxMessage"
+            url=""
+            handle-as="json"
+            method="post"
+            content-type="application/json"
+            loading="{{loadingMessage}}"
+            last-response="{{messageLastResponse}}"
+            on-response="_handleMessage"
+            on-error="_handleMessageError"
+            debounce-duration="100"></iron-ajax>
+
+    <iron-ajax
+            id="ajaxListen"
+            url=""
+            handle-as="text"
+            loading="{{loadingListen}}"
+            last-response="{{listenLastResponse}}"
+            on-request="_handleListenOpen"
+            on-error="_handleListenError"
+            on-response="_handleListenMessageEvent"
+            debounce-duration="100"></iron-ajax>
+`
+
 Polymer({
     is: 'channelstream-connection',
+
+    _template: elemTemplate,
 
     /**
      * Fired when `channels` array changes.

@@ -122,7 +122,7 @@ class Search(BaseSearch):
                 search_user, repo_name)
             try:
                 query = qp.parse(safe_unicode(query))
-                log.debug('query: %s (%s)' % (query, repr(query)))
+                log.debug('query: %s (%s)', query, repr(query))
 
                 reverse, sortedby = False, None
                 if search_type == 'message':
@@ -217,8 +217,8 @@ class Search(BaseSearch):
             'path': self.file_schema
         }.get(cur_type, self.file_schema)
 
-        log.debug('IDX: %s' % index_name)
-        log.debug('SCHEMA: %s' % schema_defn)
+        log.debug('IDX: %s', index_name)
+        log.debug('SCHEMA: %s', schema_defn)
         return search_type, index_name, schema_defn
 
     def _init_searcher(self, index_name):

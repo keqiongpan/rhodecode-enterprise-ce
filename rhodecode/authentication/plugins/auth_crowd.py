@@ -241,16 +241,16 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             log.debug('Empty username or password skipping...')
             return None
 
-        log.debug("Crowd settings: \n%s" % (formatted_json(settings)))
+        log.debug("Crowd settings: \n%s", formatted_json(settings))
         server = CrowdServer(**settings)
         server.set_credentials(settings["app_name"], settings["app_password"])
         crowd_user = server.user_auth(username, password)
-        log.debug("Crowd returned: \n%s" % (formatted_json(crowd_user)))
+        log.debug("Crowd returned: \n%s", formatted_json(crowd_user))
         if not crowd_user["status"]:
             return None
 
         res = server.user_groups(crowd_user["name"])
-        log.debug("Crowd groups: \n%s" % (formatted_json(res)))
+        log.debug("Crowd groups: \n%s", formatted_json(res))
         crowd_user["groups"] = [x["name"] for x in res["groups"]]
 
         # old attrs fetched from RhodeCode database
@@ -280,6 +280,6 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         for group in settings["admin_groups"]:
             if group in user_attrs["groups"]:
                 user_attrs["admin"] = True
-        log.debug("Final crowd user object: \n%s" % (formatted_json(user_attrs)))
-        log.info('user `%s` authenticated correctly' % user_attrs['username'])
+        log.debug("Final crowd user object: \n%s", formatted_json(user_attrs))
+        log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs

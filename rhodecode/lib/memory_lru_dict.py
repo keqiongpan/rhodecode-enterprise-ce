@@ -67,7 +67,7 @@ class LRUDictDebug(LRUDict):
         fmt = '\n'
         for cnt, elem in enumerate(self.keys()):
             fmt += '%s - %s\n' % (cnt+1, safe_str(elem))
-        log.debug('current LRU keys (%s):%s' % (elems_cnt, fmt))
+        log.debug('current LRU keys (%s):%s', elems_cnt, fmt)
 
     def __getitem__(self, key):
         self._report_keys()

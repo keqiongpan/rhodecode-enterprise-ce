@@ -204,7 +204,7 @@ def request_view(request):
                 message='Request from IP:%s not allowed' % (
                     request.rpc_ip_addr,))
         else:
-            log.info('Access for IP:%s allowed' % (request.rpc_ip_addr,))
+            log.info('Access for IP:%s allowed', request.rpc_ip_addr)
 
         # register our auth-user
         request.rpc_user = auth_u
@@ -352,8 +352,7 @@ def setup_request(request):
         request.rpc_params = json_body['args'] \
             if isinstance(json_body['args'], dict) else {}
 
-        log.debug(
-            'method: %s, params: %s' % (request.rpc_method, request.rpc_params))
+        log.debug('method: %s, params: %s', request.rpc_method, request.rpc_params)
     except KeyError as e:
         raise JSONRPCError('Incorrect JSON data. Missing %s' % e)
 

@@ -9,7 +9,7 @@
 #  {
 #    # Thoughts on how to configure the dev environment
 #    rc = {
-#      codeInternalUrl = "https://usr:token@internal-code.rhodecode.com";
+#      codeInternalUrl = "https://usr:token@code.rhodecode.com/internal";
 #      sources = {
 #        rhodecode-vcsserver = "/home/user/work/rhodecode-vcsserver";
 #        rhodecode-enterprise-ce = "/home/user/work/rhodecode-enterprise-ce";
@@ -26,10 +26,18 @@ args@
 }:
 
 let
-  # Use nixpkgs from args or import them. We use this indirect approach
-  # through args to be able to use the name `pkgs` for our customized packages.
-  # Otherwise we will end up with an infinite recursion.
-  pkgs = args.pkgs or (import <nixpkgs> { });
+  pkgs_ = (import <nixpkgs> {});
+in
+
+let
+  pkgs = import <nixpkgs> {
+    overlays = [
+      (import ./pkgs/overlays.nix)
+    ];
+    inherit
+      (pkgs_)
+      system;
+  };
 
   # Works with the new python-packages, still can fallback to the old
   # variant.
@@ -46,7 +54,7 @@ let
     in
       !builtins.elem (basename path) [
         ".git" ".hg" "__pycache__" ".eggs" ".idea" ".dev"
-        "bower_components" "node_modules"
+        "node_modules" "node_binaries"
         "build" "data" "result" "tmp"] &&
       !builtins.elem ext ["egg-info" "pyc"] &&
       # TODO: johbo: This check is wrong, since "path" contains an absolute path,
@@ -55,7 +63,11 @@ let
 
   sources =
     let
-      inherit (pkgs.lib) all isString attrValues;
+      inherit
+        (pkgs.lib)
+        all
+        isString
+        attrValues;
       sourcesConfig = pkgs.config.rc.sources or {};
     in
       # Ensure that sources are configured as strings. Using a path
@@ -66,17 +78,11 @@ let
   version = builtins.readFile "${rhodecode-enterprise-ce-src}/rhodecode/VERSION";
   rhodecode-enterprise-ce-src = builtins.filterSource src-filter ./.;
 
-  buildBowerComponents = pkgs.buildBowerComponents;
   nodeEnv = import ./pkgs/node-default.nix {
-    inherit pkgs;
+    inherit
+      pkgs;
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
-
-  bowerComponents = buildBowerComponents {
-    name = "enterprise-ce-${version}";
-    generated = ./pkgs/bower-packages.nix;
-    src = rhodecode-enterprise-ce-src;
-  };
 
   rhodecode-testdata-src = sources.rhodecode-testdata or (
     pkgs.fetchhg {
@@ -95,23 +101,22 @@ let
   pythonLocalOverrides = self: super: {
     rhodecode-enterprise-ce =
       let
-        linkNodeAndBowerPackages = ''
+        linkNodePackages = ''
           export RHODECODE_CE_PATH=${rhodecode-enterprise-ce-src}
 
-          echo "[BEGIN]: Link node packages"
-          rm -fr node_modules
-          mkdir node_modules
+          echo "[BEGIN]: Link node packages and binaries"
           # johbo: Linking individual packages allows us to run "npm install"
           # inside of a shell to try things out. Re-entering the shell will
           # restore a clean environment.
+          rm -fr node_modules
+          mkdir node_modules
           ln -s ${nodeDependencies}/lib/node_modules/* node_modules/
-          echo "[DONE]: Link node packages"
+          export NODE_PATH=./node_modules
 
-          echo "[BEGIN]: Link bower packages"
-          rm -fr bower_components
-          mkdir bower_components
-          ln -s ${bowerComponents}/bower_components/* bower_components/
-          echo "[DONE]: Link bower packages"
+          rm -fr node_binaries
+          mkdir node_binaries
+          ln -s ${nodeDependencies}/bin/* node_binaries/
+          echo "[DONE ]: Link node packages and binaries"
         '';
 
         releaseName = "RhodeCodeEnterpriseCE-${version}";
@@ -129,8 +134,7 @@ let
       passthru = {
         inherit
           rhodecode-testdata
-          bowerComponents
-          linkNodeAndBowerPackages
+          linkNodePackages
           myPythonPackagesUnfix
           pythonLocalOverrides
           pythonCommunityOverrides;
@@ -141,8 +145,6 @@ let
       buildInputs =
         attrs.buildInputs or [] ++ [
           rhodecode-testdata
-          pkgs.nodePackages.bower
-          pkgs.nodePackages.grunt-cli
         ];
 
       #NOTE: option to inject additional propagatedBuildInputs
@@ -175,39 +177,66 @@ let
       '';
 
       preBuild = ''
-
-        echo "Building frontend assets"
-        ${linkNodeAndBowerPackages}
-        grunt
+        echo "[BEGIN]: Building frontend assets"
+        ${linkNodePackages}
+        make web-build
         rm -fr node_modules
+        rm -fr node_binaries
+        echo "[DONE ]: Building frontend assets"
       '';
 
       postInstall = ''
+        # check required files
+        STATIC_CHECK="/robots.txt /502.html
+                      /js/scripts.js /js/rhodecode-components.js
+                      /css/style.css /css/style-polymer.css"
+
+        for file in $STATIC_CHECK;
+        do
+            if [ ! -f rhodecode/public/$file ]; then
+              echo "Missing $file"
+              exit 1
+            fi
+        done
+
         echo "Writing enterprise-ce meta information for rccontrol to nix-support/rccontrol"
         mkdir -p $out/nix-support/rccontrol
         cp -v rhodecode/VERSION $out/nix-support/rccontrol/version
-        echo "[DONE]: enterprise-ce meta information for rccontrol written"
+        echo "[DONE ]: enterprise-ce meta information for rccontrol written"
 
         mkdir -p $out/etc
         cp configs/production.ini $out/etc
-        echo "[DONE]: saved enterprise-ce production.ini into $out/etc"
+        echo "[DONE ]: saved enterprise-ce production.ini into $out/etc"
+
+        cp -Rf rhodecode/config/rcextensions $out/etc/rcextensions.tmpl
+        echo "[DONE ]: saved enterprise-ce rcextensions into $out/etc/rcextensions.tmpl"
 
         # python based programs need to be wrapped
         mkdir -p $out/bin
-        # rhodecode-tools
-        ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
 
         # required binaries from dependencies
-        #ln -s ${self.python}/bin/python $out/bin
-        ln -s ${self.pyramid}/bin/* $out/bin/
-        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
-        ln -s ${self.supervisor}/bin/supervisor* $out/bin/
+        ln -s ${self.supervisor}/bin/supervisorctl $out/bin/
+        ln -s ${self.supervisor}/bin/supervisord $out/bin/
         ln -s ${self.pastescript}/bin/paster $out/bin/
         ln -s ${self.channelstream}/bin/channelstream $out/bin/
         ln -s ${self.celery}/bin/celery $out/bin/
-        echo "[DONE]: created symlinks into $out/bin"
+        ln -s ${self.gunicorn}/bin/gunicorn $out/bin/
+        ln -s ${self.pyramid}/bin/prequest $out/bin/
+        ln -s ${self.pyramid}/bin/pserve $out/bin/
 
-        for file in $out/bin/*;
+        echo "[DONE ]: created symlinks into $out/bin"
+        DEPS="$out/bin/supervisorctl \
+              $out/bin/supervisord \
+              $out/bin/paster \
+              $out/bin/channelstream \
+              $out/bin/celery \
+              $out/bin/gunicorn \
+              $out/bin/prequest \
+              $out/bin/pserve"
+
+        # wrap only dependency scripts, they require to have full PYTHONPATH set
+        # to be able to import all packages
+        for file in $DEPS;
         do
           wrapProgram $file \
             --prefix PATH : $PATH \
@@ -215,16 +244,18 @@ let
             --set PYTHONHASHSEED random
         done
 
-        echo "[DONE]: enterprise-ce binary wrapping"
+        echo "[DONE ]: enterprise-ce binary wrapping"
 
-        if [ ! -f rhodecode/public/js/scripts.js ]; then
-          echo "Missing scripts.js"
-          exit 1
-        fi
-        if [ ! -f rhodecode/public/css/style.css ]; then
-          echo "Missing style.css"
-          exit 1
-        fi
+        # rhodecode-tools don't need wrapping
+        ln -s ${self.rhodecode-tools}/bin/rhodecode-* $out/bin/
+
+        # expose sources of CE
+        ln -s $out $out/etc/rhodecode_enterprise_ce_source
+
+        # expose static files folder
+        cp -Rf $out/lib/${self.python.libPrefix}/site-packages/rhodecode/public/ $out/etc/static
+        chmod 755 -R $out/etc/static
+
       '';
     });
 
@@ -237,8 +268,13 @@ let
       getAttr pythonPackages pkgs;
 
   pythonGeneratedPackages = import ./pkgs/python-packages.nix {
-    inherit pkgs;
-    inherit (pkgs) fetchurl fetchgit fetchhg;
+    inherit
+      pkgs;
+    inherit
+      (pkgs)
+      fetchurl
+      fetchgit
+      fetchhg;
   };
 
   pythonCommunityOverrides = import ./pkgs/python-packages-overrides.nix {

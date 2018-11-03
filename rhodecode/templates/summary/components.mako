@@ -84,50 +84,13 @@
         </div>
 
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label">
-            ${_('Description')}:
-          </div>
-          <div class="right-content">
-            <div class="input ${summary(c.show_stats)}">
-                <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
-                ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
-            </div>
-          </div>
-        </div>
-
-        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label">
+          <div class="left-label-summary">
             ${_('Information')}:
           </div>
           <div class="right-content">
-
-              <div class="repo-size">
-                  <% commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision') %>
-
-                  ## commits
-                  % if commit_rev == -1:
-                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
-                  % else:
-                      <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
-                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
-                  % endif
-
-                  ## forks
-                  <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
-                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
-
-                  ## repo size
-                  % if commit_rev == -1:
-                      <span class="stats-bullet">0 B</span>
-                  % else:
-                      <span class="stats-bullet" id="repo_size_container">
-                          ${_('Calculating Repository Size...')}
-                      </span>
-                  % endif
-              </div>
-
             <div class="commit-info">
                 <div class="tags">
+                <% commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision') %>
                 % if c.rhodecode_repo:
                     ${refs_counters(
                         c.rhodecode_repo.branches,
@@ -138,52 +101,66 @@
                     ## missing requirements can make c.rhodecode_repo None
                     ${refs_counters([], [], [], [])}
                 % endif
+
+                ## commits
+                <span class="tag">
+                  % if commit_rev == -1:
+                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
+                  % else:
+                      <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
+                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
+                  % endif
+                </span>
+
+                ## forks
+                <span class="tag">
+                  <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
+                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
+                </span>
+
+                ## repo size
+                % if commit_rev == -1:
+                      <span class="stats-bullet">0 B</span>
+                % else:
+                      <span class="stats-bullet" id="repo_size_container">
+                          ${_('Calculating Repository Size...')}
+                      </span>
+                % endif
+
                 </div>
             </div>
-
           </div>
         </div>
 
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label">
-            ${_('Statistics')}:
+          <div class="left-label-summary">
+            ${_('Description')}:
           </div>
           <div class="right-content">
-            <div class="input ${summary(c.show_stats)} statistics">
-              % if c.show_stats:
-                <div id="lang_stats" class="enabled">
-                    ${_('Calculating Code Statistics...')}
-                </div>
-              % else:
-                  <span class="disabled">
-                      ${_('Statistics are disabled for this repository')}
-                  </span>
-                  % if h.HasPermissionAll('hg.admin')('enable stats on from summary'):
-                     , ${h.link_to(_('enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_statistics'))}
-                  % endif
-              % endif
+            <div class="input ${summary(c.show_stats)}">
+                <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
             </div>
-            
           </div>
         </div>
 
         % if show_downloads:
           <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-            <div class="left-label">
+            <div class="left-label-summary">
               ${_('Downloads')}:
             </div>
             <div class="right-content">
               <div class="input ${summary(c.show_stats)} downloads">
-                % if c.rhodecode_repo and len(c.rhodecode_repo.revisions) == 0:
+                % if c.rhodecode_repo and len(c.rhodecode_repo.commit_ids) == 0:
                   <span class="disabled">
                     ${_('There are no downloads yet')}
                   </span>
                 % elif not c.enable_downloads:
                     <span class="disabled">
-                        ${_('Downloads are disabled for this repository')}
+                        ${_('Downloads are disabled for this repository')}.
                     </span>
                     % if h.HasPermissionAll('hg.admin')('enable downloads on from summary'):
-                       , ${h.link_to(_('enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_downloads'))}
+                       ${h.link_to(_('Enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_downloads'))}
                     % endif
                 % else:
                     <span class="enabled">
@@ -198,6 +175,30 @@
             </div>
           </div>
         % endif
+
+        ## Statistics
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            ${_('Statistics')}:
+          </div>
+          <div class="right-content">
+            <div class="input ${summary(c.show_stats)} statistics">
+              % if c.show_stats:
+                <div id="lang_stats" class="enabled">
+                    ${_('Calculating Code Statistics...')}
+                </div>
+              % else:
+                  <span class="disabled">
+                      ${_('Statistics are disabled for this repository')}.
+                  </span>
+                  % if h.HasPermissionAll('hg.admin')('enable stats on from summary'):
+                     ${h.link_to(_('Enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_statistics'))}
+                  % endif
+              % endif
+            </div>
+
+          </div>
+        </div>
 
     </div><!--end summary-detail-->
 </%def>

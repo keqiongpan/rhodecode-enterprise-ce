@@ -739,13 +739,18 @@ class User(Base, BaseModel):
         plain_tokens = []
         hash_tokens = []
 
-        for token in tokens_q.all():
-            # verify scope first
+        user_tokens = tokens_q.all()
+        log.debug('Found %s user tokens to check for authentication', len(user_tokens))
+        for token in user_tokens:
+            log.debug('AUTH_TOKEN: checking if user token with id `%s` matches',
+                      token.user_api_key_id)
+            # verify scope first, since it's way faster than hash calculation of
+            # encrypted tokens
             if token.repo_id:
                 # token has a scope, we need to verify it
                 if scope_repo_id != token.repo_id:
                     log.debug(
-                        'Scope mismatch: token has a set repo scope: %s, '
+                        'AUTH_TOKEN: scope mismatch, token has a set repo scope: %s, '
                         'and calling scope is:%s, skipping further checks',
                          token.repo, scope_repo_id)
                     # token has a scope, and it doesn't match, skip token
@@ -761,7 +766,7 @@ class User(Base, BaseModel):
             return True
 
         for hashed in hash_tokens:
-            # TODO(marcink): this is expensive to calculate, but most secure
+            # NOTE(marcink): this is expensive to calculate, but most secure
             match = crypto_backend.hash_check(auth_token, hashed)
             if match:
                 return True
@@ -938,7 +943,11 @@ class User(Base, BaseModel):
 
     @classmethod
     def get_first_super_admin(cls):
-        user = User.query().filter(User.admin == true()).first()
+        user = User.query()\
+            .filter(User.admin == true()) \
+            .order_by(User.user_id.asc()) \
+            .first()
+
         if user is None:
             raise Exception('FATAL: Missing administrative account!')
         return user
@@ -1576,6 +1585,8 @@ class Repository(Base, BaseModel):
         unique=False, default=None)
     private = Column(
         "private", Boolean(), nullable=True, unique=None, default=None)
+    archived = Column(
+        "archived", Boolean(), nullable=True, unique=None, default=None)
     enable_statistics = Column(
         "statistics", Boolean(), nullable=True, unique=None, default=True)
     enable_downloads = Column(
@@ -1774,8 +1785,11 @@ class Repository(Base, BaseModel):
 
     @classmethod
     def get_all_repos(cls, user_id=Optional(None), group_id=Optional(None),
-                      case_insensitive=True):
+                      case_insensitive=True, archived=False):
         q = Repository.query()
+
+        if not archived:
+            q = q.filter(Repository.archived.isnot(true()))
 
         if not isinstance(user_id, Optional):
             q = q.filter(Repository.user_id == user_id)
@@ -1787,6 +1801,7 @@ class Repository(Base, BaseModel):
             q = q.order_by(func.lower(Repository.repo_name))
         else:
             q = q.order_by(Repository.repo_name)
+
         return q.all()
 
     @property
@@ -2536,8 +2551,8 @@ class RepoGroup(Base, BaseModel):
                 break
             if cnt == parents_recursion_limit:
                 # this will prevent accidental infinit loops
-                log.error(('more than %s parents found for group %s, stopping '
-                           'recursive parent fetching' % (parents_recursion_limit, self)))
+                log.error('more than %s parents found for group %s, stopping '
+                          'recursive parent fetching', parents_recursion_limit, self)
                 break
 
             groups.insert(0, gr)

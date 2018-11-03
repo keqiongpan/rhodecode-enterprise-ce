@@ -1,13 +1,13 @@
 .menuselection, .guilabel {
     font-size: .90em;
-    font-family: "proximanovaregular", "Proxima Nova Regular", "Proxima Nova", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     font-style: oblique;
 }
 
-.version{
+.version {
     display: none;
-    }
+}
 
-.pre{
-    color:#000
-    }
+.pre {
+    color: #000
+}

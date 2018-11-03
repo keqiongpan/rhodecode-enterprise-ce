@@ -38,6 +38,7 @@ def test_post_push_truncates_commits(user_regular, repo_stub):
         'user_agent': 'some-client',
         'locked_by': [None],
         'commit_ids': ['abcde12345' * 4] * 30000,
+        'hook_type': 'large_push_test_type',
         'is_shadow_repo': False,
     }
     extras = utils2.AttributeDict(extras)
@@ -70,11 +71,13 @@ def hook_extras(user_regular, repo_stub):
         'repository': repo_stub.repo_name,
         'scm': '',
         'config': '',
+        'repo_store': '',
         'server_url': 'http://example.com',
         'make_lock': None,
         'user_agent': 'some-client',
         'locked_by': [None],
         'commit_ids': [],
+        'hook_type': 'test_type',
         'is_shadow_repo': False,
     })
     return extras
@@ -91,7 +94,12 @@ def test_hooks_propagate(func, extension, event, hook_extras):
     Tests that our hook code propagates to rhodecode extensions and triggers
     the appropriate event.
     """
-    extension_mock = mock.Mock()
+    class ExtensionMock(mock.Mock):
+        @property
+        def output(self):
+            return 'MOCK'
+
+    extension_mock = ExtensionMock()
     events_mock = mock.Mock()
     patches = {
         'Repository': mock.Mock(),

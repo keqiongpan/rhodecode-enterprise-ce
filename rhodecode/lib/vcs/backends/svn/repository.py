@@ -68,7 +68,7 @@ class SubversionRepository(base.BaseRepository):
     contact = base.BaseRepository.DEFAULT_CONTACT
     description = base.BaseRepository.DEFAULT_DESCRIPTION
 
-    def __init__(self, repo_path, config=None, create=False, src_url=None,
+    def __init__(self, repo_path, config=None, create=False, src_url=None, bare=False,
                  **kwargs):
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()

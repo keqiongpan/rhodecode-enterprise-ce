@@ -45,7 +45,10 @@
             %endif
         </td>
         <td class="td-commit">
-            <pre><a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=cs.raw_id)}">${h.show_id(cs)}</a></pre>
+            <code>
+                <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=cs.raw_id)}">${h.show_id(cs)}</a>
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${cs.raw_id}" title="${_('Copy the full commit id')}"></i>
+            </code>
         </td>
 
         <td class="td-description mid">

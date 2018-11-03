@@ -9,7 +9,7 @@
     %>
     <tr class="cb-line cb-line-fresh ${'cb-annotate' if show_annotation else ''}"
     %if annotation:
-    data-revision="${annotation.revision}"
+    data-revision="${annotation.idx}"
     %endif
     >
 
@@ -28,11 +28,11 @@
             </td>
             <td
               class="cb-annotate-revision"
-              data-revision="${annotation.revision}"
-              onclick="$('[data-revision=${annotation.revision}]').toggleClass('cb-line-fresh')"
+              data-revision="${annotation.idx}"
+              onclick="$('[data-revision=${annotation.idx}]').toggleClass('cb-line-fresh')"
               style="background: ${bgcolor}">
             <a class="cb-annotate" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=annotation.raw_id)}">
-              r${annotation.revision}
+              r${annotation.idx}
             </a>
             </td>
         % else:
@@ -40,8 +40,8 @@
             <td class="cb-annotate-message-spacer"></td>
             <td
               class="cb-annotate-revision"
-              data-revision="${annotation.revision}"
-              onclick="$('[data-revision=${annotation.revision}]').toggleClass('cb-line-fresh')"
+              data-revision="${annotation.idx}"
+              onclick="$('[data-revision=${annotation.idx}]').toggleClass('cb-line-fresh')"
               style="background: ${bgcolor}">
             </td>
         % endif

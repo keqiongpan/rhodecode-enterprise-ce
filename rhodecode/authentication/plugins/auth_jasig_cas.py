@@ -134,10 +134,10 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         try:
             response = urllib2.urlopen(request)
         except urllib2.HTTPError as e:
-            log.debug("HTTPError when requesting Jasig CAS (status code: %d)" % e.code)
+            log.debug("HTTPError when requesting Jasig CAS (status code: %d)", e.code)
             return None
         except urllib2.URLError as e:
-            log.debug("URLError when requesting Jasig CAS url: %s " % url)
+            log.debug("URLError when requesting Jasig CAS url: %s ", url)
             return None
 
         # old attrs fetched from RhodeCode database
@@ -163,5 +163,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'extern_type': extern_type,
         }
 
-        log.info('user `%s` authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs

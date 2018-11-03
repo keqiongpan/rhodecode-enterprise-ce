@@ -241,9 +241,8 @@ class SettingsModel(BaseModel):
                 region.invalidate()
 
             result = _get_all_settings('rhodecode_settings', key)
-            log.debug(
-                'Fetching app settings for key: %s took: %.3fs', key,
-                inv_context_manager.compute_time)
+            log.debug('Fetching app settings for key: %s took: %.3fs', key,
+                      inv_context_manager.compute_time)
 
         return result
 

@@ -32,7 +32,7 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 from rhodecode import events
 from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.exceptions import AttachedForksError
+from rhodecode.lib.exceptions import AttachedForksError, AttachedPullRequestsError
 from rhodecode.lib.hooks_base import log_delete_repository
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
@@ -207,8 +207,8 @@ class RepoModel(BaseModel):
         def quick_menu(repo_name):
             return _render('quick_menu', repo_name)
 
-        def repo_lnk(name, rtype, rstate, private, fork_of):
-            return _render('repo_name', name, rtype, rstate, private, fork_of,
+        def repo_lnk(name, rtype, rstate, private, archived, fork_of):
+            return _render('repo_name', name, rtype, rstate, private, archived, fork_of,
                            short_name=not admin, admin=False)
 
         def last_change(last_change):
@@ -246,8 +246,8 @@ class RepoModel(BaseModel):
             row = {
                 "menu": quick_menu(repo.repo_name),
 
-                "name": repo_lnk(repo.repo_name, repo.repo_type,
-                                 repo.repo_state, repo.private, repo.fork),
+                "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
+                                 repo.private, repo.archived, repo.fork),
                 "name_raw": repo.repo_name.lower(),
 
                 "last_change": last_change(repo.last_db_change),
@@ -427,6 +427,7 @@ class RepoModel(BaseModel):
             new_repo.group = repo_group
             new_repo.description = description or repo_name
             new_repo.private = private
+            new_repo.archived = False
             new_repo.clone_uri = clone_uri
             new_repo.landing_rev = landing_rev
 
@@ -608,7 +609,24 @@ class RepoModel(BaseModel):
         from rhodecode.lib.celerylib import tasks, run_task
         return run_task(tasks.create_repo_fork, form_data, cur_user)
 
-    def delete(self, repo, forks=None, fs_remove=True, cur_user=None):
+    def archive(self, repo):
+        """
+        Archive given repository. Set archive flag.
+
+        :param repo:
+        """
+        repo = self._get_repo(repo)
+        if repo:
+
+            try:
+                repo.archived = True
+                self.sa.add(repo)
+                self.sa.commit()
+            except Exception:
+                log.error(traceback.format_exc())
+                raise
+
+    def delete(self, repo, forks=None, pull_requests=None, fs_remove=True, cur_user=None):
         """
         Delete given repository, forks parameter defines what do do with
         attached forks. Throws AttachedForksError if deleted repo has attached
@@ -616,6 +634,7 @@ class RepoModel(BaseModel):
 
         :param repo:
         :param forks: str 'delete' or 'detach'
+        :param pull_requests: str 'delete' or None
         :param fs_remove: remove(archive) repo from filesystem
         """
         if not cur_user:
@@ -631,6 +650,12 @@ class RepoModel(BaseModel):
                     self.delete(r, forks='delete')
             elif [f for f in repo.forks]:
                 raise AttachedForksError()
+
+            # check for pull requests
+            pr_sources = repo.pull_requests_source
+            pr_targets = repo.pull_requests_target
+            if pull_requests != 'delete' and (pr_sources or pr_targets):
+                raise AttachedPullRequestsError()
 
             old_repo_dict = repo.get_dict()
             events.trigger(events.RepoPreDeleteEvent(repo))

@@ -106,7 +106,7 @@ def test_strip_with_multiple_heads(backend_hg):
     model.strip(repo, commit_ids['b'], branch=None)
 
     vcs_repo = repo.scm_instance()
-    rest_commit_ids = [c.raw_id for c in vcs_repo.get_changesets()]
+    rest_commit_ids = [c.raw_id for c in vcs_repo.get_commits()]
     assert len(rest_commit_ids) == 4
     assert commit_ids['b'] not in rest_commit_ids
 
@@ -124,7 +124,7 @@ def test_strip_with_single_heads(backend_hg):
     model.strip(repo, commit_ids['b'], branch=None)
 
     vcs_repo = repo.scm_instance()
-    rest_commit_ids = [c.raw_id for c in vcs_repo.get_changesets()]
+    rest_commit_ids = [c.raw_id for c in vcs_repo.get_commits()]
     assert len(rest_commit_ids) == 2
     assert commit_ids['b'] not in rest_commit_ids
 

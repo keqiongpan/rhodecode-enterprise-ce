@@ -39,6 +39,7 @@ def route_path(name, params=None, **kwargs):
         'repo_summary': '/{repo_name}',
         'edit_repo_advanced': '/{repo_name}/settings/advanced',
         'edit_repo_advanced_delete': '/{repo_name}/settings/advanced/delete',
+        'edit_repo_advanced_archive': '/{repo_name}/settings/advanced/archive',
         'edit_repo_advanced_fork': '/{repo_name}/settings/advanced/fork',
         'edit_repo_advanced_locking': '/{repo_name}/settings/advanced/locking',
         'edit_repo_advanced_journal': '/{repo_name}/settings/advanced/journal',
@@ -133,7 +134,7 @@ class TestAdminRepoSettingsAdvanced(object):
         "suffix",
         ['', u'ąęł' , '123'],
         ids=no_newline_id_generator)
-    def test_advanced_delete(self, autologin_user, backend, suffix, csrf_token):
+    def test_advanced_repo_delete(self, autologin_user, backend, suffix, csrf_token):
         repo = backend.create_repo(name_suffix=suffix)
         repo_name = repo.repo_name
         repo_name_str = safe_str(repo.repo_name)
@@ -148,3 +149,25 @@ class TestAdminRepoSettingsAdvanced(object):
         # check if repo was deleted from db
         assert RepoModel().get_by_repo_name(repo_name) is None
         assert not repo_on_filesystem(repo_name_str)
+
+    @pytest.mark.parametrize(
+        "suffix",
+        ['', u'ąęł' , '123'],
+        ids=no_newline_id_generator)
+    def test_advanced_repo_archive(self, autologin_user, backend, suffix, csrf_token):
+        repo = backend.create_repo(name_suffix=suffix)
+        repo_name = repo.repo_name
+        repo_name_str = safe_str(repo.repo_name)
+
+        response = self.app.post(
+            route_path('edit_repo_advanced_archive', repo_name=repo_name_str),
+            params={'csrf_token': csrf_token})
+
+        assert_session_flash(response,
+                             u'Archived repository `{}`'.format(repo_name))
+
+        response = self.app.get(route_path('repo_summary', repo_name=repo_name_str))
+        response.mustcontain('This repository has been archived. It is now read-only.')
+
+        # check if repo was deleted from db
+        assert RepoModel().get_by_repo_name(repo_name).archived is True

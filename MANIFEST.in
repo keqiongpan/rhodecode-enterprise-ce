@@ -39,7 +39,6 @@ include rhodecode/public/sounds/*.mp3
 include rhodecode/public/sounds/*.wav
 
 # fonts
-recursive-include rhodecode/public/fonts/ProximaNova *
 recursive-include rhodecode/public/fonts/RCIcons *
 
 # js

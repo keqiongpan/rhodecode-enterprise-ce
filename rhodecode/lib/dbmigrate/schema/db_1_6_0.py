@@ -614,15 +614,13 @@ class Repository(Base, BaseModel):
         if (cs_cache != self.changeset_cache or not self.changeset_cache):
             _default = datetime.datetime.fromtimestamp(0)
             last_change = cs_cache.get('date') or _default
-            log.debug('updated repo %s with new cs cache %s'
-                      % (self.repo_name, cs_cache))
+            log.debug('updated repo %s with new cs cache %s', self.repo_name, cs_cache)
             self.updated_on = last_change
             self.changeset_cache = cs_cache
             Session().add(self)
             Session().commit()
         else:
-            log.debug('Skipping repo:%s already with latest changes'
-                      % self.repo_name)
+            log.debug('Skipping repo:%s already with latest changes', self.repo_name)
 
 class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'

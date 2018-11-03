@@ -1,7 +1,7 @@
 <%namespace name="commentblock" file="/changeset/changeset_file_comment.mako"/>
 
-<%def name="diff_line_anchor(filename, line, type)"><%
-return '%s_%s_%i' % (h.safeid(filename), type, line)
+<%def name="diff_line_anchor(commit, filename, line, type)"><%
+return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 %></%def>
 
 <%def name="action_class(action)">
@@ -47,7 +47,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
     deleted_files_comments=None,
 
     # for cache purpose
-    inline_comments=None
+    inline_comments=None,
 
 )">
 %if use_comments:
@@ -83,7 +83,7 @@ return '%s_%s_%i' % (h.safeid(filename), type, line)
 collapse_all = len(diffset.files) > collapse_when_files_over
 %>
 
-%if c.diffmode == 'sideside':
+%if c.user_session_attrs["diffmode"] == 'sideside':
 <style>
 .wrapper {
     max-width: 1600px !important;
@@ -116,20 +116,24 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             </div>
         %endif
         <h2 class="clearinner">
-        %if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${'r%s:%s' % (commit.revision,h.short_id(commit.raw_id))}</a> -
-            ${h.age_component(commit.date)} -
-        %endif
-
-        %if diffset.limited_diff:
-            ${_('The requested commit is too big and content was truncated.')}
-
-            ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-            <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-        %else:
-            ${_ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted',
-                        '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}}
-        %endif
+        ## invidual commit
+        % if commit:
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
+            ${h.age_component(commit.date)}
+            % if diffset.limited_diff:
+                - ${_('The requested commit is too big and content was truncated.')}
+                ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
+                <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+            % elif hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
+                ## compare diff, has no file-selector and we want to show stats anyway
+               ${_ungettext('{num} file changed: {linesadd} inserted, ''{linesdel} deleted',
+                            '{num} files changed: {linesadd} inserted, {linesdel} deleted', diffset.changed_files) \
+                            .format(num=diffset.changed_files, linesadd=diffset.lines_added, linesdel=diffset.lines_deleted)}
+            % endif
+        % else:
+            ## pull requests/compare
+            ${_('File Changes')}
+        % endif
 
         </h2>
     </div>
@@ -141,6 +145,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
     %endif
 
     <div class="filediffs">
+
     ## initial value could be marked as False later on
     <% over_lines_changed_limit = False %>
     %for i, filediff in enumerate(diffset.files):
@@ -149,111 +154,128 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         lines_changed = filediff.patch['stats']['added'] + filediff.patch['stats']['deleted']
         over_lines_changed_limit = lines_changed > lines_changed_limit
         %>
-        <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox">
+        ## anchor with support of sticky header
+        <div class="anchor" id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"></div>
+
+        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="updateSticky();">
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
-            id="a_${h.FID('', filediff.patch['filename'])}">
-            <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
-                <div class="filediff-collapse-indicator"></div>
-                ${diff_ops(filediff)}
-            </label>
-            ${diff_menu(filediff, use_comments=use_comments)}
-            <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
-        %if not filediff.hunks:
-            %for op_id, op_text in filediff.patch['stats']['ops'].items():
-                <tr>
-                    <td class="cb-text cb-${op_class(op_id)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
-                        %if op_id == DEL_FILENODE:
-                        ${_('File was deleted')}
-                        %elif op_id == BIN_FILENODE:
-                        ${_('Binary file hidden')}
-                        %else:
-                        ${op_text}
-                        %endif
-                    </td>
-                </tr>
-            %endfor
-        %endif
+            data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}"
+        >
+        <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
+            <div class="filediff-collapse-indicator"></div>
+            ${diff_ops(filediff)}
+        </label>
+
+        ${diff_menu(filediff, use_comments=use_comments)}
+        <table data-f-path="${filediff.patch['filename']}" data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}" class="code-visible-block cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
+
+        ## new/deleted/empty content case
+        % if not filediff.hunks:
+            ## Comment container, on "fakes" hunk that contains all data to render comments
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
+        % endif
+
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
-                    <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
+                    <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
                         ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:
             %if over_lines_changed_limit:
                     <tr class="cb-warning cb-collapser">
-                        <td class="cb-text" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=6'}>
+                        <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
                             ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
                             <a href="#" class="cb-expand"
-                               onclick="$(this).closest('table').removeClass('cb-collapsed'); return false;">${_('Show them')}
+                               onclick="$(this).closest('table').removeClass('cb-collapsed'); updateSticky(); return false;">${_('Show them')}
                             </a>
                             <a href="#" class="cb-collapse"
-                               onclick="$(this).closest('table').addClass('cb-collapsed'); return false;">${_('Hide them')}
+                               onclick="$(this).closest('table').addClass('cb-collapsed'); updateSticky(); return false;">${_('Hide them')}
                             </a>
                         </td>
                     </tr>
             %endif
         %endif
 
-        %for hunk in filediff.hunks:
-                <tr class="cb-hunk">
-                    <td ${c.diffmode == 'unified' and 'colspan=3' or ''}>
-                        ## TODO: dan: add ajax loading of more context here
-                        ## <a href="#">
-                            <i class="icon-more"></i>
-                        ## </a>
-                    </td>
-                    <td ${c.diffmode == 'sideside' and 'colspan=5' or ''}>
-                        @@
-                        -${hunk.source_start},${hunk.source_length}
-                        +${hunk.target_start},${hunk.target_length}
-                        ${hunk.section_header}
-                    </td>
-                </tr>
-            %if c.diffmode == 'unified':
-                    ${render_hunk_lines_unified(hunk, use_comments=use_comments, inline_comments=inline_comments)}
-            %elif c.diffmode == 'sideside':
-                    ${render_hunk_lines_sideside(hunk, use_comments=use_comments, inline_comments=inline_comments)}
-            %else:
-                <tr class="cb-line">
-                    <td>unknown diff mode</td>
-                </tr>
-            %endif
-        %endfor
+        % for hunk in filediff.hunks:
+            <tr class="cb-hunk">
+                <td ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=3' or '')}>
+                    ## TODO: dan: add ajax loading of more context here
+                    ## <a href="#">
+                        <i class="icon-more"></i>
+                    ## </a>
+                </td>
+                <td ${(c.user_session_attrs["diffmode"] == 'sideside' and 'colspan=5' or '')}>
+                    @@
+                    -${hunk.source_start},${hunk.source_length}
+                    +${hunk.target_start},${hunk.target_length}
+                    ${hunk.section_header}
+                </td>
+            </tr>
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        % endfor
+
+        <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
 
         ## outdated comments that do not fit into currently displayed lines
-        % for lineno, comments in filediff.left_comments.items():
+        % for lineno, comments in unmatched_comments.items():
 
-        %if c.diffmode == 'unified':
-            <tr class="cb-line">
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    ${inline_comments_container(comments, inline_comments)}
-                </td>
-            </tr>
-        %elif c.diffmode == 'sideside':
-            <tr class="cb-line">
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    % if lineno.startswith('o'):
+            %if c.user_session_attrs["diffmode"] == 'unified':
+                % if loop.index == 0:
+                <tr class="cb-hunk">
+                    <td colspan="3"></td>
+                    <td>
+                        <div>
+                        ${_('Unmatched inline comments below')}
+                        </div>
+                    </td>
+                </tr>
+                % endif
+                <tr class="cb-line">
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
                         ${inline_comments_container(comments, inline_comments)}
-                    % endif
-                </td>
+                    </td>
+                </tr>
+            %elif c.user_session_attrs["diffmode"] == 'sideside':
+                % if loop.index == 0:
+                <tr class="cb-comment-info">
+                    <td colspan="2"></td>
+                    <td class="cb-line">
+                        <div>
+                        ${_('Unmatched inline comments below')}
+                        </div>
+                    </td>
+                    <td colspan="2"></td>
+                    <td class="cb-line">
+                        <div>
+                        ${_('Unmatched comments below')}
+                        </div>
+                    </td>
+                </tr>
+                % endif
+                <tr class="cb-line">
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
+                        % if lineno.startswith('o'):
+                            ${inline_comments_container(comments, inline_comments)}
+                        % endif
+                    </td>
 
-                <td class="cb-data cb-context"></td>
-                <td class="cb-lineno cb-context"></td>
-                <td class="cb-content cb-context">
-                    % if lineno.startswith('n'):
-                        ${inline_comments_container(comments, inline_comments)}
-                    % endif
-                </td>
-            </tr>
-        %endif
+                    <td class="cb-data cb-context"></td>
+                    <td class="cb-lineno cb-context"></td>
+                    <td class="cb-content cb-context">
+                        % if lineno.startswith('n'):
+                            ${inline_comments_container(comments, inline_comments)}
+                        % endif
+                    </td>
+                </tr>
+            %endif
 
         % endfor
 
@@ -270,8 +292,8 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                 display_state = ''
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
-            <input ${collapse_all and 'checked' or ''} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox">
-            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID('', filename)}">
+            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
+            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
                     <span class="pill">
@@ -282,24 +304,24 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         ## file op, doesn't need translation
                         <span class="pill" op="removed">removed in this version</span>
                     </span>
-                    <a class="pill filediff-anchor" href="#a_${h.FID('', filename)}">¶</a>
+                    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filename)}">¶</a>
                     <span class="pill-group" style="float: right">
                         <span class="pill" op="deleted">-${comments_dict['stats']}</span>
                     </span>
                 </label>
 
-                <table class="cb cb-diff-${c.diffmode} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
+                <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
                     <tr>
-                        % if c.diffmode == 'unified':
+                        % if c.user_session_attrs["diffmode"] == 'unified':
                         <td></td>
                         %endif
 
                         <td></td>
-                        <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${c.diffmode == 'unified' and 'colspan=4' or 'colspan=5'}>
+                        <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=5')}>
                         ${_('File was deleted in this version. There are still outdated/unresolved comments attached to it.')}
                         </td>
                     </tr>
-                    %if c.diffmode == 'unified':
+                    %if c.user_session_attrs["diffmode"] == 'unified':
                     <tr class="cb-line">
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
@@ -308,7 +330,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                             ${inline_comments_container(comments_dict['comments'], inline_comments)}
                         </td>
                     </tr>
-                    %elif c.diffmode == 'sideside':
+                    %elif c.user_session_attrs["diffmode"] == 'sideside':
                     <tr class="cb-line">
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
@@ -364,17 +386,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         %endif
         <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
     </span>
-    <span class="pill-group" style="float: left">
+    ## anchor link
+    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
+
+    <span class="pill-group" style="float: right">
+
+        ## ops pills
         %if filediff.limited_diff:
         <span class="pill tooltip" op="limited" title="The stats for this diff are not complete">limited diff</span>
-        %endif
-
-        %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
-        <span class="pill" op="renamed">renamed</span>
-        %endif
-
-        %if COPIED_FILENODE in filediff.patch['stats']['ops']:
-        <span class="pill" op="copied">copied</span>
         %endif
 
         %if NEW_FILENODE in filediff.patch['stats']['ops']:
@@ -386,6 +405,14 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             %endif
         %endif
 
+        %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
+        <span class="pill" op="renamed">renamed</span>
+        %endif
+
+        %if COPIED_FILENODE in filediff.patch['stats']['ops']:
+        <span class="pill" op="copied">copied</span>
+        %endif
+
         %if DEL_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="removed">removed</span>
         %endif
@@ -395,38 +422,35 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             ${nice_mode(filediff['source_mode'])} ➡ ${nice_mode(filediff['target_mode'])}
         </span>
         %endif
-    </span>
 
-    <a class="pill filediff-anchor" href="#a_${h.FID('', filediff.patch['filename'])}">¶</a>
-
-    <span class="pill-group" style="float: right">
         %if BIN_FILENODE in filediff.patch['stats']['ops']:
         <span class="pill" op="binary">binary</span>
             %if MOD_FILENODE in filediff.patch['stats']['ops']:
-            <span class="pill" op="modified">modified</span>
+        <span class="pill" op="modified">modified</span>
             %endif
         %endif
-        %if filediff.patch['stats']['added']:
-        <span class="pill" op="added">+${filediff.patch['stats']['added']}</span>
-        %endif
-        %if filediff.patch['stats']['deleted']:
-        <span class="pill" op="deleted">-${filediff.patch['stats']['deleted']}</span>
-        %endif
+
+        <span class="pill" op="added">${('+' if filediff.patch['stats']['added'] else '')}${filediff.patch['stats']['added']}</span>
+        <span class="pill" op="deleted">${((h.safe_int(filediff.patch['stats']['deleted']) or 0) * -1)}</span>
+
     </span>
 
 </%def>
 
 <%def name="nice_mode(filemode)">
-    ${filemode.startswith('100') and filemode[3:] or filemode}
+    ${(filemode.startswith('100') and filemode[3:] or filemode)}
 </%def>
 
 <%def name="diff_menu(filediff, use_comments=False)">
     <div class="filediff-menu">
-%if filediff.diffset.source_ref:
+
+    %if filediff.diffset.source_ref:
+
+    ## FILE BEFORE CHANGES
     %if filediff.operation in ['D', 'M']:
         <a
             class="tooltip"
-            href="${h.route_path('repo_files',repo_name=filediff.diffset.repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
+            href="${h.route_path('repo_files',repo_name=filediff.diffset.target_repo_name,commit_id=filediff.diffset.source_ref,f_path=filediff.source_file_path)}"
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
@@ -434,11 +458,13 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     %else:
         <span
             class="tooltip"
-            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
+            title="${h.tooltip(_('File not present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.source_ref[:12]})}"
         >
             ${_('Show file before')}
         </span> |
     %endif
+
+    ## FILE AFTER CHANGES
     %if filediff.operation in ['A', 'M']:
         <a
             class="tooltip"
@@ -446,47 +472,25 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
             title="${h.tooltip(_('Show file at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
         >
             ${_('Show file after')}
-        </a> |
+        </a>
     %else:
         <span
             class="tooltip"
-            title="${h.tooltip(_('File no longer present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
+            title="${h.tooltip(_('File not present at commit: %(commit_id)s') % {'commit_id': filediff.diffset.target_ref[:12]})}"
             >
-                ${_('Show file after')}
-        </span> |
+            ${_('Show file after')}
+        </span>
     %endif
-        <a
-            class="tooltip"
-            title="${h.tooltip(_('Raw diff'))}"
-            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='raw'))}"
-        >
-            ${_('Raw diff')}
-        </a> |
-        <a
-            class="tooltip"
-            title="${h.tooltip(_('Download diff'))}"
-            href="${h.route_path('repo_files_diff',repo_name=filediff.diffset.repo_name,f_path=filediff.target_file_path, _query=dict(diff2=filediff.diffset.target_ref,diff1=filediff.diffset.source_ref,diff='download'))}"
-        >
-            ${_('Download diff')}
-        </a>
-        % if use_comments:
-            |
-        % endif
 
-        ## TODO: dan: refactor ignorews_url and context_url into the diff renderer same as diffmode=unified/sideside. Also use ajax to load more context (by clicking hunks)
-        %if hasattr(c, 'ignorews_url'):
-        ${c.ignorews_url(request, h.FID('', filediff.patch['filename']))}
-        %endif
-        %if hasattr(c, 'context_url'):
-        ${c.context_url(request, h.FID('', filediff.patch['filename']))}
-        %endif
+    % if use_comments:
+    |
+    <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
+        <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
+    </a>
+    % endif
 
-        %if use_comments:
-        <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
-            <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
-        </a>
-        %endif
-%endif
+    %endif
+
     </div>
 </%def>
 
@@ -512,29 +516,31 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 <%!
-def get_comments_for(comments, filename, line_version, line_number):
+def get_comments_for(diff_type, comments, filename, line_version, line_number):
     if hasattr(filename, 'unicode_path'):
         filename = filename.unicode_path
 
     if not isinstance(filename, basestring):
         return None
 
-    line_key = '{}{}'.format(line_version, line_number)
+    line_key = '{}{}'.format(line_version, line_number) ## e.g o37, n12
+
     if comments and filename in comments:
         file_comments = comments[filename]
         if line_key in file_comments:
-            return file_comments[line_key]
+            data = file_comments.pop(line_key)
+            return data
 %>
 
-<%def name="render_hunk_lines_sideside(hunk, use_comments=False, inline_comments=None)">
-
+<%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None)">
     %for i, line in enumerate(hunk.sideside):
     <%
     old_line_anchor, new_line_anchor = None, None
+
     if line.original.lineno:
-        old_line_anchor = diff_line_anchor(hunk.source_file_path, line.original.lineno, 'o')
+        old_line_anchor = diff_line_anchor(filediff.raw_id, hunk.source_file_path, line.original.lineno, 'o')
     if line.modified.lineno:
-        new_line_anchor = diff_line_anchor(hunk.target_file_path, line.modified.lineno, 'n')
+        new_line_anchor = diff_line_anchor(filediff.raw_id, hunk.target_file_path, line.modified.lineno, 'n')
     %>
 
     <tr class="cb-line">
@@ -542,16 +548,17 @@ def get_comments_for(comments, filename, line_version, line_number):
             data-line-no="${line.original.lineno}"
             >
             <div>
-            <% loc = None %>
+
+            <% line_old_comments = None %>
             %if line.original.get_comment_args:
-                <% loc = get_comments_for(inline_comments, *line.original.get_comment_args) %>
+                <% line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args) %>
             %endif
-            %if loc:
-                <% has_outdated = any([x.outdated for x in loc]) %>
+            %if line_old_comments:
+                <% has_outdated = any([x.outdated for x in line_old_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(loc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments including outdated')}:${len(line_old_comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(loc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments')}: ${len(line_old_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -572,10 +579,10 @@ def get_comments_for(comments, filename, line_version, line_number):
             %if use_comments and line.original.lineno:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${line.original.action} ${line.original.content or '' | n}</span>
+            <span class="cb-code"><span class="cb-action ${action_class(line.original.action)}"></span>${line.original.content or '' | n}</span>
 
-            %if use_comments and line.original.lineno and loc:
-                ${inline_comments_container(loc, inline_comments)}
+            %if use_comments and line.original.lineno and line_old_comments:
+                ${inline_comments_container(line_old_comments, inline_comments)}
             %endif
 
         </td>
@@ -585,16 +592,16 @@ def get_comments_for(comments, filename, line_version, line_number):
             <div>
 
             %if line.modified.get_comment_args:
-                <% lmc = get_comments_for(inline_comments, *line.modified.get_comment_args) %>
+                <% line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args) %>
             %else:
-                <% lmc = None%>
+                <% line_new_comments = None%>
             %endif
-            %if lmc:
-                <% has_outdated = any([x.outdated for x in lmc]) %>
+            %if line_new_comments:
+                <% has_outdated = any([x.outdated for x in line_new_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(lmc)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments including outdated')}:${len(line_new_comments)}" class="icon-comment_toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(lmc)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i title="${_('comments')}: ${len(line_new_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -615,9 +622,9 @@ def get_comments_for(comments, filename, line_version, line_number):
             %if use_comments and line.modified.lineno:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${line.modified.action} ${line.modified.content or '' | n}</span>
-            %if use_comments and line.modified.lineno and lmc:
-            ${inline_comments_container(lmc, inline_comments)}
+            <span class="cb-code"><span class="cb-action ${action_class(line.modified.action)}"></span>${line.modified.content or '' | n}</span>
+            %if use_comments and line.modified.lineno and line_new_comments:
+            ${inline_comments_container(line_new_comments, inline_comments)}
             %endif
         </td>
     </tr>
@@ -625,23 +632,24 @@ def get_comments_for(comments, filename, line_version, line_number):
 </%def>
 
 
-<%def name="render_hunk_lines_unified(hunk, use_comments=False,  inline_comments=None)">
+<%def name="render_hunk_lines_unified(filediff, hunk, use_comments=False,  inline_comments=None)">
     %for old_line_no, new_line_no, action, content, comments_args in hunk.unified:
+
     <%
     old_line_anchor, new_line_anchor = None, None
     if old_line_no:
-        old_line_anchor = diff_line_anchor(hunk.source_file_path, old_line_no, 'o')
+        old_line_anchor = diff_line_anchor(filediff.raw_id, hunk.source_file_path, old_line_no, 'o')
     if new_line_no:
-        new_line_anchor = diff_line_anchor(hunk.target_file_path, new_line_no, 'n')
+        new_line_anchor = diff_line_anchor(filediff.raw_id, hunk.target_file_path, new_line_no, 'n')
     %>
     <tr class="cb-line">
         <td class="cb-data ${action_class(action)}">
             <div>
 
             %if comments_args:
-                <% comments = get_comments_for(inline_comments, *comments_args) %>
+                <% comments = get_comments_for('unified', inline_comments, *comments_args) %>
             %else:
-                <% comments = None%>
+                <% comments = None %>
             %endif
 
             % if comments:
@@ -675,12 +683,12 @@ def get_comments_for(comments, filename, line_version, line_number):
             %endif
         </td>
         <td class="cb-content ${action_class(action)}"
-            data-line-no="${new_line_no and 'n' or 'o'}${new_line_no or old_line_no}"
+            data-line-no="${(new_line_no and 'n' or 'o')}${(new_line_no or old_line_no)}"
             >
             %if use_comments:
             ${render_add_comment_button()}
             %endif
-            <span class="cb-code">${action} ${content or '' | n}</span>
+            <span class="cb-code"><span class="cb-action ${action_class(action)}"></span> ${content or '' | n}</span>
             %if use_comments and comments:
             ${inline_comments_container(comments, inline_comments)}
             %endif
@@ -689,47 +697,327 @@ def get_comments_for(comments, filename, line_version, line_number):
     %endfor
 </%def>
 
+
+<%def name="render_hunk_lines(filediff, diff_mode, hunk, use_comments, inline_comments)">
+    % if diff_mode == 'unified':
+        ${render_hunk_lines_unified(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+    % elif diff_mode == 'sideside':
+        ${render_hunk_lines_sideside(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+    % else:
+        <tr class="cb-line">
+            <td>unknown diff mode</td>
+        </tr>
+    % endif
+</%def>file changes
+
+
 <%def name="render_add_comment_button()">
 <button class="btn btn-small btn-primary cb-comment-box-opener" onclick="return Rhodecode.comments.createComment(this)">
     <span><i class="icon-comment"></i></span>
 </button>
 </%def>
 
-<%def name="render_diffset_menu()">
+<%def name="render_diffset_menu(diffset=None, range_diff_on=None)">
 
-    <div class="diffset-menu clearinner">
-        <div class="pull-right">
+    <div id="diff-file-sticky" class="diffset-menu clearinner">
+        ## auto adjustable
+        <div class="sidebar__inner">
+            <div class="sidebar__bar">
+            <div class="pull-right">
             <div class="btn-group">
 
+                ## DIFF OPTIONS via Select2
+                <div class="pull-left">
+                ${h.hidden('diff_menu')}
+                </div>
+
                 <a
-                  class="btn ${c.diffmode == 'sideside' and 'btn-primary'} tooltip"
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'sideside' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View side by side'))}"
                   href="${h.current_route_path(request, diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
+
                 <a
-                  class="btn ${c.diffmode == 'unified' and 'btn-primary'} tooltip"
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'unified' and 'btn-primary')} tooltip"
                   title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
+
+                % if range_diff_on is True:
+                    <a
+                      title="${_('Turn off: Show the diff as commit range')}"
+                      class="btn btn-primary"
+                      href="${h.current_route_path(request, **{"range-diff":"0"})}">
+                        <span>${_('Range Diff')}</span>
+                   </a>
+                % elif range_diff_on is False:
+                    <a
+                      title="${_('Show the diff as commit range')}"
+                      class="btn"
+                      href="${h.current_route_path(request, **{"range-diff":"1"})}">
+                        <span>${_('Range Diff')}</span>
+                   </a>
+                % endif
             </div>
         </div>
-
-        <div class="pull-left">
-          <div class="btn-group">
+            <div class="pull-left">
+            <div class="btn-group">
+              <div class="pull-left">
+              ${h.hidden('file_filter')}
+              </div>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); return false">${_('Expand All Files')}</a>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); updateSticky(); return false">${_('Expand All Files')}</a>
               <a
                   class="btn"
                   href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); return false">${_('Collapse All Files')}</a>
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="return Rhodecode.comments.toggleWideMode(this)">${_('Wide Mode Diff')}</a>
-          </div>
+                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); updateSticky(); return false">${_('Collapse All Files')}</a>
+            </div>
+            </div>
+        </div>
+        <div class="fpath-placeholder">
+            <i class="icon-file-text"></i>
+            <strong class="fpath-placeholder-text">
+            Context file:
+            </strong>
+        </div>
+        <div class="sidebar_inner_shadow"></div>
         </div>
     </div>
+
+    % if diffset:
+
+        %if diffset.limited_diff:
+            <% file_placeholder = _ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files} %>
+        %else:
+            <% file_placeholder = _ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted', '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}%>
+        %endif
+        ## case on range-diff placeholder needs to be updated
+        % if range_diff_on is True:
+            <% file_placeholder = _('Disabled on range diff') %>
+        % endif
+
+        <script>
+
+        var feedFilesOptions = function (query, initialData) {
+            var data = {results: []};
+            var isQuery = typeof query.term !== 'undefined';
+
+            var section = _gettext('Changed files');
+            var filteredData = [];
+
+            //filter results
+            $.each(initialData.results, function (idx, value) {
+
+                if (!isQuery || query.term.length === 0 || value.text.toUpperCase().indexOf(query.term.toUpperCase()) >= 0) {
+                    filteredData.push({
+                        'id': this.id,
+                        'text': this.text,
+                        "ops": this.ops,
+                    })
+                }
+
+            });
+
+            data.results = filteredData;
+
+            query.callback(data);
+        };
+
+        var formatFileResult = function(result, container, query, escapeMarkup) {
+            return function(data, escapeMarkup) {
+                var container = '<div class="filelist" style="padding-right:100px">{0}</div>';
+                var tmpl = '<span style="margin-right:-50px"><strong>{0}</strong></span>'.format(escapeMarkup(data['text']));
+                var pill = '<span class="pill-group" style="float: right;margin-right: -100px">' +
+                            '<span class="pill" op="added">{0}</span>' +
+                            '<span class="pill" op="deleted">{1}</span>' +
+                           '</span>'
+                        ;
+                var added = data['ops']['added'];
+                if (added === 0) {
+                    // don't show +0
+                    added = 0;
+                } else {
+                    added = '+' + added;
+                }
+
+                var deleted = -1*data['ops']['deleted'];
+
+                tmpl += pill.format(added, deleted);
+                return container.format(tmpl);
+
+            }(result, escapeMarkup);
+        };
+
+        var preloadFileFilterData = {
+            results: [
+                % for filediff in diffset.files:
+                    {id:"a_${h.FID(filediff.raw_id, filediff.patch['filename'])}",
+                     text:"${filediff.patch['filename']}",
+                     ops:${h.json.dumps(filediff.patch['stats'])|n}}${('' if loop.last else ',')}
+                % endfor
+            ]
+        };
+
+        $(document).ready(function () {
+
+            var fileFilter = $("#file_filter").select2({
+                'dropdownAutoWidth': true,
+                'width': 'auto',
+                'placeholder': "${file_placeholder}",
+                containerCssClass: "drop-menu",
+                dropdownCssClass: "drop-menu-dropdown",
+                data: preloadFileFilterData,
+                query: function(query) {
+                    feedFilesOptions(query, preloadFileFilterData);
+                },
+                formatResult: formatFileResult
+            });
+
+            % if range_diff_on is True:
+                fileFilter.select2("enable", false);
+            % endif
+
+            $("#file_filter").on('click', function (e) {
+                e.preventDefault();
+                var selected = $('#file_filter').select2('data');
+                var idSelector = "#"+selected.id;
+                window.location.hash = idSelector;
+                // expand the container if we quick-select the field
+                $(idSelector).next().prop('checked', false);
+                updateSticky()
+            });
+
+            var contextPrefix = _gettext('Context file: ');
+            ## sticky sidebar
+            var sidebarElement = document.getElementById('diff-file-sticky');
+            sidebar = new StickySidebar(sidebarElement, {
+                  topSpacing: 0,
+                  bottomSpacing: 0,
+                  innerWrapperSelector: '.sidebar__inner'
+            });
+            sidebarElement.addEventListener('affixed.static.stickySidebar', function () {
+                // reset our file so it's not holding new value
+                $('.fpath-placeholder-text').html(contextPrefix)
+            });
+
+            updateSticky = function () {
+                sidebar.updateSticky();
+                Waypoint.refreshAll();
+            };
+
+            var animateText =  $.debounce(100, function(fPath, anchorId) {
+                // animate setting the text
+                var callback = function () {
+                    $('.fpath-placeholder-text').animate({'opacity': 1.00}, 200)
+                    $('.fpath-placeholder-text').html(contextPrefix + '<a href="#a_' + anchorId + '">' + fPath + '</a>')
+                };
+                $('.fpath-placeholder-text').animate({'opacity': 0.15}, 200, callback);
+            });
+
+            ## dynamic file waypoints
+            var setFPathInfo = function(fPath, anchorId){
+                animateText(fPath, anchorId)
+            };
+
+            var codeBlock = $('.filediff');
+            // forward waypoint
+            codeBlock.waypoint(
+                function(direction) {
+                    if (direction === "down"){
+                        setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
+                    }
+                }, {
+                    offset: 70,
+                    context: '.fpath-placeholder'
+                }
+            );
+
+            // backward waypoint
+            codeBlock.waypoint(
+                function(direction) {
+                    if (direction === "up"){
+                        setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
+                    }
+                }, {
+                    offset: function () {
+                        return -this.element.clientHeight + 90
+                    },
+                    context: '.fpath-placeholder'
+                }
+            );
+
+            var preloadDiffMenuData = {
+                results: [
+                    ## Wide diff mode
+                    {
+                        id: 1,
+                        text: _gettext('Toggle Wide Mode diff'),
+                        action: function () {
+                            updateSticky();
+                            Rhodecode.comments.toggleWideMode(this);
+                            return null;
+                        },
+                        url: null,
+                    },
+
+                    ## Whitespace change
+                    % if request.GET.get('ignorews', '') == '1':
+                    {
+                        id: 2,
+                        text: _gettext('Show whitespace changes'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, ignorews=0)|n}"
+                    },
+                    % else:
+                    {
+                        id: 2,
+                        text: _gettext('Hide whitespace changes'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, ignorews=1)|n}"
+                    },
+                    % endif
+
+                    ## FULL CONTEXT
+                    % if request.GET.get('fullcontext', '') == '1':
+                    {
+                        id: 3,
+                        text: _gettext('Hide full context diff'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, fullcontext=0)|n}"
+                    },
+                    % else:
+                    {
+                        id: 3,
+                        text: _gettext('Show full context diff'),
+                        action: function () {},
+                        url: "${h.current_route_path(request, fullcontext=1)|n}"
+                    },
+                    % endif
+
+                ]
+            };
+
+            $("#diff_menu").select2({
+                minimumResultsForSearch: -1,
+                containerCssClass: "drop-menu",
+                dropdownCssClass: "drop-menu-dropdown",
+                dropdownAutoWidth: true,
+                data: preloadDiffMenuData,
+                placeholder: "${_('Diff Options')}",
+            });
+            $("#diff_menu").on('select2-selecting', function (e) {
+                e.choice.action();
+                if (e.choice.url !== null) {
+                    window.location = e.choice.url
+                }
+            });
+
+        });
+
+    </script>
+    % endif
+
 </%def>

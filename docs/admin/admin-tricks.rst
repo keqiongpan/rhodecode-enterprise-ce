@@ -162,7 +162,8 @@ To add custom hooks to your instance, use the following steps:
 
 1. Open :menuselection:`Admin --> Settings --> Hooks`
 2. Add your custom hook details, you can use a file path to specify custom
-   hook scripts, for example: ``python:/path/to/custom_hook.py``
+   hook scripts, for example:
+   ``pretxnchangegroup.example`` with value ``python:/path/to/custom_hook.py:my_func_name``
 3. Select :guilabel:`Save`
 
 Also, see the |RC| Extensions section of the :ref:`rc-tools` guide. |RC|

@@ -41,7 +41,16 @@ log = logging.getLogger(__name__)
 
 # define max context, a file with more than this numbers of lines is unusable
 # in browser anyway
-MAX_CONTEXT = 1024 * 1014
+MAX_CONTEXT = 20 * 1024
+DEFAULT_CONTEXT = 3
+
+
+def get_diff_context(request):
+    return MAX_CONTEXT if request.GET.get('fullcontext', '') == '1' else DEFAULT_CONTEXT
+
+
+def get_diff_whitespace_flag(request):
+    return request.GET.get('ignorews', '') == '1'
 
 
 class OPS(object):
@@ -446,7 +455,7 @@ class DiffProcessor(object):
 
         for chunk in self._diff.chunks():
             head = chunk.header
-            log.debug('parsing diff %r' % head)
+            log.debug('parsing diff %r', head)
 
             raw_diff = chunk.raw
             limited_diff = False
@@ -1134,10 +1143,23 @@ class DiffLimitExceeded(Exception):
     pass
 
 
+# NOTE(marcink): if diffs.mako change, probably this
+# needs a bump to next version
+CURRENT_DIFF_VERSION = 'v4'
+
+
+def _cleanup_cache_file(cached_diff_file):
+    # cleanup file to not store it "damaged"
+    try:
+        os.remove(cached_diff_file)
+    except Exception:
+        log.exception('Failed to cleanup path %s', cached_diff_file)
+
+
 def cache_diff(cached_diff_file, diff, commits):
 
     struct = {
-        'version': 'v1',
+        'version': CURRENT_DIFF_VERSION,
         'diff': diff,
         'commits': commits
     }
@@ -1148,17 +1170,13 @@ def cache_diff(cached_diff_file, diff, commits):
         log.debug('Saved diff cache under %s', cached_diff_file)
     except Exception:
         log.warn('Failed to save cache', exc_info=True)
-        # cleanup file to not store it "damaged"
-        try:
-            os.remove(cached_diff_file)
-        except Exception:
-            log.exception('Failed to cleanup path %s', cached_diff_file)
+        _cleanup_cache_file(cached_diff_file)
 
 
 def load_cached_diff(cached_diff_file):
 
     default_struct = {
-        'version': 'v1',
+        'version': CURRENT_DIFF_VERSION,
         'diff': None,
         'commits': None
     }
@@ -1181,6 +1199,12 @@ def load_cached_diff(cached_diff_file):
     if not isinstance(data, dict):
         # old version of data ?
         data = default_struct
+
+    # check version
+    if data.get('version') != CURRENT_DIFF_VERSION:
+        # purge cache
+        _cleanup_cache_file(cached_diff_file)
+        return default_struct
 
     return data
 

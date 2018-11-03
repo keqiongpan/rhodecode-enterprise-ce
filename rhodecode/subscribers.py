@@ -19,15 +19,14 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import io
 import re
+import os
 import datetime
 import logging
 import Queue
 import subprocess32
-import os
 
 
 from dateutil.parser import parse
-from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
 from pyramid.interfaces import IRoutesMapper
 from pyramid.settings import asbool
@@ -38,7 +37,6 @@ from rhodecode.translation import _ as tsf
 from rhodecode.config.jsroutes import generate_jsroutes_content
 from rhodecode.lib import auth
 from rhodecode.lib.base import get_auth_user
-
 
 import rhodecode
 

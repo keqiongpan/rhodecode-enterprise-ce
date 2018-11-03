@@ -14,6 +14,7 @@
     </div>
     <div class="panel-body" id="app">
         <h3>List of Gunicorn processes on this machine</h3>
+        <p>RhodeCode workers set: ${c.gunicorn_workers}</p>
         <%
             def get_name(proc):
                 cmd = ' '.join(proc.cmdline())

@@ -300,11 +300,11 @@ class UserModel(BaseModel):
 
         if updating_user_id:
             log.debug('Checking for existing account in RhodeCode '
-                      'database with user_id `%s` ' % (updating_user_id,))
+                      'database with user_id `%s` ', updating_user_id)
             user = User.get(updating_user_id)
         else:
             log.debug('Checking for existing account in RhodeCode '
-                      'database with username `%s` ' % (username,))
+                      'database with username `%s` ', username)
             user = User.get_by_username(username, case_insensitive=True)
 
         if user is None:

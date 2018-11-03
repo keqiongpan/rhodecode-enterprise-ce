@@ -35,7 +35,6 @@ class OpenSourceLicensesAdminSettingsView(BaseAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
     @LoginRequired()
@@ -47,7 +46,6 @@ class OpenSourceLicensesAdminSettingsView(BaseAppView):
         c = self.load_default_context()
         c.active = 'open_source'
         c.navlist = navigation_list(self.request)
-        items = sorted(read_opensource_licenses().items(), key=lambda t: t[0])
-        c.opensource_licenses = collections.OrderedDict(items)
-
+        c.opensource_licenses = sorted(
+            read_opensource_licenses(), key=lambda d: d["name"])
         return self._get_template_context(c)

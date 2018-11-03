@@ -107,7 +107,7 @@ class DbManage(object):
 
         checkfirst = not override
         Base.metadata.create_all(checkfirst=checkfirst)
-        log.info('Created tables for %s' % self.dbname)
+        log.info('Created tables for %s', self.dbname)
 
     def set_db_version(self):
         ver = DbMigrateVersion()
@@ -115,7 +115,7 @@ class DbManage(object):
         ver.repository_id = 'rhodecode_db_migrations'
         ver.repository_path = 'versions'
         self.sa.add(ver)
-        log.info('db version set to: %s' % __dbversion__)
+        log.info('db version set to: %s', __dbversion__)
 
     def run_pre_migration_tasks(self):
         """
@@ -138,7 +138,7 @@ class DbManage(object):
             DatabaseNotControlledError
 
         if 'sqlite' in self.dburi:
-            print (
+            print(
                '********************** WARNING **********************\n'
                'Make sure your version of sqlite is at least 3.7.X.  \n'
                'Earlier versions are known to fail on some migrations\n'
@@ -402,7 +402,7 @@ class DbManage(object):
                         ('auth_rhodecode_enabled', 'True', 'bool')]:
             if (skip_existing and
                     SettingsModel().get_setting_by_name(k) is not None):
-                log.debug('Skipping option %s' % k)
+                log.debug('Skipping option %s', k)
                 continue
             setting = RhodeCodeSetting(k, v, t)
             self.sa.add(setting)
@@ -419,7 +419,7 @@ class DbManage(object):
 
             if (skip_existing and
                     SettingsModel().get_setting_by_name(k) is not None):
-                log.debug('Skipping option %s' % k)
+                log.debug('Skipping option %s', k)
                 continue
             setting = RhodeCodeSetting(k, v, t)
             self.sa.add(setting)
@@ -436,7 +436,7 @@ class DbManage(object):
                 .scalar()
 
             if default is None:
-                log.debug('missing default permission for group %s adding' % g)
+                log.debug('missing default permission for group %s adding', g)
                 perm_obj = RepoGroupModel()._create_default_perms(g)
                 self.sa.add(perm_obj)
 
@@ -484,20 +484,20 @@ class DbManage(object):
         # check proper dir
         if not os.path.isdir(path):
             path_ok = False
-            log.error('Given path %s is not a valid directory' % (path,))
+            log.error('Given path %s is not a valid directory', path)
 
         elif not os.path.isabs(path):
             path_ok = False
-            log.error('Given path %s is not an absolute path' % (path,))
+            log.error('Given path %s is not an absolute path', path)
 
         # check if path is at least readable.
         if not os.access(path, os.R_OK):
             path_ok = False
-            log.error('Given path %s is not readable' % (path,))
+            log.error('Given path %s is not readable', path)
 
         # check write access, warn user about non writeable paths
         elif not os.access(path, os.W_OK) and path_ok:
-            log.warning('No write permission to given path %s' % (path,))
+            log.warning('No write permission to given path %s', path)
 
             q = ('Given path %s is not writeable, do you want to '
                  'continue with read only mode ? [y/n]' % (path,))
@@ -573,7 +573,7 @@ class DbManage(object):
 
     def create_user(self, username, password, email='', admin=False,
                     strict_creation_check=True, api_key=None):
-        log.info('creating user `%s`' % username)
+        log.info('creating user `%s`', username)
         user = UserModel().create_or_update(
             username, password, email, firstname=u'RhodeCode', lastname=u'Admin',
             active=True, admin=admin, extern_type="rhodecode",

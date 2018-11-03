@@ -150,10 +150,6 @@
               <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
                 ${_('Download Diff')}
               </a>
-               |
-              ${c.ignorews_url(request)}
-               |
-              ${c.context_url(request)}
             </div>
         </div>
       </div>
@@ -211,7 +207,7 @@
   </div> <!-- end summary -->
   <div class="cs_files">
     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-    ${cbdiffs.render_diffset_menu()}
+    ${cbdiffs.render_diffset_menu(c.changes[c.commit.raw_id])}
     ${cbdiffs.render_diffset(
       c.changes[c.commit.raw_id], commit=c.commit, use_comments=True,inline_comments=c.inline_comments )}
   </div>

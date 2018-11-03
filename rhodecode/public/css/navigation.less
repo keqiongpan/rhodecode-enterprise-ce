@@ -119,11 +119,6 @@
         &.has_select2 a {
             display: block;
             padding: 10px 0 2px;
-
-            .show_more {
-                margin-top: -4px;
-                padding-right: .5em;
-            }
         }
 
         .menulabel {
@@ -170,17 +165,13 @@
 
             &:hover { color: @grey1; }
         }
-
-        .show_more {
-            padding-left: .5em;
-        }
     }
 
     #quick_login_link {
         display: inline-block;
 
         .gravatar {
-            border: 1px solid @grey2;
+            border: 1px solid @grey5;
         }
 
         .gravatar-login {
@@ -204,6 +195,10 @@
 
             &:hover #quick_login_link {
                 color: inherit;
+            }
+
+            .menu_link_user {
+                padding: 0 2px;
             }
         }
 
@@ -649,7 +644,7 @@ ul#context-pages {
     border-bottom: 1px solid @grey4;
     display: inline-block;
     vertical-align: top;
-    margin-left: -5px;
+    margin-left: -7px;
     background: @grey3;
 }
 
@@ -673,10 +668,11 @@ ul#context-pages {
 }
 
 .main_filter_input {
-    padding: 6px;
+    padding: 5px;
     min-width: 220px;
     color: @nav-grey;
     background: @grey3;
+    min-height: 18px;
 }
 
 .main_filter_input::placeholder {

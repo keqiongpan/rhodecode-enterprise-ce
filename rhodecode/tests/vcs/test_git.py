@@ -94,7 +94,7 @@ class TestGitRepository:
         repo = GitRepository(TEST_GIT_REPO)
         repo_clone = GitRepository(
             TEST_GIT_REPO_CLONE,
-            src_url=TEST_GIT_REPO, create=True, update_after_clone=True)
+            src_url=TEST_GIT_REPO, create=True, do_workspace_checkout=True)
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
         # Checking hashes of commits should be enough
         for commit in repo.get_commits():
@@ -111,7 +111,7 @@ class TestGitRepository:
         clone_path = TEST_GIT_REPO_CLONE + '_with_update'
         repo_clone = GitRepository(
             clone_path,
-            create=True, src_url=TEST_GIT_REPO, update_after_clone=True)
+            create=True, src_url=TEST_GIT_REPO, do_workspace_checkout=True)
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
 
         # check if current workdir was updated
@@ -123,7 +123,7 @@ class TestGitRepository:
         clone_path = TEST_GIT_REPO_CLONE + '_without_update'
         repo_clone = GitRepository(
             clone_path,
-            create=True, src_url=TEST_GIT_REPO, update_after_clone=False)
+            create=True, src_url=TEST_GIT_REPO, do_workspace_checkout=False)
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
         # check if current workdir was *NOT* updated
         fpath = os.path.join(clone_path, 'MANIFEST.in')
@@ -153,7 +153,7 @@ class TestGitRepository:
         # Note: This is a git specific part of the API, it's only implemented
         # by the git backend.
         source_repo = vcsbackend_git.repo
-        target_repo = vcsbackend_git.create_repo()
+        target_repo = vcsbackend_git.create_repo(bare=True)
         target_repo.fetch(source_repo.path)
         # Note: Get a fresh instance, avoids caching trouble
         target_repo = vcsbackend_git.backend(target_repo.path)
@@ -162,32 +162,31 @@ class TestGitRepository:
     def test_commit_ids(self):
         # there are 112 commits (by now)
         # so we can assume they would be available from now on
-        subset = set([
-            'c1214f7e79e02fc37156ff215cd71275450cffc3',
-            '38b5fe81f109cb111f549bfe9bb6b267e10bc557',
-            'fa6600f6848800641328adbf7811fd2372c02ab2',
-            '102607b09cdd60e2793929c4f90478be29f85a17',
-            '49d3fd156b6f7db46313fac355dca1a0b94a0017',
-            '2d1028c054665b962fa3d307adfc923ddd528038',
-            'd7e0d30fbcae12c90680eb095a4f5f02505ce501',
-            'ff7ca51e58c505fec0dd2491de52c622bb7a806b',
-            'dd80b0f6cf5052f17cc738c2951c4f2070200d7f',
-            '8430a588b43b5d6da365400117c89400326e7992',
-            'd955cd312c17b02143c04fa1099a352b04368118',
-            'f67b87e5c629c2ee0ba58f85197e423ff28d735b',
-            'add63e382e4aabc9e1afdc4bdc24506c269b7618',
-            'f298fe1189f1b69779a4423f40b48edf92a703fc',
-            'bd9b619eb41994cac43d67cf4ccc8399c1125808',
-            '6e125e7c890379446e98980d8ed60fba87d0f6d1',
-            'd4a54db9f745dfeba6933bf5b1e79e15d0af20bd',
-            '0b05e4ed56c802098dfc813cbe779b2f49e92500',
-            '191caa5b2c81ed17c0794bf7bb9958f4dcb0b87e',
-            '45223f8f114c64bf4d6f853e3c35a369a6305520',
-            'ca1eb7957a54bce53b12d1a51b13452f95bc7c7e',
-            'f5ea29fc42ef67a2a5a7aecff10e1566699acd68',
-            '27d48942240f5b91dfda77accd2caac94708cc7d',
-            '622f0eb0bafd619d2560c26f80f09e3b0b0d78af',
-            'e686b958768ee96af8029fe19c6050b1a8dd3b2b'])
+        subset = {'c1214f7e79e02fc37156ff215cd71275450cffc3',
+                  '38b5fe81f109cb111f549bfe9bb6b267e10bc557',
+                  'fa6600f6848800641328adbf7811fd2372c02ab2',
+                  '102607b09cdd60e2793929c4f90478be29f85a17',
+                  '49d3fd156b6f7db46313fac355dca1a0b94a0017',
+                  '2d1028c054665b962fa3d307adfc923ddd528038',
+                  'd7e0d30fbcae12c90680eb095a4f5f02505ce501',
+                  'ff7ca51e58c505fec0dd2491de52c622bb7a806b',
+                  'dd80b0f6cf5052f17cc738c2951c4f2070200d7f',
+                  '8430a588b43b5d6da365400117c89400326e7992',
+                  'd955cd312c17b02143c04fa1099a352b04368118',
+                  'f67b87e5c629c2ee0ba58f85197e423ff28d735b',
+                  'add63e382e4aabc9e1afdc4bdc24506c269b7618',
+                  'f298fe1189f1b69779a4423f40b48edf92a703fc',
+                  'bd9b619eb41994cac43d67cf4ccc8399c1125808',
+                  '6e125e7c890379446e98980d8ed60fba87d0f6d1',
+                  'd4a54db9f745dfeba6933bf5b1e79e15d0af20bd',
+                  '0b05e4ed56c802098dfc813cbe779b2f49e92500',
+                  '191caa5b2c81ed17c0794bf7bb9958f4dcb0b87e',
+                  '45223f8f114c64bf4d6f853e3c35a369a6305520',
+                  'ca1eb7957a54bce53b12d1a51b13452f95bc7c7e',
+                  'f5ea29fc42ef67a2a5a7aecff10e1566699acd68',
+                  '27d48942240f5b91dfda77accd2caac94708cc7d',
+                  '622f0eb0bafd619d2560c26f80f09e3b0b0d78af',
+                  'e686b958768ee96af8029fe19c6050b1a8dd3b2b'}
         assert subset.issubset(set(self.repo.commit_ids))
 
     def test_slicing(self):
@@ -281,12 +280,12 @@ TODO: To be written...
 
         new_branch = 'new_branch'
         assert repo_clone._current_branch() == 'master'
-        assert set(repo_clone.branches) == set(('master',))
+        assert set(repo_clone.branches) == {'master'}
         repo_clone._checkout(new_branch, create=True)
 
         # Branches is a lazy property so we need to recrete the Repo object.
         repo_clone = GitRepository(repo_clone.path)
-        assert set(repo_clone.branches) == set(('master', new_branch))
+        assert set(repo_clone.branches) == {'master', new_branch}
         assert repo_clone._current_branch() == new_branch
 
     def test_checkout(self):
@@ -1171,7 +1170,7 @@ class TestGitRegression(BackendTestMixin):
         assert paths == expected_paths
 
 
-class TestDiscoverGitVersion:
+class TestDiscoverGitVersion(object):
 
     def test_returns_git_version(self, baseapp):
         version = discover_git_version()

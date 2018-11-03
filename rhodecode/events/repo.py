@@ -99,7 +99,7 @@ def _commits_as_dict(event, commit_ids, repos):
 
                 else:
                     try:
-                        cs = vcs_repo.get_changeset(commit_id)
+                        cs = vcs_repo.get_commit(commit_id)
                     except CommitDoesNotExistError:
                         continue  # maybe its in next repo
 
@@ -133,7 +133,7 @@ def _commits_as_dict(event, commit_ids, repos):
     missing_commits = set(commit_ids) - set(c['raw_id'] for c in commits)
     if missing_commits:
         log.error('Inconsistent repository state. '
-                  'Missing commits: %s' % ', '.join(missing_commits))
+                  'Missing commits: %s', ', '.join(missing_commits))
 
     return commits
 

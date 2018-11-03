@@ -1249,15 +1249,18 @@ class InitialsGravatar(object):
         """
         generates the svg metadata for image
         """
-
-        font_family = ','.join([
-            'proximanovaregular',
-            'Proxima Nova Regular',
-            'Proxima Nova',
-            'Arial',
-            'Lucida Grande',
-            'sans-serif'
-            ])
+        fonts = [
+            '-apple-system',
+             'BlinkMacSystemFont',
+             'Segoe UI',
+             'Roboto',
+             'Oxygen-Sans',
+             'Ubuntu',
+             'Cantarell',
+             'Helvetica Neue',
+             'sans-serif'
+        ]
+        font_family = ','.join(fonts)
         if svg_type:
             return self.get_img_data_by_type(font_family, svg_type)
 
@@ -1712,14 +1715,14 @@ def process_patterns(text_string, repo_name, link_format='html',
     newtext = text_string
 
     for uid, entry in active_entries.items():
-        log.debug('found issue tracker entry with uid %s' % (uid,))
+        log.debug('found issue tracker entry with uid %s', uid)
 
         if not (entry['pat'] and entry['url']):
             log.debug('skipping due to missing data')
             continue
 
-        log.debug('issue tracker entry: uid: `%s` PAT:%s URL:%s PREFIX:%s'
-                  % (uid, entry['pat'], entry['url'], entry['pref']))
+        log.debug('issue tracker entry: uid: `%s` PAT:%s URL:%s PREFIX:%s',
+                  uid, entry['pat'], entry['url'], entry['pref'])
 
         try:
             pattern = re.compile(r'%s' % entry['pat'])
@@ -1741,7 +1744,7 @@ def process_patterns(text_string, repo_name, link_format='html',
             link_format=link_format)
 
         newtext = pattern.sub(url_func, newtext)
-        log.debug('processed prefix:uid `%s`' % (uid,))
+        log.debug('processed prefix:uid `%s`', uid)
 
     return newtext, issues_data
 

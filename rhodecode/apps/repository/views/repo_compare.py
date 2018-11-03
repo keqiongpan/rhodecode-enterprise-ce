@@ -44,10 +44,7 @@ log = logging.getLogger(__name__)
 class RepoCompareView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
-
         c.rhodecode_repo = self.rhodecode_vcs_repo
-
-
         return c
 
     def _get_commit_or_redirect(
@@ -144,6 +141,10 @@ class RepoCompareView(RepoAppView):
 
         # c.fulldiff disables cut_off_limit
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+
+        # fetch global flags of ignore ws or context lines
+        diff_context = diffs.get_diff_context(self.request)
+        hide_whitespace_changes = diffs.get_diff_whitespace_flag(self.request)
 
         c.file_path = target_path
         c.commit_statuses = ChangesetStatus.STATUSES
@@ -256,8 +257,8 @@ class RepoCompareView(RepoAppView):
             # case we want a simple diff without incoming commits,
             # previewing what will be merged.
             # Make the diff on target repo (which is known to have target_ref)
-            log.debug('Using ancestor %s as source_ref instead of %s'
-                      % (c.ancestor, source_ref))
+            log.debug('Using ancestor %s as source_ref instead of %s',
+                      c.ancestor, source_ref)
             source_repo = target_repo
             source_commit = target_repo.get_commit(commit_id=c.ancestor)
 
@@ -288,7 +289,8 @@ class RepoCompareView(RepoAppView):
 
         txt_diff = source_repo.scm_instance().get_diff(
             commit1=source_commit, commit2=target_commit,
-            path=target_path, path1=source_path)
+            path=target_path, path1=source_path,
+            ignore_whitespace=hide_whitespace_changes, context=diff_context)
 
         diff_processor = diffs.DiffProcessor(
             txt_diff, format='newdiff', diff_limit=diff_limit,
@@ -298,6 +300,7 @@ class RepoCompareView(RepoAppView):
         diffset = codeblocks.DiffSet(
             repo_name=source_repo.repo_name,
             source_node_getter=codeblocks.diffset_node_getter(source_commit),
+            target_repo_name=self.db_repo_name,
             target_node_getter=codeblocks.diffset_node_getter(target_commit),
         )
         c.diffset = self.path_filter.render_patchset_filtered(

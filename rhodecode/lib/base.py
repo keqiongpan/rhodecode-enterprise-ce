@@ -180,7 +180,12 @@ def vcs_operation_context(
     ui_settings = settings_model.get_ui_settings()
 
     # NOTE(marcink): This should be also in sync with
-    # rhodecode/apps/ssh_support/lib/backends/base.py:update_enviroment scm_data
+    # rhodecode/apps/ssh_support/lib/backends/base.py:update_environment scm_data
+    store = [x for x in ui_settings if x.key == '/']
+    repo_store = ''
+    if store:
+        repo_store = store[0].value
+
     scm_data = {
         'ip': get_ip_addr(environ),
         'username': username,
@@ -189,6 +194,7 @@ def vcs_operation_context(
         'repository': repo_name,
         'scm': scm,
         'config': rhodecode.CONFIG['__file__'],
+        'repo_store': repo_store,
         'make_lock': make_lock,
         'locked_by': locked_by,
         'server_url': utils2.get_server_url(environ),
@@ -216,7 +222,7 @@ class BasicAuth(AuthBasicAuthenticator):
         try:
             return get_exception(safe_int(http_code))
         except Exception:
-            log.exception('Failed to fetch response for code %s' % http_code)
+            log.exception('Failed to fetch response for code %s', http_code)
             return HTTPForbidden
 
     def get_rc_realm(self):
@@ -357,6 +363,28 @@ def attach_context_attributes(context, request, user_id):
         'appenlight.api_public_key', '')
     context.appenlight_server_url = config.get('appenlight.server_url', '')
 
+    diffmode = {
+        "unified": "unified",
+        "sideside": "sideside"
+    }.get(request.GET.get('diffmode'))
+
+    if diffmode and diffmode != request.session.get('rc_user_session_attr.diffmode'):
+        request.session['rc_user_session_attr.diffmode'] = diffmode
+
+    # session settings per user
+    session_attrs = {
+        # defaults
+        "clone_url_format": "http",
+        "diffmode": "sideside"
+    }
+    for k, v in request.session.items():
+        pref = 'rc_user_session_attr.'
+        if k and k.startswith(pref):
+            k = k[len(pref):]
+            session_attrs[k] = v
+
+    context.user_session_attrs = session_attrs
+
     # JS template context
     context.template_context = {
         'repo_name': None,
@@ -367,6 +395,7 @@ def attach_context_attributes(context, request, user_id):
             'email': None,
             'notification_status': False
         },
+        'session_attrs': session_attrs,
         'visual': {
             'default_renderer': None
         },
@@ -384,18 +413,6 @@ def attach_context_attributes(context, request, user_id):
         'extra': {'plugins': {}}
     }
     # END CONFIG VARS
-
-    diffmode = 'sideside'
-    if request.GET.get('diffmode'):
-        if request.GET['diffmode'] == 'unified':
-            diffmode = 'unified'
-    elif request.session.get('diffmode'):
-        diffmode = request.session['diffmode']
-
-    context.diffmode = diffmode
-
-    if request.session.get('diffmode') != diffmode:
-        request.session['diffmode'] = diffmode
 
     context.csrf_token = auth.get_csrf_token(session=request.session)
     context.backends = rhodecode.BACKENDS.keys()

@@ -54,23 +54,13 @@ packaged with |RCE| by default.
 
 .. code-block:: bash
 
-    $ .rccontrol/enterprise-4/profile/bin/rhodecode-extensions --plugins \
-        --instance-name=enterprise-4 --ini-file=rhodecode.ini
+    $ .rccontrol/enterprise-4/profile/bin/rhodecode-api --instance-name=enterprise-4 get_ip                                                                                                                                                                                                                                                                                                                                                                     [11:56:57 on 05/10/2018]
 
-    Writen new extensions file to rcextensions
-    Copied hipchat_push_notify.py plugin to rcextensions
-    Copied jira_pr_flow.py plugin to rcextensions
-    Copied default_reviewers.py plugin to rcextensions
-    Copied extract_commits.py plugin to rcextensions
-    Copied extract_issues.py plugin to rcextensions
-    Copied redmine_pr_flow.py plugin to rcextensions
-    Copied extra_fields.py plugin to rcextensions
-    Copied jira_smart_commits.py plugin to rcextensions
-    Copied http_notify.py plugin to rcextensions
-    Copied slack_push_notify.py plugin to rcextensions
-    Copied slack_message.py plugin to rcextensions
-    Copied extract_jira_issues.py plugin to rcextensions
-    Copied extract_redmine_issues.py plugin to rcextensions
-    Copied redmine_smart_commits.py plugin to rcextensions
-    Copied send_mail.py plugin to rcextensions
-
+    {
+      "error": null,
+      "id": 1000,
+      "result": {
+        "server_ip_addr": "1.2.3.4",
+        "user_ips": []
+      }
+    }

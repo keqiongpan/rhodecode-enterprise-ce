@@ -7,6 +7,8 @@
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
     (_('Cached Commit id'), lambda: h.link_to(c.rhodecode_db_repo.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.changeset_cache.get('raw_id'))), '', ''),
     (_('Attached scoped tokens'), len(c.rhodecode_db_repo.scoped_tokens), '', [x.user for x in c.rhodecode_db_repo.scoped_tokens]),
+    (_('Pull requests source'), len(c.rhodecode_db_repo.pull_requests_source), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.source_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_source]),
+    (_('Pull requests target'), len(c.rhodecode_db_repo.pull_requests_target), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.target_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_target]),
  ]
 %>
 
@@ -96,7 +98,7 @@
               <button class="btn btn-small" type="submit"
                       onclick="return confirm('${_('Confirm to lock repository.')}');">
                   <i class="icon-lock"></i>
-                  ${_('Lock Repository')}
+                  ${_('Lock repository')}
               </button>
             %endif
          </div>
@@ -108,6 +110,35 @@
         ${h.end_form()}
     </div>
 </div>
+
+
+<div class="panel panel-warning">
+    <div class="panel-heading" id="advanced-archive">
+        <h3 class="panel-title">${_('Archive repository')} <a class="permalink" href="#advanced-archive"> ¶</a></h3>
+    </div>
+    <div class="panel-body">
+      ${h.secure_form(h.route_path('edit_repo_advanced_archive', repo_name=c.repo_name), request=request)}
+
+        <div style="margin: 0 0 20px 0" class="fake-space"></div>
+
+        <div class="field">
+            <button class="btn btn-small btn-danger" type="submit"
+                    onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
+                <i class="icon-remove-sign"></i>
+                ${_('Archive this repository')}
+            </button>
+        </div>
+        <div class="field">
+            <span class="help-block">
+                ${_('Archiving the repository will make it entirely read-only. The repository cannot be committed to.'
+                    'It is hidden from the search results and dashboard. ')}
+            </span>
+        </div>
+
+      ${h.end_form()}
+    </div>
+</div>
+
 
 <div class="panel panel-danger">
     <div class="panel-heading" id="advanced-delete">
@@ -131,6 +162,18 @@
                     %endif
                 </td>
             </tr>
+            <% attached_prs = len(c.rhodecode_db_repo.pull_requests_source + c.rhodecode_db_repo.pull_requests_target) %>
+            % if c.rhodecode_db_repo.pull_requests_source or c.rhodecode_db_repo.pull_requests_target:
+            <tr>
+                <td>
+                    ${_ungettext('This repository has %s attached pull request.', 'This repository has %s attached pull requests.', attached_prs) % attached_prs}
+                    <br/>
+                    ${_('Consider to archive this repository instead.')}
+                </td>
+                <td></td>
+                <td></td>
+            </tr>
+            % endif
         </table>
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
@@ -138,7 +181,7 @@
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
                 <i class="icon-remove-sign"></i>
-                ${_('Delete This Repository')}
+                ${_('Delete this repository')}
             </button>
         </div>
         <div class="field">

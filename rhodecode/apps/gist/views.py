@@ -405,8 +405,8 @@ class GistView(BaseAppView):
         revision = self.request.GET.get('revision')
 
         if revision != last_rev.raw_id:
-            log.error('Last revision %s is different then submitted %s'
-                      % (revision, last_rev))
+            log.error('Last revision %s is different then submitted %s',
+                      revision, last_rev)
             # our gist has newer version than we
             success = False
 

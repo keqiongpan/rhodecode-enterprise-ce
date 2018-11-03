@@ -39,7 +39,7 @@ def fixups(models, _SESSION):
     notify('fixing new schema for landing_rev')
 
     for repo in models.Repository.get_all():
-        print u'repo %s old landing rev is: %s' % (repo, repo.landing_rev)
+        print(u'repo %s old landing rev is: %s' % (repo, repo.landing_rev))
         _rev = repo.landing_rev[1]
         _rev_type = 'rev'  # default
 
@@ -58,13 +58,13 @@ def fixups(models, _SESSION):
                     elif _rev in known_bookmarks:
                         _rev_type = 'book'
             except Exception as e:
-                print e
-                print 'continue...'
+                print(e)
+                print('continue...')
                 #we don't want any error to break the process
                 pass
 
         _new_landing_rev = '%s:%s' % (_rev_type, _rev)
-        print u'setting to %s' % _new_landing_rev
+        print(u'setting to %s' % _new_landing_rev)
         repo.landing_rev = _new_landing_rev
         _SESSION().add(repo)
         _SESSION().commit()

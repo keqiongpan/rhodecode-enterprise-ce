@@ -66,7 +66,7 @@
   </div>
 </%def>
 
-<%def name="repo_name(name,rtype,rstate,private,fork_of,short_name=False,admin=False)">
+<%def name="repo_name(name,rtype,rstate,private,archived,fork_of,short_name=False,admin=False)">
     <%
     def get_name(name,short_name=short_name):
       if short_name:
@@ -105,6 +105,7 @@
           (${_('creating...')})
       </span>
     %endif
+
   </div>
 </%def>
 

@@ -125,24 +125,24 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         username = None
         environ = environ or {}
         if not environ:
-            log.debug('got empty environ: %s' % environ)
+            log.debug('got empty environ: %s', environ)
 
         settings = settings or {}
         if settings.get('header'):
             header = settings.get('header')
             username = environ.get(header)
-            log.debug('extracted %s:%s' % (header, username))
+            log.debug('extracted %s:%s', header, username)
 
         # fallback mode
         if not username and settings.get('fallback_header'):
             header = settings.get('fallback_header')
             username = environ.get(header)
-            log.debug('extracted %s:%s' % (header, username))
+            log.debug('extracted %s:%s', header, username)
 
         if username and str2bool(settings.get('clean_username')):
-            log.debug('Received username `%s` from headers' % username)
+            log.debug('Received username `%s` from headers', username)
             username = self._clean_username(username)
-            log.debug('New cleanup user is:%s' % username)
+            log.debug('New cleanup user is:%s', username)
         return username
 
     def get_user(self, username=None, **kwargs):
@@ -221,5 +221,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'extern_type': extern_type,
         }
 
-        log.info('user `%s` authenticated correctly' % user_attrs['username'])
+        log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs

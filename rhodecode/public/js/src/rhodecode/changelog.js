@@ -142,7 +142,8 @@ var CommitsController = function () {
         })
     };
 
-    this.expandCommit = function (node) {
+    this.expandCommit = function (node, reloadGraph) {
+        reloadGraph = reloadGraph || false;
 
         var target_expand = $(node);
         var cid = target_expand.data('commitId');
@@ -179,7 +180,10 @@ var CommitsController = function () {
             });
             target_expand.addClass('open');
         }
-        // redraw the graph
-        self.reloadGraph();
+
+        if (reloadGraph) {
+            // redraw the graph
+            self.reloadGraph();
+        }
     }
 };

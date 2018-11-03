@@ -1,9 +1,31 @@
-ccLog = Logger.get('RhodeCodeApp');
+import {PolymerElement, html} from '@polymer/polymer/polymer-element.js';
+import '../channelstream-connection/channelstream-connection.js';
+import '../rhodecode-toast/rhodecode-toast.js';
+import '../rhodecode-favicon/rhodecode-favicon.js';
+
+var ccLog = Logger.get('RhodeCodeApp');
 ccLog.setLevel(Logger.OFF);
 
-var rhodeCodeApp = Polymer({
-    is: 'rhodecode-app',
-    attached: function () {
+export class RhodecodeApp extends PolymerElement {
+
+    static get is() {
+        return 'rhodecode-app';
+    }
+
+    static get template(){
+        return html`
+        <channelstream-connection
+                id="channelstream-connection"
+                on-channelstream-listen-message="receivedMessage"
+                on-channelstream-connected="handleConnected"
+                on-channelstream-subscribed="handleSubscribed">
+        </channelstream-connection>
+        <rhodecode-favicon></rhodecode-favicon>
+        `
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
         $.Topic('/favicon/update').subscribe(this.faviconUpdate.bind(this));
@@ -21,46 +43,47 @@ var rhodeCodeApp = Polymer({
         $(document).ready(function () {
             this.kickoffChannelstreamPlugin();
         }.bind(this));
-    },
+    }
 
-    initPlugins: function(){
+    initPlugins() {
         for (var i = 0; i < window.APPLICATION_PLUGINS.length; i++) {
             var pluginDef = window.APPLICATION_PLUGINS[i];
-            if (pluginDef.component){
+            if (pluginDef.component) {
                 var pluginElem = document.createElement(pluginDef.component);
                 this.shadowRoot.appendChild(pluginElem);
-                if (typeof pluginElem.init !== 'undefined'){
+                if (typeof pluginElem.init !== 'undefined') {
                     pluginElem.init();
                 }
             }
         }
-    },
-    /** proxy to channelstream connection */
-    getChannelStreamConnection: function () {
-        return this.$['channelstream-connection'];
-    },
+    }
 
-    handleNotifications: function (data) {
+    /** proxy to channelstream connection */
+    getChannelStreamConnection() {
+        return this.$['channelstream-connection'];
+    }
+
+    handleNotifications(data) {
         var elem = document.getElementById('notifications');
-        if(elem){
+        if (elem) {
             elem.handleNotification(data);
         }
 
-    },
+    }
 
-    faviconUpdate: function (data) {
+    faviconUpdate(data) {
         this.shadowRoot.querySelector('rhodecode-favicon').counter = data.count;
-    },
+    }
 
     /** opens connection to ws server */
-    kickoffChannelstreamPlugin: function (data) {
+    kickoffChannelstreamPlugin(data) {
         ccLog.debug('kickoffChannelstreamPlugin');
         var channels = ['broadcast'];
         var addChannels = this.checkViewChannels();
         for (var i = 0; i < addChannels.length; i++) {
             channels.push(addChannels[i]);
         }
-        if (window.CHANNELSTREAM_SETTINGS && CHANNELSTREAM_SETTINGS.enabled){
+        if (window.CHANNELSTREAM_SETTINGS && CHANNELSTREAM_SETTINGS.enabled) {
             var channelstreamConnection = this.getChannelStreamConnection();
             channelstreamConnection.connectUrl = CHANNELSTREAM_URLS.connect;
             channelstreamConnection.subscribeUrl = CHANNELSTREAM_URLS.subscribe;
@@ -74,9 +97,9 @@ var rhodeCodeApp = Polymer({
             $.Topic('/connection_controller/subscribe').processPrepared();
             channelstreamConnection.connect();
         }
-    },
+    }
 
-    checkViewChannels: function () {
+    checkViewChannels() {
         // subscribe to different channels data is sent.
 
         var channels = [];
@@ -94,10 +117,10 @@ var rhodeCodeApp = Polymer({
         }
 
         return channels;
-    },
+    }
 
     /** subscribes users from channels in channelstream */
-    subscribeToChannelTopic: function (channels) {
+    subscribeToChannelTopic(channels) {
         var channelstreamConnection = this.getChannelStreamConnection();
         var toSubscribe = channelstreamConnection.calculateSubscribe(channels);
         ccLog.debug('subscribeToChannelTopic', toSubscribe);
@@ -113,34 +136,35 @@ var rhodeCodeApp = Polymer({
                 }
             }
         }
-    },
+    }
 
     /** publish received messages into correct topic */
-    receivedMessage: function (event) {
+    receivedMessage(event) {
         for (var i = 0; i < event.detail.length; i++) {
             var message = event.detail[i];
             if (message.message.topic) {
                 ccLog.debug('publishing', message.message.topic);
                 $.Topic(message.message.topic).publish(message);
             }
-            else if (message.type === 'presence'){
+            else if (message.type === 'presence') {
                 $.Topic('/connection_controller/presence').publish(message);
             }
             else {
                 ccLog.warn('unhandled message', message);
             }
         }
-    },
+    }
 
-    handleConnected: function (event) {
+    handleConnected(event) {
         var channelstreamConnection = this.getChannelStreamConnection();
         channelstreamConnection.set('channelsState',
             event.detail.channels_info);
         channelstreamConnection.set('userState', event.detail.state);
         channelstreamConnection.set('channels', event.detail.channels);
         this.propagageChannelsState();
-    },
-    handleSubscribed: function (event) {
+    }
+
+    handleSubscribed(event) {
         var channelstreamConnection = this.getChannelStreamConnection();
         var channelInfo = event.detail.channels_info;
         var channelKeys = Object.keys(event.detail.channels_info);
@@ -150,9 +174,10 @@ var rhodeCodeApp = Polymer({
         }
         channelstreamConnection.set('channels', event.detail.channels);
         this.propagageChannelsState();
-    },
+    }
+
     /** propagates channel states on topics */
-    propagageChannelsState: function (event) {
+    propagageChannelsState(event) {
         var channelstreamConnection = this.getChannelStreamConnection();
         var channel_data = channelstreamConnection.channelsState;
         var channels = channelstreamConnection.channels;
@@ -163,4 +188,7 @@ var rhodeCodeApp = Polymer({
             );
         }
     }
-});
+
+}
+
+customElements.define(RhodecodeApp.is, RhodecodeApp);

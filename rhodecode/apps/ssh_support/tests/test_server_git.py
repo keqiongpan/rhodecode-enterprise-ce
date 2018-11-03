@@ -23,7 +23,7 @@ import mock
 import pytest
 
 from rhodecode.apps.ssh_support.lib.backends.git import GitServer
-from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
+from rhodecode.apps.ssh_support.tests.conftest import plain_dummy_env, plain_dummy_user
 
 
 class GitServerCreator(object):
@@ -37,7 +37,7 @@ class GitServerCreator(object):
     }
     repo_name = 'test_git'
     repo_mode = 'receive-pack'
-    user = dummy_user()
+    user = plain_dummy_user()
 
     def __init__(self):
         def config_get(part, key):
@@ -56,7 +56,7 @@ class GitServerCreator(object):
                 self.repo_name: 'repository.admin'
             },
             'config': self.config_mock,
-            'env': dummy_env()
+            'env': plain_dummy_env()
         }
         parameters.update(kwargs)
         server = GitServer(**parameters)
@@ -121,6 +121,8 @@ class TestGitServer(object):
         ])
     def test_update_environment(self, git_server, repo_mode, action):
         server = git_server.create(repo_mode=repo_mode)
+        store = server.store
+
         with mock.patch('os.environ', {'SSH_CLIENT': '10.10.10.10 b'}):
             with mock.patch('os.putenv') as putenv_mock:
                 server.update_environment(action)
@@ -135,6 +137,7 @@ class TestGitServer(object):
             'ip': '10.10.10.10',
             'locked_by': [None, None],
             'config': '',
+            'repo_store': store,
             'server_url': None,
             'hooks': ['push', 'pull'],
             'is_shadow_repo': False,

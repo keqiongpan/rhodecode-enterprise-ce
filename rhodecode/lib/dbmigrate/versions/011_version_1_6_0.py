@@ -44,6 +44,6 @@ def fixups(models, _SESSION):
     notify('Upgrading repositories Caches')
     repositories = models.Repository.getAll()
     for repo in repositories:
-        print repo
+        print(repo)
         repo.update_commit_cache()
         _SESSION().commit()

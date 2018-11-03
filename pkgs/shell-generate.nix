@@ -23,9 +23,6 @@ pkgs.stdenv.mkDerivation {
     pip2nix.pip2nix
     pythonPackages.pip-tools
 
-    # Allows to generate bower dependencies
-    pkgs.nodePackages.bower2nix
-
     # Allows to generate node dependencies
     pkgs.nodePackages.node2nix
 

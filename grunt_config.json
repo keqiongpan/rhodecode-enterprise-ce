@@ -1,35 +1,33 @@
 {
   "dirs": {
     "css": {
-      "src":"rhodecode/public/css",
-      "dest":"rhodecode/public/css"
+      "src": "rhodecode/public/css",
+      "dest": "rhodecode/public/css"
     },
     "js": {
       "src": "rhodecode/public/js/src",
       "src_rc": "rhodecode/public/js/rhodecode",
       "dest": "rhodecode/public/js",
-      "bower": "bower_components",
       "node_modules": "node_modules"
     }
   },
   "copy": {
     "main": {
-      "expand": true,
-      "cwd": "bower_components",
-      "src": "webcomponentsjs/webcomponents-lite.js",
-      "dest": "<%= dirs.js.dest %>/vendors"
+      "files": [
+        {
+          "expand": true,
+          "cwd": "node_modules/@webcomponents",
+          "src": "webcomponentsjs/*.*",
+          "dest": "<%= dirs.js.dest %>/vendors"
+        },
+        {
+          "src": "<%= dirs.css.src %>/style-polymer.css",
+          "dest": "<%= dirs.js.dest %>/src/components/style-polymer.css"
+        }
+      ]
     }
   },
   "concat": {
-    "polymercss": {
-      "src": [
-        "<%= dirs.js.src %>/components/root-styles-prefix.html",
-        "<%= dirs.css.src %>/style-polymer.css",
-        "<%= dirs.js.src %>/components/root-styles-suffix.html"
-      ],
-      "dest": "<%= dirs.js.dest %>/src/components/root-styles.gen.html",
-      "nonull": true
-    },
     "dist": {
       "src": [
         "<%= dirs.js.node_modules %>/jquery/dist/jquery.min.js",
@@ -37,6 +35,10 @@
         "<%= dirs.js.node_modules %>/moment/min/moment.min.js",
         "<%= dirs.js.node_modules %>/clipboard/dist/clipboard.min.js",
         "<%= dirs.js.node_modules %>/favico.js/favico-0.3.10.min.js",
+        "<%= dirs.js.node_modules %>/sticky-sidebar/dist/sticky-sidebar.min.js",
+        "<%= dirs.js.node_modules %>/sticky-sidebar/dist/jquery.sticky-sidebar.min.js",
+        "<%= dirs.js.node_modules %>/waypoints/lib/noframework.waypoints.min.js",
+        "<%= dirs.js.node_modules %>/waypoints/lib/jquery.waypoints.min.js",
         "<%= dirs.js.node_modules %>/appenlight-client/appenlight-client.min.js",
         "<%= dirs.js.src %>/logging.js",
         "<%= dirs.js.src %>/bootstrap.js",
@@ -89,20 +91,11 @@
         "<%= dirs.js.src %>/rhodecode/tooltips.js",
         "<%= dirs.js.src %>/rhodecode/users.js",
         "<%= dirs.js.src %>/rhodecode/appenlight.js",
-        "<%= dirs.js.src %>/rhodecode.js"
+        "<%= dirs.js.src %>/rhodecode.js",
+        "<%= dirs.js.dest %>/rhodecode-components.js"
       ],
       "dest": "<%= dirs.js.dest %>/scripts.js",
       "nonull": true
-    }
-  },
-  "crisper": {
-    "dist": {
-      "options": {
-        "cleanup": false,
-        "onlySplit": true
-      },
-      "src": "<%= dirs.js.dest %>/rhodecode-components.html",
-      "dest": "<%= dirs.js.dest %>/rhodecode-components.js"
     }
   },
   "less": {
@@ -152,8 +145,7 @@
         "less:development",
         "less:components",
         "concat:polymercss",
-        "vulcanize",
-        "crisper",
+        "webpack",
         "concat:dist"
       ]
     },
@@ -166,8 +158,7 @@
       "tasks": [
         "less:components",
         "concat:polymercss",
-        "vulcanize",
-        "crisper",
+        "webpack",
         "concat:dist"
       ]
     }
@@ -177,19 +168,6 @@
       "src": "<%= dirs.js.src %>/rhodecode/**/*.js",
       "options": {
         "jshintrc": ".jshintrc"
-      }
-    }
-  },
-  "vulcanize": {
-    "default": {
-      "options": {
-        "abspath": "",
-        "inlineScripts": true,
-        "inlineCss": true,
-        "stripComments": true
-      },
-      "files": {
-        "<%= dirs.js.dest %>/rhodecode-components.html": "<%= dirs.js.src %>/components/shared-components.html"
       }
     }
   }

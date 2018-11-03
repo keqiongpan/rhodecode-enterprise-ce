@@ -53,7 +53,7 @@ class TestInheritGlobalSettingsProperty(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.inherit_global_settings
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
     def test_true_is_returned_when_value_is_not_found(self, repo_stub):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
@@ -81,7 +81,7 @@ class TestInheritGlobalSettingsProperty(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.inherit_global_settings = False
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestVcsSettingsModel(object):
@@ -114,7 +114,7 @@ class TestVcsSettingsModel(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.get_repo_svn_branch_patterns()
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
     def test_global_svn_tag_patterns(self):
         model = VcsSettingsModel()
@@ -144,7 +144,7 @@ class TestVcsSettingsModel(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.get_repo_svn_tag_patterns()
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
     def test_get_global_settings(self):
         expected_result = {'test': 'test'}
@@ -277,9 +277,8 @@ class TestCreateOrUpdateRepoHookSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model.create_or_update_repo_hook_settings(data)
-        assert (
-            exc_info.value.message ==
-            'The given data does not contain {} key'.format(deleted_key))
+        msg = 'The given data does not contain {} key'.format(deleted_key)
+        assert str(exc_info.value) == msg
 
     def test_update_when_repo_object_found(self, repo_stub, settings_util):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
@@ -310,9 +309,8 @@ class TestUpdateGlobalHookSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model.update_global_hook_settings(data)
-        assert (
-            exc_info.value.message ==
-            'The given data does not contain {} key'.format(deleted_key))
+        msg = 'The given data does not contain {} key'.format(deleted_key)
+        assert str(exc_info.value) == msg
 
     def test_update_global_hook_settings(self, settings_util):
         model = VcsSettingsModel()
@@ -342,7 +340,7 @@ class TestCreateOrUpdateRepoGeneralSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_repo_pr_settings(GENERAL_FORM_DATA)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestCreateOrUpdatGlobalGeneralSettings(object):
@@ -382,9 +380,9 @@ class TestCreateOrUpdateGeneralSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model._create_or_update_general_settings(model.repo_settings, data)
-        assert (
-            exc_info.value.message ==
-            'The given data does not contain {} key'.format(deleted_key))
+
+        msg = 'The given data does not contain {} key'.format(deleted_key)
+        assert str(exc_info.value) == msg
 
     def test_update_when_repo_setting_found(self, repo_stub, settings_util):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
@@ -411,7 +409,7 @@ class TestCreateRepoSvnSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_repo_svn_settings(SVN_FORM_DATA)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestCreateSvnSettings(object):
@@ -550,13 +548,13 @@ class TestCreateOrUpdateRepoHgSettings(object):
             model.create_or_update_repo_hg_settings(data)
         expected_message = 'The given data does not contain {} key'.format(
             field_to_remove)
-        assert exc_info.value.message == expected_message
+        assert str(exc_info.value) == expected_message
 
     def test_create_raises_exception_when_repository_not_specified(self):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_repo_hg_settings(self.FORM_DATA)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestUpdateGlobalSslSetting(object):
@@ -613,7 +611,7 @@ class TestCreateOrUpdateGlobalHgSettings(object):
             model.create_or_update_global_hg_settings(data)
         expected_message = 'The given data does not contain {} key'.format(
             field_to_remove)
-        assert exc_info.value.message == expected_message
+        assert str(exc_info.value) == expected_message
 
 
 class TestCreateOrUpdateGlobalGitSettings(object):
@@ -659,7 +657,7 @@ class TestDeleteRepoSvnPattern(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.delete_repo_svn_pattern(123)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestDeleteGlobalSvnPattern(object):
@@ -783,7 +781,7 @@ class TestGetRepoUiSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.get_repo_ui_settings()
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestGetRepoGeneralSettings(object):
@@ -809,7 +807,7 @@ class TestGetRepoGeneralSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.get_repo_general_settings()
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
 
 class TestGetGlobalGeneralSettings(object):
@@ -994,7 +992,7 @@ class TestCreateOrUpdateRepoSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_repo_settings(data=self.FORM_DATA)
-        assert exc_info.value.message == 'Repository is not specified'
+        assert str(exc_info.value) == 'Repository is not specified'
 
     def test_only_svn_settings_are_updated_when_type_is_svn(self, backend_svn):
         repo = backend_svn.create_repo()

@@ -42,11 +42,13 @@ def scm_extras(user_regular, repo_stub):
         'repository': repo_stub.repo_name,
         'scm': repo_stub.scm_instance().alias,
         'config': '',
+        'repo_store': '',
         'server_url': 'http://example.com',
         'make_lock': None,
-        'user-agent': 'some-client',
+        'user_agent': 'some-client',
         'locked_by': [None],
         'commit_ids': ['a' * 40] * 3,
+        'hook_type': 'scm_extras_test',
         'is_shadow_repo': False,
     })
     return extras

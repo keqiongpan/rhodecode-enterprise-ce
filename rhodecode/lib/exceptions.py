@@ -70,6 +70,10 @@ class AttachedForksError(Exception):
     pass
 
 
+class AttachedPullRequestsError(Exception):
+    pass
+
+
 class RepoGroupAssignmentError(Exception):
     pass
 

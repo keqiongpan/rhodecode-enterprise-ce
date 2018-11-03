@@ -34,7 +34,7 @@ def _get_dbs_from_metafunc(metafunc):
     if hasattr(metafunc.function, 'dbs'):
         # Supported backends by this test function, created from
         # pytest.mark.dbs
-        backends = metafunc.function.dbs.args
+        backends = metafunc.definition.get_closest_marker('dbs').args
     else:
         backends = metafunc.config.getoption('--dbs')
     return backends

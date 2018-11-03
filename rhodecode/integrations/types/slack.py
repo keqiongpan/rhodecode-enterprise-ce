@@ -35,7 +35,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
 from rhodecode.lib.colander_utils import strip_whitespace
 from rhodecode.integrations.types.base import (
-    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback)
+    IntegrationTypeBase, CommitParsingDataHandler, render_with_traceback,
+    requests_retry_call)
 
 log = logging.getLogger(__name__)
 
@@ -110,11 +111,11 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
 
     def send_event(self, event):
         if event.__class__ not in self.valid_events:
-            log.debug('event not valid: %r' % event)
+            log.debug('event not valid: %r', event)
             return
 
         if event.name not in self.settings['events']:
-            log.debug('event ignored: %r' % event)
+            log.debug('event ignored: %r', event)
             return
 
         data = event.as_dict()
@@ -127,7 +128,7 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         fields = None
         overrides = None
 
-        log.debug('handling slack event for %s' % event.name)
+        log.debug('handling slack event for %s', event.name)
 
         if isinstance(event, events.PullRequestCommentEvent):
             (title, text, fields, overrides) \
@@ -141,7 +142,7 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         elif isinstance(event, events.RepoCreateEvent):
             title, text = self.format_repo_create_event(data)
         else:
-            log.error('unhandled event type: %r' % event)
+            log.error('unhandled event type: %r', event)
 
         run_task(post_text_to_slack, self.settings, title, text, fields, overrides)
 
@@ -314,8 +315,7 @@ def html_to_slack_links(message):
 
 @async_task(ignore_result=True, base=RequestContextTask)
 def post_text_to_slack(settings, title, text, fields=None, overrides=None):
-    log.debug('sending %s (%s) to slack %s' % (
-        title, text, settings['service']))
+    log.debug('sending %s (%s) to slack %s', title, text, settings['service'])
 
     fields = fields or []
     overrides = overrides or {}
@@ -345,6 +345,6 @@ def post_text_to_slack(settings, title, text, fields=None, overrides=None):
         "username": settings.get('username', 'Rhodecode'),
         "attachments": [message_data]
     }
-
-    resp = requests.post(settings['service'], json=json_message, timeout=60)
+    req_session = requests_retry_call()
+    resp = req_session.post(settings['service'], json=json_message, timeout=60)
     resp.raise_for_status()  # raise exception on a failed request

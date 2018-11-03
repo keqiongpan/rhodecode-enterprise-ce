@@ -66,8 +66,8 @@ def integrations_event_handler(event):
             exc_info = sys.exc_info()
             store_exception(id(exc_info), exc_info)
             log.exception(
-                'failure occurred when sending event %s to integration %s' % (
-                    event, integration))
+                'failure occurred when sending event %s to integration %s',
+                event, integration)
 
 
 def includeme(config):

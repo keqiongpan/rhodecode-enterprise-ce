@@ -561,7 +561,7 @@ def test_get_repo_by_id(test, expected):
 
 
 def test_invalidation_context(baseapp):
-    repo_id = 999
+    repo_id = 9999
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
         repo_id, CacheKey.CACHE_TYPE_README)

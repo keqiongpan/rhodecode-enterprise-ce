@@ -511,21 +511,17 @@
                                 <td class="td-hash">
                                     <code>
                                         <a href="${h.route_path('repo_commit', repo_name=c.target_repo.repo_name, commit_id=commit.raw_id)}">
-                                            r${commit.revision}:${h.short_id(commit.raw_id)}
+                                            r${commit.idx}:${h.short_id(commit.raw_id)}
                                         </a>
                                         ${h.hidden('revisions', commit.raw_id)}
                                     </code>
                                 </td>
-                                <td class="expand_commit" data-commit-id="${commit.raw_id}" title="${_( 'Expand commit message')}">
-                                    <div class="show_more_col">
-                                    <i class="show_more"></i>
-                                    </div>
+                                <td class="td-message expand_commit" data-commit-id="${commit.raw_id}" title="${_( 'Expand commit message')}" onclick="commitsController.expandCommit(this); return false">
+                                    <i class="icon-expand-linked"></i>
                                 </td>
                                 <td class="mid td-description">
                                     <div class="log-container truncate-wrap">
-                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">
-                                            ${h.urlify_commit_message(commit.message, c.repo_name)}
-                                        </div>
+                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name)}</div>
                                     </div>
                                 </td>
                             </tr>
@@ -533,32 +529,6 @@
                             % endfor
                         </table>
                     </div>
-
-                    <script>
-                    $('.expand_commit').on('click',function(e){
-                      var target_expand = $(this);
-                      var cid = target_expand.data('commitId');
-
-                      if (target_expand.hasClass('open')){
-                        $('#c-'+cid).css({
-                            'height': '1.5em',
-                            'white-space': 'nowrap',
-                            'text-overflow': 'ellipsis',
-                            'overflow':'hidden'
-                        });
-                        target_expand.removeClass('open');
-                      }
-                      else {
-                        $('#c-'+cid).css({
-                            'height': 'auto',
-                            'white-space': 'pre-line',
-                            'text-overflow': 'initial',
-                            'overflow':'visible'
-                        });
-                        target_expand.addClass('open');
-                      }
-                    });
-                    </script>
 
                     % endif
 
@@ -568,13 +538,28 @@
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                    ${cbdiffs.render_diffset_menu()}
-                    ${cbdiffs.render_diffset(
-                      c.diffset, use_comments=True,
-                      collapse_when_files_over=30,
-                      disable_new_comments=not c.allowed_to_comment,
-                      deleted_files_comments=c.deleted_files_comments,
-                      inline_comments=c.inline_comments)}
+
+                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on)}
+
+                    % if c.range_diff_on:
+                        % for commit in c.commit_ranges:
+                            ${cbdiffs.render_diffset(
+                              c.changes[commit.raw_id],
+                              commit=commit, use_comments=True,
+                              collapse_when_files_over=5,
+                              disable_new_comments=True,
+                              deleted_files_comments=c.deleted_files_comments,
+                              inline_comments=c.inline_comments)}
+                        % endfor
+                    % else:
+                        ${cbdiffs.render_diffset(
+                          c.diffset, use_comments=True,
+                          collapse_when_files_over=30,
+                          disable_new_comments=not c.allowed_to_comment,
+                          deleted_files_comments=c.deleted_files_comments,
+                          inline_comments=c.inline_comments)}
+                    % endif
+
                 </div>
               % else:
                   ## skipping commits we need to clear the view for missing commits
@@ -641,6 +626,7 @@
         versionController.init();
 
         reviewersController = new ReviewersController();
+        commitsController = new CommitsController();
 
         $(function(){
 

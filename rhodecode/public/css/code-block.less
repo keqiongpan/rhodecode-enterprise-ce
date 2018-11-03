@@ -79,6 +79,7 @@ div.diffblock {
                 min-width: 5em;
                 margin: 0;
                 padding: @button-padding @button-padding @button-padding 0;
+                font-weight: @text-semibold-weight;
                 font-family: @text-semibold;
             }
 
@@ -422,6 +423,7 @@ div.codeblock {
     .author {
         clear: both;
         vertical-align: middle;
+        font-weight: @text-bold-weight;
         font-family: @text-bold;
     }
 
@@ -543,7 +545,7 @@ div.search-code-body {
             border-right: 1px solid #ccc !important;
             padding-right: 10px;
             text-align: right;
-            font-family: "Lucida Console",Monaco,monospace;
+            font-family: @text-monospace;
             span {
                 white-space: pre-wrap;
                 color: #666666;
@@ -571,7 +573,7 @@ div.annotatediv { margin-left: 2px; margin-right: 4px; }
 .codehilite {
     .hll { background-color: #ffffcc }
     .c { color: #408080; font-style: italic } /* Comment */
-    .err, .codehilite .err { border: @border-thickness solid #FF0000 } /* Error */
+    .err, .codehilite .err { border: none } /* Error */
     .k { color: #008000; font-weight: bold } /* Keyword */
     .o { color: #666666 } /* Operator */
     .cm { color: #408080; font-style: italic } /* Comment.Multiline */
@@ -648,6 +650,7 @@ pre.literal-block, .codehilite pre{
 @cb-text-padding: 5px;
 
 @pill-padding: 2px 7px;
+@pill-padding-small: 2px 2px 1px 2px;
 
 input.filediff-collapse-state {
     display: none;
@@ -667,7 +670,7 @@ input.filediff-collapse-state {
         .filediff-menu {
             display: none;
         }
-        margin: 10px 0 0 0;
+
     }
 
     &+ .filediff { /* file diff is expanded */
@@ -689,8 +692,64 @@ input.filediff-collapse-state {
         }
     }
 }
+
+.filediffs .anchor {
+    display: block;
+    height: 40px;
+    margin-top: -40px;
+    visibility: hidden;
+}
+
+.filediffs .anchor:nth-of-type(1) {
+    display: block;
+    height: 80px;
+    margin-top: -80px;
+    visibility: hidden;
+}
+
 .cs_files {
     clear: both;
+}
+
+#diff-file-sticky{
+    will-change: min-height;
+}
+
+.sidebar__inner{
+    transform: translate(0, 0); /* For browsers don't support translate3d. */
+    transform: translate3d(0, 0, 0);
+    will-change: position, transform;
+    height: 70px;
+    z-index: 30;
+    background-color: #fff;
+    padding: 5px 0px;
+}
+
+.sidebar__bar {
+    padding: 5px 0px 0px 0px
+}
+
+.fpath-placeholder {
+    clear: both;
+    visibility: hidden
+}
+
+.is-affixed {
+    .sidebar_inner_shadow {
+        position: fixed;
+        top: 75px;
+        right: -100%;
+        left: -100%;
+        z-index: 28;
+        display: block;
+        height: 5px;
+        content: "";
+        background: linear-gradient(rgba(0, 0, 0, 0.075), rgba(0, 0, 0, 0.001)) repeat-x 0 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    .fpath-placeholder {
+        visibility: visible !important;
+    }
 }
 
 .diffset-menu {
@@ -725,14 +784,27 @@ input.filediff-collapse-state {
     }
 }
 
+.filelist {
+    .pill {
+        display: block;
+        float: left;
+        padding: @pill-padding-small;
+    }
+}
+
 .pill {
     display: block;
     float: left;
     padding: @pill-padding;
 }
+
 .pill-group {
     .pill {
         opacity: .8;
+        margin-right: 3px;
+        font-size: 12px;
+        font-weight: normal;
+
         &:first-child {
             border-radius: @border-radius 0 0 @border-radius;
         }
@@ -741,6 +813,7 @@ input.filediff-collapse-state {
         }
         &:only-child {
             border-radius: @border-radius;
+            margin-right: 0;
         }
     }
 }
@@ -815,6 +888,56 @@ input.filediff-collapse-state {
         }
     }
 
+    .filediff-collapse-button, .filediff-expand-button {
+        cursor: pointer;
+    }
+    .filediff-collapse-button {
+        display: inline;
+    }
+    .filediff-expand-button {
+        display: none;
+    }
+    .filediff-collapsed .filediff-collapse-button {
+        display: none;
+    }
+    .filediff-collapsed .filediff-expand-button {
+        display: inline;
+    }
+
+    /**** COMMENTS ****/
+
+    .filediff-menu {
+        .show-comment-button {
+            display: none;
+        }
+    }
+    &.hide-comments {
+        .inline-comments {
+            display: none;
+        }
+        .filediff-menu {
+            .show-comment-button {
+                display: inline;
+            }
+            .hide-comment-button {
+                display: none;
+            }
+        }
+    }
+
+    .hide-line-comments {
+        .inline-comments {
+            display: none;
+        }
+    }
+
+    /**** END COMMENTS ****/
+
+}
+
+
+
+.filediff, .filelist {
     .pill {
         &[op="name"] {
             background: none;
@@ -868,53 +991,8 @@ input.filediff-collapse-state {
             color: white;
         }
     }
-
-    .filediff-collapse-button, .filediff-expand-button {
-        cursor: pointer;
-    }
-    .filediff-collapse-button {
-        display: inline;
-    }
-    .filediff-expand-button {
-        display: none;
-    }
-    .filediff-collapsed .filediff-collapse-button {
-        display: none;
-    }
-    .filediff-collapsed .filediff-expand-button {
-        display: inline;
-    }
-
-    /**** COMMENTS ****/
-
-    .filediff-menu {
-        .show-comment-button {
-            display: none;
-        }
-    }
-    &.hide-comments {
-        .inline-comments {
-            display: none;
-        }
-        .filediff-menu {
-            .show-comment-button {
-                display: inline;
-            }
-            .hide-comment-button {
-                display: none;
-            }
-        }
-    }
-
-    .hide-line-comments {
-        .inline-comments {
-            display: none;
-        }
-    }
-
-    /**** END COMMENTS ****/
-
 }
+
 
 .filediff-outdated {
     padding: 8px 0;
@@ -950,6 +1028,9 @@ table.cb {
         .cb-collapse {
             display: none;
         }
+        .cb-hunk {
+            display: none;
+        }
     }
 
     /* intentionally general selector since .cb-line-selected must override it
@@ -976,8 +1057,18 @@ table.cb {
             border-top: 1px solid #eee;
         }
 
+        &.cb-comment-info {
+            border-top: 1px solid #eee;
+            color: rgba(0, 0, 0, 0.3);
+            background: #edf2f9;
+
+            td {
+
+            }
+        }
+
         &.cb-hunk {
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
             color: rgba(0, 0, 0, 0.3);
 
             td {
@@ -1009,10 +1100,21 @@ table.cb {
                 padding-right: @cb-line-code-padding;
                 display: block;
                 white-space: pre-wrap;
-                font-family: @font-family-monospace;
+                font-family: @text-monospace;
                 word-break: break-all;
                 .nonl {
                     color: @color5;
+                }
+                .cb-action {
+                    &:before {
+                        content: "  ";
+                    }
+                    &.cb-deletion:before {
+                        content: "- ";
+                    }
+                    &.cb-addition:before {
+                        content: "+ ";
+                    }
                 }
             }
 
@@ -1043,10 +1145,13 @@ table.cb {
         &.cb-data {
             text-align: right;
             width: 30px;
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
 
             .icon-comment {
                 cursor: pointer;
+            }
+            &.cb-line-selected {
+                background: @comment-highlight-color !important;
             }
             &.cb-line-selected > div {
                 display: block;
@@ -1062,13 +1167,15 @@ table.cb {
             color: rgba(0, 0, 0, 0.3);
             text-align: right;
             border-right: 1px solid #eee;
-            font-family: @font-family-monospace;
+            font-family: @text-monospace;
+            -webkit-user-select: none;
+            -moz-user-select: none;
             user-select: none;
 
             a::before {
                 content: attr(data-line-no);
             }
-            &.cb-line-selected a {
+            &.cb-line-selected {
                 background: @comment-highlight-color !important;
             }
 

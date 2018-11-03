@@ -62,6 +62,7 @@
             height: 30px;
             margin: 0;
             padding: 0;
+            font-weight: @text-semibold-weight;
             font-family: @text-semibold;
         }
 
@@ -165,7 +166,13 @@
         width: 25%;
         margin: 0;
         padding: 0;
+        font-weight: @text-semibold-weight;
         font-family: @text-semibold;
+    }
+
+    .left-label-summary {
+        .left-label;
+        width: 150px;
     }
     
     .right-content { // similar to form fields
@@ -247,12 +254,18 @@
     display: block;
     width: 100%;
     margin: 0;
-    padding: @space 0 @padding 0;
+    padding: @space 0 10px 0;
     border-top: @border-thickness solid @border-default-color; 
 
     .stats {
         float: left;
         width: 50%;
+    }
+    .stats-filename {
+        font-size: 120%;
+    }
+    .stats-first-item {
+        padding: 0px 0px 0px 3px;
     }
 
     .buttons {

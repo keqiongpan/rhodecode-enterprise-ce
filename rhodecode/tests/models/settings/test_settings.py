@@ -491,7 +491,7 @@ class TestDeleteUiValue(object):
         model = SettingsModel()
         with pytest.raises(SettingNotFound) as exc_info:
             model.delete_ui(id_)
-        assert exc_info.value.message == 'Setting `{}` is not found'.format(id_)
+        assert str(exc_info.value) == 'Setting `{}` is not found'.format(id_)
 
     def test_delete_ui_when_repo_is_not_set(self, settings_util):
         model = SettingsModel()

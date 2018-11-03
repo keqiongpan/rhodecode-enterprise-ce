@@ -40,10 +40,10 @@ def make_web_build_callback(filename):
     stdout = ''.join(stdout)
     stderr = ''.join(stderr)
     if stdout:
-        print stdout
+        print(stdout)
     if stderr:
-        print ('%s %s %s' % ('-' * 20, 'ERRORS', '-' * 20))
-        print stderr
+        print('%s %s %s' % ('-' * 20, 'ERRORS', '-' * 20))
+        print(stderr)
 
 
 MAXFD = 1024

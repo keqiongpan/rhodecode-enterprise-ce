@@ -22,7 +22,7 @@ import mock
 import pytest
 
 from rhodecode.apps.ssh_support.lib.backends.hg import MercurialServer
-from rhodecode.apps.ssh_support.tests.conftest import dummy_env, dummy_user
+from rhodecode.apps.ssh_support.tests.conftest import plain_dummy_env, plain_dummy_user
 
 
 class MercurialServerCreator(object):
@@ -36,7 +36,7 @@ class MercurialServerCreator(object):
         }
     }
     repo_name = 'test_hg'
-    user = dummy_user()
+    user = plain_dummy_user()
 
     def __init__(self):
         def config_get(part, key):
@@ -54,7 +54,7 @@ class MercurialServerCreator(object):
                 'test_hg': 'repository.admin'
             },
             'config': self.config_mock,
-            'env': dummy_env()
+            'env': plain_dummy_env()
         }
         parameters.update(kwargs)
         server = MercurialServer(**parameters)

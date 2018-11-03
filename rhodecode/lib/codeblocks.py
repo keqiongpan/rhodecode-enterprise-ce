@@ -25,15 +25,16 @@ from itertools import groupby
 from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
 from pygments.lexers.special import TextLexer, Token
+from pygments.lexers import get_lexer_by_name
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
-from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict
+from rhodecode.lib.utils2 import AttributeDict, StrictAttributeDict, safe_unicode
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.lib.vcs.exceptions import VCSError, NodeDoesNotExistError
 from rhodecode.lib.diff_match_patch import diff_match_patch
-from rhodecode.lib.diffs import LimitedDiffContainer
-from pygments.lexers import get_lexer_by_name
+from rhodecode.lib.diffs import LimitedDiffContainer, DEL_FILENODE, BIN_FILENODE
+
 
 plain_text_lexer = get_lexer_by_name(
     'text', stripall=False, stripnl=False, ensurenl=False)
@@ -306,7 +307,7 @@ def tokens_diff(old_tokens, new_tokens, use_diff_match_patch=True):
 
             if use_diff_match_patch:
                 dmp = diff_match_patch()
-                dmp.Diff_EditCost = 11 # TODO: dan: extract this to a setting
+                dmp.Diff_EditCost = 11  # TODO: dan: extract this to a setting
                 reps = dmp.diff_main(old_string, new_string)
                 dmp.diff_cleanupEfficiency(reps)
 
@@ -368,19 +369,19 @@ class DiffSet(object):
     adding highlighting, side by side/unified renderings and line diffs
     """
 
-    HL_REAL = 'REAL' # highlights using original file, slow
-    HL_FAST = 'FAST' # highlights using just the line, fast but not correct
-                     # in the case of multiline code
-    HL_NONE = 'NONE' # no highlighting, fastest
+    HL_REAL = 'REAL'  # highlights using original file, slow
+    HL_FAST = 'FAST'  # highlights using just the line, fast but not correct
+                      # in the case of multiline code
+    HL_NONE = 'NONE'  # no highlighting, fastest
 
     def __init__(self, highlight_mode=HL_REAL, repo_name=None,
                  source_repo_name=None,
                  source_node_getter=lambda filename: None,
+                 target_repo_name=None,
                  target_node_getter=lambda filename: None,
                  source_nodes=None, target_nodes=None,
-                 max_file_size_limit=150 * 1024, # files over this size will
-                                                 # use fast highlighting
-                 comments=None,
+                 # files over this size will use fast highlighting
+                 max_file_size_limit=150 * 1024,
                  ):
 
         self.highlight_mode = highlight_mode
@@ -390,9 +391,8 @@ class DiffSet(object):
         self.source_nodes = source_nodes or {}
         self.target_nodes = target_nodes or {}
         self.repo_name = repo_name
+        self.target_repo_name = target_repo_name or repo_name
         self.source_repo_name = source_repo_name or repo_name
-        self.comments = comments or {}
-        self.comments_store = self.comments.copy()
         self.max_file_size_limit = max_file_size_limit
 
     def render_patchset(self, patchset, source_ref=None, target_ref=None):
@@ -404,6 +404,7 @@ class DiffSet(object):
             file_stats={},
             limited_diff=isinstance(patchset, LimitedDiffContainer),
             repo_name=self.repo_name,
+            target_repo_name=self.target_repo_name,
             source_repo_name=self.source_repo_name,
             source_ref=source_ref,
             target_ref=target_ref,
@@ -416,6 +417,7 @@ class DiffSet(object):
                 target_ref=diffset.target_ref,
                 repo_name=diffset.repo_name,
                 source_repo_name=diffset.source_repo_name,
+                target_repo_name=diffset.target_repo_name,
             ))
             diffset.files.append(filediff)
             diffset.changed_files += 1
@@ -442,7 +444,7 @@ class DiffSet(object):
         return self._lexer_cache[filename]
 
     def render_patch(self, patch):
-        log.debug('rendering diff for %r' % patch['filename'])
+        log.debug('rendering diff for %r', patch['filename'])
 
         source_filename = patch['original_filename']
         target_filename = patch['filename']
@@ -451,7 +453,10 @@ class DiffSet(object):
         target_lexer = plain_text_lexer
 
         if not patch['stats']['binary']:
-            if self.highlight_mode == self.HL_REAL:
+            node_hl_mode = self.HL_NONE if patch['chunks'] == [] else None
+            hl_mode = node_hl_mode or self.highlight_mode
+
+            if hl_mode == self.HL_REAL:
                 if (source_filename and patch['operation'] in ('D', 'M')
                     and source_filename not in self.source_nodes):
                         self.source_nodes[source_filename] = (
@@ -462,12 +467,19 @@ class DiffSet(object):
                         self.target_nodes[target_filename] = (
                             self.target_node_getter(target_filename))
 
-            elif self.highlight_mode == self.HL_FAST:
+            elif hl_mode == self.HL_FAST:
                 source_lexer = self._get_lexer_for_filename(source_filename)
                 target_lexer = self._get_lexer_for_filename(target_filename)
 
         source_file = self.source_nodes.get(source_filename, source_filename)
         target_file = self.target_nodes.get(target_filename, target_filename)
+        raw_id_uid = ''
+        if self.source_nodes.get(source_filename):
+            raw_id_uid = self.source_nodes[source_filename].commit.raw_id
+
+        if not raw_id_uid and self.target_nodes.get(target_filename):
+            # in case this is a new file we only have it in target
+            raw_id_uid = self.target_nodes[target_filename].commit.raw_id
 
         source_filenode, target_filenode = None, None
 
@@ -509,29 +521,43 @@ class DiffSet(object):
             'target_mode': patch['stats']['new_mode'],
             'limited_diff': isinstance(patch, LimitedDiffContainer),
             'hunks': [],
+            'hunk_ops': None,
             'diffset': self,
+            'raw_id': raw_id_uid,
         })
 
-        for hunk in patch['chunks'][1:]:
+        file_chunks = patch['chunks'][1:]
+        for hunk in file_chunks:
             hunkbit = self.parse_hunk(hunk, source_file, target_file)
             hunkbit.source_file_path = source_file_path
             hunkbit.target_file_path = target_file_path
             filediff.hunks.append(hunkbit)
 
-        left_comments = {}
-        if source_file_path in self.comments_store:
-            for lineno, comments in self.comments_store[source_file_path].items():
-                left_comments[lineno] = comments
+        # Simulate hunk on OPS type line which doesn't really contain any diff
+        # this allows commenting on those
+        if not file_chunks:
+            actions = []
+            for op_id, op_text in filediff.patch['stats']['ops'].items():
+                if op_id == DEL_FILENODE:
+                    actions.append(u'file was removed')
+                elif op_id == BIN_FILENODE:
+                    actions.append(u'binary diff hidden')
+                else:
+                    actions.append(safe_unicode(op_text))
+            action_line = u'NO CONTENT: ' + \
+                          u', '.join(actions) or u'UNDEFINED_ACTION'
 
-        if target_file_path in self.comments_store:
-            for lineno, comments in self.comments_store[target_file_path].items():
-                left_comments[lineno] = comments
+            hunk_ops = {'source_length': 0, 'source_start': 0,
+                        'lines': [
+                            {'new_lineno': 0, 'old_lineno': 1,
+                             'action': 'unmod-no-hl', 'line': action_line}
+                        ],
+                        'section_header': u'', 'target_start': 1, 'target_length': 1}
 
-        # left comments are one that we couldn't place in diff lines.
-        # could be outdated, or the diff changed and this line is no
-        # longer available
-        filediff.left_comments = left_comments
-
+            hunkbit = self.parse_hunk(hunk_ops, source_file, target_file)
+            hunkbit.source_file_path = source_file_path
+            hunkbit.target_file_path = target_file_path
+            filediff.hunk_ops = hunkbit
         return filediff
 
     def parse_hunk(self, hunk, source_file, target_file):
@@ -546,10 +572,10 @@ class DiffSet(object):
         before, after = [], []
 
         for line in hunk['lines']:
-
-            if line['action'] == 'unmod':
+            if line['action'] in ['unmod', 'unmod-no-hl']:
+                no_hl = line['action'] == 'unmod-no-hl'
                 result.lines.extend(
-                    self.parse_lines(before, after, source_file, target_file))
+                    self.parse_lines(before, after, source_file, target_file, no_hl=no_hl))
                 after.append(line)
                 before.append(line)
             elif line['action'] == 'add':
@@ -561,14 +587,18 @@ class DiffSet(object):
             elif line['action'] == 'new-no-nl':
                 after.append(line)
 
+        all_actions = [x['action'] for x in after] + [x['action'] for x in before]
+        no_hl = {x for x in all_actions} == {'unmod-no-hl'}
         result.lines.extend(
-            self.parse_lines(before, after, source_file, target_file))
+            self.parse_lines(before, after, source_file, target_file, no_hl=no_hl))
+        # NOTE(marcink): we must keep list() call here so we can cache the result...
         result.unified = list(self.as_unified(result.lines))
         result.sideside = result.lines
 
         return result
 
-    def parse_lines(self, before_lines, after_lines, source_file, target_file):
+    def parse_lines(self, before_lines, after_lines, source_file, target_file,
+                    no_hl=False):
         # TODO: dan: investigate doing the diff comparison and fast highlighting
         # on the entire before and after buffered block lines rather than by
         # line, this means we can get better 'fast' highlighting if the context
@@ -612,9 +642,8 @@ class DiffSet(object):
                     before_tokens = [('nonl', before['line'])]
                 else:
                     before_tokens = self.get_line_tokens(
-                        line_text=before['line'],
-                        line_number=before['old_lineno'],
-                        file=source_file)
+                        line_text=before['line'], line_number=before['old_lineno'],
+                        input_file=source_file, no_hl=no_hl)
                 original.lineno = before['old_lineno']
                 original.content = before['line']
                 original.action = self.action_to_op(before['action'])
@@ -628,13 +657,12 @@ class DiffSet(object):
                 else:
                     after_tokens = self.get_line_tokens(
                         line_text=after['line'], line_number=after['new_lineno'],
-                        file=target_file)
+                        input_file=target_file, no_hl=no_hl)
                 modified.lineno = after['new_lineno']
                 modified.content = after['line']
                 modified.action = self.action_to_op(after['action'])
 
-                modified.get_comment_args = (
-                    target_file, 'n', after['new_lineno'])
+                modified.get_comment_args = (target_file, 'n', after['new_lineno'])
 
             # diff the lines
             if before_tokens and after_tokens:
@@ -663,24 +691,25 @@ class DiffSet(object):
 
         return lines
 
-    def get_line_tokens(self, line_text, line_number, file=None):
+    def get_line_tokens(self, line_text, line_number, input_file=None, no_hl=False):
         filenode = None
         filename = None
 
-        if isinstance(file, basestring):
-            filename = file
-        elif isinstance(file, FileNode):
-            filenode = file
-            filename = file.unicode_path
+        if isinstance(input_file, basestring):
+            filename = input_file
+        elif isinstance(input_file, FileNode):
+            filenode = input_file
+            filename = input_file.unicode_path
 
-        if self.highlight_mode == self.HL_REAL and filenode:
+        hl_mode = self.HL_NONE if no_hl else self.highlight_mode
+        if hl_mode == self.HL_REAL and filenode:
             lexer = self._get_lexer_for_filename(filename)
-            file_size_allowed = file.size < self.max_file_size_limit
+            file_size_allowed = input_file.size < self.max_file_size_limit
             if line_number and file_size_allowed:
                 return self.get_tokenized_filenode_line(
-                    file, line_number, lexer)
+                    input_file, line_number, lexer)
 
-        if self.highlight_mode in (self.HL_REAL, self.HL_FAST) and filename:
+        if hl_mode in (self.HL_REAL, self.HL_FAST) and filename:
             lexer = self._get_lexer_for_filename(filename)
             return list(tokenize_string(line_text, lexer))
 
@@ -698,6 +727,7 @@ class DiffSet(object):
             'add': '+',
             'del': '-',
             'unmod': ' ',
+            'unmod-no-hl': ' ',
             'old-no-nl': ' ',
             'new-no-nl': ' ',
         }.get(action, action)

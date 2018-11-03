@@ -60,15 +60,25 @@
 
 <script type="text/javascript">
 $(document).ready(function(){
-    $('#clone_option').on('change', function(e) {
-        var selected = $(this).val();
+
+    var showCloneField = function(clone_url_format){
         $.each(['http', 'http_id', 'ssh'], function (idx, val) {
-            if(val === selected){
+            if(val === clone_url_format){
                 $('#clone_option_' + val).show();
+                $('#clone_option').val(val)
             } else {
                 $('#clone_option_' + val).hide();
             }
         });
+    };
+    // default taken from session
+    showCloneField(templateContext.session_attrs.clone_url_format);
+
+    $('#clone_option').on('change', function(e) {
+        var selected = $(this).val();
+
+        storeUserSessionAttr('rc_user_session_attr.clone_url_format', selected);
+        showCloneField(selected)
     });
 
     var initialCommitData = {

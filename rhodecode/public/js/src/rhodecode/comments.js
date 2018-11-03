@@ -774,6 +774,13 @@ var CommentsController = function() {
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
+
+              if (window.updateSticky !== undefined) {
+                  // potentially our comments change the active window size, so we
+                  // notify sticky elements
+                  updateSticky()
+              }
+
               commentForm.setActionButtonsDisabled(false);
 
             };
