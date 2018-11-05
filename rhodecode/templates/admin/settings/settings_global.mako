@@ -102,6 +102,7 @@ ${h.secure_form(h.route_path('admin_settings_global_update'), request=request)}
                 <option value="clicky">Clicky</option>
                 <option value="server_announce">${_('Server Announcement')}</option>
                 <option value="flash_filtering">${_('Flash message filtering')}</option>
+                <option value="custom_logo">${_('Custom log-in logo')}</option>
             </select>
         </div>
         <div style="padding: 10px 0px"></div>
@@ -212,7 +213,7 @@ ${h.end_form()}
 // This can be used to send a global maintenance messages or other
 // important messages to all users of the RhodeCode Enterprise system.
 
-$(document).ready(function(e){
+$(document).ready(function(e) {
 
  // EDIT - put your message below
  var message = "TYPE YOUR MESSAGE HERE";
@@ -248,6 +249,27 @@ $(document).ready(function(e){
 </%text>
 </script>
 
+
+<script id="custom_logo_tmpl" type='text/x-template'>
+<%text filter="h">
+<script>
+// Set custom logo on login page.
+$(document).ready(function(e) {
+
+    // external, custom company logo
+    //$('.sign-in-image').attr("src", "http://server.com/logo_path/custom_logo.png");
+
+    // Alternative logo from static folder
+    $('.sign-in-image').attr("src", "/_static/rhodecode/images/RhodeCode_Logo_Black.png");
+	// set width/height
+    $('.sign-in-image').css({"width": "300px", "height": "345px"});
+
+});
+</script>
+</%text>
+</script>
+
+
 <script>
 var pre_cm = initCodeMirror('rhodecode_pre_code', '', false);
 var pre_old = pre_cm.getValue();
@@ -255,7 +277,7 @@ var pre_old = pre_cm.getValue();
 var post_cm = initCodeMirror('rhodecode_post_code', '', false);
 var post_old = post_cm.getValue();
 
-var get_data = function(type, old){
+var get_data = function(type, old) {
     var get_tmpl = function(tmpl_name){
         // unescape some stuff
         return htmlEnDeCode.htmlDecode($('#'+tmpl_name+'_tmpl').html());
@@ -265,7 +287,8 @@ var get_data = function(type, old){
         'ga': get_tmpl('ga'),
         'clicky': get_tmpl('clicky'),
         'server_announce': get_tmpl('server_announce'),
-        'flash_filtering': get_tmpl('flash_filtering')
+        'flash_filtering': get_tmpl('flash_filtering'),
+        'custom_logo': get_tmpl('custom_logo')
     }[type]
 };
 
