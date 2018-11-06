@@ -31,7 +31,9 @@
                     <span class="error-branding">
                         ${h.branding(c.rhodecode_name)}
                     </span><br/>
-                    ${c.error_message} | <span class="error_message">${c.error_explanation}</span>
+                    ${c.error_message}
+                    <br/>
+                    <span class="error_message">${c.error_explanation}</span>
                 </h1>
                 % if c.messages:
                     % for message in c.messages:
