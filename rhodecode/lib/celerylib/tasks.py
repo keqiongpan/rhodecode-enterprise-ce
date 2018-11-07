@@ -79,7 +79,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     # translate our LEGACY config into the one that pyramid_mailer supports
     email_conf = dict(
         host=mail_server,
-        port=email_config.get('smtp_port'),
+        port=email_config.get('smtp_port', 25),
         username=email_config.get('smtp_username'),
         password=email_config.get('smtp_password'),
 
