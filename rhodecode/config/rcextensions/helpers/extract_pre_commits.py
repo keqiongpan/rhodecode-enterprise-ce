@@ -54,7 +54,7 @@ def get_git_commits(repo, refs):
             '{}...{}'.format(old_rev, new_rev)
         ]
 
-        stdout, stderr = repo.run_git_command(cmd, env=git_env)
+        stdout, stderr = repo.run_git_command(cmd, extra_env=git_env)
         for line in stdout.splitlines():
             try:
                 data = json.loads(line)
