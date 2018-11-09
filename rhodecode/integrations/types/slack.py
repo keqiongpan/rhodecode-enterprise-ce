@@ -41,6 +41,30 @@ from rhodecode.integrations.types.base import (
 log = logging.getLogger(__name__)
 
 
+def html_to_slack_links(message):
+    return re.compile(r'<a .*?href=["\'](.+?)".*?>(.+?)</a>').sub(
+        r'<\1|\2>', message)
+
+
+REPO_PUSH_TEMPLATE = Template('''
+<%
+    def branch_text(branch):
+        if branch:
+            return 'on branch: <{}|{}>'.format(branch_commits['branch']['url'], branch_commits['branch']['name'])
+        else:
+            ## case for SVN no branch push...
+            return 'to trunk'
+%> \
+
+% for branch, branch_commits in branches_commits.items():
+${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} ${branch_text(branch)}
+% for commit in branch_commits['commits']:
+`<${commit['url']}|${commit['short_id']}>` - ${commit['message_html']|html_to_slack_links}
+% endfor
+% endfor
+''')
+
+
 class SlackSettingsSchema(colander.Schema):
     service = colander.SchemaNode(
         colander.String(),
@@ -258,7 +282,6 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         return title, text
 
     def format_repo_push_event(self, data):
-
         branches_commits = self.aggregate_branch_data(
             data['push']['branches'], data['push']['commits'])
 
@@ -267,25 +290,8 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         ''')
         title = render_with_traceback(template, data=data)
 
-        repo_push_template = Template(textwrap.dedent(r'''
-        <%
-            def branch_text(branch):
-                if branch:
-                    return 'on branch: <{}|{}>'.format(branch_commits['branch']['url'], branch_commits['branch']['name'])
-                else:
-                    ## case for SVN no branch push...
-                    return 'to trunk'
-        %> \
-        % for branch, branch_commits in branches_commits.items():
-        ${len(branch_commits['commits'])} ${'commit' if len(branch_commits['commits']) == 1 else 'commits'} ${branch_text(branch)}
-        % for commit in branch_commits['commits']:
-        `<${commit['url']}|${commit['short_id']}>` - ${commit['message_html']|html_to_slack_links}
-        % endfor
-        % endfor
-        '''))
-
         text = render_with_traceback(
-            repo_push_template,
+            REPO_PUSH_TEMPLATE,
             data=data,
             branches_commits=branches_commits,
             html_to_slack_links=html_to_slack_links,
@@ -306,11 +312,6 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         text = render_with_traceback(template, data=data)
 
         return title, text
-
-
-def html_to_slack_links(message):
-    return re.compile(r'<a .*?href=["\'](.+?)".*?>(.+?)</a>').sub(
-        r'<\1|\2>', message)
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
