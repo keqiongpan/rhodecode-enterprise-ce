@@ -756,11 +756,11 @@ self: super: {
     };
   };
   "lxml" = super.buildPythonPackage {
-    name = "lxml-3.7.3";
+    name = "lxml-4.2.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/39/e8/a8e0b1fa65dd021d48fe21464f71783655f39a41f218293c1c590d54eb82/lxml-3.7.3.tar.gz";
-      sha256 = "1iv1jgkqn1hdh1xyxri6g0y1s67h01jzjkw2nhkx3rqylmw2sl5a";
+      url = "https://files.pythonhosted.org/packages/4b/20/ddf5eb3bd5c57582d2b4652b4bbcf8da301bdfe5d805cb94e805f4d7464d/lxml-4.2.5.tar.gz";
+      sha256 = "0zw0y9hs0nflxhl9cs6ipwwh53szi3w2x06wl0k9cylyqac0cwin";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
