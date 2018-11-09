@@ -335,6 +335,32 @@ self: super: {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
+  "defusedxml" = super.buildPythonPackage {
+    name = "defusedxml-0.5.0";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/74/ba/4ba4e89e21b5a2e267d80736ea674609a0a33cc4435a6d748ef04f1f9374/defusedxml-0.5.0.tar.gz";
+      sha256 = "1x54n0h8hl92vvwyymx883fbqpqjwn2mc8fb383bcg3z9zwz5mr4";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
+    };
+  };
+  "dm.xmlsec.binding" = super.buildPythonPackage {
+    name = "dm.xmlsec.binding-1.3.7";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."setuptools"
+      self."lxml"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/2c/9e/7651982d50252692991acdae614af821fd6c79bc8dcd598ad71d55be8fc7/dm.xmlsec.binding-1.3.7.tar.gz";
+      sha256 = "03jjjscx1pz2nc0dwiw9nia02qbz1c6f0f9zkyr8fmvys2n5jkb3";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   "docutils" = super.buildPythonPackage {
     name = "docutils-0.14";
     doCheck = false;
@@ -669,6 +695,20 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  "isodate" = super.buildPythonPackage {
+    name = "isodate-0.6.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."six"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/b1/80/fb8c13a4cd38eb5021dc3741a9e588e4d1de88d895c1910c6fc8a08b7a70/isodate-0.6.0.tar.gz";
+      sha256 = "1n7jkz68kk5pwni540pr5zdh99bf6ywydk1p5pdrqisrawylldif";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "itsdangerous" = super.buildPythonPackage {
@@ -1543,6 +1583,22 @@ self: super: {
       license = [ { fullName = "License :: OSI Approved :: MIT License"; } pkgs.lib.licenses.mit ];
     };
   };
+  "python-saml" = super.buildPythonPackage {
+    name = "python-saml-2.4.2";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."dm.xmlsec.binding"
+      self."isodate"
+      self."defusedxml"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/79/a8/a6611017e0883102fd5e2b73c9d90691b8134e38247c04ee1531d3dc647c/python-saml-2.4.2.tar.gz";
+      sha256 = "0dls4hwvf13yg7x5yfjrghbywg8g38vn5vr0rsf70hli3ydbfm43";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "pytz" = super.buildPythonPackage {
     name = "pytz-2018.4";
     doCheck = false;
@@ -1697,6 +1753,7 @@ self: super: {
       self."python-ldap"
       self."python-memcached"
       self."python-pam"
+      self."python-saml"
       self."pytz"
       self."tzlocal"
       self."pyzmq"
