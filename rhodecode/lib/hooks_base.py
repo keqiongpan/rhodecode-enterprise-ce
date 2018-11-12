@@ -339,7 +339,12 @@ class ExtensionCallback(object):
         self._kwargs_keys = set(kwargs_keys)
 
     def __call__(self, *args, **kwargs):
-        log.debug('Calling extension callback for %s', self._hook_name)
+        log.debug('Calling extension callback for `%s`', self._hook_name)
+        callback = self._get_callback()
+        if not callback:
+            log.debug('extension callback `%s` not found, skipping...', self._hook_name)
+            return
+
         kwargs_to_pass = {}
         for key in self._kwargs_keys:
             try:
@@ -349,16 +354,11 @@ class ExtensionCallback(object):
                           key, self._kwargs_keys)
                 raise
 
-        # backward compat for removed api_key for old hooks. THis was it works
+        # backward compat for removed api_key for old hooks. This was it works
         # with older rcextensions that require api_key present
         if self._hook_name in ['CREATE_USER_HOOK', 'DELETE_USER_HOOK']:
             kwargs_to_pass['api_key'] = '_DEPRECATED_'
-
-        callback = self._get_callback()
-        if callback:
-            return callback(**kwargs_to_pass)
-        else:
-            log.debug('extensions callback not found skipping...')
+        return callback(**kwargs_to_pass)
 
     def is_active(self):
         return hasattr(rhodecode.EXTENSIONS, self._hook_name)
