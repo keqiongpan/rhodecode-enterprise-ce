@@ -102,7 +102,7 @@ ${h.secure_form(h.route_path('admin_settings_global_update'), request=request)}
                 <option value="clicky">Clicky</option>
                 <option value="server_announce">${_('Server Announcement')}</option>
                 <option value="flash_filtering">${_('Flash message filtering')}</option>
-                <option value="custom_logo">${_('Custom log-in logo')}</option>
+                <option value="custom_logo">${_('Custom logos')}</option>
             </select>
         </div>
         <div style="padding: 10px 0px"></div>
@@ -253,16 +253,21 @@ $(document).ready(function(e) {
 <script id="custom_logo_tmpl" type='text/x-template'>
 <%text filter="h">
 <script>
-// Set custom logo on login page.
-$(document).ready(function(e) {
 
-    // external, custom company logo
+$(document).ready(function(e) {
+    // 1) Set custom logo on login/register pages.
+
+    // external URL, custom company logo
     //$('.sign-in-image').attr("src", "http://server.com/logo_path/custom_logo.png");
 
     // Alternative logo from static folder
     $('.sign-in-image').attr("src", "/_static/rhodecode/images/RhodeCode_Logo_Black.png");
-	// set width/height
+
+    // set width/height
     $('.sign-in-image').css({"width": "300px", "height": "345px"});
+
+    // 2) Header logo on top bar
+    $('.logo-wrapper').find('img').attr('src', 'http://server.com/logo_path/custom_header_logo.png')
 
 });
 </script>
