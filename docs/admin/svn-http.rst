@@ -23,8 +23,8 @@ Prerequisites
 
     .. code-block:: bash
 
-        $ sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu `lsb_release -cs` svn19" >> /etc/apt/sources.list.d/subversion19.list'
-        $ sudo wget -q http://opensource.wandisco.com/wandisco-debian.gpg -O- | sudo apt-key add -
+        $ sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu `lsb_release -cs` svn110" >> /etc/apt/sources.list.d/subversion110.list'
+        $ sudo wget -q http://opensource.wandisco.com/wandisco-debian-new.gpg -O- | sudo apt-key add -
         $ sudo apt-get update
 
     Here is an example how to add the Wandisco repositories for Centos/Redhat. Using
@@ -46,7 +46,7 @@ Example installation of required components for Ubuntu platform:
 .. code-block:: bash
 
     $ sudo apt-get install apache2
-    $ sudo apt-get install libapache2-mod-svn
+    $ sudo apt-get install libapache2-svn
 
 Once installed you need to enable ``dav_svn`` on Ubuntu:
 
