@@ -37,6 +37,23 @@ def get_app_config(ini_path):
     return appconfig('config:{}'.format(ini_path), relative_to=os.getcwd())
 
 
+class BootstrappedRequest(Request):
+    """
+    Special version of Request Which has some available methods like in pyramid.
+    Some code (used for template rendering) requires this, and we unsure it's present.
+    """
+
+    def translate(self, msg):
+        return msg
+
+    def plularize(self, singular, plural, n):
+        return singular
+
+    def get_partial_renderer(self, tmpl_name):
+        from rhodecode.lib.partial_renderer import get_partial_renderer
+        return get_partial_renderer(request=self, tmpl_name=tmpl_name)
+
+
 def bootstrap(config_uri, request=None, options=None, env=None):
     if env:
         os.environ.update(env)
@@ -48,7 +65,7 @@ def bootstrap(config_uri, request=None, options=None, env=None):
     except (configparser.NoSectionError, configparser.NoOptionError):
         pass
 
-    request = request or Request.blank('/', base_url=base_url)
+    request = request or BootstrappedRequest.blank('/', base_url=base_url)
 
     return pyramid_bootstrap(config_uri, request=request, options=options)
 
