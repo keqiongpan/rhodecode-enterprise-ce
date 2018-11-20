@@ -22,6 +22,7 @@
 RhodeCode authentication plugin for LDAP
 """
 
+import os
 import logging
 import traceback
 
@@ -240,8 +241,14 @@ class AuthLdap(AuthLdapBase):
         if self.debug:
             ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
 
-        if hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
-            ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, '/etc/openldap/cacerts')
+        default_cert_path = os.environ.get('SSL_CERT_FILE')
+        default_cert_dir = os.environ.get('SSL_CERT_DIR', '/etc/openldap/cacerts')
+        if default_cert_path and hasattr(ldap, 'OPT_X_TLS_CACERTFILE'):
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, default_cert_path)
+
+        elif hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
+                ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, default_cert_dir)
+
         if self.TLS_KIND != 'PLAIN':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
 
