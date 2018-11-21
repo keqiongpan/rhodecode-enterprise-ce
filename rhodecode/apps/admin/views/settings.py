@@ -175,8 +175,7 @@ class AdminSettingsView(BaseAppView):
 
         try:
             if c.visual.allow_repo_location_change:
-                model.update_global_path_setting(
-                    form_result['paths_root_path'])
+                model.update_global_path_setting(form_result['paths_root_path'])
 
             model.update_global_ssl_setting(form_result['web_push_ssl'])
             model.update_global_hook_settings(form_result)
