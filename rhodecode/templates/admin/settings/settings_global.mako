@@ -263,7 +263,7 @@ $(document).ready(function(e) {
     // Alternative logo from static folder
     $('.sign-in-image').attr("src", "/_static/rhodecode/images/RhodeCode_Logo_Black.png");
 
-    // set width/height
+    // option to set width/height, adjust if required to make your image look good.
     $('.sign-in-image').css({"width": "300px", "height": "345px"});
 
     // 2) Header logo on top bar

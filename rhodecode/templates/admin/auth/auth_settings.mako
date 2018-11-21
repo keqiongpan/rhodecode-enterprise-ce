@@ -29,7 +29,7 @@
 
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          % for item in resource.get_root().get_nav_list():
+          % for item in resource.get_root().get_nav_list(sort=False):
             <li ${'class=active' if item == resource else ''}>
               <a href="${request.resource_path(item, route_name='auth_home')}">${item.display_name}</a>
             </li>
@@ -39,48 +39,54 @@
 
     <div class="main-content-full-width">
       ${h.secure_form(request.resource_path(resource, route_name='auth_home'), request=request)}
-      <div class="form">
-
         <div class="panel panel-default">
 
           <div class="panel-heading">
             <h3 class="panel-title">${_("Enabled and Available Plugins")}</h3>
           </div>
 
-          <div class="fields panel-body">
+          <div class="panel-body">
 
-            <div class="field">
-              <div class="label">${_("Enabled Plugins")}</div>
+
+              <div class="label">${_("Ordered Enabled Plugins")}</div>
               <div class="textarea text-area editor">
-                  ${h.textarea('auth_plugins',cols=23,rows=5,class_="medium")}
+                  ${h.textarea('auth_plugins',cols=120,rows=20,class_="medium")}
               </div>
-              <p class="help-block pre-formatting">${_('List of plugins, separated by commas.'
+              <div class="field">
+                <p class="help-block pre-formatting">${_('List of plugins, separated by commas.'
                   '\nThe order of the plugins is also the order in which '
-                  'RhodeCode Enterprise will try to authenticate a user.')}</p>
-            </div>
+                  'RhodeCode Enterprise will try to authenticate a user.')}
+                </p>
+              </div>
 
-            <div class="field">
-              <div class="label">${_('Available Built-in Plugins')}</div>
-              <ul class="auth_plugins">
-              %for plugin in available_plugins:
-                  <li>
-                    <div class="auth_buttons">
-                        <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
-                          ${_('enabled') if plugin.get_id() in enabled_plugins else _('disabled')}
-                        </span>
-                        ${plugin.get_display_name()} (${plugin.get_id()})
-                    </div>
-                  </li>
-              %endfor
-              </ul>
-            </div>
+              <table class="rctable">
+                  <th>${_('Activate')}</th>
+                  <th>${_('Plugin Name')}</th>
+                  <th>${_('Documentation')}</th>
+                  <th>${_('Plugin ID')}</th>
+                  %for plugin in available_plugins:
+                      <tr>
+                          <td>
+                            <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
+                              ${_('enabled') if plugin.get_id() in enabled_plugins else _('disabled')}
+                            </span>
+                          </td>
+                          <td>${plugin.get_display_name()}</td>
+                          <td>
+                              % if plugin.docs():
+                                <a href="${plugin.docs()}">docs</a>
+                              % endif
+                          </td>
+                          <td>${plugin.get_id()}</td>
+                      </tr>
+                  %endfor
+              </table>
 
             <div class="buttons">
               ${h.submit('save',_('Save'),class_="btn")}
             </div>
           </div>
         </div>
-      </div>
       ${h.end_form()}
     </div>
   </div>
