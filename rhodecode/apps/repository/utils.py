@@ -51,12 +51,12 @@ def get_default_reviewers_data(
     """ Return json for default reviewers of a repository """
 
     reasons = ['Default reviewer', 'Repository owner']
-    default = reviewer_as_json(
-        user=current_user, reasons=reasons, mandatory=False)
+    json_reviewers = [reviewer_as_json(
+        user=target_repo.user, reasons=reasons, mandatory=False, rules=None)]
 
     return {
         'api_ver': 'v1',  # define version for later possible schema upgrade
-        'reviewers': [default],
+        'reviewers': json_reviewers,
         'rules': {},
         'rules_data': {},
     }

@@ -66,7 +66,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
-        assert result['error'] == None
+        assert result['error'] is None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -89,7 +89,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
-        assert result['error'] == None
+        assert result['error'] is None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -129,7 +129,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
-        assert result['error'] == None
+        assert result['error'] is None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -144,11 +144,15 @@ class TestCreatePullRequestApi(object):
                 entry['mandatory'] = rev.mandatory
             actual_reviewers.append(entry)
 
-        # default reviewer will be added who is an owner of the repo
-        reviewers.append(
-            {'username': pull_request.author.username,
-             'reasons': [u'Default reviewer', u'Repository owner']},
-        )
+        owner_username = pull_request.target_repo.user.username
+        for spec_reviewer in reviewers[::]:
+            # default reviewer will be added who is an owner of the repo
+            # this get's overridden by a add owner to reviewers rule
+            if spec_reviewer['username'] == owner_username:
+                spec_reviewer['reasons'] = [u'Default reviewer', u'Repository owner']
+                # since owner is more important, we don't inherit mandatory flag
+                del spec_reviewer['mandatory']
+
         assert sorted(actual_reviewers, key=lambda e: e['username']) \
                == sorted(reviewers, key=lambda e: e['username'])
 
@@ -173,7 +177,7 @@ class TestCreatePullRequestApi(object):
         expected_message = "Created new pull request `{title}`".format(
             title=data['title'])
         result = response.json
-        assert result['error'] == None
+        assert result['error'] is None
         assert result['result']['msg'] == expected_message
         pull_request_id = result['result']['pull_request_id']
         pull_request = PullRequestModel().get(pull_request_id)
@@ -187,11 +191,14 @@ class TestCreatePullRequestApi(object):
             if rev.mandatory:
                 entry['mandatory'] = rev.mandatory
             actual_reviewers.append(entry)
-        # default reviewer will be added who is an owner of the repo
-        reviewers.append(
-            {'username': pull_request.author.user_id,
-             'reasons': [u'Default reviewer', u'Repository owner']},
-        )
+
+        owner_user_id = pull_request.target_repo.user.user_id
+        for spec_reviewer in reviewers[::]:
+            # default reviewer will be added who is an owner of the repo
+            # this get's overridden by a add owner to reviewers rule
+            if spec_reviewer['username'] == owner_user_id:
+                spec_reviewer['reasons'] = [u'Default reviewer', u'Repository owner']
+
         assert sorted(actual_reviewers, key=lambda e: e['username']) \
                == sorted(reviewers, key=lambda e: e['username'])
 
