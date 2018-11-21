@@ -58,7 +58,7 @@ class AuthnRootResource(AuthnResourceBase):
     def __init__(self):
         self._store = collections.OrderedDict()
         self._resource_name_map = {}
-        self.display_name = _('Global')
+        self.display_name = _('Authentication Plugins')
 
     def __getitem__(self, key):
         """

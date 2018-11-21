@@ -64,7 +64,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             context=RhodecodeAuthnResource)
 
     def get_display_name(self):
-        return _('Rhodecode')
+        return _('RhodeCode Internal')
 
     @hybrid_property
     def name(self):

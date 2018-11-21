@@ -67,7 +67,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             context=RhodecodeAuthnResource)
 
     def get_display_name(self):
-        return _('Rhodecode Token Auth')
+        return _('Rhodecode Token')
 
     @classmethod
     def docs(cls):
