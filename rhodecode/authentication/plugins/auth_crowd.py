@@ -215,6 +215,10 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     def get_display_name(self):
         return _('CROWD')
 
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth-crowd.html"
+
     @hybrid_property
     def name(self):
         return "crowd"

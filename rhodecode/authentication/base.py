@@ -171,6 +171,20 @@ class RhodeCodeAuthPluginBase(object):
             db_type = '{}.encrypted'.format(db_type)
         return db_type
 
+    @classmethod
+    def docs(cls):
+        """
+        Defines documentation url which helps with plugin setup
+        """
+        return ''
+
+    @classmethod
+    def icon(cls):
+        """
+        Defines ICON in SVG format for authentication method
+        """
+        return ''
+
     def is_enabled(self):
         """
         Returns true if this plugin is enabled. An enabled plugin can be

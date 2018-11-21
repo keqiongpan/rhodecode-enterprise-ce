@@ -69,6 +69,10 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     def get_display_name(self):
         return _('Rhodecode Token Auth')
 
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth-token.html"
+
     @hybrid_property
     def name(self):
         return "authtoken"
