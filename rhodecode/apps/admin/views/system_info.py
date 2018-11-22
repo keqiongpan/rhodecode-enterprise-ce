@@ -96,6 +96,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             # RhodeCode specific
             (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
             (_('Latest version'), version, update_state),
+            (_('RhodeCode Base URL'), val('rhodecode_config')['config']['app.base_url'], state('rhodecode_config')),
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),
