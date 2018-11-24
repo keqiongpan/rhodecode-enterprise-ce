@@ -578,5 +578,8 @@ def _substitute_values(mapping, substitutions):
         raise ValueError(
             'Failed to substitute env variable: {}. '
             'Make sure you have specified this env variable without ENV_ prefix'.format(e))
+    except ValueError as e:
+        log.warning('Failed to substitute ENV variable: %s', e)
+        result = mapping
 
     return result
