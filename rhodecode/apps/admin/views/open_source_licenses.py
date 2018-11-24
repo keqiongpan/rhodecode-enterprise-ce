@@ -24,7 +24,7 @@ import logging
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils import read_opensource_licenses
 

@@ -47,6 +47,9 @@ plugin_default_auth_ttl = 30
 # TODO: When refactoring this think about splitting it up into distinct
 # discover, load and include phases.
 def _discover_plugins(config, entry_point='enterprise.plugins1'):
+    log.debug('authentication: running plugin discovery for entrypoint %s',
+              entry_point)
+
     for ep in iter_entry_points(entry_point):
         plugin_id = '{}{}#{}'.format(
             plugin_prefix, ep.dist.project_name, ep.name)
@@ -73,6 +76,8 @@ def _discover_legacy_plugins(config, prefix=legacy_plugin_prefix):
     setting in database which are using the specified prefix. Normally 'py:' is
     used for the legacy plugins.
     """
+    log.debug('authentication: running legacy plugin discovery for prefix %s',
+              legacy_plugin_prefix)
     try:
         auth_plugins = SettingsModel().get_setting_by_name('auth_plugins')
         enabled_plugins = auth_plugins.app_settings_value

@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-from rhodecode.apps.admin.navigation import NavigationRegistry
+from rhodecode.apps._base.navigation import NavigationRegistry
 from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib.utils2 import str2bool
 

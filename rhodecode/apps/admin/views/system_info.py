@@ -25,7 +25,7 @@ from pyramid.view import view_config
 
 import rhodecode
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils2 import str2bool

@@ -24,7 +24,7 @@ import collections
 
 from zope.interface import implementer
 
-from rhodecode.apps.admin.interfaces import IAdminNavigationRegistry
+from rhodecode.apps._base.interfaces import IAdminNavigationRegistry
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.translation import _
 

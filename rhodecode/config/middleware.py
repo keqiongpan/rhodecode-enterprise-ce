@@ -23,6 +23,7 @@ import sys
 import logging
 import collections
 import tempfile
+import time
 
 from paste.gzipper import make_gzip_middleware
 import pyramid.events
@@ -78,8 +79,9 @@ def make_pyramid_app(global_config, **settings):
 
     # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
     # will be replaced by the value of the environment variable "NAME" in this case.
-    environ = {
-        'ENV_{}'.format(key): value for key, value in os.environ.items()}
+    start_time = time.time()
+
+    environ = {'ENV_{}'.format(key): value for key, value in os.environ.items()}
 
     global_config = _substitute_values(global_config, environ)
     settings = _substitute_values(settings, environ)
@@ -105,8 +107,8 @@ def make_pyramid_app(global_config, **settings):
     config.configure_celery(global_config['__file__'])
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
-
-    log.info('Pyramid app %s created and configured.', pyramid_app)
+    total_time = time.time() - start_time
+    log.info('Pyramid app %s created and configured in %.2fs', pyramid_app, total_time)
     return pyramid_app
 
 
@@ -215,6 +217,7 @@ def includeme_first(config):
 
 
 def includeme(config):
+    log.debug('Initializing main includeme from %s', os.path.basename(__file__))
     settings = config.registry.settings
     config.set_request_factory(Request)
 
@@ -237,10 +240,13 @@ def includeme(config):
     config.include('rhodecode.authentication')
     config.include('rhodecode.integrations')
 
+    config.include('rhodecode.apps._base.navigation')
+    config.include('rhodecode.apps._base.subscribers')
+    config.include('rhodecode.tweens')
+
     # apps
     config.include('rhodecode.apps._base')
     config.include('rhodecode.apps.ops')
-
     config.include('rhodecode.apps.admin')
     config.include('rhodecode.apps.channelstream')
     config.include('rhodecode.apps.login')
@@ -256,13 +262,10 @@ def includeme(config):
     config.include('rhodecode.apps.svn_support')
     config.include('rhodecode.apps.ssh_support')
     config.include('rhodecode.apps.gist')
-
     config.include('rhodecode.apps.debug_style')
-    config.include('rhodecode.tweens')
     config.include('rhodecode.api')
 
-    config.add_route(
-        'rhodecode_support', 'https://rhodecode.com/help/', static=True)
+    config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
 
     config.add_translation_dirs('rhodecode:i18n/')
     settings['default_locale_name'] = settings.get('lang', 'en')
