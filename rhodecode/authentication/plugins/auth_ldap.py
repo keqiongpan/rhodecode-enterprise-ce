@@ -22,7 +22,6 @@
 RhodeCode authentication plugin for LDAP
 """
 
-import os
 import logging
 import traceback
 
@@ -65,6 +64,171 @@ def plugin_factory(plugin_id, *args, **kwds):
 
 class LdapAuthnResource(AuthnPluginResourceBase):
     pass
+
+
+class AuthLdap(AuthLdapBase):
+    default_tls_cert_dir = '/etc/openldap/cacerts'
+
+    def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
+                 tls_kind='PLAIN', tls_reqcert='DEMAND', tls_cert_file=None,
+                 tls_cert_dir=None, ldap_version=3,
+                 search_scope='SUBTREE', attr_login='uid',
+                 ldap_filter='', timeout=None):
+        if ldap == Missing:
+            raise LdapImportError("Missing or incompatible ldap library")
+
+        self.debug = False
+        self.timeout = timeout or 60 * 5
+        self.ldap_version = ldap_version
+        self.ldap_server_type = 'ldap'
+
+        self.TLS_KIND = tls_kind
+
+        if self.TLS_KIND == 'LDAPS':
+            port = port or 689
+            self.ldap_server_type += 's'
+
+        OPT_X_TLS_DEMAND = 2
+        self.TLS_REQCERT = getattr(ldap, 'OPT_X_TLS_%s' % tls_reqcert, OPT_X_TLS_DEMAND)
+        self.TLS_CERT_FILE = tls_cert_file or ''
+        self.TLS_CERT_DIR = tls_cert_dir or self.default_tls_cert_dir
+
+        # split server into list
+        self.SERVER_ADDRESSES = self._get_server_list(server)
+        self.LDAP_SERVER_PORT = port
+
+        # USE FOR READ ONLY BIND TO LDAP SERVER
+        self.attr_login = attr_login
+
+        self.LDAP_BIND_DN = safe_str(bind_dn)
+        self.LDAP_BIND_PASS = safe_str(bind_pass)
+
+        self.SEARCH_SCOPE = getattr(ldap, 'SCOPE_%s' % search_scope)
+        self.BASE_DN = safe_str(base_dn)
+        self.LDAP_FILTER = safe_str(ldap_filter)
+
+    def _get_ldap_conn(self):
+
+        if self.debug:
+            ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
+
+        if self.TLS_CERT_FILE and hasattr(ldap, 'OPT_X_TLS_CACERTFILE'):
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, self.TLS_CERT_FILE)
+
+        elif hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
+            ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, self.TLS_CERT_DIR)
+
+        if self.TLS_KIND != 'PLAIN':
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
+
+        ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
+        ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
+
+        # init connection now
+        ldap_servers = self._build_servers(
+            self.ldap_server_type,  self.SERVER_ADDRESSES, self.LDAP_SERVER_PORT)
+        log.debug('initializing LDAP connection to:%s', ldap_servers)
+        ldap_conn = ldap.initialize(ldap_servers)
+        ldap_conn.set_option(ldap.OPT_NETWORK_TIMEOUT, self.timeout)
+        ldap_conn.set_option(ldap.OPT_TIMEOUT, self.timeout)
+        ldap_conn.timeout = self.timeout
+
+        if self.ldap_version == 2:
+            ldap_conn.protocol = ldap.VERSION2
+        else:
+            ldap_conn.protocol = ldap.VERSION3
+
+        if self.TLS_KIND == 'START_TLS':
+            ldap_conn.start_tls_s()
+
+        if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
+            log.debug('Trying simple_bind with password and given login DN: %s',
+                      self.LDAP_BIND_DN)
+            ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
+
+        return ldap_conn
+
+    def fetch_attrs_from_simple_bind(self, server, dn, username, password):
+        try:
+            log.debug('Trying simple bind with %s', dn)
+            server.simple_bind_s(dn, safe_str(password))
+            user = server.search_ext_s(
+                dn, ldap.SCOPE_BASE, '(objectClass=*)', )[0]
+            _, attrs = user
+            return attrs
+
+        except ldap.INVALID_CREDENTIALS:
+            log.debug(
+                "LDAP rejected password for user '%s': %s, org_exc:",
+                username, dn, exc_info=True)
+
+    def authenticate_ldap(self, username, password):
+        """
+        Authenticate a user via LDAP and return his/her LDAP properties.
+
+        Raises AuthenticationError if the credentials are rejected, or
+        EnvironmentError if the LDAP server can't be reached.
+
+        :param username: username
+        :param password: password
+        """
+
+        uid = self.get_uid(username, self.SERVER_ADDRESSES)
+        user_attrs = {}
+        dn = ''
+
+        self.validate_password(username, password)
+        self.validate_username(username)
+
+        ldap_conn = None
+        try:
+            ldap_conn = self._get_ldap_conn()
+            filter_ = '(&%s(%s=%s))' % (
+                self.LDAP_FILTER, self.attr_login, username)
+            log.debug("Authenticating %r filter %s", self.BASE_DN, filter_)
+
+            lobjects = ldap_conn.search_ext_s(
+                self.BASE_DN, self.SEARCH_SCOPE, filter_)
+
+            if not lobjects:
+                log.debug("No matching LDAP objects for authentication "
+                          "of UID:'%s' username:(%s)", uid, username)
+                raise ldap.NO_SUCH_OBJECT()
+
+            log.debug('Found matching ldap object, trying to authenticate')
+            for (dn, _attrs) in lobjects:
+                if dn is None:
+                    continue
+
+                user_attrs = self.fetch_attrs_from_simple_bind(
+                    ldap_conn, dn, username, password)
+                if user_attrs:
+                    break
+            else:
+                raise LdapPasswordError(
+                    'Failed to authenticate user `{}`'
+                    'with given password'.format(username))
+
+        except ldap.NO_SUCH_OBJECT:
+            log.debug("LDAP says no such user '%s' (%s), org_exc:",
+                      uid, username, exc_info=True)
+            raise LdapUsernameError('Unable to find user')
+        except ldap.SERVER_DOWN:
+            org_exc = traceback.format_exc()
+            raise LdapConnectionError(
+                "LDAP can't access authentication "
+                "server, org_exc:%s" % org_exc)
+        finally:
+            if ldap_conn:
+                log.debug('ldap: connection release')
+                try:
+                    ldap_conn.unbind_s()
+                except Exception:
+                    # for any reason this can raise exception we must catch it
+                    # to not crush the server
+                    pass
+
+        return dn, user_attrs
 
 
 class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
@@ -134,6 +298,22 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         title=_('Certificate Checks'),
         validator=colander.OneOf(tls_reqcert_choices),
         widget='select')
+    tls_cert_file = colander.SchemaNode(
+        colander.String(),
+        default='',
+        description=_('This specifies the PEM-format file path containing '
+                      'certificates for use in TLS connection.\n'
+                      'If not specified `TLS Cert dir` will be used'),
+        title=_('TLS Cert file'),
+        missing='',
+        widget='string')
+    tls_cert_dir = colander.SchemaNode(
+        colander.String(),
+        default=AuthLdap.default_tls_cert_dir,
+        description=_('This specifies the path of a directory that contains individual '
+                      'CA certificates in separate files.'),
+        title=_('TLS Cert dir'),
+        widget='string')
     base_dn = colander.SchemaNode(
         colander.String(),
         default='',
@@ -196,175 +376,6 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         preparer=strip_whitespace,
         title=_('Email Attribute'),
         widget='string')
-
-
-class AuthLdap(AuthLdapBase):
-
-    def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
-                 tls_kind='PLAIN', tls_reqcert='DEMAND', ldap_version=3,
-                 search_scope='SUBTREE', attr_login='uid',
-                 ldap_filter='', timeout=None):
-        if ldap == Missing:
-            raise LdapImportError("Missing or incompatible ldap library")
-
-        self.debug = False
-        self.timeout = timeout or 60 * 5
-        self.ldap_version = ldap_version
-        self.ldap_server_type = 'ldap'
-
-        self.TLS_KIND = tls_kind
-
-        if self.TLS_KIND == 'LDAPS':
-            port = port or 689
-            self.ldap_server_type += 's'
-
-        OPT_X_TLS_DEMAND = 2
-        self.TLS_REQCERT = getattr(ldap, 'OPT_X_TLS_%s' % tls_reqcert,
-                                   OPT_X_TLS_DEMAND)
-        self.LDAP_SERVER = server
-        # split server into list
-        self.SERVER_ADDRESSES = self._get_server_list(server)
-        self.LDAP_SERVER_PORT = port
-
-        # USE FOR READ ONLY BIND TO LDAP SERVER
-        self.attr_login = attr_login
-
-        self.LDAP_BIND_DN = safe_str(bind_dn)
-        self.LDAP_BIND_PASS = safe_str(bind_pass)
-
-        self.SEARCH_SCOPE = getattr(ldap, 'SCOPE_%s' % search_scope)
-        self.BASE_DN = safe_str(base_dn)
-        self.LDAP_FILTER = safe_str(ldap_filter)
-
-    def _get_ldap_conn(self):
-
-        if self.debug:
-            ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
-
-        default_cert_path = os.environ.get('SSL_CERT_FILE')
-        default_cert_dir = os.environ.get('SSL_CERT_DIR', '/etc/openldap/cacerts')
-        if default_cert_path and hasattr(ldap, 'OPT_X_TLS_CACERTFILE'):
-            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, default_cert_path)
-
-        elif hasattr(ldap, 'OPT_X_TLS_CACERTDIR'):
-                ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, default_cert_dir)
-
-        if self.TLS_KIND != 'PLAIN':
-            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, self.TLS_REQCERT)
-
-        ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_OFF)
-        ldap.set_option(ldap.OPT_RESTART, ldap.OPT_ON)
-
-        # init connection now
-        ldap_servers = self._build_servers(
-            self.ldap_server_type,  self.SERVER_ADDRESSES, self.LDAP_SERVER_PORT)
-        log.debug('initializing LDAP connection to:%s', ldap_servers)
-        ldap_conn = ldap.initialize(ldap_servers)
-        ldap_conn.set_option(ldap.OPT_NETWORK_TIMEOUT, self.timeout)
-        ldap_conn.set_option(ldap.OPT_TIMEOUT, self.timeout)
-        ldap_conn.timeout = self.timeout
-
-        if self.ldap_version == 2:
-            ldap_conn.protocol = ldap.VERSION2
-        else:
-            ldap_conn.protocol = ldap.VERSION3
-
-        if self.TLS_KIND == 'START_TLS':
-            ldap_conn.start_tls_s()
-
-        if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
-            log.debug('Trying simple_bind with password and given login DN: %s',
-                      self.LDAP_BIND_DN)
-            ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
-
-        return ldap_conn
-
-    def fetch_attrs_from_simple_bind(self, server, dn, username, password):
-        try:
-            log.debug('Trying simple bind with %s', dn)
-            server.simple_bind_s(dn, safe_str(password))
-            user = server.search_ext_s(
-                dn, ldap.SCOPE_BASE, '(objectClass=*)', )[0]
-            _, attrs = user
-            return attrs
-
-        except ldap.INVALID_CREDENTIALS:
-            log.debug(
-                "LDAP rejected password for user '%s': %s, org_exc:",
-                username, dn, exc_info=True)
-
-    def authenticate_ldap(self, username, password):
-        """
-        Authenticate a user via LDAP and return his/her LDAP properties.
-
-        Raises AuthenticationError if the credentials are rejected, or
-        EnvironmentError if the LDAP server can't be reached.
-
-        :param username: username
-        :param password: password
-        """
-
-        uid = self.get_uid(username, self.SERVER_ADDRESSES)
-        user_attrs = {}
-        dn = ''
-
-        if not password:
-            msg = "Authenticating user %s with blank password not allowed"
-            log.warning(msg, username)
-            raise LdapPasswordError(msg)
-        if "," in username:
-            raise LdapUsernameError(
-                "invalid character `,` in username: `{}`".format(username))
-        ldap_conn = None
-        try:
-            ldap_conn = self._get_ldap_conn()
-            filter_ = '(&%s(%s=%s))' % (
-                self.LDAP_FILTER, self.attr_login, username)
-            log.debug(
-                "Authenticating %r filter %s", self.BASE_DN, filter_)
-            lobjects = ldap_conn.search_ext_s(
-                self.BASE_DN, self.SEARCH_SCOPE, filter_)
-
-            if not lobjects:
-                log.debug("No matching LDAP objects for authentication "
-                          "of UID:'%s' username:(%s)", uid, username)
-                raise ldap.NO_SUCH_OBJECT()
-
-            log.debug('Found matching ldap object, trying to authenticate')
-            for (dn, _attrs) in lobjects:
-                if dn is None:
-                    continue
-
-                user_attrs = self.fetch_attrs_from_simple_bind(
-                    ldap_conn, dn, username, password)
-                if user_attrs:
-                    break
-
-            else:
-                raise LdapPasswordError(
-                    'Failed to authenticate user `{}`'
-                    'with given password'.format(username))
-
-        except ldap.NO_SUCH_OBJECT:
-            log.debug("LDAP says no such user '%s' (%s), org_exc:",
-                      uid, username, exc_info=True)
-            raise LdapUsernameError('Unable to find user')
-        except ldap.SERVER_DOWN:
-            org_exc = traceback.format_exc()
-            raise LdapConnectionError(
-                "LDAP can't access authentication "
-                "server, org_exc:%s" % org_exc)
-        finally:
-            if ldap_conn:
-                log.debug('ldap: connection release')
-                try:
-                    ldap_conn.unbind_s()
-                except Exception:
-                    # for any reason this can raise exception we must catch it
-                    # to not crush the server
-                    pass
-
-        return dn, user_attrs
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
@@ -459,6 +470,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             'bind_pass': settings.get('dn_pass'),
             'tls_kind': settings.get('tls_kind'),
             'tls_reqcert': settings.get('tls_reqcert'),
+            'tls_cert_file': settings.get('tls_cert_file'),
+            'tls_cert_dir': settings.get('tls_cert_dir'),
             'search_scope': settings.get('search_scope'),
             'attr_login': settings.get('attr_login'),
             'ldap_version': 3,
@@ -490,10 +503,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             groups = []
             user_attrs = {
                 'username': username,
-                'firstname': safe_unicode(
-                    get_ldap_attr('attr_firstname') or firstname),
-                'lastname': safe_unicode(
-                    get_ldap_attr('attr_lastname') or lastname),
+                'firstname': safe_unicode(get_ldap_attr('attr_firstname') or firstname),
+                'lastname': safe_unicode(get_ldap_attr('attr_lastname') or lastname),
                 'groups': groups,
                 'user_group_sync': False,
                 'email': get_ldap_attr('attr_email') or email,
@@ -503,6 +514,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
                 'extern_name': user_dn,
                 'extern_type': extern_type,
             }
+
             log.debug('ldap user: %s', user_attrs)
             log.info('user `%s` authenticated correctly', user_attrs['username'])
 
@@ -514,4 +526,3 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         except (Exception,):
             log.exception("Other exception")
             return None
-

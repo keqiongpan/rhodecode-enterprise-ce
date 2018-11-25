@@ -38,7 +38,8 @@ from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
 from rhodecode.lib.utils2 import safe_int, safe_str
-from rhodecode.lib.exceptions import LdapConnectionError
+from rhodecode.lib.exceptions import LdapConnectionError, LdapUsernameError, \
+    LdapPasswordError
 from rhodecode.model.db import User
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
@@ -577,7 +578,8 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
 class AuthLdapBase(object):
 
     @classmethod
-    def _build_servers(cls, ldap_server_type, ldap_server, port):
+    def _build_servers(cls, ldap_server_type, ldap_server, port, use_resolver=True):
+
         def host_resolver(host, port, full_resolve=True):
             """
             Main work for this function is to prevent ldap connection issues,
@@ -616,7 +618,7 @@ class AuthLdapBase(object):
         return ', '.join(
             ["{}://{}".format(
                 ldap_server_type,
-                host_resolver(host, port, full_resolve=full_resolve))
+                host_resolver(host, port, full_resolve=use_resolver and full_resolve))
              for host in ldap_server])
 
     @classmethod
@@ -629,6 +631,19 @@ class AuthLdapBase(object):
         for server_addr in server_addresses:
             uid = chop_at(username, "@%s" % server_addr)
         return uid
+
+    @classmethod
+    def validate_username(cls, username):
+        if "," in username:
+            raise LdapUsernameError(
+                "invalid character `,` in username: `{}`".format(username))
+
+    @classmethod
+    def validate_password(cls, username, password):
+        if not password:
+            msg = "Authenticating user %s with blank password not allowed"
+            log.warning(msg, username)
+            raise LdapPasswordError(msg)
 
 
 def loadplugin(plugin_id):
