@@ -126,7 +126,8 @@ class ColorFormatter(ExceptionAwareFormatter):
 def _inject_req_id(record):
     from pyramid.threadlocal import get_current_request
     req = get_current_request()
-    req_id = 'req_id:%-36s ' % (getattr(req, 'req_id', None))
+    dummy = '00000000-0000-0000-0000-000000000000'
+    req_id = 'req_id:%-36s' % (getattr(req, 'req_id', dummy))
     record.req_id = req_id
 
 
