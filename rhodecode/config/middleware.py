@@ -64,6 +64,14 @@ def is_http_error(response):
     return response.status_code > 499
 
 
+def should_load_all():
+    """
+    Returns if all application components should be loaded. In some cases it's
+    desired to skip apps loading for faster shell script execution
+    """
+    return True
+
+
 def make_pyramid_app(global_config, **settings):
     """
     Constructs the WSGI application based on Pyramid.
@@ -233,6 +241,8 @@ def includeme(config):
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')
 
+    load_all = should_load_all()
+
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
@@ -245,26 +255,42 @@ def includeme(config):
     config.include('rhodecode.integrations')
     config.include('rhodecode.authentication')
 
+    if load_all:
+        from rhodecode.authentication import discover_legacy_plugins
+        # load CE authentication plugins
+        config.include('rhodecode.authentication.plugins.auth_crowd')
+        config.include('rhodecode.authentication.plugins.auth_headers')
+        config.include('rhodecode.authentication.plugins.auth_jasig_cas')
+        config.include('rhodecode.authentication.plugins.auth_ldap')
+        config.include('rhodecode.authentication.plugins.auth_pam')
+        config.include('rhodecode.authentication.plugins.auth_rhodecode')
+        config.include('rhodecode.authentication.plugins.auth_token')
+
+        # Auto discover authentication plugins and include their configuration.
+        discover_legacy_plugins(config)
+
     # apps
     config.include('rhodecode.apps._base')
-    config.include('rhodecode.apps.ops')
-    config.include('rhodecode.apps.admin')
-    config.include('rhodecode.apps.channelstream')
-    config.include('rhodecode.apps.login')
-    config.include('rhodecode.apps.home')
-    config.include('rhodecode.apps.journal')
-    config.include('rhodecode.apps.repository')
-    config.include('rhodecode.apps.repo_group')
-    config.include('rhodecode.apps.user_group')
-    config.include('rhodecode.apps.search')
-    config.include('rhodecode.apps.user_profile')
-    config.include('rhodecode.apps.user_group_profile')
-    config.include('rhodecode.apps.my_account')
-    config.include('rhodecode.apps.svn_support')
-    config.include('rhodecode.apps.ssh_support')
-    config.include('rhodecode.apps.gist')
-    config.include('rhodecode.apps.debug_style')
-    config.include('rhodecode.api')
+
+    if load_all:
+        config.include('rhodecode.apps.ops')
+        config.include('rhodecode.apps.admin')
+        config.include('rhodecode.apps.channelstream')
+        config.include('rhodecode.apps.login')
+        config.include('rhodecode.apps.home')
+        config.include('rhodecode.apps.journal')
+        config.include('rhodecode.apps.repository')
+        config.include('rhodecode.apps.repo_group')
+        config.include('rhodecode.apps.user_group')
+        config.include('rhodecode.apps.search')
+        config.include('rhodecode.apps.user_profile')
+        config.include('rhodecode.apps.user_group_profile')
+        config.include('rhodecode.apps.my_account')
+        config.include('rhodecode.apps.svn_support')
+        config.include('rhodecode.apps.ssh_support')
+        config.include('rhodecode.apps.gist')
+        config.include('rhodecode.apps.debug_style')
+        config.include('rhodecode.api')
 
     config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
     config.add_translation_dirs('rhodecode:i18n/')

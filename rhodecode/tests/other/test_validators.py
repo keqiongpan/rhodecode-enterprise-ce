@@ -193,6 +193,8 @@ def test_ValidPasswordsMatch(localizer):
 def test_ValidAuth(localizer, config_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
+    config_stub.include('rhodecode.authentication.plugins.auth_rhodecode')
+    config_stub.include('rhodecode.authentication.plugins.auth_token')
 
     validator = v.ValidAuth(localizer)
     valid_creds = {

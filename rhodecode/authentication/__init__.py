@@ -41,7 +41,7 @@ def _import_legacy_plugin(plugin_id):
     return module.plugin_factory(plugin_id=plugin_id)
 
 
-def _discover_legacy_plugins(config, prefix=legacy_plugin_prefix):
+def discover_legacy_plugins(config, prefix=legacy_plugin_prefix):
     """
     Function that imports the legacy plugins stored in the 'auth_plugins'
     setting in database which are using the specified prefix. Normally 'py:' is
@@ -97,15 +97,3 @@ def includeme(config):
                     request_method='POST',
                     route_name='auth_home',
                     context=AuthnRootResource)
-
-    # load CE authentication plugins
-    config.include('rhodecode.authentication.plugins.auth_crowd')
-    config.include('rhodecode.authentication.plugins.auth_headers')
-    config.include('rhodecode.authentication.plugins.auth_jasig_cas')
-    config.include('rhodecode.authentication.plugins.auth_ldap')
-    config.include('rhodecode.authentication.plugins.auth_pam')
-    config.include('rhodecode.authentication.plugins.auth_rhodecode')
-    config.include('rhodecode.authentication.plugins.auth_token')
-
-    # Auto discover authentication plugins and include their configuration.
-    _discover_legacy_plugins(config)
