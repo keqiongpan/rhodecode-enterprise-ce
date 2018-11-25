@@ -18,11 +18,9 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import os
 import logging
 import importlib
 
-from pkg_resources import iter_entry_points
 from pyramid.authentication import SessionAuthenticationPolicy
 
 from rhodecode.authentication.registry import AuthenticationPluginRegistry
@@ -31,37 +29,10 @@ from rhodecode.authentication.routes import AuthnRootResource
 from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.settings import SettingsModel
 
-
 log = logging.getLogger(__name__)
 
-# Plugin ID prefixes to distinct between normal and legacy plugins.
-plugin_prefix = 'egg:'
 legacy_plugin_prefix = 'py:'
 plugin_default_auth_ttl = 30
-
-
-# TODO: Currently this is only used to discover the authentication plugins.
-# Later on this may be used in a generic way to look up and include all kinds
-# of supported enterprise plugins. Therefore this has to be moved and
-# refactored to a real 'plugin look up' machinery.
-# TODO: When refactoring this think about splitting it up into distinct
-# discover, load and include phases.
-def _discover_plugins(config, entry_point='enterprise.plugins1'):
-    log.debug('authentication: running plugin discovery for entrypoint %s',
-              entry_point)
-
-    for ep in iter_entry_points(entry_point):
-        plugin_id = '{}{}#{}'.format(
-            plugin_prefix, ep.dist.project_name, ep.name)
-        log.debug('Plugin discovered: "%s"', plugin_id)
-        try:
-            module = ep.load()
-            plugin = module(plugin_id=plugin_id)
-            config.include(plugin.includeme)
-        except Exception as e:
-            log.exception(
-                'Exception while loading authentication plugin '
-                '"{}": {}'.format(plugin_id, e.message))
 
 
 def _import_legacy_plugin(plugin_id):
@@ -127,11 +98,14 @@ def includeme(config):
                     route_name='auth_home',
                     context=AuthnRootResource)
 
-    for key in ['RC_CMD_SETUP_RC', 'RC_CMD_UPGRADE_DB', 'RC_CMD_SSH_WRAPPER']:
-        if os.environ.get(key):
-            # skip this heavy step below on certain CLI commands
-            return
+    # load CE authentication plugins
+    config.include('rhodecode.authentication.plugins.auth_crowd')
+    config.include('rhodecode.authentication.plugins.auth_headers')
+    config.include('rhodecode.authentication.plugins.auth_jasig_cas')
+    config.include('rhodecode.authentication.plugins.auth_ldap')
+    config.include('rhodecode.authentication.plugins.auth_pam')
+    config.include('rhodecode.authentication.plugins.auth_rhodecode')
+    config.include('rhodecode.authentication.plugins.auth_token')
 
     # Auto discover authentication plugins and include their configuration.
-    _discover_plugins(config)
     _discover_legacy_plugins(config)

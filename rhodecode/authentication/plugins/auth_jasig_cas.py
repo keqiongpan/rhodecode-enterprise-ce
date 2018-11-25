@@ -165,3 +165,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('jasig_cas')
+    plugin_factory(plugin_id).includeme(config)

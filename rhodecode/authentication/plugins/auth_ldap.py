@@ -526,3 +526,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         except (Exception,):
             log.exception("Other exception")
             return None
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('ldap')
+    plugin_factory(plugin_id).includeme(config)

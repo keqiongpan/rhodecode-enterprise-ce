@@ -117,10 +117,11 @@ class NavigationRegistry(object):
         self._registered_entries[entry.key] = entry
 
     def get_navlist(self, request):
-        navlist = [NavListEntry(i.key, i.get_localized_name(request),
-                                i.generate_url(request), i.active_list)
-                   for i in self._registered_entries.values()]
-        return navlist
+        nav_list = [
+            NavListEntry(i.key, i.get_localized_name(request),
+                         i.generate_url(request), i.active_list)
+            for i in self._registered_entries.values()]
+        return nav_list
 
 
 def navigation_registry(request, registry=None):
@@ -143,5 +144,5 @@ def includeme(config):
     # Create admin navigation registry and add it to the pyramid registry.
     settings = config.get_settings()
     labs_active = str2bool(settings.get('labs_settings_active', False))
-    navigation_registry = NavigationRegistry(labs_active=labs_active)
-    config.registry.registerUtility(navigation_registry)
+    navigation_registry_instance = NavigationRegistry(labs_active=labs_active)
+    config.registry.registerUtility(navigation_registry_instance)

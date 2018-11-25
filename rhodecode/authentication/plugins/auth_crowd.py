@@ -287,3 +287,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         log.debug("Final crowd user object: \n%s", formatted_json(user_attrs))
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('crowd')
+    plugin_factory(plugin_id).includeme(config)

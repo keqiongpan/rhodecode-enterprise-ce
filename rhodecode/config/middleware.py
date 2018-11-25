@@ -108,7 +108,8 @@ def make_pyramid_app(global_config, **settings):
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
     total_time = time.time() - start_time
-    log.info('Pyramid app %s created and configured in %.2fs', pyramid_app, total_time)
+    log.info('Pyramid app `%s` created and configured in %.2fs',
+             pyramid_app.func_name, total_time)
     return pyramid_app
 
 
@@ -237,12 +238,12 @@ def includeme(config):
     config.include('pyramid_beaker')
     config.include('rhodecode.lib.rc_cache')
 
-    config.include('rhodecode.authentication')
-    config.include('rhodecode.integrations')
-
     config.include('rhodecode.apps._base.navigation')
     config.include('rhodecode.apps._base.subscribers')
     config.include('rhodecode.tweens')
+
+    config.include('rhodecode.integrations')
+    config.include('rhodecode.authentication')
 
     # apps
     config.include('rhodecode.apps._base')
@@ -266,7 +267,6 @@ def includeme(config):
     config.include('rhodecode.api')
 
     config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
-
     config.add_translation_dirs('rhodecode:i18n/')
     settings['default_locale_name'] = settings.get('lang', 'en')
 

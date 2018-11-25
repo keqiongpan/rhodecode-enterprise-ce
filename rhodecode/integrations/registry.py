@@ -32,6 +32,6 @@ class IntegrationTypeRegistry(collections.OrderedDict):
         if key in self:
             log.debug(
                 'Overriding existing integration type %s (%s) with %s',
-                self[key], key, IntegrationType)
+                self[key].__class__, key, IntegrationType)
 
         self[key] = IntegrationType

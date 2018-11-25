@@ -149,3 +149,8 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                 'user `%s` failed to authenticate via %s, reason: account not '
                 'active.', username, self.name)
         return None
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('token')
+    plugin_factory(plugin_id).includeme(config)
