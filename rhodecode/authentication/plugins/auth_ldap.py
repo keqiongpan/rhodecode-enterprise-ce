@@ -379,6 +379,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'ldap'
     # used to define dynamic binding in the
     DYNAMIC_BIND_VAR = '$login'
     _settings_unsafe_keys = ['dn_pass']
@@ -529,5 +530,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('ldap')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

@@ -66,6 +66,7 @@ class JasigCasSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'jasig_cas'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -168,5 +169,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('jasig_cas')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

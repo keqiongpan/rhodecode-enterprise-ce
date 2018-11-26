@@ -75,7 +75,7 @@ class HeadersSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
-
+    uid = 'headers'
     def includeme(self, config):
         config.add_authn_plugin(self)
         config.add_authn_resource(self.get_id(), HeadersAuthnResource(self))
@@ -226,5 +226,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('headers')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

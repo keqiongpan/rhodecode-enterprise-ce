@@ -47,6 +47,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     """
     Enables usage of authentication tokens for vcs operations.
     """
+    uid = 'token'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -152,5 +153,5 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('token')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

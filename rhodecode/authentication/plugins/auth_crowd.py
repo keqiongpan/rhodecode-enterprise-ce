@@ -189,6 +189,7 @@ class CrowdServer(object):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'crowd'
     _settings_unsafe_keys = ['app_password']
 
     def includeme(self, config):
@@ -290,5 +291,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('crowd')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

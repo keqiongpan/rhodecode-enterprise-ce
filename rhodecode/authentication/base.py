@@ -94,6 +94,9 @@ class LazyFormencode(object):
 
 
 class RhodeCodeAuthPluginBase(object):
+    # UID is used to register plugin to the registry
+    uid = None
+
     # cache the authentication request for N amount of seconds. Some kind
     # of authentication methods are very heavy and it's very efficient to cache
     # the result of a call. If it's set to None (default) cache is off

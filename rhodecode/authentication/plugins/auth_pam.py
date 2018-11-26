@@ -72,6 +72,7 @@ class PamSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'pam'
     # PAM authentication can be slow. Repository operations involve a lot of
     # auth calls. Little caching helps speedup push/pull operations significantly
     AUTH_CACHE_TTL = 4
@@ -166,5 +167,5 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('pam')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)

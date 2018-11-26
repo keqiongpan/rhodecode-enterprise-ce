@@ -44,6 +44,7 @@ class RhodecodeAuthnResource(AuthnPluginResourceBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
+    uid = 'rhodecode'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -144,5 +145,5 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
 
 def includeme(config):
-    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format('rhodecode')
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)
