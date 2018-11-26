@@ -53,6 +53,8 @@ log = logging.getLogger(__name__)
 VCS_TYPE = 'vcs'
 HTTP_TYPE = 'http'
 
+external_auth_session_key = 'rhodecode.external_auth'
+
 
 class hybrid_property(object):
     """
