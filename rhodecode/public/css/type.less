@@ -274,8 +274,11 @@ mark,
         list-style: none;
         text-align: right;
 
-        li:before { content: none; }
-        li { float: right; }
+        li {
+          float: right;
+          list-style-type: none;
+        }
+
         a {
             display: inline-block;
             margin-left: @textmargin/2;
@@ -338,15 +341,7 @@ li {
 
 ul li {
   position: relative;
-  display: block;
-  list-style-type: none;
-
-  &:before {
-    content: "\2014\00A0";
-    position: absolute;
-    top: 0;
-    left: -1.25em;
-  }
+  list-style-type: disc;
 
   p:first-child {
     display:inline;

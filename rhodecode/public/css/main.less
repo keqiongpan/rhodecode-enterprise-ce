@@ -315,7 +315,6 @@ ul.auth_plugins {
 			margin-right: @padding;
 		}
 
-        &:before { content: none; }
 	}
 }
 
@@ -1325,6 +1324,7 @@ table.integrations {
     position: relative;
     width: 100%;
     padding-bottom: 8px;
+    list-style-type: none;
 }
 
 .reviewer_entry {
@@ -1719,8 +1719,8 @@ BIN_FILENODE = 7
     padding: 0px 0px;
 }
 
-.pull-request-merge li:before{
-    content:none;
+.pull-request-merge li {
+    list-style-type: none;
 }
 
 .pull-request-merge .pull-request-wrap {
@@ -1957,7 +1957,7 @@ BIN_FILENODE = 7
 			font-size: @journal-fontsize;
             line-height: 1em;
 
-            &:before { content: none; }
+            list-style-type: none;
 		}
 	}
 }
