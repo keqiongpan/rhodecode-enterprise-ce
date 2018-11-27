@@ -4,7 +4,8 @@
     </div>
     <div class="panel-body">
         <p>
-            ${_('Below is a 2048 bit generated SSH RSA key. You can use it to access RhodeCode via the SSH wrapper.')}
+            ${_('Below is a 2048 bit generated SSH RSA key.')}<br/>
+            ${_('If You wish to use it to access RhodeCode via the SSH please save the private key and click `Use this generated key` at the bottom.')}
         </p>
         <h4>${_('Private key')}</h4>
         <pre>
