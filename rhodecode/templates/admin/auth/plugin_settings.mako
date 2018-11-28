@@ -65,7 +65,7 @@
                         %elif node.widget == "bool":
                           <div class="checkbox">${h.checkbox(node.name, True, checked=defaults.get(node.name))}</div>
                         %elif node.widget == "select":
-                          ${h.select(node.name, defaults.get(node.name), node.validator.choices)}
+                          ${h.select(node.name, defaults.get(node.name), node.validator.choices, class_="select2AuthSetting")}
                         %elif node.widget == "textarea":
                           <div class="textarea" style="margin-left: 0px">${h.textarea(node.name, defaults.get(node.name), rows=10)}</div>
                         %elif node.widget == "readonly":
@@ -113,12 +113,9 @@ $(document).ready(function() {
         dropdownCssClass: 'drop-menu-dropdown',
         dropdownAutoWidth: true,
         minimumResultsForSearch: -1
-    };
-    $("#tls_kind").select2(select2Options);
-    $("#tls_reqcert").select2(select2Options);
-    $("#search_scope").select2(select2Options);
-    $("#group_extraction_type").select2(select2Options);
-    $("#admin_groups_sync").select2(select2Options);
+  };
+  $('.select2AuthSetting').select2(select2Options);
+
 });
 </script>
 </%def>
