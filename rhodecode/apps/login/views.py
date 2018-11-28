@@ -55,7 +55,7 @@ CaptchaData = collections.namedtuple(
     'CaptchaData', 'active, private_key, public_key')
 
 
-def _store_user_in_session(session, username, remember=False):
+def store_user_in_session(session, username, remember=False):
     user = User.get_by_username(username, case_insensitive=True)
     auth_user = AuthUser(user.user_id)
     auth_user.set_authenticated()
@@ -165,7 +165,7 @@ class LoginView(BaseAppView):
             auth_info = authenticate(
                 '', '', self.request.environ, HTTP_TYPE, skip_missing=True)
             if auth_info:
-                headers = _store_user_in_session(
+                headers = store_user_in_session(
                     self.session, auth_info.get('username'))
                 raise HTTPFound(c.came_from, headers=headers)
         except UserCreationError as e:
@@ -186,7 +186,7 @@ class LoginView(BaseAppView):
             self.session.invalidate()
             form_result = login_form.to_python(self.request.POST)
             # form checks for username/password, now we're authenticated
-            headers = _store_user_in_session(
+            headers = store_user_in_session(
                 self.session,
                 username=form_result['username'],
                 remember=form_result['remember'])
