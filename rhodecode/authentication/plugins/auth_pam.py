@@ -40,7 +40,7 @@ from rhodecode.lib.colander_utils import strip_whitespace
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.

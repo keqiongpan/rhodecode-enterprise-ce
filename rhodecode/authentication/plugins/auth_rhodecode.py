@@ -34,7 +34,7 @@ from rhodecode.model.db import User
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     plugin = RhodeCodeAuthPlugin(plugin_id)
     return plugin
 
@@ -66,6 +66,10 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
     def get_display_name(self):
         return _('RhodeCode Internal')
+
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth.html"
 
     @hybrid_property
     def name(self):

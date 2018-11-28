@@ -34,7 +34,7 @@ from rhodecode.model.db import User, UserApiKeys, Repository
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     plugin = RhodeCodeAuthPlugin(plugin_id)
     return plugin
 
