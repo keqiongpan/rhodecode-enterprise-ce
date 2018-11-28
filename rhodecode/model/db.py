@@ -377,6 +377,12 @@ class RhodeCodeSetting(Base, BaseModel):
                             % (self.SETTINGS_TYPES.keys(), val))
         self._app_settings_type = val
 
+    @classmethod
+    def get_by_prefix(cls, prefix):
+        return RhodeCodeSetting.query()\
+            .filter(RhodeCodeSetting.app_settings_name.startswith(prefix))\
+            .all()
+
     def __unicode__(self):
         return u"<%s('%s:%s[%s]')>" % (
             self.__class__.__name__,
@@ -4143,20 +4149,16 @@ class ExternalIdentity(Base, BaseModel):
         base_table_args
     )
 
-    external_id = Column('external_id', Unicode(255), default=u'',
-                         primary_key=True)
+    external_id = Column('external_id', Unicode(255), default=u'', primary_key=True)
     external_username = Column('external_username', Unicode(1024), default=u'')
-    local_user_id = Column('local_user_id', Integer(),
-                           ForeignKey('users.user_id'), primary_key=True)
-    provider_name = Column('provider_name', Unicode(255), default=u'',
-                           primary_key=True)
+    local_user_id = Column('local_user_id', Integer(), ForeignKey('users.user_id'), primary_key=True)
+    provider_name = Column('provider_name', Unicode(255), default=u'', primary_key=True)
     access_token = Column('access_token', String(1024), default=u'')
     alt_token = Column('alt_token', String(1024), default=u'')
     token_secret = Column('token_secret', String(1024), default=u'')
 
     @classmethod
-    def by_external_id_and_provider(cls, external_id, provider_name,
-                                    local_user_id=None):
+    def by_external_id_and_provider(cls, external_id, provider_name, local_user_id=None):
         """
         Returns ExternalIdentity instance based on search params
 
@@ -4197,6 +4199,13 @@ class ExternalIdentity(Base, BaseModel):
         query = cls.query()
         query = query.filter(cls.local_user_id == local_user_id)
         return query
+
+    @classmethod
+    def load_provider_plugin(cls, plugin_id):
+        from rhodecode.authentication.base import loadplugin
+        _plugin_id = 'egg:rhodecode-enterprise-ee#{}'.format(plugin_id)
+        auth_plugin = loadplugin(_plugin_id)
+        return auth_plugin
 
 
 class Integration(Base, BaseModel):
