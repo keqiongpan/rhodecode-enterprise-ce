@@ -1288,14 +1288,14 @@ self: super: {
     };
   };
   "pyotp" = super.buildPythonPackage {
-    name = "pyotp-2.2.6";
+    name = "pyotp-2.2.7";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/67/69/131f5ad63de40c30f3be88d891e4a2ea1b69398528db99bc1e5c543422fa/pyotp-2.2.6.tar.gz";
-      sha256 = "0sdxxvr3j4j0pk26v258jpxhgpbnpmyqhvzhl24hsd50j7fk14fx";
+      url = "https://files.pythonhosted.org/packages/b1/ab/477cda97b6ca7baced5106471cb1ac1fe698d1b035983b9f8ee3422989eb/pyotp-2.2.7.tar.gz";
+      sha256 = "00p69nw431f0s2ilg0hnd77p1l22m06p9rq4f8zfapmavnmzw3xy";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   "pyparsing" = super.buildPythonPackage {
