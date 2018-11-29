@@ -53,7 +53,7 @@ class LdapError(Exception):
     pass
 
 
-def plugin_factory(plugin_id, *args, **kwargs):
+def plugin_factory(plugin_id, *args, **kwds):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -350,6 +350,16 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         title=_('Login Attribute'),
         missing_msg=_('The LDAP Login attribute of the CN must be specified'),
         widget='string')
+    attr_email = colander.SchemaNode(
+        colander.String(),
+        default='',
+        description=_('LDAP Attribute to map to email address (e.g., mail).\n'
+                      'Emails are a crucial part of RhodeCode. \n'
+                      'If possible add a valid email attribute to ldap users.'),
+        missing='',
+        preparer=strip_whitespace,
+        title=_('Email Attribute'),
+        widget='string')
     attr_firstname = colander.SchemaNode(
         colander.String(),
         default='',
@@ -365,16 +375,6 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         missing='',
         preparer=strip_whitespace,
         title=_('Last Name Attribute'),
-        widget='string')
-    attr_email = colander.SchemaNode(
-        colander.String(),
-        default='',
-        description=_('LDAP Attribute to map to email address (e.g., mail).\n'
-                      'Emails are a crucial part of RhodeCode. \n'
-                      'If possible add a valid email attribute to ldap users.'),
-        missing='',
-        preparer=strip_whitespace,
-        title=_('Email Attribute'),
         widget='string')
 
 
@@ -414,7 +414,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "ldap"
+        return u"ldap"
 
     def use_fake_password(self):
         return True

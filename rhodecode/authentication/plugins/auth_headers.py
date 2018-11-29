@@ -102,7 +102,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return 'headers'
+        return u"headers"
 
     @property
     def is_headers_auth(self):

@@ -94,7 +94,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "jasig-cas"
+        return u"jasig-cas"
 
     @property
     def is_headers_auth(self):

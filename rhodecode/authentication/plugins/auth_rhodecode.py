@@ -73,7 +73,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
 
     @hybrid_property
     def name(self):
-        return "rhodecode"
+        return u"rhodecode"
 
     def user_activation_state(self):
         def_user_perms = User.get_default_user().AuthUser().permissions['global']

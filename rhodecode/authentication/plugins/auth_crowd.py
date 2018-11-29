@@ -222,7 +222,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "crowd"
+        return u"crowd"
 
     def use_fake_password(self):
         return True

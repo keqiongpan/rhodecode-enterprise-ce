@@ -104,7 +104,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "pam"
+        return u"pam"
 
     def get_settings_schema(self):
         return PamSettingsSchema()
