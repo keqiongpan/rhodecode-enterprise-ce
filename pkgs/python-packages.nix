@@ -1770,7 +1770,6 @@ self: super: {
       self."supervisor"
       self."tempita"
       self."translationstring"
-      self."trollius"
       self."urllib3"
       self."urlobject"
       self."venusian"
@@ -2057,20 +2056,6 @@ self: super: {
     };
     meta = {
       license = [ { fullName = "BSD-like (http://repoze.org/license.html)"; } ];
-    };
-  };
-  "trollius" = super.buildPythonPackage {
-    name = "trollius-1.0.4";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."futures"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/aa/e6/4141db437f55e6ee7a3fb69663239e3fde7841a811b4bef293145ad6c836/trollius-1.0.4.tar.gz";
-      sha256 = "0xny8y12x3wrflmyn6xi8a7n3m3ac80fgmgzphx5jbbaxkjcm148";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.asl20 ];
     };
   };
   "tzlocal" = super.buildPythonPackage {

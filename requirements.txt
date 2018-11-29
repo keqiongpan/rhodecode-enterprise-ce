@@ -83,7 +83,6 @@ subprocess32==3.5.2
 supervisor==3.3.4
 tempita==0.5.2
 translationstring==1.3
-trollius==1.0.4
 urllib3==1.21
 urlobject==2.4.3
 venusian==1.1.0
