@@ -589,11 +589,11 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.4";
+    name = "hupper-1.4.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/fb/8e/0e45729d54e88c3791fb7e8c0c99530c5b9204bae73156a28b258583609a/hupper-1.4.tar.gz";
-      sha256 = "0f571zcphbja39blfgw657iwlj8wr7gxglvq0bi1xl7xawjapngr";
+      url = "https://files.pythonhosted.org/packages/f1/75/1915dc7650b4867fa3049256e24ca8eddb5989998fcec788cf52b9812dfc/hupper-1.4.2.tar.gz";
+      sha256 = "16vb9fkiaakdpcp6pn56h3w0dwvm67bxq2k2dv4i382qhqwphdzb";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1878,11 +1878,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.5.0";
+    name = "setuptools-40.6.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/26/e5/9897eee1100b166a61f91b68528cb692e8887300d9cbdaa1a349f6304b79/setuptools-40.5.0.zip";
-      sha256 = "1aqykblgfxd21q9ccrgdxwl4xjifpq01l29ssbgdn2kn987j0aia";
+      url = "https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip";
+      sha256 = "0r2c5hapirlzm34h7pl1lgkm6gk7bcrlrdj28qgsvaqg3f74vfw6";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
