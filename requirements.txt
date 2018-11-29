@@ -45,7 +45,7 @@ paste==2.0.3
 pastedeploy==1.5.2
 pastescript==2.0.2
 pathlib2==2.3.2
-peppercorn==0.5
+peppercorn==0.6
 psutil==5.4.7
 psycopg2==2.7.5
 py-bcrypt==0.4

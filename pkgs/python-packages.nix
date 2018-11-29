@@ -1030,11 +1030,11 @@ self: super: {
     };
   };
   "peppercorn" = super.buildPythonPackage {
-    name = "peppercorn-0.5";
+    name = "peppercorn-0.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/45/ec/a62ec317d1324a01567c5221b420742f094f05ee48097e5157d32be3755c/peppercorn-0.5.tar.gz";
-      sha256 = "0jvp144zn7yqk9kbpxc059167mlqk85i5lpvl1niw8gsa5fvl74j";
+      url = "https://files.pythonhosted.org/packages/e4/77/93085de7108cdf1a0b092ff443872a8f9442c736d7ddebdf2f27627935f4/peppercorn-0.6.tar.gz";
+      sha256 = "1ip4bfwcpwkq9hz2dai14k2cyabvwrnvcvrcmzxmqm04g8fnimwn";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
