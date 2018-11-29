@@ -273,16 +273,26 @@ class LoginView(BaseAppView):
         route_name='register', request_method='POST',
         renderer='rhodecode:templates/register.mako')
     def register_post(self):
+        from rhodecode.authentication.plugins import auth_rhodecode
+
         self.load_default_context()
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser().permissions['global']
+
+        extern_name = auth_rhodecode.RhodeCodeAuthPlugin.uid
+        extern_type = auth_rhodecode.RhodeCodeAuthPlugin.uid
 
         register_form = RegisterForm(self.request.translate)()
         try:
 
             form_result = register_form.to_python(self.request.POST)
             form_result['active'] = auto_active
+            external_identity = self.request.POST.get('external_identity')
+
+            if external_identity:
+                extern_name = external_identity
+                extern_type = external_identity
 
             if captcha.active:
                 captcha_status, captcha_message = self.validate_captcha(
@@ -295,10 +305,16 @@ class LoginView(BaseAppView):
                     raise formencode.Invalid(
                         _msg, _value, None, error_dict=error_dict)
 
-            new_user = UserModel().create_registration(form_result)
+            new_user = UserModel().create_registration(
+                form_result, extern_name=extern_name, extern_type=extern_type)
 
             action_data = {'data': new_user.get_api_data(),
                            'user_agent': self.request.user_agent}
+
+
+
+            if external_identity:
+                action_data['external_identity'] = external_identity
 
             audit_user = audit_logger.UserWrap(
                 username=new_user.username,

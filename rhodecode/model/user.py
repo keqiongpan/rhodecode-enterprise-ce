@@ -344,8 +344,8 @@ class UserModel(BaseModel):
         new_user.is_new_user = not edit
         # for users that didn's specify auth type, we use RhodeCode built in
         from rhodecode.authentication.plugins import auth_rhodecode
-        extern_name = extern_name or auth_rhodecode.RhodeCodeAuthPlugin.name
-        extern_type = extern_type or auth_rhodecode.RhodeCodeAuthPlugin.name
+        extern_name = extern_name or auth_rhodecode.RhodeCodeAuthPlugin.uid
+        extern_type = extern_type or auth_rhodecode.RhodeCodeAuthPlugin.uid
 
         try:
             new_user.username = username
@@ -392,14 +392,15 @@ class UserModel(BaseModel):
             log.error(traceback.format_exc())
             raise
 
-    def create_registration(self, form_data):
+    def create_registration(self, form_data,
+                            extern_name='rhodecode', extern_type='rhodecode'):
         from rhodecode.model.notification import NotificationModel
         from rhodecode.model.notification import EmailNotificationModel
 
         try:
             form_data['admin'] = False
-            form_data['extern_name'] = 'rhodecode'
-            form_data['extern_type'] = 'rhodecode'
+            form_data['extern_name'] = extern_name
+            form_data['extern_type'] = extern_type
             new_user = self.create(form_data)
 
             self.sa.add(new_user)
