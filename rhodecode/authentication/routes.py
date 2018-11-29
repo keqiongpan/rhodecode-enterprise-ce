@@ -88,15 +88,15 @@ class AuthnRootResource(AuthnResourceBase):
         # TODO: Store this info in the resource element.
         return self._resource_name_map[resource_name]
 
-    def get_sorted_list(self):
+    def get_sorted_list(self, sort_key=None):
         """
         Returns a sorted list of sub resources for displaying purposes.
         """
-        def sort_key(resource):
+        def default_sort_key(resource):
             return str.lower(safe_str(resource.display_name))
 
         active = [item for item in self]
-        return sorted(active, key=sort_key)
+        return sorted(active, key=sort_key or default_sort_key)
 
     def get_nav_list(self, sort=True):
         """

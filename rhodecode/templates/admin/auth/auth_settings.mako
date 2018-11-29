@@ -29,7 +29,7 @@
 
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          % for item in resource.get_root().get_nav_list(sort=False):
+          % for item in resource.get_root().get_nav_list():
             <li ${'class=active' if item == resource else ''}>
               <a href="${request.resource_path(item, route_name='auth_home')}">${item.display_name}</a>
             </li>

@@ -45,7 +45,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "external_test"
+        return u"external_test"
 
     def settings(self):
         settings = [
