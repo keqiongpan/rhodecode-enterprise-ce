@@ -50,8 +50,8 @@ from rhodecode.lib.vcs.exceptions import (
 log = logging.getLogger(__name__)
 
 
-FILEMODE_DEFAULT = 0100644
-FILEMODE_EXECUTABLE = 0100755
+FILEMODE_DEFAULT = 0o100644
+FILEMODE_EXECUTABLE = 0o100755
 
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
 MergeResponse = collections.namedtuple(
@@ -209,7 +209,7 @@ class BaseRepository(object):
     def get_create_shadow_cache_pr_path(self, db_repo):
         path = db_repo.cached_diffs_dir
         if not os.path.exists(path):
-            os.makedirs(path, 0755)
+            os.makedirs(path, 0o755)
         return path
 
     @classmethod
@@ -1046,7 +1046,7 @@ class BaseCommit(object):
                 ('tags', ','.join(self.tags)),
             ]
             meta = ["%s:%s" % (f_name, value) for f_name, value in metadata]
-            file_info.append(('.archival.txt', 0644, False, '\n'.join(meta)))
+            file_info.append(('.archival.txt', 0o644, False, '\n'.join(meta)))
 
         connection.Hg.archive_repo(file_path, mtime, file_info, kind)
 

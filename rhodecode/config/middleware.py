@@ -476,7 +476,7 @@ def _sanitize_cache_settings(settings):
 
     # ensure we have our dir created
     if not os.path.isdir(default_cache_dir):
-        os.makedirs(default_cache_dir, mode=0755)
+        os.makedirs(default_cache_dir, mode=0o755)
 
     # exception store cache
     _string_setting(

@@ -181,7 +181,7 @@ class RepoGroupModel(BaseModel):
         self.check_exist_filesystem(group_name)
         create_path = os.path.join(self.repos_path, group_name)
         log.debug('creating new group in %s', create_path)
-        os.makedirs(create_path, mode=0755)
+        os.makedirs(create_path, mode=0o755)
         log.debug('created group in %s', create_path)
 
     def _rename_group(self, old, new):

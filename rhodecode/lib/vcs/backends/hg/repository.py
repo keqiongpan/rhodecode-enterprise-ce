@@ -355,7 +355,7 @@ class MercurialRepository(BaseRepository):
             create = False
 
         if create:
-            os.makedirs(self.path, mode=0755)
+            os.makedirs(self.path, mode=0o755)
 
         self._remote.localrepository(create)
 
