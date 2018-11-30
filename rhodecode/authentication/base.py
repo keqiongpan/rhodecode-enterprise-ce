@@ -119,7 +119,7 @@ class RhodeCodeAuthPluginBase(object):
         "active":
             'True|False defines active state of user internally for RhodeCode',
         "active_from_extern":
-            "True|False\None, active state from the external auth, "
+            "True|False|None, active state from the external auth, "
             "None means use definition from RhodeCode extern_type active value"
 
     }
