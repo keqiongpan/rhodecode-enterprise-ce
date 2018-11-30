@@ -166,7 +166,7 @@ To add custom hooks to your instance, use the following steps:
    ``pretxnchangegroup.example`` with value ``python:/path/to/custom_hook.py:my_func_name``
 3. Select :guilabel:`Save`
 
-Also, see the |RC| Extensions section of the :ref:`rc-tools` guide. |RC|
+Also, see the RhodeCode Extensions section of the :ref:`rc-tools` guide. RhodeCode
 Extensions can be used to add additional hooks to your instance and comes
 with a number of pre-built plugins if you chose to install them.
 

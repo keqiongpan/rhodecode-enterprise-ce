@@ -3,19 +3,19 @@
 Getting Started with VCS
 ------------------------
 
-When using |RCM|, you will be working with |git|, |svn| or |hg| |repos| from the
+When using |RCE|, you will be working with |git|, |svn| or |hg| |repos| from the
 command line or using a GUI client such as Tortoise, Tower or SourceTree.
 
-|RCM| uses a standard |git|, |svn| and |hg| protocols. So all tools that
+|RCE| uses a standard |git|, |svn| and |hg| protocols. So all tools that
 can interact with there protocols are supported, including Eclipse or PyCharm
 plugins.
 
 
 If you have never used either before, the following information should
 help you set up your local machine so that you can sync changes with the
-|RCM| server.
+|RCE| server.
 
-All of the following instructions assume you have a |RCM| account,
+All of the following instructions assume you have a |RCE| account,
 and you can access your |repos| from the web interface.
 
 .. note::

@@ -5,8 +5,24 @@ Supported Databases
 
 .. important::
 
-   We do not recommend using SQLite in a production environment. It is
-   supported by |RCE| for evaluation purposes.
+   We do not recommend using SQLite in a production environment of more than 5 people.
+   It is not suited for higher usage and mayb cause problems.
+
+
+|RCE| supports the following databases. The recommended encoding is UTF-8.
+
+.. only:: latex
+
+   * :ref:`install-sqlite-database`
+   * :ref:`install-mysql-database`
+   * :ref:`install-postgresql-database`
+
+.. toctree::
+
+   using-mysql
+   using-postgresql
+   using-sqllite
+
 
 Database Overview
 -----------------
@@ -48,21 +64,3 @@ following example to configure the correct one.
      # for the RCE instance you are installing
      Database name: example-db-name-for-2xx # The 2xx version database
      Database name: example-db-name-for-3xx # The 3xx version database
-
-Supported Databases
--------------------
-
-|RCM| supports the following databases. The recommended encoding is Unicode
-UTF-8.
-
-.. only:: latex
-
-   * :ref:`install-sqlite-database`
-   * :ref:`install-mysql-database`
-   * :ref:`install-postgresql-database`
-
-.. toctree::
-
-   using-mysql
-   using-postgresql
-   using-sqllite

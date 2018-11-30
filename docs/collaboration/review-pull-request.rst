@@ -20,7 +20,7 @@ To review a pull request, use the following steps:
 4. Select Comment
 
 When the |pr| is approved by all reviewers you will be able to merge
-automatically if |RCM| detects that it can do so safely. You will see this
+automatically if |RCE| detects that it can do so safely. You will see this
 message: `This pull request can be automatically merged.`
 
 If rejected, you can fix the issues raised during review and then update the

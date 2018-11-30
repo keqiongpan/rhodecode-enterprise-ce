@@ -97,6 +97,18 @@
                 ${h.end_form()}
               </div>
             </div>
+
+% if request.GET.get('schema'):
+## this is for development and creation of example configurations for documentation
+<pre>
+    % for node in plugin.get_settings_schema():
+    *option*: `${node.name}` => `${defaults.get(node.name)}`${'\n    # '.join(['']+node.description.splitlines())}
+
+    % endfor
+</pre>
+
+% endif
+
           </div>
         </div>
       </div>
@@ -104,8 +116,7 @@
     </div>
   </div>
 
-## TODO: Ugly hack to get ldap select elements to work.
-##       Find a solution to integrate this nicely.
+
 <script>
 $(document).ready(function() {
   var select2Options = {

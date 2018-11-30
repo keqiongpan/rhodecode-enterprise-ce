@@ -44,10 +44,10 @@ following example:
 Installing |RCT|
 ^^^^^^^^^^^^^^^^
 
-|RCT| enable you to automate many of the most common |RCM| functions through
+|RCT| enable you to automate many of the most common |RCE| functions through
 the API. Installing them on a local machine lets you carry out maintenance on
 the server remotely. Once installed you can use them to index your |repos|
-to setup full-text search, strip commits, or install |RC| Extensions for
+to setup full-text search, strip commits, or install RhodeCode Extensions for
 additional functionality.
 
 For more detailed instructions about using |RCT| for indexing and full-text

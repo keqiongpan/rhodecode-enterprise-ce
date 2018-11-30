@@ -16,7 +16,7 @@ rhodecode-tools
 ---------------
 
 Use |RCT| to setup automation, run the indexer, and install extensions for
-your |RCM| instances. Options:
+your |RCE| instances. Options:
 
 .. rst-class:: dl-horizontal
 
@@ -49,7 +49,7 @@ Example usage:
 rhodecode-api
 -------------
 
-The |RC| API lets you connect to |RCE| and carry out management tasks from a
+The RhodeCode API lets you connect to |RCE| and carry out management tasks from a
 remote machine, for more information about the API, see the :ref:`api`. To
 pass arguments on the command-line use the ``method:option`` syntax.
 
@@ -117,7 +117,7 @@ Options:
 rhodecode-cleanup-gists
 -----------------------
 
-Use this to delete gists within |RCM|. Options:
+Use this to delete gists within |RCE|. Options:
 
 .. rst-class:: dl-horizontal
 
@@ -166,7 +166,7 @@ Example usage:
 rhodecode-cleanup-repos
 -----------------------
 
-Use this to manage |repos| and |repo| groups within |RCM|. Options:
+Use this to manage |repos| and |repo| groups within |RCE|. Options:
 
 .. rst-class:: dl-horizontal
 
@@ -280,7 +280,7 @@ the using :ref:`integrations-rcextensions` section.
 rhodecode-gist
 --------------
 
-Use this to create, list, show, or delete gists within |RCM|. Options:
+Use this to create, list, show, or delete gists within |RCE|. Options:
 
 .. rst-class:: dl-horizontal
 

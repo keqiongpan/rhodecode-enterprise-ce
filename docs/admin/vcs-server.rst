@@ -3,13 +3,13 @@
 VCS Server Management
 ---------------------
 
-The VCS Server handles |RCM| backend functionality. You need to configure
-a VCS Server to run with a |RCM| instance. If you do not, you will be missing
-the connection between |RCM| and its |repos|. This will cause error messages
+The VCS Server handles |RCE| backend functionality. You need to configure
+a VCS Server to run with a |RCE| instance. If you do not, you will be missing
+the connection between |RCE| and its |repos|. This will cause error messages
 on the web interface. You can run your setup in the following configurations,
 currently the best performance is one of following:
 
-* One VCS Server per |RCM| instance.
+* One VCS Server per |RCE| instance.
 * One VCS Server handling multiple instances.
 
 .. important::
@@ -49,7 +49,7 @@ To configure a |RCE| instance to use a VCS server, see
 |RCE| VCS Server Options
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following list shows the available options on the |RCM| side of the
+The following list shows the available options on the |RCE| side of the
 connection to the VCS Server. The settings are configured per
 instance in the
 :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
@@ -75,7 +75,7 @@ instance in the
 
     \vcs.server <host:port>
         Set the host, either hostname or IP Address, and port of the VCS server
-        you wish to run with your |RCM| instance.
+        you wish to run with your |RCE| instance.
 
 .. code-block:: ini
 

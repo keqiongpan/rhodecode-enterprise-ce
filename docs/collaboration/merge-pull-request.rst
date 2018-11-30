@@ -3,7 +3,7 @@
 Merge a |pr|
 ------------
 
-|RCM| can detect if it can automatically merge the changes in a |pr|. If it
+|RCE| can detect if it can automatically merge the changes in a |pr|. If it
 can, you will see the following message:
 :guilabel:`This pull request can be automatically merged.` To merge,
 click the big blue button! To enable this feature, see :ref:`server-side-merge`.
@@ -21,7 +21,7 @@ messages:
 Manual Merge a |PR|
 ^^^^^^^^^^^^^^^^^^^
 
-If |RCM| cannot safely merge the changes in a |pr|,
+If |RCE| cannot safely merge the changes in a |pr|,
 usually due to conflicts, you need to manually merge the changes on the
 command line. You can see more information for each |repo| type at the
 following links:

@@ -1,7 +1,7 @@
 |RCE| 3.0.0 |RNS|
 -----------------
 
-As |RCM| 3.0 is a big release, the release notes have been split into the following sections:
+As |RCE| 3.0 is a big release, the release notes have been split into the following sections:
 
 * :ref:`general-rn-ref`
 * :ref:`security-rn-ref`

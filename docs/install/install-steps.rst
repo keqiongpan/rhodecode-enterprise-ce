@@ -4,7 +4,7 @@ Post Installation Tasks
 =======================
 
 The following tasks are the most common post installation requirements. Use
-the information in these sections to configure your instance of |RCM|.
+the information in these sections to configure your instance of |RCE|.
 
 .. toctree::
 

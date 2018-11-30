@@ -3,7 +3,7 @@
 User Administration
 ===================
 
-|RCM| enables you to define permissions for the following entities within the
+|RCE| enables you to define permissions for the following entities within the
 system; **users**, **user groups**, **repositories**, **repository groups**.
 
 Within each one of these entities you can set default settings,

@@ -249,7 +249,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         colander.Int(),
         default=389,
         description=_('Custom port that the LDAP server is listening on. '
-                      'Default value is: 389'),
+                      'Default value is: 389, use 689 for LDAPS(SSL)'),
         preparer=strip_whitespace,
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),

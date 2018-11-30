@@ -3,7 +3,7 @@
 Full-text Search
 ----------------
 
-By default |RC| is configured to use `Whoosh`_ to index |repos| and
+By default RhodeCode is configured to use `Whoosh`_ to index |repos| and
 provide full-text search.
 
 |RCE| also provides support for `Elasticsearch`_ as a backend for scalable
@@ -46,7 +46,7 @@ Configure the ``.rhoderc`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 |RCT| uses the :file:`/home/{user}/.rhoderc` file for connection details
-to |RCM| instances. If this file is not automatically created,
+to |RCE| instances. If this file is not automatically created,
 you can configure it using the following example. You need to configure the
 details for each instance you want to index.
 
@@ -62,7 +62,7 @@ details for each instance you want to index.
      - VERSION: 1.5.0
      - URL: http://127.0.0.1:10000
 
-To get your API Token, on the |RCM| interface go to
+To get your API Token, on the |RCE| interface go to
 :menuselection:`username --> My Account --> Auth tokens`
 
 .. code-block:: ini

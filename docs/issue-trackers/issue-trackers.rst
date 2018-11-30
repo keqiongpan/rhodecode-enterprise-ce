@@ -9,7 +9,7 @@ You can set an issue tracker connection in two ways with |RCE|.
 * At the |repo| level, you can configure an integration with a different issue
   tracker.
 
-To integrate |RCM| with an issue tracker, you need to define a regular
+To integrate |RCE| with an issue tracker, you need to define a regular
 expression that will fetch the issue ID stored in commit messages, and replace
 it with a URL. This enables |RCE| to generate a link matching each issue to the
 target |repo|.

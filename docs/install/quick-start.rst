@@ -27,8 +27,11 @@ To get |RCE| up and running, run through the below steps:
 
 .. code-block:: bash
 
-    $ chmod 755 RhodeCode-installer-linux-*
+    $ chmod +x RhodeCode-installer-linux-*
     $ ./RhodeCode-installer-linux-*
+
+    Do you accept the RhodeCode Control license?
+    Press [Y] to accept license and [V] to view license text: y
 
 3. Install a VCS Server, and configure it to start at boot.
 

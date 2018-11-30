@@ -4,29 +4,31 @@ Authentication Options
 ======================
 
 |RCE| provides a built in authentication against its own database. This is
-implemented using ``rhodecode.lib.auth_rhodecode`` plugin. This plugin is
-enabled by default.
+implemented using ``RhodeCode Internal`` plugin. This plugin is enabled by default.
 Additionally, |RCE| provides a Pluggable Authentication System. This gives the
 administrator greater control over how users authenticate with the system.
 
 .. important::
 
-  You can disable the built in |RCM| authentication plugin
-  ``rhodecode.lib.auth_rhodecode`` and force all authentication to go
+  You can disable the built in |RCE| authentication plugin
+  ``RhodeCode Internal`` and force all authentication to go
   through your authentication plugin of choice e.g LDAP only.
   However, if you do this, and your external authentication tools fails,
-  you will be unable to access |RCM|.
+  accessing |RCE| will be blocked unless a fallback plugin is
+  enabled via :file: rhodecode.ini
 
-|RCM| comes with the following user authentication management plugins:
+
+|RCE| comes with the following user authentication management plugins:
 
 
 .. toctree::
 
+    auth-token
     auth-ldap
     auth-ldap-groups
+    auth-saml-generic
+    auth-saml-onelogin
+    auth-saml-duosecurity
     auth-crowd
     auth-pam
-    auth-token
     ssh-connection
-
-

@@ -4,7 +4,7 @@ Using Notifications
 -------------------
 
 To notify users of items that require their attention you can use the mention
-function. The mention function allows you to use ``@username`` within |RCM|.
+function. The mention function allows you to use ``@username`` within |RCE|.
 The notification function can be used within the following
 items to highlight their need for attention:
   
