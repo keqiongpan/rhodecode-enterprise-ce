@@ -48,7 +48,7 @@
           <div class="panel-body">
 
 
-              <div class="label">${_("Ordered Enabled Plugins")}</div>
+              <div class="label">${_("Ordered Activated Plugins")}</div>
               <div class="textarea text-area editor">
                   ${h.textarea('auth_plugins',cols=120,rows=20,class_="medium")}
               </div>
@@ -64,11 +64,12 @@
                   <th>${_('Plugin Name')}</th>
                   <th>${_('Documentation')}</th>
                   <th>${_('Plugin ID')}</th>
+                  <th>${_('Enabled')}</th>
                   %for plugin in available_plugins:
                       <tr>
                           <td>
                             <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
-                              ${_('enabled') if plugin.get_id() in enabled_plugins else _('disabled')}
+                              ${_('activated') if plugin.get_id() in enabled_plugins else _('not active')}
                             </span>
                           </td>
                           <td>${plugin.get_display_name()}</td>
@@ -78,6 +79,7 @@
                               % endif
                           </td>
                           <td>${plugin.get_id()}</td>
+                          <td>${plugin.is_active()}</td>
                       </tr>
                   %endfor
               </table>
@@ -109,7 +111,7 @@
       elems.splice(elems.indexOf(plugin_id), 1);
       auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).removeClass('btn-success');
-      cur_button.innerHTML = _gettext('disabled');
+      cur_button.innerHTML = _gettext('not active');
     }
     else{
       if(elems.indexOf(plugin_id) == -1){
@@ -117,7 +119,7 @@
       }
       auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).addClass('btn-success');
-      cur_button.innerHTML = _gettext('enabled');
+      cur_button.innerHTML = _gettext('activated');
     }
   });
 </script>
