@@ -53,7 +53,7 @@ class LdapError(Exception):
     pass
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -142,7 +142,7 @@ class AuthLdap(AuthLdapBase):
             ldap_conn.start_tls_s()
 
         if self.LDAP_BIND_DN and self.LDAP_BIND_PASS:
-            log.debug('Trying simple_bind with password and given login DN: %s',
+            log.debug('Trying simple_bind with password and given login DN: %r',
                       self.LDAP_BIND_DN)
             ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
 
@@ -150,7 +150,7 @@ class AuthLdap(AuthLdapBase):
 
     def fetch_attrs_from_simple_bind(self, server, dn, username, password):
         try:
-            log.debug('Trying simple bind with %s', dn)
+            log.debug('Trying simple bind with %r', dn)
             server.simple_bind_s(dn, safe_str(password))
             user = server.search_ext_s(
                 dn, ldap.SCOPE_BASE, '(objectClass=*)', )[0]
@@ -502,6 +502,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             extern_type = getattr(userobj, 'extern_type', '')
 
             groups = []
+
             user_attrs = {
                 'username': username,
                 'firstname': safe_unicode(get_ldap_attr('attr_firstname') or firstname),
