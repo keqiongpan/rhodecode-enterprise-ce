@@ -89,6 +89,10 @@ def make_pyramid_app(global_config, **settings):
     # will be replaced by the value of the environment variable "NAME" in this case.
     start_time = time.time()
 
+    debug = asbool(global_config.get('debug'))
+    if debug:
+        enable_debug()
+
     environ = {'ENV_{}'.format(key): value for key, value in os.environ.items()}
 
     global_config = _substitute_values(global_config, environ)
@@ -118,6 +122,7 @@ def make_pyramid_app(global_config, **settings):
     total_time = time.time() - start_time
     log.info('Pyramid app `%s` created and configured in %.2fs',
              pyramid_app.func_name, total_time)
+
     return pyramid_app
 
 
@@ -430,6 +435,114 @@ def sanitize_settings_and_apply_defaults(settings):
     config_utils.set_instance_id(settings)
 
     return settings
+
+
+def enable_debug():
+    """
+    Helper to enable debug on running instance
+    :return:
+    """
+    import tempfile
+    import textwrap
+    import logging.config
+
+    ini_template = textwrap.dedent("""
+    #####################################
+    ### DEBUG LOGGING CONFIGURATION  ####
+    #####################################
+    [loggers]
+    keys = root, sqlalchemy, beaker, celery, rhodecode, ssh_wrapper
+
+    [handlers]
+    keys = console, console_sql
+
+    [formatters]
+    keys = generic, color_formatter, color_formatter_sql
+
+    #############
+    ## LOGGERS ##
+    #############
+    [logger_root]
+    level = NOTSET
+    handlers = console
+
+    [logger_sqlalchemy]
+    level = INFO
+    handlers = console_sql
+    qualname = sqlalchemy.engine
+    propagate = 0
+
+    [logger_beaker]
+    level = DEBUG
+    handlers =
+    qualname = beaker.container
+    propagate = 1
+
+    [logger_rhodecode]
+    level = DEBUG
+    handlers =
+    qualname = rhodecode
+    propagate = 1
+
+    [logger_ssh_wrapper]
+    level = DEBUG
+    handlers =
+    qualname = ssh_wrapper
+    propagate = 1
+
+    [logger_celery]
+    level = DEBUG
+    handlers =
+    qualname = celery
+
+
+    ##############
+    ## HANDLERS ##
+    ##############
+
+    [handler_console]
+    class = StreamHandler
+    args = (sys.stderr, )
+    level = DEBUG
+    formatter = color_formatter
+
+    [handler_console_sql]
+    # "level = DEBUG" logs SQL queries and results.
+    # "level = INFO" logs SQL queries.
+    # "level = WARN" logs neither.  (Recommended for production systems.)
+    class = StreamHandler
+    args = (sys.stderr, )
+    level = WARN
+    formatter = color_formatter_sql
+
+    ################
+    ## FORMATTERS ##
+    ################
+
+    [formatter_generic]
+    class = rhodecode.lib.logging_formatter.ExceptionAwareFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s | %(req_id)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter]
+    class = rhodecode.lib.logging_formatter.ColorRequestTrackingFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s | %(req_id)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter_sql]
+    class = rhodecode.lib.logging_formatter.ColorFormatterSql
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
+    datefmt = %Y-%m-%d %H:%M:%S    
+    """)
+
+    with tempfile.NamedTemporaryFile(prefix='rc_debug_logging_', suffix='.ini',
+                                     delete=False) as f:
+        log.info('Saved Temporary DEBUG config at %s', f.name)
+        f.write(ini_template)
+
+    logging.config.fileConfig(f.name)
+    log.debug('DEBUG MODE ON')
+    os.remove(f.name)
 
 
 def _sanitize_appenlight_settings(settings):
