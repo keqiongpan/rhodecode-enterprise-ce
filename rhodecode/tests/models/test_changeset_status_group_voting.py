@@ -46,7 +46,7 @@ class ReviewerMock(object):
 class MemberMock(object):
     def __init__(self, reviewer_def):
         self.reviewer_def = reviewer_def
-        self.user_id = random.randint(1, 1024)
+        self.user_id = random.randint(1, 1024*1024)
 
 
 class Statuses(object):
