@@ -36,7 +36,7 @@ self: super: {
     };
   };
   "appenlight-client" = super.buildPythonPackage {
-    name = "appenlight-client-0.6.25";
+    name = "appenlight-client-0.6.26";
     doCheck = false;
     propagatedBuildInputs = [
       self."webob"
@@ -44,8 +44,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/fa/44/2911ef85ea4f4fe65058fd22959d8dad598fab6a3c84e5bcb569d15c8783/appenlight_client-0.6.25.tar.gz";
-      sha256 = "1r9l2rfg677nxhamdbyb9y4fs1zgy2dy1p19c68fnvqkxz40y627";
+      url = "https://files.pythonhosted.org/packages/2e/56/418fc10379b96e795ee39a15e69a730c222818af04c3821fa354eaa859ec/appenlight_client-0.6.26.tar.gz";
+      sha256 = "0s9xw3sb8s3pk73k78nnq4jil3q4mk6bczfa1fmgfx61kdxl2712";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

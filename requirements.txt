@@ -126,7 +126,7 @@ ipython==5.1.0
 https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.0.1.tar.gz?md5=ffb5d6bcb855305b93cfe23ad42e500b#egg=rhodecode-tools==1.0.1
 
 ## appenlight
-appenlight-client==0.6.25
+appenlight-client==0.6.26
 
 ## test related requirements
 -r requirements_test.txt
