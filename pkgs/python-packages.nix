@@ -1165,15 +1165,15 @@ self: super: {
     };
   };
   "py-gfm" = super.buildPythonPackage {
-    name = "py-gfm-0.1.3";
+    name = "py-gfm-0.1.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."setuptools"
       self."markdown"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/12/e4/6b3d8678da04f97d7490d8264d8de51c2dc9fb91209ccee9c515c95e14c5/py-gfm-0.1.3.tar.gz";
-      sha256 = "162ggwwj0af9g3s1k8m4bfwbvis03x9pinnf35mj79pb90rf81zi";
+      url = "https://files.pythonhosted.org/packages/06/ee/004a03a1d92bb386dae44f6dd087db541bc5093374f1637d4d4ae5596cc2/py-gfm-0.1.4.tar.gz";
+      sha256 = "0zip06g2isivx8fzgqd4n9qzsa22c25jas1rsb7m2rnjg72m0rzg";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

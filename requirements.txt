@@ -71,7 +71,7 @@ python-saml
 pytz==2018.4
 tzlocal==1.5.1
 pyzmq==14.6.0
-py-gfm==0.1.3
+py-gfm==0.1.4
 redis==2.10.6
 repoze.lru==0.7
 requests==2.9.1
