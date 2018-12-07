@@ -7,18 +7,20 @@ About
 
 ``RhodeCode`` is a fast and powerful management tool for Mercurial_ and GIT_
 and Subversion_ with a built in push/pull server, full text search,
-pull requests and powerful code-review system. It works on http/https and
+pull requests and powerful code-review system. It works on http/https, SSH and
 has a few unique features like:
 
- - plugable architecture
- - advanced permission system with IP restrictions
- - rich set of authentication plugins including LDAP,
-   ActiveDirectory, Atlassian Crowd, Http-Headers, Pam, Token-Auth.
- - live code-review chat
- - full web based file editing
- - unified multi vcs support
- - snippets (gist) system
- - integration with all 3rd party issue trackers
+- plugable architecture from Pyramid web-framework.
+- advanced permission system with IP restrictions, inheritation, and user-groups.
+- rich set of authentication plugins including LDAP, ActiveDirectory, SAML 2.0,
+  Atlassian Crowd, Http-Headers, Pam, Token-Auth, OAuth.
+- live code-review chat, and reviewer rules.
+- full web based file editing.
+- unified multi vcs support.
+- snippets (gist) system.
+- integration framework for Slack, CI systems, Webhooks.
+- integration with all 3rd party issue trackers.
+
 
 RhodeCode also provides rich API, and multiple event hooks so it's easy
 integrable with existing external systems.
