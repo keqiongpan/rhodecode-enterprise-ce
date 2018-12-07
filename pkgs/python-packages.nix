@@ -146,15 +146,15 @@ self: super: {
     };
   };
   "bleach" = super.buildPythonPackage {
-    name = "bleach-2.1.4";
+    name = "bleach-3.0.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
-      self."html5lib"
+      self."webencodings"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7a/b7/fa555afb61462b030abaf9ed1479b8ea031510f58c7706b06113be9f82ea/bleach-2.1.4.tar.gz";
-      sha256 = "1n337zbdml6z6zia0b1qgv6xiddx3qlwmcg9vk2mk60jcxhmzs8f";
+      url = "https://files.pythonhosted.org/packages/ae/31/680afc7d44040004296a2d8f0584983c2f2386448cd9d0964197e6c1160e/bleach-3.0.2.tar.gz";
+      sha256 = "06474zg7f73hv8h1xw2wcsmvn2ygj73zxgxxqg8zcx8ap1srdls8";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -568,21 +568,6 @@ self: super: {
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/47/52/68ba8e5e8ba251e54006a49441f7ccabca83b6bef5aedacb4890596c7911/gunicorn-19.9.0.tar.gz";
       sha256 = "1wzlf4xmn6qjirh5w81l6i6kqjnab1n1qqkh7zsj1yb6gh4n49ps";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  "html5lib" = super.buildPythonPackage {
-    name = "html5lib-1.0.1";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."six"
-      self."webencodings"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/85/3e/cf449cf1b5004e87510b9368e7a5f1acd8831c2d6691edd3c62a0823f98f/html5lib-1.0.1.tar.gz";
-      sha256 = "0dipzfrycv6j1jw82v9b7d8lzggx3x8xngx6l4xrqkxwvg7hvjv6";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1696,6 +1681,7 @@ self: super: {
       self."attrs"
       self."babel"
       self."beaker"
+      self."bleach"
       self."celery"
       self."chameleon"
       self."channelstream"
@@ -1784,7 +1770,6 @@ self: super: {
       self."zope.event"
       self."zope.interface"
       self."nbconvert"
-      self."bleach"
       self."nbformat"
       self."jupyter-client"
       self."alembic"
