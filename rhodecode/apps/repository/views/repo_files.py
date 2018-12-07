@@ -663,7 +663,7 @@ class RepoFilesView(RepoAppView):
             pass
 
         if is_file:
-            history = commit.get_file_history(f_path)
+            history = commit.get_path_history(f_path)
             prev_commit_id = history[1].raw_id \
                 if len(history) > 1 else prev_commit_id
         prev_url = h.route_path(
@@ -897,10 +897,10 @@ class RepoFilesView(RepoAppView):
         if commits is None:
             pre_load = ["author", "branch"]
             try:
-                commits = tip.get_file_history(f_path, pre_load=pre_load)
+                commits = tip.get_path_history(f_path, pre_load=pre_load)
             except (NodeDoesNotExistError, CommitError):
                 # this node is not present at tip!
-                commits = commit_obj.get_file_history(f_path, pre_load=pre_load)
+                commits = commit_obj.get_path_history(f_path, pre_load=pre_load)
 
         history = []
         commits_group = ([], _("Changesets"))

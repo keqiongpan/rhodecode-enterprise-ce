@@ -298,7 +298,7 @@ class GitCommit(base.BaseCommit):
         id_, _ = self._get_id_for_path(path)
         return self._remote.blob_raw_length(id_)
 
-    def get_file_history(self, path, limit=None, pre_load=None):
+    def get_path_history(self, path, limit=None, pre_load=None):
         """
         Returns history of file as reversed list of `GitCommit` objects for
         which file at given `path` has been modified.
@@ -316,21 +316,6 @@ class GitCommit(base.BaseCommit):
 
         output, __ = self.repository.run_git_command(cmd)
         commit_ids = re.findall(r'[0-9a-fA-F]{40}', output)
-
-        return [
-            self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
-            for commit_id in commit_ids]
-
-    # TODO: unused for now potential replacement for subprocess
-    def get_file_history_2(self, path, limit=None, pre_load=None):
-        """
-        Returns history of file as reversed list of `Commit` objects for
-        which file at given `path` has been modified.
-        """
-        self._get_filectx(path)
-        f_path = safe_str(path)
-
-        commit_ids = self._remote.get_file_history(f_path, self.id, limit)
 
         return [
             self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)

@@ -211,7 +211,7 @@ class RepoChangelogView(RepoAppView):
                 base_commit = self.rhodecode_vcs_repo.get_commit(commit_id)
 
                 try:
-                    collection = base_commit.get_file_history(
+                    collection = base_commit.get_path_history(
                         f_path, limit=hist_limit, pre_load=pre_load)
                     if collection and partial_xhr:
                         # for ajax call we remove first one since we're looking
@@ -221,7 +221,7 @@ class RepoChangelogView(RepoAppView):
                     # this node is not present at tip!
                     try:
                         commit = self._get_commit_or_redirect(commit_id)
-                        collection = commit.get_file_history(f_path)
+                        collection = commit.get_path_history(f_path)
                     except RepositoryError as e:
                         h.flash(safe_str(e), category='warning')
                         redirect_url = h.route_path(
@@ -315,7 +315,7 @@ class RepoChangelogView(RepoAppView):
                 raise HTTPFound(
                     h.route_path('repo_changelog', repo_name=self.db_repo_name))
 
-            collection = base_commit.get_file_history(
+            collection = base_commit.get_path_history(
                 f_path, limit=hist_limit, pre_load=pre_load)
             collection = list(reversed(collection))
         else:

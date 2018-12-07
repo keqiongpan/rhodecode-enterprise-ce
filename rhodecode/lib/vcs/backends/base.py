@@ -942,13 +942,13 @@ class BaseCommit(object):
         """
         raise NotImplementedError
 
-    def get_file_commit(self, path, pre_load=None):
+    def get_path_commit(self, path, pre_load=None):
         """
         Returns last commit of the file at the given `path`.
 
         :param pre_load: Optional. List of commit attributes to load.
         """
-        commits = self.get_file_history(path, limit=1, pre_load=pre_load)
+        commits = self.get_path_history(path, limit=1, pre_load=pre_load)
         if not commits:
             raise RepositoryError(
                 'Failed to fetch history for path {}. '
@@ -956,7 +956,7 @@ class BaseCommit(object):
                     path))
         return commits[0]
 
-    def get_file_history(self, path, limit=None, pre_load=None):
+    def get_path_history(self, path, limit=None, pre_load=None):
         """
         Returns history of file as reversed list of :class:`BaseCommit`
         objects for which file at given `path` has been modified.
@@ -1194,8 +1194,8 @@ class BaseCommit(object):
         self.idx = value
 
     def get_file_changeset(self, path):
-        warnings.warn("Use get_file_commit instead", DeprecationWarning)
-        return self.get_file_commit(path)
+        warnings.warn("Use get_path_commit instead", DeprecationWarning)
+        return self.get_path_commit(path)
 
 
 class BaseChangesetClass(type):
@@ -1502,7 +1502,7 @@ class EmptyCommit(BaseCommit):
     def id(self):
         return self.raw_id
 
-    def get_file_commit(self, path):
+    def get_path_commit(self, path):
         return self
 
     def get_file_content(self, path):
