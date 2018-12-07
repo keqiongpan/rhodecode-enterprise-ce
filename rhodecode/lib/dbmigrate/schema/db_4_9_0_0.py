@@ -41,7 +41,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.sql.expression import true
-from sqlalchemy.sql.functions import coalesce, count  # noqa
+from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
 

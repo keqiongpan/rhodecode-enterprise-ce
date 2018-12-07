@@ -264,7 +264,7 @@ class WhooshResultWrapper(object):
         # inside hit object, and we don't need all
         res = dict(hit)
 
-        f_path = ''  # noqa
+        f_path = ''  # pragma: no cover
         if self.search_type in ['content', 'path']:
             f_path = res['path'][len(res['repository']):]
             f_path = f_path.lstrip(os.sep)

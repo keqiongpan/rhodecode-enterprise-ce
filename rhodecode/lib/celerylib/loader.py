@@ -33,7 +33,7 @@ import importlib
 from celery import Celery
 from celery import signals
 from celery import Task
-from celery import exceptions  # noqa
+from celery import exceptions  # pragma: no cover
 from kombu.serialization import register
 from pyramid.threadlocal import get_current_request
 

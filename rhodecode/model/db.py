@@ -40,12 +40,12 @@ from sqlalchemy import (
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType)
 from sqlalchemy.sql.expression import true, false
-from sqlalchemy.sql.functions import coalesce, count  # noqa
+from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.exc import IntegrityError  # noqa
+from sqlalchemy.exc import IntegrityError  # pragma: no cover
 from sqlalchemy.dialects.mysql import LONGTEXT
 from zope.cachedescriptors.property import Lazy as LazyProperty
 

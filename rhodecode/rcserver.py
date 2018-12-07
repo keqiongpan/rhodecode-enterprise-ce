@@ -475,11 +475,10 @@ class RcServerCommand(object):
                 msg = ''
             self.out('Exiting%s (-v to see traceback)' % msg)
 
-
     def loadapp(self, app_spec, name, relative_to, **kw):  # pragma: no cover
         return loadapp(app_spec, name=name, relative_to=relative_to, **kw)
 
-    def loadserver(self, server_spec, name, relative_to, **kw):  # pragma:no cover
+    def loadserver(self, server_spec, name, relative_to, **kw):  # pragma: no cover
         return loadserver(
             server_spec, name=name, relative_to=relative_to, **kw)
 
