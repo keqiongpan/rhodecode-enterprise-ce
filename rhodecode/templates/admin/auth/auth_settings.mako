@@ -66,7 +66,7 @@
                   <th>${_('Plugin ID')}</th>
                   <th>${_('Enabled')}</th>
                   %for plugin in available_plugins:
-                      <tr>
+                      <tr class="${'inactive' if (not plugin.is_active() and plugin.get_id() in enabled_plugins) else ''}">
                           <td>
                             <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
                               ${_('activated') if plugin.get_id() in enabled_plugins else _('not active')}
@@ -114,8 +114,8 @@
       cur_button.innerHTML = _gettext('not active');
     }
     else{
-      if(elems.indexOf(plugin_id) == -1){
-        elems.push(plugin_id);
+      if (elems.indexOf(plugin_id) === -1) {
+            elems.push(plugin_id);
       }
       auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).addClass('btn-success');
