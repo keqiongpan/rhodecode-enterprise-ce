@@ -5,11 +5,11 @@
 
 self: super: {
   "alabaster" = super.buildPythonPackage {
-    name = "alabaster-0.7.11";
+    name = "alabaster-0.7.12";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3f/46/9346ea429931d80244ab7f11c4fce83671df0b7ae5a60247a2b588592c46/alabaster-0.7.11.tar.gz";
-      sha256 = "1mvm69xsn5xf1jc45kdq1mn0yq0pfn54mv2jcww4s1vwqx6iyfxn";
+      url = "https://files.pythonhosted.org/packages/cc/b4/ed8dcb0d67d5cfb7f83c4d5463a7614cb1d078ad7ae890c9143edebbf072/alabaster-0.7.12.tar.gz";
+      sha256 = "00nwwjj2d2ym4s2kk217x7jkx1hnczc3fvm8yxbqmsp6b0nxfqd6";
     };
   };
   "babel" = super.buildPythonPackage {
@@ -24,11 +24,11 @@ self: super: {
     };
   };
   "certifi" = super.buildPythonPackage {
-    name = "certifi-2018.8.24";
+    name = "certifi-2018.11.29";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e1/0f/f8d5e939184547b3bdc6128551b831a62832713aa98c2ccdf8c47ecc7f17/certifi-2018.8.24.tar.gz";
-      sha256 = "0f0nhrj9mlrf79iway4578wrsgmjh0fmacl9zv8zjckdy7b90rip";
+      url = "https://files.pythonhosted.org/packages/55/54/3ce77783acba5979ce16674fc98b1920d00b01d337cfaaf5db22543505ed/certifi-2018.11.29.tar.gz";
+      sha256 = "1dvccavd2fzq4j37w0sznylp92ps14zi6gvlxzm23in0yhzciya7";
     };
   };
   "chardet" = super.buildPythonPackage {
@@ -83,31 +83,31 @@ self: super: {
     };
   };
   "packaging" = super.buildPythonPackage {
-    name = "packaging-17.1";
+    name = "packaging-18.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyparsing"
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/77/32/439f47be99809c12ef2da8b60a2c47987786d2c6c9205549dd6ef95df8bd/packaging-17.1.tar.gz";
-      sha256 = "0nrpayk8kij1zm9sjnk38ldz3a6705ggvw8ljylqbrb4vmqbf6gh";
+      url = "https://files.pythonhosted.org/packages/cf/50/1f10d2626df0aa97ce6b62cf6ebe14f605f4e101234f7748b8da4138a8ed/packaging-18.0.tar.gz";
+      sha256 = "01wq9c53ix5rz6qg2c98gy8n4ff768rmanifm8m5jpjiaizj51h8";
     };
   };
   "pygments" = super.buildPythonPackage {
-    name = "pygments-2.2.0";
+    name = "pygments-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/71/2a/2e4e77803a8bd6408a2903340ac498cb0a2181811af7c9ec92cb70b0308a/Pygments-2.2.0.tar.gz";
-      sha256 = "1k78qdvir1yb1c634nkv6rbga8wv4289xarghmsbbvzhvr311bnv";
+      url = "https://files.pythonhosted.org/packages/63/a2/91c31c4831853dedca2a08a0f94d788fc26a48f7281c99a303769ad2721b/Pygments-2.3.0.tar.gz";
+      sha256 = "1z34ms51dh4jq4h3cizp7vd1dmsxcbvffkjsd2xxfav22nn6lrl2";
     };
   };
   "pyparsing" = super.buildPythonPackage {
-    name = "pyparsing-2.2.0";
+    name = "pyparsing-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3c/ec/a94f8cf7274ea60b5413df054f82a8980523efd712ec55a59e7c3357cf7c/pyparsing-2.2.0.tar.gz";
-      sha256 = "016b9gh606aa44sq92jslm89bg874ia0yyiyb643fa6dgbsbqch8";
+      url = "https://files.pythonhosted.org/packages/d0/09/3e6a5eeb6e04467b737d55f8bba15247ac0876f98fae659e58cd744430c6/pyparsing-2.3.0.tar.gz";
+      sha256 = "14k5v7n3xqw8kzf42x06bzp184spnlkya2dpjyflax6l3yrallzk";
     };
   };
   "pytz" = super.buildPythonPackage {
@@ -119,7 +119,7 @@ self: super: {
     };
   };
   "requests" = super.buildPythonPackage {
-    name = "requests-2.19.1";
+    name = "requests-2.20.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."chardet"
@@ -128,16 +128,16 @@ self: super: {
       self."certifi"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/54/1f/782a5734931ddf2e1494e4cd615a51ff98e1879cbe9eecbdfeaf09aa75e9/requests-2.19.1.tar.gz";
-      sha256 = "0snf8xxdzsgh1x2zv3vilvbrv9jbpmnfagzzb1rjmmvflckdh8pc";
+      url = "https://files.pythonhosted.org/packages/40/35/298c36d839547b50822985a2cf0611b3b978a5ab7a5af5562b8ebe3e1369/requests-2.20.1.tar.gz";
+      sha256 = "0qzj6cgv3k9wyj7wlxgz7xq0cfg4jbbkfm24pp8dnhczwl31527a";
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.2.0";
+    name = "setuptools-40.6.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ef/1d/201c13e353956a1c840f5d0fbf0461bd45bbd678ea4843ebf25924e8984c/setuptools-40.2.0.zip";
-      sha256 = "19ng5m7kigllg3x96c91y3a2k28g6kwnbb1v4warrnp4xma1v227";
+      url = "https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip";
+      sha256 = "0r2c5hapirlzm34h7pl1lgkm6gk7bcrlrdj28qgsvaqg3f74vfw6";
     };
   };
   "six" = super.buildPythonPackage {
@@ -157,7 +157,7 @@ self: super: {
     };
   };
   "sphinx" = super.buildPythonPackage {
-    name = "sphinx-1.7.8";
+    name = "sphinx-1.8.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
@@ -175,8 +175,8 @@ self: super: {
       self."typing"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ac/54/4ef326d0c654da1ed91341a7a1f43efc18a8c770ddd2b8e45df97cb79d82/Sphinx-1.7.8.tar.gz";
-      sha256 = "1ryz0w4c31930f1br2sjwrxwx9cmsy7cqdb0d81g98n9bj250w50";
+      url = "https://files.pythonhosted.org/packages/4c/ea/7388faba7cf02999e1bc42f6a8eb1ea0120aec3dd93474cee21cea2d693f/Sphinx-1.8.2.tar.gz";
+      sha256 = "1sia2h5rfzy76rbsd69ghr8bbidhsjzzinf3f523dcmivp5k41qj";
     };
   };
   "sphinx-rtd-theme" = super.buildPythonPackage {
@@ -207,11 +207,11 @@ self: super: {
     };
   };
   "urllib3" = super.buildPythonPackage {
-    name = "urllib3-1.23";
+    name = "urllib3-1.24.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3c/d2/dc5471622bd200db1cd9319e02e71bc655e9ea27b8e0ce65fc69de0dac15/urllib3-1.23.tar.gz";
-      sha256 = "1bvbd35q3zdcd7gsv38fwpizy7p06dr0154g5gfybrvnbvhwb2m6";
+      url = "https://files.pythonhosted.org/packages/b1/53/37d82ab391393565f2f831b8eedbffd57db5a718216f82f1a8b4d381a1c1/urllib3-1.24.1.tar.gz";
+      sha256 = "08lwd9f3hqznyf32vnzwvp87pchx062nkbgyrf67rwlkgj0jk5fy";
     };
   };
 
