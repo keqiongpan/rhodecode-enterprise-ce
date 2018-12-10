@@ -38,8 +38,6 @@ mako==1.0.7
 markdown==2.6.11
 markupsafe==1.0.0
 msgpack-python==0.5.6
-mysql-python==1.2.5
-pymysql==0.8.1
 pyotp==2.2.7
 packaging==15.2
 paste==2.0.3
@@ -48,7 +46,6 @@ pastescript==2.0.2
 pathlib2==2.3.2
 peppercorn==0.6
 psutil==5.4.7
-psycopg2==2.7.5
 py-bcrypt==0.4
 pycrypto==2.6.1
 pycurl==7.43.0.2
@@ -62,7 +59,6 @@ pyramid-jinja2==2.7
 pyramid-mako==1.0.2
 pyramid==1.9.2
 pyramid_mailer==0.15.1
-pysqlite==2.8.3
 python-dateutil
 python-ldap==3.1.0
 python-memcached==1.59
@@ -98,6 +94,11 @@ zope.deprecation==4.3.0
 zope.event==4.3.0
 zope.interface==4.5.0
 
+# DB drivers
+mysql-python==1.2.5
+pymysql==0.8.1
+pysqlite==2.8.3
+psycopg2==2.7.5
 
 # IPYTHON RENDERING
 # entrypoints backport, pypi version doesn't support egg installs
