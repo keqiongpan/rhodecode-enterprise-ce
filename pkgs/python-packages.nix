@@ -1238,11 +1238,11 @@ self: super: {
     };
   };
   "pygments" = super.buildPythonPackage {
-    name = "pygments-2.2.0";
+    name = "pygments-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/71/2a/2e4e77803a8bd6408a2903340ac498cb0a2181811af7c9ec92cb70b0308a/Pygments-2.2.0.tar.gz";
-      sha256 = "1k78qdvir1yb1c634nkv6rbga8wv4289xarghmsbbvzhvr311bnv";
+      url = "https://files.pythonhosted.org/packages/63/a2/91c31c4831853dedca2a08a0f94d788fc26a48f7281c99a303769ad2721b/Pygments-2.3.0.tar.gz";
+      sha256 = "1z34ms51dh4jq4h3cizp7vd1dmsxcbvffkjsd2xxfav22nn6lrl2";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1711,8 +1711,6 @@ self: super: {
       self."markdown"
       self."markupsafe"
       self."msgpack-python"
-      self."mysql-python"
-      self."pymysql"
       self."pyotp"
       self."packaging"
       self."paste"
@@ -1721,7 +1719,6 @@ self: super: {
       self."pathlib2"
       self."peppercorn"
       self."psutil"
-      self."psycopg2"
       self."py-bcrypt"
       self."pycrypto"
       self."pycurl"
@@ -1735,7 +1732,6 @@ self: super: {
       self."pyramid-mako"
       self."pyramid"
       self."pyramid-mailer"
-      self."pysqlite"
       self."python-dateutil"
       self."python-ldap"
       self."python-memcached"
@@ -1770,6 +1766,10 @@ self: super: {
       self."zope.deprecation"
       self."zope.event"
       self."zope.interface"
+      self."mysql-python"
+      self."pymysql"
+      self."pysqlite"
+      self."psycopg2"
       self."nbconvert"
       self."nbformat"
       self."jupyter-client"

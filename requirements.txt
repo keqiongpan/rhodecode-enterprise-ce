@@ -51,7 +51,7 @@ pycrypto==2.6.1
 pycurl==7.43.0.2
 pyflakes==0.8.1
 pygments-markdown-lexer==0.1.0.dev39
-pygments==2.2.0
+pygments==2.3.0
 pyparsing==1.5.7
 pyramid-beaker==0.8
 pyramid-debugtoolbar==4.4.0
