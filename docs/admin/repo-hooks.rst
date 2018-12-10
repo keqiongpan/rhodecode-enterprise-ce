@@ -46,11 +46,6 @@ This is the complete list of |repos| hooks and the events which trigger them:
 Using Repository Hooks
 ----------------------
 
-To use these hooks you need to install |RCX|. For more information, see the
-:ref:`install-rcx` section.
+To use these hooks you need to setup |RCX|. For more information, see the
+:ref:`integrations-rcextensions` section.
 
-Creating Extensions
--------------------
-
-To create your own extensions using these hooks, see the :ref:`dev-plug`
-section.
