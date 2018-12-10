@@ -79,7 +79,7 @@
                               % endif
                           </td>
                           <td>${plugin.get_id()}</td>
-                          <td>${plugin.is_active()}</td>
+                          <td>${h.bool2icon(plugin.is_active(),show_at_false=False)}</td>
                       </tr>
                   %endfor
               </table>

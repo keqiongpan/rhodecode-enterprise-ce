@@ -1018,7 +1018,7 @@ def style_metatag(tag_type, value):
     return html_value
 
 
-def bool2icon(value):
+def bool2icon(value, show_at_false=True):
     """
     Returns boolean value of a given value, represented as html element with
     classes that will represent icons
@@ -1029,8 +1029,9 @@ def bool2icon(value):
     if value:  # does bool conversion
         return HTML.tag('i', class_="icon-true")
     else:  # not true as bool
-        return HTML.tag('i', class_="icon-false")
-
+        if show_at_false:
+            return HTML.tag('i', class_="icon-false")
+        return HTML.tag('i')
 
 #==============================================================================
 # PERMS
