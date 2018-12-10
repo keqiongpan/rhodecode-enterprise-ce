@@ -95,10 +95,10 @@ but below is the example shortcut.
 
     # Check that the script is uploaded to your home directory
     $ ls -1
-    RhodeCode-installer-linux-391_b1a804c4d69b_d6c087d520e3
+    RhodeCode-installer-linux-buildYYYYXXXX_ZZZZ
 
     # Change the script permissions
-    $ chmod 755 RhodeCode-installer-linux*
+    $ chmod +x RhodeCode-installer-linux*
 
     # Run the installer and accept the prompts
     $ ./RhodeCode-installer-linux-*

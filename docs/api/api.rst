@@ -22,12 +22,12 @@ API access can also be turned on for each web view in |RCE| that is
 decorated with a `@LoginRequired` decorator. To enable API access, change
 the standard login decorator to `@LoginRequired(api_access=True)`.
 
-From |RCM| version 1.7.0 you can configure a white list
+From |RCE| version 1.7.0 you can configure a white list
 of views that have API access enabled by default. To enable these,
-edit the |RCM| configuration ``.ini`` file. The default location is:
+edit the |RCE| configuration ``.ini`` file. The default location is:
 
-* |RCM| Pre-2.2.7 :file:`root/rhodecode/data/production.ini`
-* |RCM| 3.0 :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
+* |RCE| Pre-2.2.7 :file:`root/rhodecode/data/production.ini`
+* |RCE| 3.0 :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
 
 To configure the white list, edit this section of the file. In this
 configuration example, API access is granted to the patch/diff raw file and

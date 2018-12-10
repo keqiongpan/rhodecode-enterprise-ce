@@ -21,6 +21,7 @@
 
 import logging
 
+import rhodecode
 from rhodecode.model import meta, db
 from rhodecode.lib.utils2 import obfuscate_url_pw, get_encryption_key
 
@@ -36,7 +37,7 @@ def init_model(engine, encryption_key=None):
     :param engine: engine to bind to
     """
     engine_str = obfuscate_url_pw(str(engine.url))
-    log.info("initializing db for %s", engine_str)
+    log.info("RhodeCode %s initializing db for %s", rhodecode.__version__, engine_str)
     meta.Base.metadata.bind = engine
     db.ENCRYPTION_KEY = encryption_key
 

@@ -20,5 +20,5 @@
 
 import colander
 
-from colander import Invalid  # noqa, don't remove this
+from colander import Invalid  # pragma: no cover
 

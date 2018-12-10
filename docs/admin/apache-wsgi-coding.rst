@@ -3,7 +3,7 @@
 Apache WSGI Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-|RCM| can also be set up with Apache under ``mod_wsgi``. To configure this
+|RCE| can also be set up with Apache under ``mod_wsgi``. To configure this
 use the following steps.
 
 1. Install ``mod_wsgi`` using the following command:
@@ -50,6 +50,6 @@ The following is an example ``wsgi`` dispatch script.
 .. note::
 
    When using `mod_wsgi` the same version of |hg| must be running in your
-   system's |PY| environment and on |RCM|. To check the |RCM| version,
+   system's |PY| environment and on |RCE|. To check the |RCE| version,
    on the interface go to
    :menuselection:`Admin --> Settings --> System Info`

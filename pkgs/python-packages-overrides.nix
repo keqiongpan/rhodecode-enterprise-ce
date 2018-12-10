@@ -72,7 +72,7 @@ self: super: {
     ];
   });
 
- "nbconvert" = super."nbconvert".override (attrs: {
+  "nbconvert" = super."nbconvert".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       # marcink: plug in jupyter-client for notebook rendering
       self."jupyter-client"
@@ -120,10 +120,12 @@ self: super: {
       pkgs.curl
       pkgs.openssl
     ];
+
     preConfigure = ''
       substituteInPlace setup.py --replace '--static-libs' '--libs'
       export PYCURL_SSL_LIBRARY=openssl
     '';
+
     meta = {
       license = pkgs.lib.licenses.mit;
     };
@@ -168,13 +170,31 @@ self: super: {
     propagatedBuildInputs = [
         pkgs.pam
     ];
+
     # TODO: johbo: Check if this can be avoided, or transform into
     # a real patch
     patchPhase = ''
       substituteInPlace pam.py \
         --replace 'find_library("pam")' '"${pkgs.pam}/lib/libpam.so.0"'
     '';
+
     });
+
+  "python-saml" = super."python-saml".override (attrs: {
+    buildInputs = [
+      pkgs.libxml2
+      pkgs.libxslt
+    ];
+  });
+
+  "dm.xmlsec.binding" = super."dm.xmlsec.binding".override (attrs: {
+    buildInputs = [
+      pkgs.libxml2
+      pkgs.libxslt
+      pkgs.xmlsec
+      pkgs.libtool
+    ];
+  });
 
   "pyzmq" = super."pyzmq".override (attrs: {
     buildInputs = [

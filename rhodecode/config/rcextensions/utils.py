@@ -145,3 +145,41 @@ def maybe_log_call(name, args, kwargs):
     if hasattr(rcextensions, 'calls'):
         calls = rcextensions.calls
         calls[name].append((args, kwargs))
+
+
+def str2bool(_str):
+    """
+    returns True/False value from given string, it tries to translate the
+    string into boolean
+
+    :param _str: string value to translate into boolean
+    :rtype: boolean
+    :returns: boolean from given string
+    """
+    if _str is None:
+        return False
+    if _str in (True, False):
+        return _str
+    _str = str(_str).strip().lower()
+    return _str in ('t', 'true', 'y', 'yes', 'on', '1')
+
+
+def aslist(obj, sep=None, strip=True):
+    """
+    Returns given string separated by sep as list
+
+    :param obj:
+    :param sep:
+    :param strip:
+    """
+    if isinstance(obj, (basestring,)):
+        lst = obj.split(sep)
+        if strip:
+            lst = [v.strip() for v in lst]
+        return lst
+    elif isinstance(obj, (list, tuple)):
+        return obj
+    elif obj is None:
+        return []
+    else:
+        return [obj]

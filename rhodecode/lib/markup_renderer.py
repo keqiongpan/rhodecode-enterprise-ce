@@ -40,8 +40,7 @@ from docutils.writers import html4css1
 import markdown
 
 from rhodecode.lib.markdown_ext import GithubFlavoredMarkdownExtension
-from rhodecode.lib.utils2 import (
-    safe_str, safe_unicode, md5_safe, MENTIONS_REGEX)
+from rhodecode.lib.utils2 import (safe_unicode, md5_safe, MENTIONS_REGEX)
 
 log = logging.getLogger(__name__)
 
@@ -172,6 +171,32 @@ def relative_path(path, request_path, is_repo_file=None):
     return u'/' + final_path
 
 
+_cached_markdown_renderer = None
+
+
+def get_markdown_renderer(extensions, output_format):
+    global _cached_markdown_renderer
+
+    if _cached_markdown_renderer is None:
+        _cached_markdown_renderer = markdown.Markdown(
+            extensions=extensions,
+            enable_attributes=False, output_format=output_format)
+    return _cached_markdown_renderer
+
+
+_cached_markdown_renderer_flavored = None
+
+
+def get_markdown_renderer_flavored(extensions, output_format):
+    global _cached_markdown_renderer_flavored
+
+    if _cached_markdown_renderer_flavored is None:
+        _cached_markdown_renderer_flavored = markdown.Markdown(
+            extensions=extensions + [GithubFlavoredMarkdownExtension()],
+            enable_attributes=False, output_format=output_format)
+    return _cached_markdown_renderer_flavored
+
+
 class MarkupRenderer(object):
     RESTRUCTUREDTEXT_DISALLOWED_DIRECTIVES = ['include', 'meta', 'raw']
 
@@ -183,14 +208,10 @@ class MarkupRenderer(object):
     URL_PAT = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
                          r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
 
-    extensions = ['codehilite', 'extra', 'def_list', 'sane_lists']
-    output_format = 'html4'
-    markdown_renderer = markdown.Markdown(
-        extensions, enable_attributes=False, output_format=output_format)
+    extensions = ['markdown.extensions.codehilite', 'markdown.extensions.extra',
+                  'markdown.extensions.def_list', 'markdown.extensions.sane_lists']
 
-    markdown_renderer_flavored = markdown.Markdown(
-        extensions + [GithubFlavoredMarkdownExtension()],
-        enable_attributes=False, output_format=output_format)
+    output_format = 'html4'
 
     # extension together with weights. Lower is first means we control how
     # extensions are attached to readme names with those.
@@ -346,9 +367,11 @@ class MarkupRenderer(object):
         """
 
         if flavored:
-            markdown_renderer = cls.markdown_renderer_flavored
+            markdown_renderer = get_markdown_renderer_flavored(
+                cls.extensions, cls.output_format)
         else:
-            markdown_renderer = cls.markdown_renderer
+            markdown_renderer = get_markdown_renderer(
+                cls.extensions, cls.output_format)
 
         if mentions:
             mention_pat = re.compile(MENTIONS_REGEX)
@@ -452,7 +475,7 @@ class MarkupRenderer(object):
 
                 return nb, resources
 
-        def _sanitize_resources(resources):
+        def _sanitize_resources(input_resources):
             """
             Skip/sanitize some of the CSS generated and included in jupyter
             so it doesn't messes up UI so much
@@ -464,8 +487,8 @@ class MarkupRenderer(object):
             # _default_template_path_default, to achieve that
 
             # strip the reset CSS
-            resources[0] = resources[0][resources[0].find('/*! Source'):]
-            return resources
+            input_resources[0] = input_resources[0][input_resources[0].find('/*! Source'):]
+            return input_resources
 
         def as_html(notebook):
             conf = Config()

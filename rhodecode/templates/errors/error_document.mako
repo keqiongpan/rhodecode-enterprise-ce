@@ -5,12 +5,15 @@
         <title>Error - ${c.error_message}</title>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
         <meta name="robots" content="index, nofollow"/>
-        <link rel="icon" href="${h.asset('images/favicon.ico')}" sizes="16x16 32x32" type="image/png" />
 
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
         %if c.redirect_time:
             <meta http-equiv="refresh" content="${c.redirect_time}; url=${c.url_redirect}"/>
         %endif
+
+        <link rel="icon" href="${h.asset('images/favicon.ico', ver=c.rhodecode_version_hash)}" sizes="16x16 32x32" type="image/png" />
+        <script src="${h.asset('js/vendors/webcomponentsjs/custom-elements-es5-adapter.js', ver=c.rhodecode_version_hash)}"></script>
+        <script src="${h.asset('js/vendors/webcomponentsjs/webcomponents-bundle.js', ver=c.rhodecode_version_hash)}"></script>
 
         <link rel="stylesheet" type="text/css" href="${h.asset('css/style.css', ver=c.rhodecode_version_hash)}" media="screen"/>
         <style>body { background:#eeeeee; }</style>
@@ -31,7 +34,9 @@
                     <span class="error-branding">
                         ${h.branding(c.rhodecode_name)}
                     </span><br/>
-                    ${c.error_message} | <span class="error_message">${c.error_explanation}</span>
+                    ${c.error_message}
+                    <br/>
+                    <span class="error_message">${c.error_explanation}</span>
                 </h1>
                 % if c.messages:
                     % for message in c.messages:

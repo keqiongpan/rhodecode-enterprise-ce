@@ -27,6 +27,7 @@ us in hooks::
 """
 import re
 import collections
+import json
 
 
 def get_hg_commits(repo, refs):
@@ -36,6 +37,31 @@ def get_hg_commits(repo, refs):
 
 def get_git_commits(repo, refs):
     commits = []
+
+    for data in refs:
+        # we should now extract commit data
+        old_rev = data['old_rev']
+        new_rev = data['new_rev']
+
+        if '00000000' in old_rev:
+            # new branch, we don't need to extract nothing
+            return commits
+
+        git_env = dict(data['git_env'])
+        cmd = [
+            'log',
+            '--pretty=format:{"commit_id": "%H",  "author": "%aN <%aE>",  "date": "%ad",  "message": "%f"}',
+            '{}...{}'.format(old_rev, new_rev)
+        ]
+
+        stdout, stderr = repo.run_git_command(cmd, extra_env=git_env)
+        for line in stdout.splitlines():
+            try:
+                data = json.loads(line)
+                commits.append(data)
+            except Exception:
+                print('Failed to load data from GIT line')
+
     return commits
 
 
@@ -51,13 +77,14 @@ def run(*args, **kwargs):
 
     commits = []
 
-    for rev_data in kwargs['commit_ids']:
-        new_environ = dict((k, v) for k, v in rev_data['hg_env'])
-
     if vcs_type == 'git':
+        for rev_data in kwargs['commit_ids']:
+            new_environ = dict((k, v) for k, v in rev_data['git_env'])
         commits = get_git_commits(vcs_repo, kwargs['commit_ids'])
 
     if vcs_type == 'hg':
+        for rev_data in kwargs['commit_ids']:
+            new_environ = dict((k, v) for k, v in rev_data['hg_env'])
         commits = get_hg_commits(vcs_repo, kwargs['commit_ids'])
 
     return commits

@@ -3,7 +3,7 @@ Pull request management
 
 .. only:: html
 
-    There are two ways of tracking |prs| within |RCM|.
+    There are two ways of tracking |prs| within |RCE|.
 
     1. :ref:`prs-your-review`
     2. :ref:`prs-per-repo`
@@ -15,7 +15,7 @@ Pull requests for your review
 
 To view pull requests for your review, use the following steps:
 
-1. From the |RCM| interface, Select
+1. From the |RCE| interface, Select
    :menuselection:`username --> Notifications`
 2. Select :guilabel:`Pull Requests`
 

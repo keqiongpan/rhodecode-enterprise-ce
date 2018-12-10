@@ -46,7 +46,7 @@ The following LDAP attributes are required when enabling |LDAP| on |RCE|.
 * The LDAP username or account used to connect to |RCE|. This will be added
   to the LDAP filter for locating the user object.
 * For example, if an LDAP filter is specified as `LDAPFILTER`,
-  the login attribute is specified as `uid`, and the user connects as
+  the login/username attribute is specified as `uid`, and the user connects as
   `jsmith`, then the LDAP Filter will be like the following example.
       
 .. code-block:: vim
@@ -68,7 +68,7 @@ The following LDAP attributes are required when enabling |LDAP| on |RCE|.
 Optional settings
 ^^^^^^^^^^^^^^^^^
 
-The following are optional when enabling LDAP on |RCM|
+The following are optional when enabling LDAP on |RCE|
  
 * An LDAP account is only required if the LDAP server does not allow
   anonymous browsing of records.
@@ -103,11 +103,5 @@ The following are optional when enabling LDAP on |RCM|
    To enable this functionality install the SSL certificates in the
    following directory: `/etc/openldap/cacerts`
 
-
-Below is example setup that can be used with Active Directory and ldap groups.
-
-.. image:: ../images/ldap-groups-example.png
-   :alt: LDAP/AD setup example
-   :scale: 50 %
 
 .. _RFC 2254: http://www.rfc-base.org/rfc-2254.html

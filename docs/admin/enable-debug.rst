@@ -3,6 +3,16 @@
 Enabling Debug Mode
 -------------------
 
+Debug Mode will enable debug logging, and request tracking middleware. Debug Mode
+enabled DEBUG log-level which allows tracking various information about authentication
+failures, LDAP connection, email etc.
+
+The request tracking will add a special
+unique ID: `| req_id:00000000-0000-0000-0000-000000000000` at the end of each log line.
+The req_id is the same for each individual requests, it means that if you want to
+track particular user logs only, and exclude other concurrent ones
+simply grep by `req_id` uuid which you'll have to find for the individual request.
+
 To enable debug mode on a |RCE| instance you need to set the debug property
 in the :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file. To
 do this, use the following steps
@@ -11,14 +21,10 @@ do this, use the following steps
 2. Restart you instance using the ``rccontrol restart`` command,
    see the following example:
 
-You can also set the log level, the follow are the valid options;
-``debug``, ``info``, ``warning``, or ``fatal``.
-
 .. code-block:: ini
 
     [DEFAULT]
     debug = true
-    pdebug = false
 
 .. code-block:: bash
 
@@ -26,6 +32,7 @@ You can also set the log level, the follow are the valid options;
     $ rccontrol restart enterprise-1
     Instance "enterprise-1" successfully stopped.
     Instance "enterprise-1" successfully started.
+
 
 Debug and Logging Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -47,7 +54,7 @@ the ``debug`` level.
     ### LOGGING CONFIGURATION   ####
     ################################
     [loggers]
-    keys = root, sqlalchemy, rhodecode, ssh_wrapper
+    keys = root, sqlalchemy, beaker, celery, rhodecode, ssh_wrapper
 
     [handlers]
     keys = console, console_sql, file, file_rotating
@@ -62,11 +69,16 @@ the ``debug`` level.
     level = NOTSET
     handlers = console
 
-    [logger_routes]
+    [logger_sqlalchemy]
+    level = INFO
+    handlers = console_sql
+    qualname = sqlalchemy.engine
+    propagate = 0
+
+    [logger_beaker]
     level = DEBUG
     handlers =
-    qualname = routes.middleware
-    ## "level = DEBUG" logs the route matched and routing variables.
+    qualname = beaker.container
     propagate = 1
 
     [logger_rhodecode]
@@ -75,11 +87,16 @@ the ``debug`` level.
     qualname = rhodecode
     propagate = 1
 
-    [logger_sqlalchemy]
-    level = INFO
-    handlers = console_sql
-    qualname = sqlalchemy.engine
-    propagate = 0
+    [logger_ssh_wrapper]
+    level = DEBUG
+    handlers =
+    qualname = ssh_wrapper
+    propagate = 1
+
+    [logger_celery]
+    level = DEBUG
+    handlers =
+    qualname = celery
 
     ##############
     ## HANDLERS ##
@@ -87,19 +104,19 @@ the ``debug`` level.
 
     [handler_console]
     class = StreamHandler
-    args = (sys.stderr,)
-    level = INFO
+    args = (sys.stderr, )
+    level = DEBUG
     formatter = generic
 
     [handler_console_sql]
     class = StreamHandler
-    args = (sys.stderr,)
-    level = WARN
+    args = (sys.stderr, )
+    level = INFO
     formatter = generic
 
     [handler_file]
     class = FileHandler
-    args = ('rhodecode.log', 'a',)
+    args = ('rhodecode_debug.log', 'a',)
     level = INFO
     formatter = generic
 
@@ -107,6 +124,25 @@ the ``debug`` level.
     class = logging.handlers.TimedRotatingFileHandler
     # 'D', 5 - rotate every 5days
     # you can set 'h', 'midnight'
-    args = ('rhodecode.log', 'D', 5, 10,)
+    args = ('rhodecode_debug_rotated.log', 'D', 5, 10,)
     level = INFO
     formatter = generic
+
+    ################
+    ## FORMATTERS ##
+    ################
+
+    [formatter_generic]
+    class = rhodecode.lib.logging_formatter.ExceptionAwareFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter]
+    class = rhodecode.lib.logging_formatter.ColorFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter_sql]
+    class = rhodecode.lib.logging_formatter.ColorFormatterSql
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
+    datefmt = %Y-%m-%d %H:%M:%S

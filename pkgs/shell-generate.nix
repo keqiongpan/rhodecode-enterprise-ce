@@ -32,6 +32,11 @@ pkgs.stdenv.mkDerivation {
     # We need postgresql to be around
     pkgs.postgresql
 
+    # we need the below for saml
+    pkgs.libxml2
+    pkgs.libxslt
+    pkgs.xmlsec
+
     # Curl is needed for pycurl
     pkgs.curl
   ];

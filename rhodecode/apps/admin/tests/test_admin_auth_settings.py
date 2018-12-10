@@ -89,7 +89,7 @@ class TestAuthSettingsView(object):
             'timeout': 3600,
             'tls_kind': 'PLAIN',
             'tls_reqcert': 'NEVER',
-
+            'tls_cert_dir':'/etc/openldap/cacerts',
             'dn_user': 'test_user',
             'dn_pass': 'test_pass',
             'base_dn': 'test_base_dn',

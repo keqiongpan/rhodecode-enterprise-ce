@@ -24,7 +24,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib.utils2 import safe_int

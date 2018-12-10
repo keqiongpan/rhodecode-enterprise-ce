@@ -32,10 +32,10 @@
           <li class="${'active' if c.active in ['ssh_keys', 'ssh_keys_generate'] else ''}"><a href="${h.route_path('my_account_ssh_keys')}">${_('SSH Keys')}</a></li>
           <li class="${'active' if c.active=='user_group_membership' else ''}"><a href="${h.route_path('my_account_user_group_membership')}">${_('User Group Membership')}</a></li>
 
-          ## TODO: Find a better integration of oauth views into navigation.
-          <% my_account_oauth_url = h.route_path_or_none('my_account_oauth') %>
-          % if my_account_oauth_url:
-          <li class="${'active' if c.active=='oauth' else ''}"><a href="${my_account_oauth_url}">${_('OAuth Identities')}</a></li>
+          ## TODO: Find a better integration of oauth/saml views into navigation.
+          <% my_account_external_url = h.route_path_or_none('my_account_external_identity') %>
+          % if my_account_external_url:
+          <li class="${'active' if c.active=='external_identity' else ''}"><a href="${my_account_external_url}">${_('External Identities')}</a></li>
           % endif
           <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
           <li class="${'active' if c.active=='repos' else ''}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>

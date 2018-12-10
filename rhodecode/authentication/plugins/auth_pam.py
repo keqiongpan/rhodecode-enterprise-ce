@@ -40,7 +40,7 @@ from rhodecode.lib.colander_utils import strip_whitespace
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -72,6 +72,7 @@ class PamSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'pam'
     # PAM authentication can be slow. Repository operations involve a lot of
     # auth calls. Little caching helps speedup push/pull operations significantly
     AUTH_CACHE_TTL = 4
@@ -97,9 +98,13 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     def get_display_name(self):
         return _('PAM')
 
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth-pam.html"
+
     @hybrid_property
     def name(self):
-        return "pam"
+        return u"pam"
 
     def get_settings_schema(self):
         return PamSettingsSchema()
@@ -159,3 +164,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         log.debug("pamuser: %s", user_attrs)
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

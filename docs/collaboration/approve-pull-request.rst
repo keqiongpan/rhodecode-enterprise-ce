@@ -10,7 +10,7 @@ To approve a |pr|, use the following steps:
 4. Set the review status to :guilabel:`Approved`
 5. Select :guilabel:`Comment`
 
-If you approve the |pr|, you will be able to merge automatically if |RCM|
+If you approve the |pr|, you will be able to merge automatically if |RCE|
 detects that it can do so safely. You will see this message:
 
 :guilabel:`This pull request can be automatically merged.`

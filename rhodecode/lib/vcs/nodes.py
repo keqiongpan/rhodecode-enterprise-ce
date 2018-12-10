@@ -404,7 +404,7 @@ class FileNode(Node):
     def last_commit(self):
         if self.commit:
             pre_load = ["author", "date", "message"]
-            return self.commit.get_file_commit(self.path, pre_load=pre_load)
+            return self.commit.get_path_commit(self.path, pre_load=pre_load)
         raise NodeError(
             "Cannot retrieve last commit of the file without "
             "related commit attribute")
@@ -510,7 +510,7 @@ class FileNode(Node):
         """
         if self.commit is None:
             raise NodeError('Unable to get commit for this FileNode')
-        return self.commit.get_file_history(self.path)
+        return self.commit.get_path_history(self.path)
 
     @LazyProperty
     def annotate(self):
@@ -723,6 +723,15 @@ class DirNode(Node):
                 size += f.size
 
         return size
+
+    @LazyProperty
+    def last_commit(self):
+        if self.commit:
+            pre_load = ["author", "date", "message"]
+            return self.commit.get_path_commit(self.path, pre_load=pre_load)
+        raise NodeError(
+            "Cannot retrieve last commit of the file without "
+            "related commit attribute")
 
     def __repr__(self):
         return '<%s %r @ %s>' % (self.__class__.__name__, self.path,

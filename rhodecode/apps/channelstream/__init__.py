@@ -63,7 +63,7 @@ def maybe_create_history_store(event):
     settings = event.app.registry.settings
     history_dir = settings.get('channelstream.history.location', '')
     if history_dir and not os.path.exists(history_dir):
-        os.makedirs(history_dir, 0750)
+        os.makedirs(history_dir, 0o750)
 
 
 def includeme(config):

@@ -69,6 +69,11 @@ class SimpleHg(simplevcs.SimpleVCS):
         'statlfile': 'pull',
         'lheads': 'pull',
 
+        # evolve
+        'evoext_obshashrange_v1': 'pull',
+        'evoext_obshash': 'pull',
+        'evoext_obshash1': 'pull',
+
         'unbundle': 'push',
         'pushkey': 'push',
     }

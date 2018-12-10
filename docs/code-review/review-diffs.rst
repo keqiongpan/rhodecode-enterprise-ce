@@ -16,7 +16,7 @@ review purposes.
 Reviewing Changes
 -----------------
 
-|RCM| displays all code changes made with each commit. Removed content is
+|RCE| displays all code changes made with each commit. Removed content is
 marked in red and new content in green.
 
 .. image:: ../images/plain-diff.png

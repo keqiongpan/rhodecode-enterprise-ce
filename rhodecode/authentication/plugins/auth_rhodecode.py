@@ -34,7 +34,7 @@ from rhodecode.model.db import User
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     plugin = RhodeCodeAuthPlugin(plugin_id)
     return plugin
 
@@ -44,6 +44,7 @@ class RhodecodeAuthnResource(AuthnPluginResourceBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
+    uid = 'rhodecode'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -64,11 +65,15 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             context=RhodecodeAuthnResource)
 
     def get_display_name(self):
-        return _('Rhodecode')
+        return _('RhodeCode Internal')
+
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth.html"
 
     @hybrid_property
     def name(self):
-        return "rhodecode"
+        return u"rhodecode"
 
     def user_activation_state(self):
         def_user_perms = User.get_default_user().AuthUser().permissions['global']
@@ -141,3 +146,8 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                 'user `%s` failed to authenticate via %s, reason: account not '
                 'active.', username, self.name)
             return None
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

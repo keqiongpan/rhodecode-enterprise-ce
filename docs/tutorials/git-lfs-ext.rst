@@ -7,13 +7,13 @@
 Git Large File Storage (or LFS) is a new, open-source extension to Git that
 aims to improve handling of large files. It does this by replacing large files
 in your repository—such as graphics and videos—with simple text pointers.
-|RC| Server includes an embedded LFS object store server, allowing storage of
+RhodeCode Server includes an embedded LFS object store server, allowing storage of
 large files without the need for an external object store.
 Git LFS is disabled by default, globally, and for each individual repository.
 
 .. note::
 
-    |RC| implements V2 API of Git LFS. Please make sure your git client is
+    RhodeCode implements V2 API of Git LFS. Please make sure your git client is
     using the latest version (2.0.X recommended) to leverage full feature set
     of the V2 API.
 
@@ -22,7 +22,7 @@ Git LFS is disabled by default, globally, and for each individual repository.
 Enabling Git LFS
 ++++++++++++++++
 
-Git LFS is disabled by default within |RC| Server.
+Git LFS is disabled by default within RhodeCode Server.
 
 To enable Git LFS Globally:
 
@@ -87,7 +87,7 @@ size in bytes. For example::
 
 
 The object itself will be uploaded to a separate location via the Git LFS Batch API.
-The transfer is validated and authorized by |RC| server itself.
+The transfer is validated and authorized by RhodeCode server itself.
 
 If give repository has Git LFS disabled, a proper message will be sent back to
 the client and upload of LFS objects will be forbidden.

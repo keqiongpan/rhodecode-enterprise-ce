@@ -33,7 +33,7 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.apps.svn_support.config_keys import generate_config
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
@@ -175,8 +175,7 @@ class AdminSettingsView(BaseAppView):
 
         try:
             if c.visual.allow_repo_location_change:
-                model.update_global_path_setting(
-                    form_result['paths_root_path'])
+                model.update_global_path_setting(form_result['paths_root_path'])
 
             model.update_global_ssl_setting(form_result['web_push_ssl'])
             model.update_global_hook_settings(form_result)

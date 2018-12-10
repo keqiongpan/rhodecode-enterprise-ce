@@ -121,7 +121,7 @@ class SubversionCommit(base.BaseCommit):
         path = self._fix_path(path)
         return self._remote.get_file_size(safe_str(path), self._svn_rev)
 
-    def get_file_history(self, path, limit=None, pre_load=None):
+    def get_path_history(self, path, limit=None, pre_load=None):
         path = safe_str(self._fix_path(path))
         history = self._remote.node_history(path, self._svn_rev, limit)
         return [

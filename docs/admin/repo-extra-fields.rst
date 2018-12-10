@@ -7,7 +7,7 @@ Extra fields attached to a |repo| allow you to configure additional fields for
 each repository. This allows storing custom data per-repository.
 
 It can be used in :ref:`integrations-webhook` or in |RCX|.
-To install and read more about |RCX|, see the :ref:`install-rcx` section.
+To read more about |RCX|, see the :ref:`integrations-rcextensions` section.
 
 
 Enabling Extra Fields

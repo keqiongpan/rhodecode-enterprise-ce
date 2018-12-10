@@ -1,13 +1,13 @@
-|RCM|
+|RCE|
 =====
 
-|RCM| is a high-performance source code management and collaboration system.
+|RCE| is a high-performance source code management and collaboration system.
 It enables you to develop projects securely behind the firewall while
 providing collaboration tools that work with |git|, |hg|,
 and |svn| |repos|. The user interface allows you to create, edit,
 and commit files and |repos| while managing their security permissions.
 
-|RCM| provides the following features:
+|RCE| provides the following features:
 
 * Source code management.
 * Extended permissions management.
@@ -18,7 +18,7 @@ and commit files and |repos| while managing their security permissions.
 * Web-based hook management.
 * Native |svn| support.
 * Migration from existing databases.
-* |RCM| SDK.
+* |RCE| SDK.
 * Built-in analytics
 * Built in integrations including: Slack, Webhooks (used for Jenkins/TeamCity and other CIs), Jira, Redmine, Hipchat
 * Pluggable authentication system.

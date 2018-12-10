@@ -7,7 +7,7 @@ To install |RCT| correctly, see the installation steps covered in
 :ref:`install-tools`, and :ref:`config-rhoderc`.
 
 Once |RCT| is installed, and the :file:`/home/{user}/.rhoderc` file is
-configured you can then use |RCT| on each |RCM| instance to carry out admin
+configured you can then use |RCT| on each |RCE| instance to carry out admin
 tasks. Use the following example to configure that file,
 and once configured see the :ref:`tools-cli` for more details.
 

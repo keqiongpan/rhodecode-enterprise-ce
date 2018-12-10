@@ -7,7 +7,7 @@ Error Message
 Error creating repository repo-name
 
 Cause
-As of |RCM| 3.0, a VCS Server is required to run backend operations.
+As of |RCE| 3.0, a VCS Server is required to run backend operations.
 
 Solution
 Install a VCS Server. See the `Install a VCS Server`_ section of |RCC|

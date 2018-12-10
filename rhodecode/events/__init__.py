@@ -44,7 +44,7 @@ def trigger(event, registry=None):
         integrations_event_handler(event)
 
 
-from rhodecode.events.user import (  # noqa
+from rhodecode.events.user import (  # pragma: no cover
     UserPreCreate,
     UserPostCreate,
     UserPreUpdate,
@@ -52,7 +52,7 @@ from rhodecode.events.user import (  # noqa
     UserPermissionsChange,
 )
 
-from rhodecode.events.repo import (  # noqa
+from rhodecode.events.repo import (  # pragma: no cover
     RepoEvent,
     RepoPreCreateEvent, RepoCreateEvent,
     RepoPreDeleteEvent, RepoDeleteEvent,
@@ -60,14 +60,14 @@ from rhodecode.events.repo import (  # noqa
     RepoPrePullEvent,   RepoPullEvent,
 )
 
-from rhodecode.events.repo_group import (  # noqa
+from rhodecode.events.repo_group import (  # pragma: no cover
     RepoGroupEvent,
     RepoGroupCreateEvent,
     RepoGroupUpdateEvent,
     RepoGroupDeleteEvent,
 )
 
-from rhodecode.events.pullrequest import (  # noqa
+from rhodecode.events.pullrequest import (  # pragma: no cover
     PullRequestEvent,
     PullRequestCreateEvent,
     PullRequestUpdateEvent,

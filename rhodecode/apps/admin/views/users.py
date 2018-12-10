@@ -185,7 +185,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
     def users_new(self):
         _ = self.request.translate
         c = self.load_default_context()
-        c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
+        c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.uid
         self._set_personal_repo_group_template_vars(c)
         return self._get_template_context(c)
 
@@ -198,7 +198,7 @@ class AdminUsersView(BaseAppView, DataGridAppView):
     def users_create(self):
         _ = self.request.translate
         c = self.load_default_context()
-        c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.name
+        c.default_extern_type = auth_rhodecode.RhodeCodeAuthPlugin.uid
         user_model = UserModel()
         user_form = UserForm(self.request.translate)()
         try:

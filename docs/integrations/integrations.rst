@@ -11,20 +11,20 @@ different Slack channels, for example.
 Supported integrations
 ^^^^^^^^^^^^^^^^^^^^^^
 
-================================    ============    ========================================
-Type/Name                           |RC| Edition    Description
-================================    ============    ========================================
-:ref:`integrations-webhook`         |RCCEshort|     Trigger events as `json` to a custom url
-:ref:`integrations-slack`           |RCCEshort|     Integrate with https://slack.com/
-:ref:`integrations-hipchat`         |RCCEshort|     Integrate with https://www.hipchat.com/
-:ref:`integrations-email`           |RCCEshort|     Send repo push commits by email
-:ref:`integrations-ci`              |RCCEshort|     Trigger Builds for Common CI Systems
-:ref:`integrations-rcextensions`    |RCCEshort|     Advanced low-level integration framework
+================================    ==================    ========================================
+Type/Name                           RhodeCode Edition     Description
+================================    ==================    ========================================
+:ref:`integrations-webhook`         |RCCEshort|           Trigger events as `json` to a custom url
+:ref:`integrations-slack`           |RCCEshort|           Integrate with https://slack.com/
+:ref:`integrations-hipchat`         |RCCEshort|           Integrate with https://www.hipchat.com/
+:ref:`integrations-email`           |RCCEshort|           Send repo push commits by email
+:ref:`integrations-ci`              |RCCEshort|           Trigger Builds for Common CI Systems
+:ref:`integrations-rcextensions`    |RCCEshort|           Advanced low-level integration framework
 
-:ref:`integrations-jenkins`         |RCEEshort|     Trigger Builds for Jenkins CI System
-:ref:`integrations-redmine`         |RCEEshort|     Close/Resolve/Reference Redmine issues
-:ref:`integrations-jira`            |RCEEshort|     Close/Resolve/Reference JIRA issues
-================================    ============    ========================================
+:ref:`integrations-jenkins`         |RCEEshort|           Trigger Builds for Jenkins CI System
+:ref:`integrations-redmine`         |RCEEshort|           Close/Resolve/Reference Redmine issues
+:ref:`integrations-jira`            |RCEEshort|           Close/Resolve/Reference JIRA issues
+================================    ==================    ========================================
 
 .. _creating-integrations:
 

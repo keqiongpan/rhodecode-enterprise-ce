@@ -25,9 +25,9 @@ import webhelpers.paginate
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPNotFound
 
-from rhodecode.apps._base import BaseAppView
 from rhodecode.integrations import integration_type_registry
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib.auth import (
     LoginRequired, CSRFRequired, HasPermissionAnyDecorator,
     HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)

@@ -43,7 +43,7 @@ then you can retrieve the url by simply calling the URL function:
 The redirection must be first implemented in our servers before
 you can see it working.
 """
-# flake8: noqa
+# pragma: no cover
 from __future__ import unicode_literals
 
 link_config = [

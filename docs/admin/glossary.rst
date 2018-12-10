@@ -33,7 +33,7 @@ Glossary
         Adding more machines or workers into your pool of resources.
 
     Instance
-        A single installed version of one of the |RC| products. It could
+        A single installed version of one of the RhodeCode products. It could
         refer to |RCE| or the VCS server depending on the context.
 
     Plugin

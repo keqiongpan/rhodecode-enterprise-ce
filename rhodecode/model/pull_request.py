@@ -1576,10 +1576,8 @@ class PullRequestModel(BaseModel):
             from rc_reviewers.utils import get_default_reviewers_data
             from rc_reviewers.utils import validate_default_reviewers
         except ImportError:
-            from rhodecode.apps.repository.utils import \
-                get_default_reviewers_data
-            from rhodecode.apps.repository.utils import \
-                validate_default_reviewers
+            from rhodecode.apps.repository.utils import get_default_reviewers_data
+            from rhodecode.apps.repository.utils import validate_default_reviewers
 
         return get_default_reviewers_data, validate_default_reviewers
 

@@ -23,6 +23,7 @@ import sys
 import logging
 import collections
 import tempfile
+import time
 
 from paste.gzipper import make_gzip_middleware
 import pyramid.events
@@ -63,6 +64,14 @@ def is_http_error(response):
     return response.status_code > 499
 
 
+def should_load_all():
+    """
+    Returns if all application components should be loaded. In some cases it's
+    desired to skip apps loading for faster shell script execution
+    """
+    return True
+
+
 def make_pyramid_app(global_config, **settings):
     """
     Constructs the WSGI application based on Pyramid.
@@ -78,8 +87,13 @@ def make_pyramid_app(global_config, **settings):
 
     # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
     # will be replaced by the value of the environment variable "NAME" in this case.
-    environ = {
-        'ENV_{}'.format(key): value for key, value in os.environ.items()}
+    start_time = time.time()
+
+    debug = asbool(global_config.get('debug'))
+    if debug:
+        enable_debug()
+
+    environ = {'ENV_{}'.format(key): value for key, value in os.environ.items()}
 
     global_config = _substitute_values(global_config, environ)
     settings = _substitute_values(settings, environ)
@@ -105,8 +119,10 @@ def make_pyramid_app(global_config, **settings):
     config.configure_celery(global_config['__file__'])
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
+    total_time = time.time() - start_time
+    log.info('Pyramid app `%s` created and configured in %.2fs',
+             pyramid_app.func_name, total_time)
 
-    log.info('Pyramid app %s created and configured.', pyramid_app)
     return pyramid_app
 
 
@@ -215,6 +231,7 @@ def includeme_first(config):
 
 
 def includeme(config):
+    log.debug('Initializing main includeme from %s', os.path.basename(__file__))
     settings = config.registry.settings
     config.set_request_factory(Request)
 
@@ -229,41 +246,58 @@ def includeme(config):
     if asbool(settings.get('appenlight', 'false')):
         config.include('appenlight_client.ext.pyramid_tween')
 
+    load_all = should_load_all()
+
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
     config.include('pyramid_beaker')
     config.include('rhodecode.lib.rc_cache')
 
-    config.include('rhodecode.authentication')
+    config.include('rhodecode.apps._base.navigation')
+    config.include('rhodecode.apps._base.subscribers')
+    config.include('rhodecode.tweens')
+
     config.include('rhodecode.integrations')
+    config.include('rhodecode.authentication')
+
+    if load_all:
+        from rhodecode.authentication import discover_legacy_plugins
+        # load CE authentication plugins
+        config.include('rhodecode.authentication.plugins.auth_crowd')
+        config.include('rhodecode.authentication.plugins.auth_headers')
+        config.include('rhodecode.authentication.plugins.auth_jasig_cas')
+        config.include('rhodecode.authentication.plugins.auth_ldap')
+        config.include('rhodecode.authentication.plugins.auth_pam')
+        config.include('rhodecode.authentication.plugins.auth_rhodecode')
+        config.include('rhodecode.authentication.plugins.auth_token')
+
+        # Auto discover authentication plugins and include their configuration.
+        discover_legacy_plugins(config)
 
     # apps
     config.include('rhodecode.apps._base')
-    config.include('rhodecode.apps.ops')
 
-    config.include('rhodecode.apps.admin')
-    config.include('rhodecode.apps.channelstream')
-    config.include('rhodecode.apps.login')
-    config.include('rhodecode.apps.home')
-    config.include('rhodecode.apps.journal')
-    config.include('rhodecode.apps.repository')
-    config.include('rhodecode.apps.repo_group')
-    config.include('rhodecode.apps.user_group')
-    config.include('rhodecode.apps.search')
-    config.include('rhodecode.apps.user_profile')
-    config.include('rhodecode.apps.user_group_profile')
-    config.include('rhodecode.apps.my_account')
-    config.include('rhodecode.apps.svn_support')
-    config.include('rhodecode.apps.ssh_support')
-    config.include('rhodecode.apps.gist')
+    if load_all:
+        config.include('rhodecode.apps.ops')
+        config.include('rhodecode.apps.admin')
+        config.include('rhodecode.apps.channelstream')
+        config.include('rhodecode.apps.login')
+        config.include('rhodecode.apps.home')
+        config.include('rhodecode.apps.journal')
+        config.include('rhodecode.apps.repository')
+        config.include('rhodecode.apps.repo_group')
+        config.include('rhodecode.apps.user_group')
+        config.include('rhodecode.apps.search')
+        config.include('rhodecode.apps.user_profile')
+        config.include('rhodecode.apps.user_group_profile')
+        config.include('rhodecode.apps.my_account')
+        config.include('rhodecode.apps.svn_support')
+        config.include('rhodecode.apps.ssh_support')
+        config.include('rhodecode.apps.gist')
+        config.include('rhodecode.apps.debug_style')
+        config.include('rhodecode.api')
 
-    config.include('rhodecode.apps.debug_style')
-    config.include('rhodecode.tweens')
-    config.include('rhodecode.api')
-
-    config.add_route(
-        'rhodecode_support', 'https://rhodecode.com/help/', static=True)
-
+    config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
     config.add_translation_dirs('rhodecode:i18n/')
     settings['default_locale_name'] = settings.get('lang', 'en')
 
@@ -403,6 +437,114 @@ def sanitize_settings_and_apply_defaults(settings):
     return settings
 
 
+def enable_debug():
+    """
+    Helper to enable debug on running instance
+    :return:
+    """
+    import tempfile
+    import textwrap
+    import logging.config
+
+    ini_template = textwrap.dedent("""
+    #####################################
+    ### DEBUG LOGGING CONFIGURATION  ####
+    #####################################
+    [loggers]
+    keys = root, sqlalchemy, beaker, celery, rhodecode, ssh_wrapper
+
+    [handlers]
+    keys = console, console_sql
+
+    [formatters]
+    keys = generic, color_formatter, color_formatter_sql
+
+    #############
+    ## LOGGERS ##
+    #############
+    [logger_root]
+    level = NOTSET
+    handlers = console
+
+    [logger_sqlalchemy]
+    level = INFO
+    handlers = console_sql
+    qualname = sqlalchemy.engine
+    propagate = 0
+
+    [logger_beaker]
+    level = DEBUG
+    handlers =
+    qualname = beaker.container
+    propagate = 1
+
+    [logger_rhodecode]
+    level = DEBUG
+    handlers =
+    qualname = rhodecode
+    propagate = 1
+
+    [logger_ssh_wrapper]
+    level = DEBUG
+    handlers =
+    qualname = ssh_wrapper
+    propagate = 1
+
+    [logger_celery]
+    level = DEBUG
+    handlers =
+    qualname = celery
+
+
+    ##############
+    ## HANDLERS ##
+    ##############
+
+    [handler_console]
+    class = StreamHandler
+    args = (sys.stderr, )
+    level = DEBUG
+    formatter = color_formatter
+
+    [handler_console_sql]
+    # "level = DEBUG" logs SQL queries and results.
+    # "level = INFO" logs SQL queries.
+    # "level = WARN" logs neither.  (Recommended for production systems.)
+    class = StreamHandler
+    args = (sys.stderr, )
+    level = WARN
+    formatter = color_formatter_sql
+
+    ################
+    ## FORMATTERS ##
+    ################
+
+    [formatter_generic]
+    class = rhodecode.lib.logging_formatter.ExceptionAwareFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s | %(req_id)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter]
+    class = rhodecode.lib.logging_formatter.ColorRequestTrackingFormatter
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s | %(req_id)s
+    datefmt = %Y-%m-%d %H:%M:%S
+
+    [formatter_color_formatter_sql]
+    class = rhodecode.lib.logging_formatter.ColorFormatterSql
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
+    datefmt = %Y-%m-%d %H:%M:%S    
+    """)
+
+    with tempfile.NamedTemporaryFile(prefix='rc_debug_logging_', suffix='.ini',
+                                     delete=False) as f:
+        log.info('Saved Temporary DEBUG config at %s', f.name)
+        f.write(ini_template)
+
+    logging.config.fileConfig(f.name)
+    log.debug('DEBUG MODE ON')
+    os.remove(f.name)
+
+
 def _sanitize_appenlight_settings(settings):
     _bool_setting(settings, 'appenlight', 'false')
 
@@ -447,7 +589,7 @@ def _sanitize_cache_settings(settings):
 
     # ensure we have our dir created
     if not os.path.isdir(default_cache_dir):
-        os.makedirs(default_cache_dir, mode=0755)
+        os.makedirs(default_cache_dir, mode=0o755)
 
     # exception store cache
     _string_setting(
@@ -578,5 +720,8 @@ def _substitute_values(mapping, substitutions):
         raise ValueError(
             'Failed to substitute env variable: {}. '
             'Make sure you have specified this env variable without ENV_ prefix'.format(e))
+    except ValueError as e:
+        log.warning('Failed to substitute ENV variable: %s', e)
+        result = mapping
 
     return result

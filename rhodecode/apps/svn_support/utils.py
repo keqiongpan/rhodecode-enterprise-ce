@@ -35,15 +35,8 @@ from .events import ModDavSvnConfigChange
 log = logging.getLogger(__name__)
 
 
-def generate_mod_dav_svn_config(registry):
-    """
-    Generate the configuration file for use with subversion's mod_dav_svn
-    module. The configuration has to contain a <Location> block for each
-    available repository group because the mod_dav_svn module does not support
-    repositories organized in sub folders.
-    """
-    settings = registry.settings
-    use_ssl = str2bool(registry.settings['force_https'])
+def write_mod_dav_svn_config(settings):
+    use_ssl = str2bool(settings['force_https'])
 
     config = _render_mod_dav_svn_config(
         use_ssl=use_ssl,
@@ -53,6 +46,17 @@ def generate_mod_dav_svn_config(registry):
         repo_groups=RepoGroup.get_all_repo_groups(),
         realm=get_rhodecode_realm(), template=settings[config_keys.template])
     _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
+
+
+def generate_mod_dav_svn_config(registry):
+    """
+    Generate the configuration file for use with subversion's mod_dav_svn
+    module. The configuration has to contain a <Location> block for each
+    available repository group because the mod_dav_svn module does not support
+    repositories organized in sub folders.
+    """
+    settings = registry.settings
+    write_mod_dav_svn_config(settings)
 
     # Trigger an event on mod dav svn configuration change.
     trigger(ModDavSvnConfigChange(), registry)

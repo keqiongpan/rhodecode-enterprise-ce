@@ -51,23 +51,29 @@
                 <div class="form">
 
                   %for node in plugin.get_settings_schema():
-                    <% label_css_class = ("label-checkbox" if (node.widget == "bool") else "") %>
+                    <%
+                      label_to_type = {'label-checkbox': 'bool', 'label-textarea': 'textarea'}
+                    %>
+
                     <div class="field">
-                      <div class="label ${label_css_class}"><label for="${node.name}">${node.title}</label></div>
+                      <div class="label ${label_to_type.get(node.widget)}"><label for="${node.name}">${node.title}</label></div>
                       <div class="input">
                         %if node.widget in ["string", "int", "unicode"]:
-                          ${h.text(node.name, defaults.get(node.name), class_="medium")}
+                          ${h.text(node.name, defaults.get(node.name), class_="large")}
                         %elif node.widget == "password":
-                          ${h.password(node.name, defaults.get(node.name), class_="medium")}
+                          ${h.password(node.name, defaults.get(node.name), class_="large")}
                         %elif node.widget == "bool":
                           <div class="checkbox">${h.checkbox(node.name, True, checked=defaults.get(node.name))}</div>
                         %elif node.widget == "select":
-                          ${h.select(node.name, defaults.get(node.name), node.validator.choices)}
+                          ${h.select(node.name, defaults.get(node.name), node.validator.choices, class_="select2AuthSetting")}
+                        %elif node.widget == "textarea":
+                          <div class="textarea" style="margin-left: 0px">${h.textarea(node.name, defaults.get(node.name), rows=10)}</div>
                         %elif node.widget == "readonly":
                           ${node.default}
                         %else:
                           This field is of type ${node.typ}, which cannot be displayed. Must be one of [string|int|bool|select].
                         %endif
+
                         %if node.name in errors:
                           <span class="error-message">${errors.get(node.name)}</span>
                           <br />
@@ -91,6 +97,18 @@
                 ${h.end_form()}
               </div>
             </div>
+
+% if request.GET.get('schema'):
+## this is for development and creation of example configurations for documentation
+<pre>
+    % for node in plugin.get_settings_schema():
+    *option*: `${node.name}` => `${defaults.get(node.name)}`${'\n    # '.join(['']+node.description.splitlines())}
+
+    % endfor
+</pre>
+
+% endif
+
           </div>
         </div>
       </div>
@@ -98,8 +116,7 @@
     </div>
   </div>
 
-## TODO: Ugly hack to get ldap select elements to work.
-##       Find a solution to integrate this nicely.
+
 <script>
 $(document).ready(function() {
   var select2Options = {
@@ -107,12 +124,9 @@ $(document).ready(function() {
         dropdownCssClass: 'drop-menu-dropdown',
         dropdownAutoWidth: true,
         minimumResultsForSearch: -1
-    };
-    $("#tls_kind").select2(select2Options);
-    $("#tls_reqcert").select2(select2Options);
-    $("#search_scope").select2(select2Options);
-    $("#group_extraction_type").select2(select2Options);
-    $("#admin_groups_sync").select2(select2Options);
+  };
+  $('.select2AuthSetting').select2(select2Options);
+
 });
 </script>
 </%def>

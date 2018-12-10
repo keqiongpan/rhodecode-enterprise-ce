@@ -3,7 +3,7 @@
 Nix Packaging
 =============
 
-|RCM| is installed using |Nix Package Manager|. The Nix environment provides
+|RCE| is installed using |Nix Package Manager|. The Nix environment provides
 the following features for maintenance and deployment:
 
 * Atomic upgrades and rollbacks

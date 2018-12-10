@@ -30,7 +30,7 @@ from rhodecode.model import db
 class RcTestAuthPlugin(RhodeCodeAuthPluginBase):
 
     def name(self):
-        return 'stub_auth'
+        return u'stub_auth'
 
 
 def test_authenticate_returns_from_auth(stub_auth_data):

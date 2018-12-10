@@ -31,7 +31,7 @@ import greenlet
 
 # Import everything from pycurl.
 # This allows us to use this module as a drop in replacement of pycurl.
-from pycurl import *  # noqa
+from pycurl import *  # pragma: no cover
 
 from gevent import core
 from gevent.hub import Waiter

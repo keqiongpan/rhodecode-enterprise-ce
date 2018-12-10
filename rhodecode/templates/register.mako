@@ -32,8 +32,8 @@
         <div id="register" class="right-column">
             <!-- login -->
             <div class="sign-in-title">
-                % if social_auth_provider:
-                    <h1>${_('Create an account linked with {}').format(social_auth_provider)}</h1>
+                % if external_auth_provider:
+                    <h1>${_('Create an account linked with {}').format(external_auth_provider)}</h1>
                 % else:
                     <h1>${_('Create an account')}</h1>
                 % endif
@@ -50,7 +50,9 @@
                       <br />
                     %endif
 
-                    % if social_auth_provider:
+                    % if external_auth_provider:
+                        ## store internal marker about external identity
+                        ${h.hidden('external_identity', external_auth_provider)}
                         ## hide password prompts for social auth
                         <div style="display: none">
                     % endif
@@ -69,7 +71,7 @@
                       <br />
                     %endif
 
-                    % if social_auth_provider:
+                    % if external_auth_provider:
                         ## hide password prompts for social auth
                         </div>
                     % endif

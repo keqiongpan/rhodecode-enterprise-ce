@@ -3,7 +3,7 @@
 Code Review
 ===========
 
-|RCM| provides two ways in which you can review code. You can review |prs| or
+|RCE| provides two ways in which you can review code. You can review |prs| or
 commits. To better understand |prs|, see the :ref:`pull-requests-ref`
 and :ref:`collaborate-ref` sections. For more information about why
 code review matters, see these posts on the topic:

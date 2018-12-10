@@ -22,36 +22,7 @@ import re
 
 import markdown
 
-from mdx_gfm import GithubFlavoredMarkdownExtension  # noqa
-
-
-class FlavoredCheckboxExtension(markdown.Extension):
-
-    def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add('checklist',
-                             FlavoredCheckboxPreprocessor(md), '<reference')
-        md.postprocessors.add('checklist',
-                              FlavoredCheckboxPostprocessor(md), '>unescape')
-
-
-class FlavoredCheckboxPreprocessor(markdown.preprocessors.Preprocessor):
-    """
-    Replaces occurrences of [ ] or [x] to checkbox input
-    """
-
-    pattern = re.compile(r'^([*-]) \[([ x])\]')
-
-    def run(self, lines):
-        return [self._transform_line(line) for line in lines]
-
-    def _transform_line(self, line):
-        return self.pattern.sub(self._replacer, line)
-
-    def _replacer(self, match):
-        list_prefix, state = match.groups()
-        checked = '' if state == ' ' else ' checked="checked"'
-        return '%s <input type="checkbox" disabled="disabled"%s>' % (list_prefix,
-                                                                   checked)
+from mdx_gfm import GithubFlavoredMarkdownExtension  # pragma: no cover
 
 
 class FlavoredCheckboxPostprocessor(markdown.postprocessors.Postprocessor):

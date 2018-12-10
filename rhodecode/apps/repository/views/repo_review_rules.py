@@ -25,6 +25,7 @@ from pyramid.view import view_config
 from rhodecode.apps._base import RepoAppView
 from rhodecode.apps.repository.utils import get_default_reviewers_data
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
+from rhodecode.model.db import Repository
 
 log = logging.getLogger(__name__)
 
@@ -53,8 +54,8 @@ class RepoReviewRulesView(RepoAppView):
         renderer='json_ext')
     def repo_default_reviewers_data(self):
         self.load_default_context()
+        target_repo_name = self.request.GET.get('target_repo', self.db_repo.repo_name)
+        target_repo = Repository.get_by_repo_name(target_repo_name)
         review_data = get_default_reviewers_data(
-            self.db_repo.user, None, None, None, None)
+            self.db_repo.user, None, None, target_repo, None)
         return review_data
-
-

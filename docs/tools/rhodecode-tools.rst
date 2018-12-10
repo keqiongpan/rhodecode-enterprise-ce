@@ -3,7 +3,7 @@
 |RCT|
 =====
 
-|RCT| enable you to automate many of the most common |RCM| functions through
+|RCT| enable you to automate many of the most common |RCE| functions through
 the API.
 
 .. toctree::

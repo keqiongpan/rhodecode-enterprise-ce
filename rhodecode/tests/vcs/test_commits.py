@@ -310,9 +310,9 @@ class TestCommits(BackendTestMixin):
         with pytest.raises(CommitDoesNotExistError):
             commit.next()
 
-    def test_get_file_commit(self):
+    def test_get_path_commit(self):
         commit = self.repo.get_commit()
-        commit.get_file_commit('file_4.txt')
+        commit.get_path_commit('file_4.txt')
         assert commit.message == 'Commit 4'
 
     def test_get_filenodes_generator(self):
@@ -571,19 +571,19 @@ class TestCommitsChanges(BackendTestMixin):
         assert FILEMODE_DEFAULT == commit.get_file_mode('foo/bał')
         assert FILEMODE_DEFAULT == commit.get_file_mode(u'foo/bał')
 
-    def test_get_file_history(self):
+    def test_get_path_history(self):
         commit = self.repo.get_commit()
-        history = commit.get_file_history('foo/bar')
+        history = commit.get_path_history('foo/bar')
         assert len(history) == 2
 
-    def test_get_file_history_with_limit(self):
+    def test_get_path_history_with_limit(self):
         commit = self.repo.get_commit()
-        history = commit.get_file_history('foo/bar', limit=1)
+        history = commit.get_path_history('foo/bar', limit=1)
         assert len(history) == 1
 
-    def test_get_file_history_first_commit(self):
+    def test_get_path_history_first_commit(self):
         commit = self.repo[0]
-        history = commit.get_file_history('foo/bar')
+        history = commit.get_path_history('foo/bar')
         assert len(history) == 1
 
 

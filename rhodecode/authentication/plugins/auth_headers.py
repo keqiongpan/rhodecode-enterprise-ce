@@ -34,7 +34,7 @@ from rhodecode.model.db import User
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -75,7 +75,7 @@ class HeadersSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
-
+    uid = 'headers'
     def includeme(self, config):
         config.add_authn_plugin(self)
         config.add_authn_resource(self.get_id(), HeadersAuthnResource(self))
@@ -102,7 +102,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return 'headers'
+        return u"headers"
 
     @property
     def is_headers_auth(self):
@@ -223,3 +223,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

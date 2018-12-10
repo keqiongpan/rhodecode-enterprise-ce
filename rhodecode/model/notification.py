@@ -95,15 +95,14 @@ class NotificationModel(BaseModel):
             log.debug('sending notifications %s to admins: %s',
                       notification_type, recipients_objs)
         else:
-            recipients_objs = []
+            recipients_objs = set()
             for u in recipients:
                 obj = self._get_user(u)
                 if obj:
-                    recipients_objs.append(obj)
+                    recipients_objs.add(obj)
                 else:  # we didn't find this user, log the error and carry on
                     log.error('cannot notify unknown user %r', u)
 
-            recipients_objs = set(recipients_objs)
             if not recipients_objs:
                 raise Exception('no valid recipients specified')
 
@@ -122,7 +121,7 @@ class NotificationModel(BaseModel):
             return notification
 
         # don't send email to person who created this comment
-        rec_objs = set(recipients_objs).difference(set([created_by_obj]))
+        rec_objs = set(recipients_objs).difference({created_by_obj})
 
         # now notify all recipients in question
 

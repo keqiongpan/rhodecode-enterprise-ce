@@ -39,48 +39,56 @@
 
     <div class="main-content-full-width">
       ${h.secure_form(request.resource_path(resource, route_name='auth_home'), request=request)}
-      <div class="form">
-
         <div class="panel panel-default">
 
           <div class="panel-heading">
             <h3 class="panel-title">${_("Enabled and Available Plugins")}</h3>
           </div>
 
-          <div class="fields panel-body">
+          <div class="panel-body">
 
-            <div class="field">
-              <div class="label">${_("Enabled Plugins")}</div>
+
+              <div class="label">${_("Ordered Activated Plugins")}</div>
               <div class="textarea text-area editor">
-                  ${h.textarea('auth_plugins',cols=23,rows=5,class_="medium")}
+                  ${h.textarea('auth_plugins',cols=120,rows=20,class_="medium")}
               </div>
-              <p class="help-block pre-formatting">${_('List of plugins, separated by commas.'
+              <div class="field">
+                <p class="help-block pre-formatting">${_('List of plugins, separated by commas.'
                   '\nThe order of the plugins is also the order in which '
-                  'RhodeCode Enterprise will try to authenticate a user.')}</p>
-            </div>
+                  'RhodeCode Enterprise will try to authenticate a user.')}
+                </p>
+              </div>
 
-            <div class="field">
-              <div class="label">${_('Available Built-in Plugins')}</div>
-              <ul class="auth_plugins">
-              %for plugin in available_plugins:
-                  <li>
-                    <div class="auth_buttons">
-                        <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
-                          ${_('enabled') if plugin.get_id() in enabled_plugins else _('disabled')}
-                        </span>
-                        ${plugin.get_display_name()} (${plugin.get_id()})
-                    </div>
-                  </li>
-              %endfor
-              </ul>
-            </div>
+              <table class="rctable">
+                  <th>${_('Activate')}</th>
+                  <th>${_('Plugin Name')}</th>
+                  <th>${_('Documentation')}</th>
+                  <th>${_('Plugin ID')}</th>
+                  <th>${_('Enabled')}</th>
+                  %for plugin in available_plugins:
+                      <tr class="${'inactive' if (not plugin.is_active() and plugin.get_id() in enabled_plugins) else ''}">
+                          <td>
+                            <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
+                              ${_('activated') if plugin.get_id() in enabled_plugins else _('not active')}
+                            </span>
+                          </td>
+                          <td>${plugin.get_display_name()}</td>
+                          <td>
+                              % if plugin.docs():
+                                <a href="${plugin.docs()}">docs</a>
+                              % endif
+                          </td>
+                          <td>${plugin.get_id()}</td>
+                          <td>${h.bool2icon(plugin.is_active(),show_at_false=False)}</td>
+                      </tr>
+                  %endfor
+              </table>
 
             <div class="buttons">
               ${h.submit('save',_('Save'),class_="btn")}
             </div>
           </div>
         </div>
-      </div>
       ${h.end_form()}
     </div>
   </div>
@@ -103,15 +111,15 @@
       elems.splice(elems.indexOf(plugin_id), 1);
       auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).removeClass('btn-success');
-      cur_button.innerHTML = _gettext('disabled');
+      cur_button.innerHTML = _gettext('not active');
     }
     else{
-      if(elems.indexOf(plugin_id) == -1){
-        elems.push(plugin_id);
+      if (elems.indexOf(plugin_id) === -1) {
+            elems.push(plugin_id);
       }
       auth_plugins_input.val(elems.join(',\n'));
       $(cur_button).addClass('btn-success');
-      cur_button.innerHTML = _gettext('enabled');
+      cur_button.innerHTML = _gettext('activated');
     }
   });
 </script>

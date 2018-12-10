@@ -40,7 +40,7 @@ from rhodecode.model.db import User
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -189,6 +189,7 @@ class CrowdServer(object):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'crowd'
     _settings_unsafe_keys = ['app_password']
 
     def includeme(self, config):
@@ -215,9 +216,13 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     def get_display_name(self):
         return _('CROWD')
 
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth-crowd.html"
+
     @hybrid_property
     def name(self):
-        return "crowd"
+        return u"crowd"
 
     def use_fake_password(self):
         return True
@@ -283,3 +288,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
         log.debug("Final crowd user object: \n%s", formatted_json(user_attrs))
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

@@ -77,6 +77,8 @@ class StubVCSController(simplevcs.SimpleVCS):
 def vcscontroller(baseapp, config_stub, request_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')
+    config_stub.include('rhodecode.authentication.plugins.auth_rhodecode')
+    config_stub.include('rhodecode.authentication.plugins.auth_token')
 
     controller = StubVCSController(
         baseapp.config.get_settings(), request_stub.registry)

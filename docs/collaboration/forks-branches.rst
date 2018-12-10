@@ -55,7 +55,7 @@ on the web interface. To branch a |git| |repo| use the following example:
     $ git commit -a -m "ghost script: initial file"
     $ git push
 
-Once it is pushed to the |RCM| server, you can switch to the newly created
+Once it is pushed to the |RCE| server, you can switch to the newly created
 branch using the following steps:
 
 1. Select :menuselection:`Admin --> Repositories`.

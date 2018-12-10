@@ -259,13 +259,13 @@ class TestRepositoryGetCommonAncestor:
             commit_id1=original[0].raw_id,
             commit_id2=unrelated[0].raw_id,
             repo2=unrelated
-        ) == None
+        ) is None
 
         assert original.get_common_ancestor(
             commit_id1=original[-1].raw_id,
             commit_id2=unrelated[-1].raw_id,
             repo2=unrelated
-        ) == None
+        ) is None
 
 
 @pytest.mark.backends("git", "hg")

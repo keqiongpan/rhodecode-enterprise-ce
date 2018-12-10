@@ -32,6 +32,7 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
+from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import UserRegistered, trigger
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
@@ -55,7 +56,7 @@ CaptchaData = collections.namedtuple(
     'CaptchaData', 'active, private_key, public_key')
 
 
-def _store_user_in_session(session, username, remember=False):
+def store_user_in_session(session, username, remember=False):
     user = User.get_by_username(username, case_insensitive=True)
     auth_user = AuthUser(user.user_id)
     auth_user.set_authenticated()
@@ -165,7 +166,7 @@ class LoginView(BaseAppView):
             auth_info = authenticate(
                 '', '', self.request.environ, HTTP_TYPE, skip_missing=True)
             if auth_info:
-                headers = _store_user_in_session(
+                headers = store_user_in_session(
                     self.session, auth_info.get('username'))
                 raise HTTPFound(c.came_from, headers=headers)
         except UserCreationError as e:
@@ -186,7 +187,7 @@ class LoginView(BaseAppView):
             self.session.invalidate()
             form_result = login_form.to_python(self.request.POST)
             # form checks for username/password, now we're authenticated
-            headers = _store_user_in_session(
+            headers = store_user_in_session(
                 self.session,
                 username=form_result['username'],
                 remember=form_result['remember'])
@@ -273,16 +274,26 @@ class LoginView(BaseAppView):
         route_name='register', request_method='POST',
         renderer='rhodecode:templates/register.mako')
     def register_post(self):
+        from rhodecode.authentication.plugins import auth_rhodecode
+
         self.load_default_context()
         captcha = self._get_captcha_data()
         auto_active = 'hg.register.auto_activate' in User.get_default_user()\
             .AuthUser().permissions['global']
+
+        extern_name = auth_rhodecode.RhodeCodeAuthPlugin.uid
+        extern_type = auth_rhodecode.RhodeCodeAuthPlugin.uid
 
         register_form = RegisterForm(self.request.translate)()
         try:
 
             form_result = register_form.to_python(self.request.POST)
             form_result['active'] = auto_active
+            external_identity = self.request.POST.get('external_identity')
+
+            if external_identity:
+                extern_name = external_identity
+                extern_type = external_identity
 
             if captcha.active:
                 captcha_status, captcha_message = self.validate_captcha(
@@ -295,10 +306,16 @@ class LoginView(BaseAppView):
                     raise formencode.Invalid(
                         _msg, _value, None, error_dict=error_dict)
 
-            new_user = UserModel().create_registration(form_result)
+            new_user = UserModel().create_registration(
+                form_result, extern_name=extern_name, extern_type=extern_type)
 
             action_data = {'data': new_user.get_api_data(),
                            'user_agent': self.request.user_agent}
+
+
+
+            if external_identity:
+                action_data['external_identity'] = external_identity
 
             audit_user = audit_logger.UserWrap(
                 username=new_user.username,
@@ -351,15 +368,24 @@ class LoginView(BaseAppView):
         # matching emails
         msg = _('If such email exists, a password reset link was sent to it.')
 
+        def default_response():
+            log.debug('faking response on invalid password reset')
+            # make this take 2s, to prevent brute forcing.
+            time.sleep(2)
+            h.flash(msg, category='success')
+            return HTTPFound(self.request.route_path('reset_password'))
+
         if self.request.POST:
             if h.HasPermissionAny('hg.password_reset.disabled')():
                 _email = self.request.POST.get('email', '')
                 log.error('Failed attempt to reset password for `%s`.', _email)
-                h.flash(_('Password reset has been disabled.'),
-                                   category='error')
+                h.flash(_('Password reset has been disabled.'), category='error')
                 return HTTPFound(self.request.route_path('reset_password'))
 
             password_reset_form = PasswordResetForm(self.request.translate)()
+            description = u'Generated token for password reset from {}'.format(
+                datetime.datetime.now().isoformat())
+
             try:
                 form_result = password_reset_form.to_python(
                     self.request.POST)
@@ -379,10 +405,14 @@ class LoginView(BaseAppView):
                 # Generate reset URL and send mail.
                 user = User.get_by_email(user_email)
 
-                # generate password reset token that expires in 10 minutes
-                description = u'Generated token for password reset from {}'.format(
-                    datetime.datetime.now().isoformat())
+                # only allow rhodecode based users to reset their password
+                # external auth shouldn't allow password reset
+                if user and user.extern_type != auth_rhodecode.RhodeCodeAuthPlugin.uid:
+                    log.warning('User %s with external type `%s` tried a password reset. '
+                                'This try was rejected', user, user.extern_type)
+                    return default_response()
 
+                # generate password reset token that expires in 10 minutes
                 reset_token = UserModel().add_auth_token(
                     user=user, lifetime_minutes=10,
                     role=UserModel.auth_token_role.ROLE_PASSWORD_RESET,
@@ -395,15 +425,14 @@ class LoginView(BaseAppView):
                     _query={'key': reset_token.api_key})
                 UserModel().reset_password_link(
                     form_result, password_reset_url)
-                # Display success message and redirect.
-                h.flash(msg, category='success')
 
                 action_data = {'email': user_email,
                                'user_agent': self.request.user_agent}
                 audit_logger.store_web(
                     'user.password.reset_request', action_data=action_data,
                     user=self._rhodecode_user, commit=True)
-                return HTTPFound(self.request.route_path('reset_password'))
+
+                return default_response()
 
             except formencode.Invalid as errors:
                 template_context.update({
@@ -418,11 +447,7 @@ class LoginView(BaseAppView):
                     # case of failed captcha
                     return self._get_template_context(c, **template_context)
 
-            log.debug('faking response on invalid password reset')
-            # make this take 2s, to prevent brute forcing.
-            time.sleep(2)
-            h.flash(msg, category='success')
-            return HTTPFound(self.request.route_path('reset_password'))
+            return default_response()
 
         return self._get_template_context(c, **template_context)
 

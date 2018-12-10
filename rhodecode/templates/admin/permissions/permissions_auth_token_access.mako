@@ -49,9 +49,7 @@ ${entry}
         % for route_name, view_fqn, view_url, active in c.view_data:
         <tr>
             <td class="td-x">
-                % if active:
-                    ${h.bool2icon(active)}
-                % endif
+                ${h.bool2icon(active, show_at_false=False)}
             </td>
             <td class="td-x">${view_fqn}</td>
             <td class="td-x" title="${route_name}">${view_url}</td>

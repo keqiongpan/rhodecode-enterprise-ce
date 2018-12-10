@@ -7,7 +7,7 @@ Collaboration
 
    Forking and branching does not work with |svn| |repos|.
 
-Collaboration in |RCM| is accomplished through a combination of the following
+Collaboration in |RCE| is accomplished through a combination of the following
 functions:
 
 .. only:: latex

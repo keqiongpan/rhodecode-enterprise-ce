@@ -3,12 +3,12 @@
 Set up Email
 ------------
 
-To setup email with your |RCM| instance, open the default
+To setup email with your |RCE| instance, open the default
 :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
 file and uncomment and configure the email section. If it is not there,
 use the below example to insert it.
 
-Once configured you can check the settings for your |RCM| instance on the
+Once configured you can check the settings for your |RCE| instance on the
 :menuselection:`Admin --> Settings --> Email` page.
 
 .. code-block:: ini

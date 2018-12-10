@@ -146,7 +146,7 @@ persistent sessions across nodes. Please generate other one then in this example
 
 .. code-block:: ini
 
-    # use an unique generated long string
+    # use a unique generated long string
     beaker.session.secret = 70e116cae2274656ba7265fd860aebbd
 
 3) Configure stored cached/archive cache to our shared NFS `rc-node-1`

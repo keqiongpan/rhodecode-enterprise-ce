@@ -1,7 +1,7 @@
 Notifications Overview
 ----------------------
 
-|RCM| has an integrated notification system which alerts users to requests
+|RCE| has an integrated notification system which alerts users to requests
 that they have received. Notifications can occur for the following reasons:
 
 * Pull request reviews

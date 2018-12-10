@@ -67,7 +67,7 @@ sections.
         Default location: :file:`/home/{user}/.rccontrol/cache/MANIFEST`
 
         |RCC| uses this file to source the latest available builds from the
-        secure |RC| download channels. The only reason to mess with this file
+        secure RhodeCode download channels. The only reason to mess with this file
         is if you need to do an offline installation,
         see the :ref:`Offline Installation<control:offline-installer-ref>`
         instructions, otherwise |RCC| will completely manage this file.

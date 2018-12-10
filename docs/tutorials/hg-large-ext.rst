@@ -13,7 +13,7 @@ of the current revision. This saves both disk space and bandwidth.
 Enabling HG Largefiles
 ++++++++++++++++++++++
 
-Mercurial Largefiles extension is disabled by default within |RC| Server.
+Mercurial Largefiles extension is disabled by default within RhodeCode Server.
 
 To enable Mercurial Largefiles Globally:
 

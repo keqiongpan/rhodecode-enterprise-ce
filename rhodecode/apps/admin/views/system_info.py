@@ -25,7 +25,7 @@ from pyramid.view import view_config
 
 import rhodecode
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.admin.navigation import navigation_list
+from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
 from rhodecode.lib.utils2 import str2bool
@@ -96,6 +96,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
             # RhodeCode specific
             (_('RhodeCode Version'), val('rhodecode_app')['text'], state('rhodecode_app')),
             (_('Latest version'), version, update_state),
+            (_('RhodeCode Base URL'), val('rhodecode_config')['config'].get('app.base_url'), state('rhodecode_config')),
             (_('RhodeCode Server IP'), val('server')['server_ip'], state('server')),
             (_('RhodeCode Server ID'), val('server')['server_id'], state('server')),
             (_('RhodeCode Configuration'), val('rhodecode_config')['path'], state('rhodecode_config')),

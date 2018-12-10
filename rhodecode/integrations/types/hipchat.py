@@ -36,6 +36,26 @@ from rhodecode.integrations.types.base import (
 
 log = logging.getLogger(__name__)
 
+REPO_PUSH_TEMPLATE = Template('''
+<b>${data['actor']['username']}</b> pushed to repo <a href="${data['repo']['url']}">${data['repo']['repo_name']}</a>:
+<br>
+<ul>
+%for branch, branch_commits in branches_commits.items():
+    <li>
+        % if branch:
+        <a href="${branch_commits['branch']['url']}">branch: ${branch_commits['branch']['name']}</a>
+        % else:
+        to trunk
+        % endif
+        <ul>
+        % for commit in branch_commits['commits']:
+            <li><a href="${commit['url']}">${commit['short_id']}</a> - ${commit['message_html']}</li>
+        % endfor
+        </ul>
+    </li>
+%endfor
+''')
+
 
 class HipchatSettingsSchema(colander.Schema):
     color_choices = [
@@ -74,27 +94,6 @@ class HipchatSettingsSchema(colander.Schema):
             values=color_choices,
         ),
     )
-
-
-repo_push_template = Template('''
-<b>${data['actor']['username']}</b> pushed to repo <a href="${data['repo']['url']}">${data['repo']['repo_name']}</a>:
-<br>
-<ul>
-%for branch, branch_commits in branches_commits.items():
-    <li>
-        % if branch:
-        <a href="${branch_commits['branch']['url']}">branch: ${branch_commits['branch']['name']}</a>
-        % else:
-        to trunk
-        % endif
-        <ul>
-        % for commit in branch_commits['commits']:
-            <li><a href="${commit['url']}">${commit['short_id']}</a> - ${commit['message_html']}</li>
-        % endfor
-        </ul>
-    </li>
-%endfor
-''')
 
 
 class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
@@ -226,7 +225,7 @@ class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
             data['push']['branches'], data['push']['commits'])
 
         result = render_with_traceback(
-            repo_push_template,
+            REPO_PUSH_TEMPLATE,
             data=data,
             branches_commits=branches_commits,
         )

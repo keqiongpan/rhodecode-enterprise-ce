@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+import collections
 
 from pyramid.exceptions import ConfigurationError
 
@@ -55,9 +56,9 @@ class AuthnRootResource(AuthnResourceBase):
     """
 
     def __init__(self):
-        self._store = {}
+        self._store = collections.OrderedDict()
         self._resource_name_map = {}
-        self.display_name = _('Global')
+        self.display_name = _('Authentication Plugins')
 
     def __getitem__(self, key):
         """
@@ -87,23 +88,27 @@ class AuthnRootResource(AuthnResourceBase):
         # TODO: Store this info in the resource element.
         return self._resource_name_map[resource_name]
 
-    def get_sorted_list(self):
+    def get_sorted_list(self, sort_key=None):
         """
         Returns a sorted list of sub resources for displaying purposes.
         """
-        def sort_key(resource):
+        def default_sort_key(resource):
             return str.lower(safe_str(resource.display_name))
 
         active = [item for item in self]
-        return sorted(active, key=sort_key)
+        return sorted(active, key=sort_key or default_sort_key)
 
-    def get_nav_list(self):
+    def get_nav_list(self, sort=True):
         """
         Returns a sorted list of resources for displaying the navigation.
         """
-        list = self.get_sorted_list()
-        list.insert(0, self)
-        return list
+        if sort:
+            nav_list = self.get_sorted_list()
+        else:
+            nav_list = [item for item in self]
+
+        nav_list.insert(0, self)
+        return nav_list
 
     def add_authn_resource(self, config, plugin_id, resource):
         """

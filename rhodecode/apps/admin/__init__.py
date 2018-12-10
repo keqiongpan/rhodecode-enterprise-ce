@@ -429,7 +429,7 @@ def admin_routes(config):
 
 
 def includeme(config):
-    from rhodecode.apps.admin.navigation import includeme as nav_includeme
+    from rhodecode.apps._base.navigation import includeme as nav_includeme
 
     # Create admin navigation registry and add it to the pyramid registry.
     nav_includeme(config)
@@ -437,8 +437,6 @@ def includeme(config):
     # main admin routes
     config.add_route(name='admin_home', pattern=ADMIN_PREFIX)
     config.include(admin_routes, route_prefix=ADMIN_PREFIX)
-
-    config.include('.subscribers')
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')

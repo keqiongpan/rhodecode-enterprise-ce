@@ -34,7 +34,7 @@ from rhodecode.model.db import User, UserApiKeys, Repository
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     plugin = RhodeCodeAuthPlugin(plugin_id)
     return plugin
 
@@ -47,6 +47,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     """
     Enables usage of authentication tokens for vcs operations.
     """
+    uid = 'token'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -67,11 +68,15 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             context=RhodecodeAuthnResource)
 
     def get_display_name(self):
-        return _('Rhodecode Token Auth')
+        return _('Rhodecode Token')
+
+    @classmethod
+    def docs(cls):
+        return "https://docs.rhodecode.com/RhodeCode-Enterprise/auth/auth-token.html"
 
     @hybrid_property
     def name(self):
-        return "authtoken"
+        return u"authtoken"
 
     def user_activation_state(self):
         def_user_perms = User.get_default_user().AuthUser().permissions['global']
@@ -145,3 +150,8 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                 'user `%s` failed to authenticate via %s, reason: account not '
                 'active.', username, self.name)
         return None
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

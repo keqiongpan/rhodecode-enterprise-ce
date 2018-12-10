@@ -18,7 +18,7 @@ so to clarify what is meant each time, read the following definitions:
 Hooks
 -----
 
-Within |RCM| there are two types of supported hooks.
+Within |RCE| there are two types of supported hooks.
 
 * **Internal built-in hooks**: The internal |hg|, |git| or |svn| hooks are
   triggered by different VCS operations, like push, pull,

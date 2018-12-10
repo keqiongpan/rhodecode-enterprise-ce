@@ -161,7 +161,7 @@ class GitRepository(BaseRepository):
                 GitRepository.check_url(src_url, self.config)
 
             if create:
-                os.makedirs(self.path, mode=0755)
+                os.makedirs(self.path, mode=0o755)
 
                 if bare:
                     self._remote.init_bare()

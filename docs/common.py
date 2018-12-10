@@ -20,10 +20,7 @@ rst_epilog = '''
 .. |psf| replace:: Python Software Foundation
 .. |repo| replace:: repository
 .. |repos| replace:: repositories
-.. |RCI| replace:: RhodeCode Control
 .. |RCC| replace:: RhodeCode Control
-.. |RCV| replace:: RhodeCode Enterprise
-.. |RCM| replace:: RhodeCode Enterprise
 .. |RCE| replace:: RhodeCode Enterprise
 .. |RCCE| replace:: RhodeCode Community
 .. |RCEE| replace:: RhodeCode Enterprise
@@ -31,6 +28,5 @@ rst_epilog = '''
 .. |RCT| replace:: RhodeCode Tools
 .. |RCEBOLD| replace:: **RhodeCode Enterprise**
 .. |RCEITALICS| replace:: `RhodeCode Enterprise`
-.. |RC| replace:: RhodeCode
 .. |RNS| replace:: Release Notes
 '''

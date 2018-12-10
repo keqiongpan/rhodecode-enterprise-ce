@@ -42,7 +42,7 @@ from rhodecode.model.db import User
 log = logging.getLogger(__name__)
 
 
-def plugin_factory(plugin_id, *args, **kwds):
+def plugin_factory(plugin_id, *args, **kwargs):
     """
     Factory function that is called during plugin discovery.
     It returns the plugin instance.
@@ -66,6 +66,7 @@ class JasigCasSettingsSchema(AuthnPluginSettingsSchemaBase):
 
 
 class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
+    uid = 'jasig_cas'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -93,7 +94,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
     @hybrid_property
     def name(self):
-        return "jasig-cas"
+        return u"jasig-cas"
 
     @property
     def is_headers_auth(self):
@@ -165,3 +166,8 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
 
         log.info('user `%s` authenticated correctly', user_attrs['username'])
         return user_attrs
+
+
+def includeme(config):
+    plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
+    plugin_factory(plugin_id).includeme(config)

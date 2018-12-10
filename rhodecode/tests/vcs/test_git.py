@@ -538,7 +538,7 @@ TODO: To be written...
                 'sys.exit(1)',
             ]
             f.write('\n'.join(script_lines))
-        os.chmod(hook_path, 0755)
+        os.chmod(hook_path, 0o755)
 
     def test_local_push_does_not_execute_hook(self):
         target_repo = self.get_empty_repo()
@@ -1061,7 +1061,7 @@ class TestGitSpecificWithRepo(BackendTestMixin):
                     FileNode('foobar/static/js/admin/base.js', content='base'),
                     FileNode(
                         'foobar/static/admin', content='admin',
-                        mode=0120000),  # this is a link
+                        mode=0o120000),  # this is a link
                     FileNode('foo', content='foo'),
                 ],
             },

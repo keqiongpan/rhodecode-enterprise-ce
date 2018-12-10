@@ -18,13 +18,14 @@ Prerequisites
 .. tip::
 
    We recommend using Wandisco repositories which provide latest SVN versions
-   for most platforms.
+   for most platforms. If you skip this version you'll have to ensure the Client version
+   is compatible with installed SVN version which might differ depending on the operating system.
    Here is an example how to add the Wandisco repositories for Ubuntu.
 
     .. code-block:: bash
 
-        $ sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu `lsb_release -cs` svn19" >> /etc/apt/sources.list.d/subversion19.list'
-        $ sudo wget -q http://opensource.wandisco.com/wandisco-debian.gpg -O- | sudo apt-key add -
+        $ sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu `lsb_release -cs` svn110" >> /etc/apt/sources.list.d/subversion110.list'
+        $ sudo wget -q http://opensource.wandisco.com/wandisco-debian-new.gpg -O- | sudo apt-key add -
         $ sudo apt-get update
 
     Here is an example how to add the Wandisco repositories for Centos/Redhat. Using
@@ -46,7 +47,7 @@ Example installation of required components for Ubuntu platform:
 .. code-block:: bash
 
     $ sudo apt-get install apache2
-    $ sudo apt-get install libapache2-mod-svn
+    $ sudo apt-get install libapache2-svn
 
 Once installed you need to enable ``dav_svn`` on Ubuntu:
 
@@ -75,6 +76,12 @@ Once installed you need to enable ``dav_svn`` on RedHat/CentOS:
     LoadModule dav_svn_module     modules/mod_dav_svn.so
     LoadModule headers_module     modules/mod_headers.so
     LoadModule authn_anon_module  modules/mod_authn_anon.so
+
+.. tip::
+
+   To check the installed mod_dav_svn module version, you can use such command.
+
+   `strings /usr/lib/apache2/modules/mod_dav_svn.so | grep 'Powered by'`
 
 
 Configuring Apache Setup

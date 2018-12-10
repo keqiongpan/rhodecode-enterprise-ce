@@ -25,7 +25,7 @@ Pre-requisites
 * For MySQL, do not use `localhost` in the database connection string of the
   :file:`rhodecode.ini` file.
 * InnoDB must be the database tables engine.
-* Contact |RC| for a new licence Key/Token pair. If you don't, a trial licence
+* Contact RhodeCode for a new licence Key/Token pair. If you don't, a trial licence
   will be applied so you are not locked out of the upgraded instance.
 
 You can find the specific instructions to carry out these pre-requisite steps

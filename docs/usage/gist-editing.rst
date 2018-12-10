@@ -4,7 +4,7 @@ Gist Editing
 ^^^^^^^^^^^^
 
 Gists are standalone files that only the creator can edit. To work with
-gists, click on the :guilabel:`Gists` tab on the |RCM| header. The gist
+gists, click on the :guilabel:`Gists` tab on the |RCE| header. The gist
 editor also has syntax highlighting.
 
 You can set the following properties for each gist:
@@ -13,7 +13,7 @@ You can set the following properties for each gist:
   and will show up in searches.
 * :guilabel:`Gist Lifetime`: You can set a gist to expire after a set
   period by using the :guilabel:`Gist Lifetime` dropdown menu.
-  This means that when the gist expires it will be deleted from the |RCM|
+  This means that when the gist expires it will be deleted from the |RCE|
   gist database.
 * :guilabel:`Private`: This means that the gist will not show up in searches.
 * :guilabel:`Gist access level`: If you create a private gist you can have

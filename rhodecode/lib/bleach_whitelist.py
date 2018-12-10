@@ -60,6 +60,7 @@ markdown_tags = [
     "table", "thead", "tbody", "tfoot", "tr", "th", "td",
     "img",
     "a",
+    "input",
 ]
 
 markdown_attrs = {
@@ -68,7 +69,8 @@ markdown_attrs = {
     "a": ["href", "alt", "title", "name"],
     "abbr": ["title"],
     "acronym": ["title"],
-    "pre": ["lang"]
+    "pre": ["lang"],
+    "input": ["type", "disabled"]
 }
 
 standard_styles = [

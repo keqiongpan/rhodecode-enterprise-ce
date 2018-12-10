@@ -38,7 +38,8 @@ from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.lib import rc_cache
 from rhodecode.lib.auth import PasswordGenerator, _RhodeCodeCryptoBCrypt
 from rhodecode.lib.utils2 import safe_int, safe_str
-from rhodecode.lib.exceptions import LdapConnectionError
+from rhodecode.lib.exceptions import LdapConnectionError, LdapUsernameError, \
+    LdapPasswordError
 from rhodecode.model.db import User
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import SettingsModel
@@ -51,6 +52,8 @@ log = logging.getLogger(__name__)
 # auth types that authenticate() function can receive
 VCS_TYPE = 'vcs'
 HTTP_TYPE = 'http'
+
+external_auth_session_key = 'rhodecode.external_auth'
 
 
 class hybrid_property(object):
@@ -93,6 +96,9 @@ class LazyFormencode(object):
 
 
 class RhodeCodeAuthPluginBase(object):
+    # UID is used to register plugin to the registry
+    uid = None
+
     # cache the authentication request for N amount of seconds. Some kind
     # of authentication methods are very heavy and it's very efficient to cache
     # the result of a call. If it's set to None (default) cache is off
@@ -113,7 +119,7 @@ class RhodeCodeAuthPluginBase(object):
         "active":
             'True|False defines active state of user internally for RhodeCode',
         "active_from_extern":
-            "True|False\None, active state from the external auth, "
+            "True|False|None, active state from the external auth, "
             "None means use definition from RhodeCode extern_type active value"
 
     }
@@ -170,6 +176,20 @@ class RhodeCodeAuthPluginBase(object):
         if name in self._settings_encrypted:
             db_type = '{}.encrypted'.format(db_type)
         return db_type
+
+    @classmethod
+    def docs(cls):
+        """
+        Defines documentation url which helps with plugin setup
+        """
+        return ''
+
+    @classmethod
+    def icon(cls):
+        """
+        Defines ICON in SVG format for authentication method
+        """
+        return ''
 
     def is_enabled(self):
         """
@@ -563,7 +583,8 @@ class RhodeCodeExternalAuthPlugin(RhodeCodeAuthPluginBase):
 class AuthLdapBase(object):
 
     @classmethod
-    def _build_servers(cls, ldap_server_type, ldap_server, port):
+    def _build_servers(cls, ldap_server_type, ldap_server, port, use_resolver=True):
+
         def host_resolver(host, port, full_resolve=True):
             """
             Main work for this function is to prevent ldap connection issues,
@@ -602,7 +623,7 @@ class AuthLdapBase(object):
         return ', '.join(
             ["{}://{}".format(
                 ldap_server_type,
-                host_resolver(host, port, full_resolve=full_resolve))
+                host_resolver(host, port, full_resolve=use_resolver and full_resolve))
              for host in ldap_server])
 
     @classmethod
@@ -615,6 +636,19 @@ class AuthLdapBase(object):
         for server_addr in server_addresses:
             uid = chop_at(username, "@%s" % server_addr)
         return uid
+
+    @classmethod
+    def validate_username(cls, username):
+        if "," in username:
+            raise LdapUsernameError(
+                "invalid character `,` in username: `{}`".format(username))
+
+    @classmethod
+    def validate_password(cls, username, password):
+        if not password:
+            msg = "Authenticating user %s with blank password not allowed"
+            log.warning(msg, username)
+            raise LdapPasswordError(msg)
 
 
 def loadplugin(plugin_id):

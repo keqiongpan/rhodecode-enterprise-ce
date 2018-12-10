@@ -103,11 +103,12 @@
             </div>
             <div class="field">
                <div class="label-text">
-                    ${_('Source of Record')}:
+                    ${_('Authentication type')}:
                </div>
                <div class="input">
                     <p>${c.extern_type}</p>
                     ${h.hidden('extern_type', readonly="readonly")}
+                    <p class="help-block">${_('User was created using an external source. He is bound to authentication using this method.')}</p>
                 </div>
             </div>
             <div class="field">
@@ -127,7 +128,7 @@
                     ## allowed_languages is defined in the users.py
                     ## c.language comes from base.py as a default language
                     ${h.select('language', c.language, c.allowed_languages)}
-                    <p class="help-block">${h.literal(_('Help translate %(rc_link)s into your language.') % {'rc_link': h.link_to('RhodeCode Enterprise', h.route_url('rhodecode_translations'))})}</p>
+                    <p class="help-block">${h.literal(_('User interface language. Help translate %(rc_link)s into your language.') % {'rc_link': h.link_to('RhodeCode Enterprise', h.route_url('rhodecode_translations'))})}</p>
                 </div>
             </div>
             <div class="buttons">

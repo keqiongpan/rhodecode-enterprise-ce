@@ -582,7 +582,6 @@ class VcsSettingsModel(object):
         self._create_or_update_ui(
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
-
     def create_or_update_global_hg_settings(self, data):
         largefiles, largefiles_store, phases, hgsubversion, evolve \
             = self.GLOBAL_HG_SETTINGS

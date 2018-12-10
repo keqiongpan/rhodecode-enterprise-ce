@@ -252,13 +252,13 @@ class MercurialCommit(base.BaseCommit):
         path = self._get_filectx(path)
         return self._remote.fctx_size(self.idx, path)
 
-    def get_file_history(self, path, limit=None, pre_load=None):
+    def get_path_history(self, path, limit=None, pre_load=None):
         """
         Returns history of file as reversed list of `MercurialCommit` objects
         for which file at given ``path`` has been modified.
         """
         path = self._get_filectx(path)
-        hist = self._remote.file_history(self.idx, path, limit)
+        hist = self._remote.node_history(self.idx, path, limit)
         return [
             self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
             for commit_id in hist]
