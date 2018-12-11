@@ -1248,20 +1248,6 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  "pygments-markdown-lexer" = super.buildPythonPackage {
-    name = "pygments-markdown-lexer-0.1.0.dev39";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."pygments"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c3/12/674cdee66635d638cedb2c5d9c85ce507b7b2f91bdba29e482f1b1160ff6/pygments-markdown-lexer-0.1.0.dev39.zip";
-      sha256 = "1pzb5wy23q3fhs0rqzasjnw6hdzwjngpakb73i98cn0b8lk8q4jc";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.asl20 ];
-    };
-  };
   "pymysql" = super.buildPythonPackage {
     name = "pymysql-0.8.1";
     doCheck = false;
@@ -1723,7 +1709,6 @@ self: super: {
       self."pycrypto"
       self."pycurl"
       self."pyflakes"
-      self."pygments-markdown-lexer"
       self."pygments"
       self."pyparsing"
       self."pyramid-beaker"
