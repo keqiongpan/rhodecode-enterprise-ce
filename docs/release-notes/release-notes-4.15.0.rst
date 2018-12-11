@@ -78,4 +78,5 @@ Fixes
 Upgrade notes
 ^^^^^^^^^^^^^
 
-- LDAP cert dirs
+- In this release we introduced new options for cert directory and file for LDAP plugins.
+  In case of problems with LDAPS please verify the settings in the LDAP plugin configuration.
