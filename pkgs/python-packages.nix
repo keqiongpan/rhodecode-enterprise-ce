@@ -2166,11 +2166,11 @@ self: super: {
     };
   };
   "webob" = super.buildPythonPackage {
-    name = "webob-1.7.4";
+    name = "webob-1.8.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/75/34/731e23f52371852dfe7490a61644826ba7fe70fd52a377aaca0f4956ba7f/WebOb-1.7.4.tar.gz";
-      sha256 = "1na01ljg04z40il7vcrn8g29vaw7nvg1xvhk64cr4jys5wcay44d";
+      url = "https://files.pythonhosted.org/packages/e4/6c/99e322c3d4cc11d9060a67a9bf2f7c9c581f40988c11fffe89bb8c36bc5e/WebOb-1.8.4.tar.gz";
+      sha256 = "16cfg5y4n6sihz59vsmns2yqbfm0gfsn3l5xgz2g0pdhilaib0x4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
