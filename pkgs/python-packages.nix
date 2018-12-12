@@ -1282,24 +1282,23 @@ self: super: {
     };
   };
   "pyramid" = super.buildPythonPackage {
-    name = "pyramid-1.9.2";
+    name = "pyramid-1.10.1";
     doCheck = false;
     propagatedBuildInputs = [
-      self."setuptools"
-      self."webob"
-      self."repoze.lru"
-      self."zope.interface"
-      self."zope.deprecation"
-      self."venusian"
-      self."translationstring"
-      self."pastedeploy"
+      self."hupper"
       self."plaster"
       self."plaster-pastedeploy"
-      self."hupper"
+      self."setuptools"
+      self."translationstring"
+      self."venusian"
+      self."webob"
+      self."zope.deprecation"
+      self."zope.interface"
+      self."repoze.lru"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a0/c1/b321d07cfc4870541989ad131c86a1d593bfe802af0eca9718a0dadfb97a/pyramid-1.9.2.tar.gz";
-      sha256 = "09drsl0346nchgxp2j7sa5hlk7mkhfld9wvbd0wicacrp26a92fg";
+      url = "https://files.pythonhosted.org/packages/0a/3e/22e3ac9be1b70a01139adba8906ee4b8f628bb469fea3c52f6c97b73063c/pyramid-1.10.1.tar.gz";
+      sha256 = "1h5105nfh6rsrfjiyw20aavyibj36la3hajy6vh1fa77xb4y3hrp";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
