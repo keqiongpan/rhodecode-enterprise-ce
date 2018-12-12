@@ -62,7 +62,7 @@ python-dateutil
 python-ldap==3.1.0
 python-memcached==1.59
 python-pam==1.8.4
-python-saml
+python-saml==2.4.2
 pytz==2018.4
 tzlocal==1.5.1
 pyzmq==14.6.0
