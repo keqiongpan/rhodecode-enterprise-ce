@@ -1654,9 +1654,9 @@ self: super: {
       self."pytest-timeout"
       self."gprof2dot"
       self."mock"
-      self."webtest"
       self."cov-core"
       self."coverage"
+      self."webtest"
       self."configobj"
     ];
     doCheck = true;
@@ -1779,9 +1779,9 @@ self: super: {
       self."pytest-timeout"
       self."gprof2dot"
       self."mock"
-      self."webtest"
       self."cov-core"
       self."coverage"
+      self."webtest"
     ];
     src = ./.;
     meta = {
@@ -2178,7 +2178,7 @@ self: super: {
     };
   };
   "webtest" = super.buildPythonPackage {
-    name = "webtest-2.0.29";
+    name = "webtest-2.0.32";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
@@ -2187,8 +2187,8 @@ self: super: {
       self."beautifulsoup4"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/94/de/8f94738be649997da99c47b104aa3c3984ecec51a1d8153ed09638253d56/WebTest-2.0.29.tar.gz";
-      sha256 = "0bcj1ica5lnmj5zbvk46x28kgphcsgh7sfnwjmn0cr94mhawrg6v";
+      url = "https://files.pythonhosted.org/packages/27/9f/9e74449d272ffbef4fb3012e6dbc53c0b24822d545e7a33a342f80131e59/WebTest-2.0.32.tar.gz";
+      sha256 = "0qp0nnbazzm4ibjiyqfcn6f230svk09i4g58zg2i9x1ga06h48a2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
