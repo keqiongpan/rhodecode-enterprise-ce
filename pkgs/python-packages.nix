@@ -1001,15 +1001,15 @@ self: super: {
     };
   };
   "pathlib2" = super.buildPythonPackage {
-    name = "pathlib2-2.3.2";
+    name = "pathlib2-2.3.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."scandir"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/db/a8/7d6439c1aec525ed70810abee5b7d7f3aa35347f59bc28343e8f62019aa2/pathlib2-2.3.2.tar.gz";
-      sha256 = "10yb0iv5x2hs631rcppkhbddx799d3h8pcwmkbh2a66ns3w71ccf";
+      url = "https://files.pythonhosted.org/packages/bf/d7/a2568f4596b75d2c6e2b4094a7e64f620decc7887f69a1f2811931ea15b9/pathlib2-2.3.3.tar.gz";
+      sha256 = "0hpp92vqqgcd8h92msm9slv161b1q160igjwnkf2ag6cx0c96695";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
