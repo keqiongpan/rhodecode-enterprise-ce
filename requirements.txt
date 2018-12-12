@@ -40,10 +40,10 @@ markupsafe==1.0.0
 msgpack-python==0.5.6
 pyotp==2.2.7
 packaging==15.2
-pastescript==2.0.2
 pathlib2==2.3.2
 paste==3.0.5
 pastedeploy==2.0.1
+pastescript==3.0.0
 peppercorn==0.6
 psutil==5.4.7
 py-bcrypt==0.4

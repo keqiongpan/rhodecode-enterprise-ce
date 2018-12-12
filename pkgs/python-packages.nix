@@ -985,7 +985,7 @@ self: super: {
     };
   };
   "pastescript" = super.buildPythonPackage {
-    name = "pastescript-2.0.2";
+    name = "pastescript-3.0.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."paste"
@@ -993,8 +993,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e5/f0/78e766c3dcc61a4f3a6f71dd8c95168ae9c7a31722b5663d19c1fdf62cb6/PasteScript-2.0.2.tar.gz";
-      sha256 = "1h3nnhn45kf4pbcv669ik4faw04j58k8vbj1hwrc532k0nc28gy0";
+      url = "https://files.pythonhosted.org/packages/08/2a/3797377a884ab9a064ad4d564ed612e54d26d7997caa8229c9c9df4eac31/PasteScript-3.0.0.tar.gz";
+      sha256 = "1hvmyz1sbn7ws1syw567ph7km9fi0wi75r3vlyzx6sk0z26xkm6r";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
