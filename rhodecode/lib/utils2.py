@@ -43,6 +43,7 @@ import sqlalchemy.exc
 import sqlalchemy.sql
 import webob
 import pyramid.threadlocal
+from pyramid.settings import asbool
 
 import rhodecode
 from rhodecode.translation import _, _pluralize
@@ -361,7 +362,8 @@ def ping_connection(connection, branch):
 def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
-    _ping_connection = configuration.pop('sqlalchemy.db1.ping_connection', None)
+    use_ping_connection = asbool(configuration.pop('sqlalchemy.db1.ping_connection', None))
+    debug = asbool(configuration.get('debug'))
 
     engine = sqlalchemy.engine_from_config(configuration, prefix, **kwargs)
 
@@ -370,12 +372,12 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
         normal = '\x1b[0m'
         return ''.join([color_seq, sql, normal])
 
-    if configuration['debug'] or _ping_connection:
+    if use_ping_connection:
+        log.debug('Adding ping_connection on the engine config.')
         sqlalchemy.event.listen(engine, "engine_connect", ping_connection)
 
-    if configuration['debug']:
+    if debug:
         # attach events only for debug configuration
-
         def before_cursor_execute(conn, cursor, statement,
                                   parameters, context, executemany):
             setattr(conn, 'query_start_time', time.time())
@@ -394,10 +396,8 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
                                  parameters, context, executemany):
             delattr(conn, 'query_start_time')
 
-        sqlalchemy.event.listen(engine, "before_cursor_execute",
-                                before_cursor_execute)
-        sqlalchemy.event.listen(engine, "after_cursor_execute",
-                                after_cursor_execute)
+        sqlalchemy.event.listen(engine, "before_cursor_execute", before_cursor_execute)
+        sqlalchemy.event.listen(engine, "after_cursor_execute", after_cursor_execute)
 
     return engine
 
