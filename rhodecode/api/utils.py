@@ -388,7 +388,19 @@ def get_commit_or_error(ref, repo):
         raise JSONRPCError('Ref `{ref}` does not exist'.format(ref=ref))
 
 
-def resolve_ref_or_error(ref, repo):
+def _get_ref_hash(repo, type_, name):
+    vcs_repo = repo.scm_instance()
+    if type_ in ['branch'] and vcs_repo.alias in ('hg', 'git'):
+        return vcs_repo.branches[name]
+    elif type_ in ['bookmark', 'book'] and vcs_repo.alias == 'hg':
+        return vcs_repo.bookmarks[name]
+    else:
+        raise ValueError()
+
+
+def resolve_ref_or_error(ref, repo, allowed_ref_types=None):
+    allowed_ref_types = allowed_ref_types or ['bookmark', 'book', 'tag', 'branch']
+
     def _parse_ref(type_, name, hash_=None):
         return type_, name, hash_
 
@@ -398,6 +410,12 @@ def resolve_ref_or_error(ref, repo):
         raise JSONRPCError(
             'Ref `{ref}` given in a wrong format. Please check the API'
             ' documentation for more details'.format(ref=ref))
+
+    if ref_type not in allowed_ref_types:
+        raise JSONRPCError(
+            'Ref `{ref}` type is not allowed. '
+            'Only:{allowed_refs} are possible.'.format(
+                ref=ref, allowed_refs=allowed_ref_types))
 
     try:
         ref_hash = ref_hash or _get_ref_hash(repo, ref_type, ref_name)
@@ -429,13 +447,3 @@ def _get_commit_dict(
         "raw_diff": raw_diff,
         "stats": stats
     }
-
-
-def _get_ref_hash(repo, type_, name):
-    vcs_repo = repo.scm_instance()
-    if type_ == 'branch' and vcs_repo.alias in ('hg', 'git'):
-        return vcs_repo.branches[name]
-    elif type_ == 'bookmark' and vcs_repo.alias == 'hg':
-        return vcs_repo.bookmarks[name]
-    else:
-        raise ValueError()

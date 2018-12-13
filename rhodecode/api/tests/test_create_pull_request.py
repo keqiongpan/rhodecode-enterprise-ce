@@ -56,6 +56,25 @@ class TestCreatePullRequestApi(object):
             assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
+    @pytest.mark.parametrize('source_ref', [
+        'bookmarg:default:initial'
+    ])
+    def test_create_with_wrong_refs_data(self, backend, source_ref):
+
+        data = self._prepare_data(backend)
+        data['source_ref'] = source_ref
+
+        id_, params = build_data(
+            self.apikey_regular, 'create_pull_request', **data)
+
+        response = api_call(self.app, params)
+
+        expected = "Ref `{}` type is not allowed. " \
+                   "Only:['bookmark', 'book', 'tag', 'branch'] " \
+                   "are possible.".format(source_ref)
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
     def test_create_with_correct_data(self, backend):
         data = self._prepare_data(backend)
         RepoModel().revoke_user_permission(
