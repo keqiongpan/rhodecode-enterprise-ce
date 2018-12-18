@@ -142,13 +142,13 @@ def exception_view(exc, request):
 
     fault_message = 'undefined error'
     if isinstance(exc, JSONRPCError):
-        fault_message = exc.message
+        fault_message = safe_str(exc.message)
         log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCValidationError):
         colander_exc = exc.colander_exception
         # TODO(marcink): think maybe of nicer way to serialize errors ?
         fault_message = colander_exc.asdict()
-        log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
+        log.debug('json-rpc colander error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCForbidden):
         fault_message = 'Access was denied to this resource.'
         log.warning('json-rpc forbidden call rpc_id:%s "%s"', rpc_id, fault_message)
