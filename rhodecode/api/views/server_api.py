@@ -30,6 +30,8 @@ from rhodecode.api.utils import (
 from rhodecode.lib.utils import repo2db_mapper
 from rhodecode.lib import system_info
 from rhodecode.lib import user_sessions
+from rhodecode.lib import exc_tracking
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import UserIpMap
 from rhodecode.model.scm import ScmModel
@@ -293,7 +295,7 @@ def get_method(request, apiuser, pattern=Optional('*')):
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
     :param pattern: pattern to match method names against
-    :type older_then: Optional("*")
+    :type pattern: Optional("*")
 
     Example output:
 
@@ -349,3 +351,64 @@ def get_method(request, apiuser, pattern=Optional('*')):
         args_desc.append(func_kwargs)
 
     return matches.keys() + args_desc
+
+
+@jsonrpc_method()
+def store_exception(request, apiuser, exc_data_json, prefix=Optional('rhodecode')):
+    """
+    Stores sent exception inside the built-in exception tracker in |RCE| server.
+
+    This command can only be run using an |authtoken| with admin rights to
+    the specified repository.
+
+    This command takes the following options:
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+
+    :param exc_data_json: JSON data with exception e.g
+        {"exc_traceback": "Value `1` is not allowed", "exc_type_name": "ValueError"}
+    :type exc_data_json: JSON data
+
+    :param prefix: prefix for error type, e.g 'rhodecode', 'vcsserver', 'rhodecode-tools'
+    :type prefix: Optional("rhodecode")
+
+    Example output:
+
+    .. code-block:: bash
+
+      id : <id_given_in_input>
+      "result": {
+        "exc_id": 139718459226384,
+        "exc_url": "http://localhost:8080/_admin/settings/exceptions/139718459226384"
+      }
+      error :  null
+    """
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    prefix = Optional.extract(prefix)
+    exc_id = exc_tracking.generate_id()
+
+    try:
+        exc_data = json.loads(exc_data_json)
+    except Exception:
+        log.error('Failed to parse JSON: %r', exc_data_json)
+        raise JSONRPCError('Failed to parse JSON data from exc_data_json field. '
+                           'Please make sure it contains a valid JSON.')
+
+    try:
+        exc_traceback = exc_data['exc_traceback']
+        exc_type_name = exc_data['exc_type_name']
+    except KeyError as err:
+        raise JSONRPCError('Missing exc_traceback, or exc_type_name '
+                           'in exc_data_json field. Missing: {}'.format(err))
+
+    exc_tracking._store_exception(
+        exc_id=exc_id, exc_traceback=exc_traceback,
+        exc_type_name=exc_type_name, prefix=prefix)
+
+    exc_url = request.route_url(
+        'admin_settings_exception_tracker_show', exception_id=exc_id)
+    return {'exc_id': exc_id, 'exc_url': exc_url}
+

@@ -67,14 +67,13 @@ def get_exc_store():
     return _exc_store_path
 
 
-def _store_exception(exc_id, exc_info, prefix):
-    exc_type, exc_value, exc_traceback = exc_info
-    tb = ''.join(traceback.format_exception(
-        exc_type, exc_value, exc_traceback, None))
+def _store_exception(exc_id, exc_type_name, exc_traceback, prefix):
+    """
+    Low level function to store exception in the exception tracker
+    """
 
-    exc_type_name = exc_type.__name__
     exc_store_path = get_exc_store()
-    exc_data, org_data = exc_serialize(exc_id, tb, exc_type_name)
+    exc_data, org_data = exc_serialize(exc_id, exc_traceback, exc_type_name)
     exc_pref_id = '{}_{}_{}'.format(exc_id, prefix, org_data['exc_timestamp'])
     if not os.path.isdir(exc_store_path):
         os.makedirs(exc_store_path)
@@ -82,6 +81,16 @@ def _store_exception(exc_id, exc_info, prefix):
     with open(stored_exc_path, 'wb') as f:
         f.write(exc_data)
     log.debug('Stored generated exception %s as: %s', exc_id, stored_exc_path)
+
+
+def _prepare_exception(exc_info):
+    exc_type, exc_value, exc_traceback = exc_info
+    exc_type_name = exc_type.__name__
+
+    tb = ''.join(traceback.format_exception(
+        exc_type, exc_value, exc_traceback, None))
+
+    return exc_type_name, tb
 
 
 def store_exception(exc_id, exc_info, prefix=global_prefix):
@@ -93,7 +102,9 @@ def store_exception(exc_id, exc_info, prefix=global_prefix):
     """
 
     try:
-        _store_exception(exc_id=exc_id, exc_info=exc_info, prefix=prefix)
+        exc_type_name, exc_traceback = _prepare_exception(exc_info)
+        _store_exception(exc_id=exc_id, exc_type_name=exc_type_name,
+                         exc_traceback=exc_traceback,  prefix=prefix)
     except Exception:
         log.exception('Failed to store exception `%s` information', exc_id)
         # there's no way this can fail, it will crash server badly if it does.
@@ -149,3 +160,7 @@ def delete_exception(exc_id, prefix=global_prefix):
         log.exception('Failed to remove exception `%s` information', exc_id)
         # there's no way this can fail, it will crash server badly if it does.
         pass
+
+
+def generate_id():
+    return id(object())
