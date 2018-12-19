@@ -119,11 +119,11 @@ class WebhookSettingsSchema(colander.Schema):
         colander.String(),
         title=_('Call Method'),
         description=_('Select if the Webhook call should be made '
-                      'with POST or GET.'),
+                      'with POST, GET or PUT.'),
         default='post',
         missing='',
         widget=deform.widget.RadioChoiceWidget(
-            values=[('get', 'GET'), ('post', 'POST')],
+            values=[('get', 'GET'), ('post', 'POST'), ('put', 'PUT')],
             inline=True
         ),
     )
