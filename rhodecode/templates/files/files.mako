@@ -314,7 +314,7 @@
         $(document).ready(function() {
             callbacks();
             var search_GET = "${request.GET.get('search','')}";
-            if (search_GET == "1") {
+            if (search_GET === "1") {
                 _NODEFILTER.initFilter();
             }
         });
