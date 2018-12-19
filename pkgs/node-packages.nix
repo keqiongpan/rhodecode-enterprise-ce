@@ -4676,6 +4676,15 @@ let
         sha1 = "ecdca8f13144e660f1b5bd41f12f3479d98dfb8f";
       };
     };
+    "mark.js-8.11.1" = {
+      name = "mark.js";
+      packageName = "mark.js";
+      version = "8.11.1";
+      src = fetchurl {
+        url = "https://registry.npmjs.org/mark.js/-/mark.js-8.11.1.tgz";
+        sha1 = "180f1f9ebef8b0e638e4166ad52db879beb2ffc5";
+      };
+    };
     "math-expression-evaluator-1.2.17" = {
       name = "math-expression-evaluator";
       packageName = "math-expression-evaluator";
@@ -8510,6 +8519,7 @@ let
       sources."map-age-cleaner-0.1.3"
       sources."map-cache-0.2.2"
       sources."map-visit-1.0.0"
+      sources."mark.js-8.11.1"
       sources."math-expression-evaluator-1.2.17"
       sources."md5.js-1.3.5"
       sources."mem-4.0.0"
