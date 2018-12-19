@@ -165,7 +165,7 @@ def error_handler(exception, request):
 
     error_explanation = base_response.explanation or str(base_response)
     if base_response.status_code == 404:
-        error_explanation += " Or you don't have permission to access it."
+        error_explanation += " Optionally you don't have permission to access this page."
     c = AttributeDict()
     c.error_message = base_response.status
     c.error_explanation = error_explanation
