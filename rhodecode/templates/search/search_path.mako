@@ -4,7 +4,8 @@
     <tr>
         <th>${_('Repository')}</th>
         <th>${_('File')}</th>
-        ##TODO: add 'Last Change' and 'Author' here
+        <th>${_('Size')}</th>
+        <th>${_('Lines')}</th>
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate
@@ -23,6 +24,16 @@
                 <td class="td-componentname">
                     ${h.link_to(h.literal(entry['f_path']),
                         h.route_path('repo_files',repo_name=entry['repository'],commit_id='tip',f_path=entry['f_path']))}
+                </td>
+                <td>
+                    %if entry.get('size'):
+                      ${h.format_byte_size_binary(entry['size'])}
+                    %endif
+                </td>
+                <td>
+                    %if entry.get('lines'):
+                      ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
+                    %endif
                 </td>
             </tr>
         % endif
