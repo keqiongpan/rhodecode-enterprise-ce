@@ -48,7 +48,6 @@ import bleach
 from datetime import datetime
 from functools import partial
 from pygments.formatters.html import HtmlFormatter
-from pygments import highlight as code_highlight
 from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
 
@@ -81,11 +80,13 @@ from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
+from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.db import Permission, User, Repository
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import IssueTrackerSettingsModel
+
 
 log = logging.getLogger(__name__)
 
@@ -260,6 +261,21 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
     return literal('/'.join(url_segments))
 
 
+def code_highlight(code, lexer, formatter, use_hl_filter=False):
+    """
+    Lex ``code`` with ``lexer`` and format it with the formatter ``formatter``.
+
+    If ``outfile`` is given and a valid file object (an object
+    with a ``write`` method), the result will be written to it, otherwise
+    it is returned as a string.
+    """
+    if use_hl_filter:
+        # add HL filter
+        from rhodecode.lib.index import search_utils
+        lexer.add_filter(search_utils.ElasticSearchHLFilter())
+    return pygments.format(pygments.lex(code, lexer), formatter)
+
+
 class CodeHtmlFormatter(HtmlFormatter):
     """
     My code Html Formatter for source codes
@@ -386,108 +402,7 @@ class SearchContentCodeHtmlFormatter(CodeHtmlFormatter):
 
             current_line_number += 1
 
-
         yield 0, '</table>'
-
-
-def extract_phrases(text_query):
-    """
-    Extracts phrases from search term string making sure phrases
-    contained in double quotes are kept together - and discarding empty values
-    or fully whitespace values eg.
-
-    'some   text "a phrase" more' => ['some', 'text', 'a phrase', 'more']
-
-    """
-
-    in_phrase = False
-    buf = ''
-    phrases = []
-    for char in text_query:
-        if in_phrase:
-            if char == '"': # end phrase
-                phrases.append(buf)
-                buf = ''
-                in_phrase = False
-                continue
-            else:
-                buf += char
-                continue
-        else:
-            if char == '"': # start phrase
-                in_phrase = True
-                phrases.append(buf)
-                buf = ''
-                continue
-            elif char == ' ':
-                phrases.append(buf)
-                buf = ''
-                continue
-            else:
-                buf += char
-
-    phrases.append(buf)
-    phrases = [phrase.strip() for phrase in phrases if phrase.strip()]
-    return phrases
-
-
-def get_matching_offsets(text, phrases):
-    """
-    Returns a list of string offsets in `text` that the list of `terms` match
-
-    >>> get_matching_offsets('some text here', ['some', 'here'])
-    [(0, 4), (10, 14)]
-
-    """
-    offsets = []
-    for phrase in phrases:
-        for match in re.finditer(phrase, text):
-            offsets.append((match.start(), match.end()))
-
-    return offsets
-
-
-def normalize_text_for_matching(x):
-    """
-    Replaces all non alnum characters to spaces and lower cases the string,
-    useful for comparing two text strings without punctuation
-    """
-    return re.sub(r'[^\w]', ' ', x.lower())
-
-
-def get_matching_line_offsets(lines, terms):
-    """ Return a set of `lines` indices (starting from 1) matching a
-    text search query, along with `context` lines above/below matching lines
-
-    :param lines: list of strings representing lines
-    :param terms: search term string to match in lines eg. 'some text'
-    :param context: number of lines above/below a matching line to add to result
-    :param max_lines: cut off for lines of interest
-     eg.
-
-    text = '''
-    words words words
-    words words words
-    some text some
-    words words words
-    words words words
-    text here what
-    '''
-    get_matching_line_offsets(text, 'text', context=1)
-    {3: [(5, 9)], 6: [(0, 4)]]
-
-    """
-    matching_lines = {}
-    phrases = [normalize_text_for_matching(phrase)
-               for phrase in extract_phrases(terms)]
-
-    for line_index, line in enumerate(lines, start=1):
-        match_offsets = get_matching_offsets(
-            normalize_text_for_matching(line), phrases)
-        if match_offsets:
-            matching_lines[line_index] = match_offsets
-
-    return matching_lines
 
 
 def hsv_to_rgb(h, s, v):
@@ -1904,25 +1819,6 @@ def journal_filter_help(request):
     ).format(actions=actions)
 
 
-def search_filter_help(searcher, request):
-    _ = request.translate
-
-    terms = ''
-    return _(
-        'Example filter terms for `{searcher}` search:\n' +
-        '{terms}\n' +
-        'Generate wildcards using \'*\' character:\n' +
-        '     "repo_name:vcs*" - search everything starting with \'vcs\'\n' +
-        '     "repo_name:*vcs*" - search for repository containing \'vcs\'\n' +
-        '\n' +
-        'Optional AND / OR operators in queries\n' +
-        '     "repo_name:vcs OR repo_name:test"\n' +
-        '     "owner:test AND repo_name:test*"\n' +
-        'More: {search_doc}'
-    ).format(searcher=searcher.name,
-             terms=terms, search_doc=searcher.query_lang_doc)
-
-
 def not_mapped_error(repo_name):
     from rhodecode.translation import _
     flash(_('%s repository is not mapped to db perhaps'
@@ -2107,3 +2003,15 @@ def go_import_header(request, db_repo=None):
 def reviewer_as_json(*args, **kwargs):
     from rhodecode.apps.repository.utils import reviewer_as_json as _reviewer_as_json
     return _reviewer_as_json(*args, **kwargs)
+
+
+def get_repo_view_type(request):
+    route_name = request.matched_route.name
+    route_to_view_type = {
+        'repo_changelog': 'changelog',
+        'repo_files': 'files',
+        'repo_summary': 'summary',
+        'repo_commit': 'commit'
+
+    }
+    return route_to_view_type.get(route_name)

@@ -34,6 +34,9 @@ class SearchParamsSchema(colander.MappingSchema):
         colander.String(),
         missing='newfirst',
         validator=colander.OneOf(['oldfirst', 'newfirst']))
+    search_max_lines = colander.SchemaNode(
+        colander.Integer(),
+        missing=10)
     page_limit = colander.SchemaNode(
         colander.Integer(),
         missing=10,

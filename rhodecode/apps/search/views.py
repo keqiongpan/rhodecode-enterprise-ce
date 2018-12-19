@@ -45,11 +45,14 @@ def search(request, tmpl_context, repo_name):
     errors = []
     try:
         search_params = schema.deserialize(
-            dict(search_query=request.GET.get('q'),
-                 search_type=request.GET.get('type'),
-                 search_sort=request.GET.get('sort'),
-                 page_limit=request.GET.get('page_limit'),
-                 requested_page=request.GET.get('page'))
+            dict(
+                search_query=request.GET.get('q'),
+                search_type=request.GET.get('type'),
+                search_sort=request.GET.get('sort'),
+                search_max_lines=request.GET.get('max_lines'),
+                page_limit=request.GET.get('page_limit'),
+                requested_page=request.GET.get('page'),
+             )
         )
     except validation_schema.Invalid as e:
         errors = e.children
@@ -57,12 +60,13 @@ def search(request, tmpl_context, repo_name):
     def url_generator(**kw):
         q = urllib.quote(safe_str(search_query))
         return update_params(
-            "?q=%s&type=%s" % (q, safe_str(search_type)), **kw)
+            "?q=%s&type=%s&max_lines=%s" % (q, safe_str(search_type), search_max_lines), **kw)
 
     c = tmpl_context
     search_query = search_params.get('search_query')
     search_type = search_params.get('search_type')
     search_sort = search_params.get('search_sort')
+    search_max_lines = search_params.get('search_max_lines')
     if search_params.get('search_query'):
         page_limit = search_params['page_limit']
         requested_page = search_params['requested_page']

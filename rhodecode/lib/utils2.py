@@ -1009,3 +1009,14 @@ def glob2re(pat):
         else:
             res = res + re.escape(c)
     return res + '\Z(?ms)'
+
+
+def parse_byte_string(size_str):
+    match = re.match(r'(\d+)(MB|KB)', size_str, re.IGNORECASE)
+    if not match:
+        raise ValueError('Given size:%s is invalid, please make sure '
+                         'to use format of <num>(MB|KB)' % size_str)
+
+    _parts = match.groups()
+    num, type_ = _parts
+    return long(num) * {'mb': 1024*1024, 'kb': 1024}[type_.lower()]

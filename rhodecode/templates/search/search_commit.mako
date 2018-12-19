@@ -1,5 +1,7 @@
 <%namespace name="base" file="/base/base.mako"/>
 
+% if c.formatted_results:
+
 <table class="rctable search-results">
     <tr>
         <th>${_('Repository')}</th>
@@ -50,14 +52,20 @@
                 </td>
 
                 <td class="td-user author">
-                    ${base.gravatar_with_user(entry['author'])}
+                    <%
+                    ## es6 stores this as object
+                    author = entry['author']
+                    if isinstance(author, dict):
+                        author = author['email']
+                    %>
+                    ${base.gravatar_with_user(author)}
                 </td>
             </tr>
         % endif
     %endfor
 </table>
 
-%if c.cur_query and c.formatted_results:
+%if c.cur_query:
 <div class="pagination-wh pagination-left">
     ${c.formatted_results.pager('$link_previous ~2~ $link_next')}
 </div>
@@ -79,4 +87,16 @@
         target_expand.addClass('open');
       }
     });
+
+    $(".message.td-description").mark(
+        "${c.searcher.query_to_mark(c.cur_query, 'message')}",
+        {
+            "className": 'match',
+            "accuracy": "complementary",
+            "ignorePunctuation": ":._(){}[]!'+=".split("")
+        }
+    );
+
 </script>
+
+% endif

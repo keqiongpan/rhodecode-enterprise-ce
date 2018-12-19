@@ -33,7 +33,7 @@ from whoosh.index import create_in, open_dir, exists_in, EmptyIndexError
 from whoosh.qparser import QueryParser, QueryParserError
 
 import rhodecode.lib.helpers as h
-from rhodecode.lib.index import BaseSearch
+from rhodecode.lib.index import BaseSearcher
 from rhodecode.lib.utils2 import safe_unicode
 
 log = logging.getLogger(__name__)
@@ -59,13 +59,13 @@ FRAGMENTER = ContextFragmenter(200)
 log = logging.getLogger(__name__)
 
 
-class Search(BaseSearch):
+class WhooshSearcher(BaseSearcher):
     # this also shows in UI
     query_lang_doc = 'http://whoosh.readthedocs.io/en/latest/querylang.html'
     name = 'whoosh'
 
     def __init__(self, config):
-        super(Search, self).__init__()
+        super(Searcher, self).__init__()
         self.config = config
         if not os.path.isdir(self.config['location']):
             os.makedirs(self.config['location'])
@@ -162,16 +162,17 @@ class Search(BaseSearch):
         _ = translator
         stats = [
             {'key': _('Index Type'), 'value': 'Whoosh'},
+            {'sep': True},
+
             {'key': _('File Index'), 'value': str(self.file_index)},
-            {'key': _('Indexed documents'),
-             'value': self.file_index.doc_count()},
-            {'key': _('Last update'),
-             'value': h.time_to_datetime(self.file_index.last_modified())},
+            {'key': _('Indexed documents'), 'value': self.file_index.doc_count()},
+            {'key': _('Last update'), 'value': h.time_to_datetime(self.file_index.last_modified())},
+
+            {'sep': True},
+
             {'key': _('Commit index'), 'value': str(self.commit_index)},
-            {'key': _('Indexed documents'),
-             'value': str(self.commit_index.doc_count())},
-            {'key': _('Last update'),
-             'value': h.time_to_datetime(self.commit_index.last_modified())}
+            {'key': _('Indexed documents'), 'value': str(self.commit_index.doc_count())},
+            {'key': _('Last update'), 'value': h.time_to_datetime(self.commit_index.last_modified())}
         ]
         return stats
 
@@ -227,6 +228,9 @@ class Search(BaseSearch):
         return self.searcher
 
 
+Searcher = WhooshSearcher
+
+
 class WhooshResultWrapper(object):
     def __init__(self, search_type, total_hits, results):
         self.search_type = search_type
@@ -263,6 +267,8 @@ class WhooshResultWrapper(object):
         # TODO: marcink: this feels like an overkill, there's a lot of data
         # inside hit object, and we don't need all
         res = dict(hit)
+        # elastic search uses that, we set it empty so it fallbacks to regular HL logic
+        res['content_highlight'] = ''
 
         f_path = ''  # pragma: no cover
         if self.search_type in ['content', 'path']:

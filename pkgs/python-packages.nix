@@ -407,30 +407,75 @@ self: super: {
     };
   };
   "elasticsearch" = super.buildPythonPackage {
-    name = "elasticsearch-2.3.0";
+    name = "elasticsearch-6.3.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."urllib3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/35/5fd52c5f0b0ee405ed4b5195e8bce44c5e041787680dc7b94b8071cac600/elasticsearch-2.3.0.tar.gz";
-      sha256 = "10ad2dk73xsys9vajwsncibs69asa63w1hgwz6lz1prjpyi80c5y";
+      url = "https://files.pythonhosted.org/packages/9d/ce/c4664e8380e379a9402ecfbaf158e56396da90d520daba21cfa840e0eb71/elasticsearch-6.3.1.tar.gz";
+      sha256 = "12y93v0yn7a4xmf969239g8gb3l4cdkclfpbk1qc8hx5qkymrnma";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
     };
   };
   "elasticsearch-dsl" = super.buildPythonPackage {
-    name = "elasticsearch-dsl-2.2.0";
+    name = "elasticsearch-dsl-6.3.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."python-dateutil"
       self."elasticsearch"
+      self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/66/2f/52a086968788e58461641570f45c3207a52d46ebbe9b77dc22b6a8ffda66/elasticsearch-dsl-2.2.0.tar.gz";
-      sha256 = "1g4kxzxsdwlsl2a9kscmx11pafgimhj7y8wrfksv8pgvpkfb9fwr";
+      url = "https://files.pythonhosted.org/packages/4c/0d/1549f50c591db6bb4e66cbcc8d34a6e537c3d89aa426b167c244fd46420a/elasticsearch-dsl-6.3.1.tar.gz";
+      sha256 = "1gh8a0shqi105k325hgwb9avrpdjh0mc6mxwfg9ba7g6lssb702z";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch1" = super.buildPythonPackage {
+    name = "elasticsearch1-1.10.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."urllib3"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/a6/eb/73e75f9681fa71e3157b8ee878534235d57f24ee64f0e77f8d995fb57076/elasticsearch1-1.10.0.tar.gz";
+      sha256 = "0g89444kd5zwql4vbvyrmi2m6l6dcj6ga98j4hqxyyyz6z20aki2";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch1-dsl" = super.buildPythonPackage {
+    name = "elasticsearch1-dsl-0.0.12";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."six"
+      self."python-dateutil"
+      self."elasticsearch1"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/eb/9d/785342775cb10eddc9b8d7457d618a423b4f0b89d8b2b2d1bc27190d71db/elasticsearch1-dsl-0.0.12.tar.gz";
+      sha256 = "0ig1ly39v93hba0z975wnhbmzwj28w6w1sqlr2g7cn5spp732bhk";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch2" = super.buildPythonPackage {
+    name = "elasticsearch2-2.5.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."urllib3"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/84/77/63cf63d4ba11d913b5278406f2a37b0712bec6fc85edfb6151a33eaeba25/elasticsearch2-2.5.0.tar.gz";
+      sha256 = "0ky0q16lbvz022yv6q3pix7aamf026p1y994537ccjf0p0dxnbxr";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -818,11 +863,11 @@ self: super: {
     };
   };
   "markupsafe" = super.buildPythonPackage {
-    name = "markupsafe-1.0";
+    name = "markupsafe-1.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz";
-      sha256 = "0rdn1s8x9ni7ss8rfiacj7x1085lx8mh2zdwqslnw8xc3l4nkgm6";
+      url = "https://files.pythonhosted.org/packages/ac/7e/1b4c2e05809a4414ebce0892fe1e32c14ace86ca7d50c70f00979ca9b3a3/MarkupSafe-1.1.0.tar.gz";
+      sha256 = "1lxirjypbdd3l9jl4vliilhfnhy7c7f2vlldqg1b0i74khn375sf";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1271,11 +1316,11 @@ self: super: {
     };
   };
   "pyparsing" = super.buildPythonPackage {
-    name = "pyparsing-1.5.7";
+    name = "pyparsing-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/6f/2c/47457771c02a8ff0f302b695e094ec309e30452232bd79198ee94fda689f/pyparsing-1.5.7.tar.gz";
-      sha256 = "17z7ws076z977sclj628fvwrp8y9j2rvdjcsq42v129n1gwi8vk4";
+      url = "https://files.pythonhosted.org/packages/d0/09/3e6a5eeb6e04467b737d55f8bba15247ac0876f98fae659e58cd744430c6/pyparsing-2.3.0.tar.gz";
+      sha256 = "14k5v7n3xqw8kzf42x06bzp184spnlkya2dpjyflax6l3yrallzk";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1642,7 +1687,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.15.0";
+    name = "rhodecode-enterprise-ce-4.16.0";
     buildInputs = [
       self."pytest"
       self."py"
@@ -1788,7 +1833,7 @@ self: super: {
     };
   };
   "rhodecode-tools" = super.buildPythonPackage {
-    name = "rhodecode-tools-1.0.1";
+    name = "rhodecode-tools-1.1.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."click"
@@ -1797,14 +1842,16 @@ self: super: {
       self."mako"
       self."markupsafe"
       self."requests"
-      self."elasticsearch"
-      self."elasticsearch-dsl"
       self."urllib3"
       self."whoosh"
+      self."elasticsearch"
+      self."elasticsearch-dsl"
+      self."elasticsearch2"
+      self."elasticsearch1-dsl"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.0.1.tar.gz?md5=ffb5d6bcb855305b93cfe23ad42e500b";
-      sha256 = "0nr300s4sg685qs4wgbwlplwriawrwi6jq79z37frcnpyc89gpvm";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.1.0.tar.gz?md5=cc320c277cb2add546220290ac9be626";
+      sha256 = "1wbnnfrzyp0d4ys55vj5vnfrzfhwlqgdhc8yv8i6kwinizf8hfrn";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];
@@ -1848,11 +1895,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.6.2";
+    name = "setuptools-40.6.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip";
-      sha256 = "0r2c5hapirlzm34h7pl1lgkm6gk7bcrlrdj28qgsvaqg3f74vfw6";
+      url = "https://files.pythonhosted.org/packages/37/1b/b25507861991beeade31473868463dad0e58b1978c209de27384ae541b0b/setuptools-40.6.3.zip";
+      sha256 = "1y085dnk574sxw9aymdng9gijvrsbw86hsv9hqnhv7y4d6nlsirv";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2043,11 +2090,11 @@ self: super: {
     };
   };
   "urllib3" = super.buildPythonPackage {
-    name = "urllib3-1.21";
+    name = "urllib3-1.24.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/34/95/7b28259d0006ed681c424cd71a668363265eac92b67dddd018eb9a22bff8/urllib3-1.21.tar.gz";
-      sha256 = "0irnj4wvh2y36s4q3l2vas9qr9m766w6w418nb490j3mf8a8zw6h";
+      url = "https://files.pythonhosted.org/packages/b1/53/37d82ab391393565f2f831b8eedbffd57db5a718216f82f1a8b4d381a1c1/urllib3-1.24.1.tar.gz";
+      sha256 = "08lwd9f3hqznyf32vnzwvp87pchx062nkbgyrf67rwlkgj0jk5fy";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

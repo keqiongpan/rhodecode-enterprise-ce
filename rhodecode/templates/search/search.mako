@@ -18,10 +18,7 @@
   %else:
     ${_('Search inside all accessible repositories')}
   %endif
-  %if c.cur_query:
-    &raquo;
-    ${c.cur_query}
-  %endif
+
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -59,7 +56,8 @@
         <div class="fields">
             ${h.text('q', c.cur_query, placeholder="Enter query...")}
 
-            ${h.select('type',c.search_type,[('content',_('File contents')), ('commit',_('Commit messages')), ('path',_('File names')),],id='id_search_type')}
+            ${h.select('type',c.search_type,[('content',_('Files')), ('path',_('File path')),('commit',_('Commits'))],id='id_search_type')}
+            ${h.hidden('max_lines', '10')}
             <input type="submit" value="${_('Search')}" class="btn"/>
             <br/>
 
@@ -72,8 +70,54 @@
               </span>
             % endfor
             <div class="field">
-                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
-                <pre id="search-help" style="display: none">${h.tooltip(h.search_filter_help(c.searcher, request))}</pre>
+                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Query Langague examples')}</p>
+<pre id="search-help" style="display: none">\
+
+% if c.searcher.name == 'whoosh':
+Example filter terms for `Whoosh` search:
+query lang: <a href="${c.searcher.query_lang_doc}">Whoosh Query Language</a>
+Whoosh has limited query capabilities. For advanced search use ElasticSearch 6 from RhodeCode EE edition.
+
+Generate wildcards using '*' character:
+  "repo_name:vcs*" - search everything starting with 'vcs'
+  "repo_name:*vcs*" - search for repository containing 'vcs'
+
+Optional AND / OR operators in queries
+  "repo_name:vcs OR repo_name:test"
+  "owner:test AND repo_name:test*" AND extension:py
+
+Move advanced search is available via ElasticSearch6 backend in EE edition.
+% elif c.searcher.name == 'elasticsearch' and c.searcher.es_version == '2':
+Example filter terms for `ElasticSearch-${c.searcher.es_version}`search:
+ElasticSearch-2 has limited query capabilities. For advanced search use ElasticSearch 6 from RhodeCode EE edition.
+
+search type: content (File Content)
+  indexed fields: content
+
+  # search for `fix` string in all files
+  fix
+
+search type: commit (Commit message)
+  indexed fields: message
+
+search type: path (File name)
+  indexed fields: path
+
+% else:
+Example filter terms for `ElasticSearch-${c.searcher.es_version}`search:
+query lang: <a href="${c.searcher.query_lang_doc}">ES 6 Query Language</a>
+The reserved characters needed espace by `\`: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
+% for handler in c.searcher.get_handlers().values():
+
+search type: ${handler.search_type_label}
+  *indexed fields*: ${', '.join( [('\n    ' if x[0]%4==0 else '')+x[1] for x in enumerate(handler.es_6_field_names)])}
+  % for entry in handler.es_6_example_queries:
+  ${entry.rstrip()}
+  % endfor
+% endfor
+
+% endif
+</pre>
             </div>
 
             <div class="field">${c.runtime}</div>
@@ -96,6 +140,7 @@
 </div>
 <script>
     $(document).ready(function(){
+        $('#q').autoGrowInput();
         $("#id_search_type").select2({
             'containerCssClass': "drop-menu",
             'dropdownCssClass': "drop-menu-dropdown",

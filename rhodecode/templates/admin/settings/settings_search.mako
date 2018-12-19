@@ -5,8 +5,13 @@
     <div class="panel-body">
         <dl class="dl-horizontal">
           % for stat in c.statistics:
-          <dt>${stat['key']}</dt>
-          <dd>${stat['value']}</dd>
+              % if stat.get('sep'):
+                  <dt></dt>
+                  <dd>--</dd>
+              % else:
+                  <dt>${stat['key']}</dt>
+                  <dd>${stat['value']}</dd>
+              % endif
           % endfor
         </dl>
     </div>

@@ -58,7 +58,7 @@ def author_name(author):
     to get the username
     """
 
-    if not author or not '@' in author:
+    if not author or '@' not in author:
         return author
     else:
         return author.replace(author_email(author), '').replace('<', '')\
