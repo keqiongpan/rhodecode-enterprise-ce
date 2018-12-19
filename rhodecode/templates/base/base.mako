@@ -594,7 +594,7 @@ commit:efced4, to search for commits
 
         $('#main_filter').autocomplete({
             serviceUrl: pyroutes.url('goto_switcher_data'),
-            params: {"repo_group_id": templateContext.repo_group_id},
+            params: {"search_context": templateContext.search_context},
             minChars:2,
             maxHeight:400,
             deferRequestBy: 300, //miliseconds
@@ -602,9 +602,15 @@ commit:efced4, to search for commits
             autoSelectFirst: true,
             formatResult: autocompleteMainFilterFormatResult,
             lookupFilter: autocompleteMainFilterResult,
-            onSelect: function(element, suggestion){
+            onSelect: function (element, suggestion) {
                 handleSelect(element, suggestion);
                 return false;
+            },
+            onSearchError: function (element, query, jqXHR, textStatus, errorThrown) {
+                if (jqXHR !== 'abort') {
+                    alert("Error during search.\nError code: {0}".format(textStatus));
+                    window.location = '';
+                }
             }
         });
 
