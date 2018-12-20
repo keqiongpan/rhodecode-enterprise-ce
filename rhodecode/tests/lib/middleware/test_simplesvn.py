@@ -161,9 +161,17 @@ class TestSimpleSvnApp(object):
         response_headers = self.app._get_response_headers(headers)
         assert sorted(response_headers) == sorted(expected_headers)
 
-    def test_get_url(self):
-        url = self.app._get_url(self.path)
-        expected_url = '{}{}'.format(self.host.strip('/'), self.path)
+    @pytest.mark.parametrize('svn_http_url, path_info, expected_url', [
+        ('http://localhost:8200', '/repo_name', 'http://localhost:8200/repo_name'),
+        ('http://localhost:8200///', '/repo_name', 'http://localhost:8200/repo_name'),
+        ('http://localhost:8200', '/group/repo_name', 'http://localhost:8200/group/repo_name'),
+        ('http://localhost:8200/', '/group/repo_name', 'http://localhost:8200/group/repo_name'),
+        ('http://localhost:8200/prefix', '/repo_name', 'http://localhost:8200/prefix/repo_name'),
+        ('http://localhost:8200/prefix', 'repo_name', 'http://localhost:8200/prefix/repo_name'),
+        ('http://localhost:8200/prefix', '/group/repo_name', 'http://localhost:8200/prefix/group/repo_name')
+    ])
+    def test_get_url(self, svn_http_url, path_info, expected_url):
+        url = self.app._get_url(svn_http_url, path_info)
         assert url == expected_url
 
     def test_call(self):
