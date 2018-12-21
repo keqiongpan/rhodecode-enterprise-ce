@@ -65,11 +65,13 @@ class OpsView(BaseAppView):
         """
         Test exception handling and emails on errors
         """
+
         class TestException(Exception):
             pass
-
+        # add timeout so we add some sort of rate limiter
+        time.sleep(2)
         msg = ('RhodeCode Enterprise test exception. '
-               'Generation time: {}'.format(time.time()))
+               'Client:{}. Generation time: {}.'.format(self.request.user, time.time()))
         raise TestException(msg)
 
     @view_config(
