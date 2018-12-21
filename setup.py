@@ -166,7 +166,6 @@ setup(
             'enterprise=rhodecode.tests.plugin',
         ],
         'console_scripts': [
-            'rc-server=rhodecode.rcserver:main',
             'rc-setup-app=rhodecode.lib.rc_commands.setup_rc:main',
             'rc-upgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
             'rc-ishell=rhodecode.lib.rc_commands.ishell:main',
