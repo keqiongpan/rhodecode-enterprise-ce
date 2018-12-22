@@ -133,6 +133,18 @@ class VcsHttpProxy(object):
         return _maybe_stream_response(response)
 
 
+def read_in_chunks(stream_obj, block_size=1024, chunks=-1):
+    """
+    Read Stream in chunks, default chunk size: 1k.
+    """
+    while chunks:
+        data = stream_obj.read(block_size)
+        if not data:
+            break
+        yield data
+        chunks -= 1
+
+
 def _is_request_chunked(environ):
     stream = environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked'
     return stream
@@ -144,7 +156,8 @@ def _maybe_stream_request(environ):
     log.debug('handling request `%s` with stream support: %s', path, stream)
 
     if stream:
-        return environ['wsgi.input']
+        # set stream by 256k
+        return read_in_chunks(environ['wsgi.input'], block_size=1024 * 256)
     else:
         return environ['wsgi.input'].read()
 
@@ -156,7 +169,8 @@ def _maybe_stream_response(response):
     stream = _is_chunked(response)
     log.debug('returning response with stream: %s', stream)
     if stream:
-        return response.raw.read_chunked()
+        # read in 256k Chunks
+        return response.raw.read_chunked(amt=1024 * 256)
     else:
         return [response.content]
 
