@@ -44,7 +44,11 @@ class SimpleHg(simplevcs.SimpleVCS):
 
         :param environ: environ where PATH_INFO is stored
         """
-        return environ['PATH_INFO'].strip('/')
+        repo_name = environ['PATH_INFO']
+        if repo_name and repo_name.startswith('/'):
+            # remove only the first leading /
+            repo_name = repo_name[1:]
+        return repo_name.rstrip('/')
 
     _ACTION_MAPPING = {
         'changegroup': 'pull',
@@ -147,8 +151,7 @@ class SimpleHg(simplevcs.SimpleVCS):
         return default
 
     def _create_wsgi_app(self, repo_path, repo_name, config):
-        return self.scm_app.create_hg_wsgi_app(
-            repo_path, repo_name, config)
+        return self.scm_app.create_hg_wsgi_app(repo_path, repo_name, config)
 
     def _create_config(self, extras, repo_name):
         config = utils.make_db_config(repo=repo_name)

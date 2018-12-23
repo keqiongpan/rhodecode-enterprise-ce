@@ -141,6 +141,16 @@ class TestVCSOperations(object):
         stdout, stderr = Command('/tmp').execute('git clone', clone_url)
         assert 'not found' in stderr
 
+    def test_clone_hg_with_slashes(self, rc_web_server, tmpdir):
+        clone_url = rc_web_server.repo_clone_url('//' + HG_REPO)
+        stdout, stderr = Command('/tmp').execute('hg clone', clone_url, tmpdir.strpath)
+        assert 'HTTP Error 404: Not Found' in stderr
+
+    def test_clone_git_with_slashes(self, rc_web_server, tmpdir):
+        clone_url = rc_web_server.repo_clone_url('//' + GIT_REPO)
+        stdout, stderr = Command('/tmp').execute('git clone', clone_url)
+        assert 'not found' in stderr
+
     def test_clone_existing_path_hg_not_in_database(
             self, rc_web_server, tmpdir, fs_repo_only):
 
