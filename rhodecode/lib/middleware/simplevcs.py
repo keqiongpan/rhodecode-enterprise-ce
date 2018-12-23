@@ -153,12 +153,10 @@ class SimpleVCS(object):
 
     @property
     def base_path(self):
-        settings_path = self.repo_vcs_config.get(
-            *VcsSettingsModel.PATH_SETTING)
+        settings_path = self.repo_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
 
         if not settings_path:
-            settings_path = self.global_vcs_config.get(
-            *VcsSettingsModel.PATH_SETTING)
+            settings_path = self.global_vcs_config.get(*VcsSettingsModel.PATH_SETTING)
 
         if not settings_path:
             # try, maybe we passed in explicitly as config option
@@ -396,7 +394,6 @@ class SimpleVCS(object):
             meta.Session.remove()
 
     def _handle_request(self, environ, start_response):
-
         if not self._check_ssl(environ, start_response):
             reason = ('SSL required, while RhodeCode was unable '
                       'to detect this as SSL request')
@@ -514,8 +511,7 @@ class SimpleVCS(object):
                         plugin_cache_active, cache_ttl = auth_result.get(
                             'auth_data', {}).get('_ttl_cache') or (False, 0)
                     else:
-                        return auth_result.wsgi_application(
-                            environ, start_response)
+                        return auth_result.wsgi_application(environ, start_response)
 
                 # ==============================================================
                 # CHECK PERMISSIONS FOR THIS REQUEST USING GIVEN USERNAME
