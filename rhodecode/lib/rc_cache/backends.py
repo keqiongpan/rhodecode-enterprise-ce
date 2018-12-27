@@ -96,7 +96,7 @@ class CustomLockFactory(FileLock):
             # set non-blocking, this will cause an exception if we cannot acquire a lock
             operation |= fcntl.LOCK_NB
             start_lock_time = time.time()
-            timeout = 60 * 5  # 5min
+            timeout = 60 * 15  # 15min
             while True:
                 try:
                     flock_org(fd, operation)

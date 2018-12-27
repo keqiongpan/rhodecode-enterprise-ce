@@ -76,6 +76,7 @@ var showRepoSize = function(target, repo_name, commit_id, callback) {
     var url = pyroutes.url('repo_stats',
       {"repo_name": repo_name, "commit_id": commit_id});
 
+    container.show();
     if (!container.hasClass('loaded')) {
         $.ajax({url: url})
             .complete(function (data) {

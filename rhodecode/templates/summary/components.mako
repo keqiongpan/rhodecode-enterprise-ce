@@ -83,9 +83,9 @@
             </div>
         </div>
 
-        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+        <div class="fieldset">
           <div class="left-label-summary">
-            ${_('Information')}:
+            &nbsp;
           </div>
           <div class="right-content">
             <div class="commit-info">
@@ -105,28 +105,42 @@
                 ## commits
                 <span class="tag">
                   % if commit_rev == -1:
-                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}},
+                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}}
                   % else:
                       <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
-                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>,
+                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>
                   % endif
                 </span>
 
                 ## forks
                 <span class="tag">
                   <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
-                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>,
+                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>
                 </span>
 
-                ## repo size
-                % if commit_rev == -1:
-                      <span class="stats-bullet">0 B</span>
-                % else:
-                      <span class="stats-bullet" id="repo_size_container">
-                          ${_('Calculating Repository Size...')}
-                      </span>
-                % endif
+                </div>
+            </div>
+          </div>
+        </div>
 
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            ${_('Repository size')}:
+          </div>
+          <div class="right-content">
+            <div class="commit-info">
+                <div class="tags">
+                   ## repo size
+                    % if commit_rev == -1:
+                          <span class="stats-bullet">0 B</span>
+                    % else:
+                          <span>
+                              <a href="#showSize" onclick="calculateSize(); $(this).hide(); return false" id="show-repo-size">Show repository size</a>
+                          </span>
+                          <span class="stats-bullet" id="repo_size_container" style="display:none">
+                              ${_('Calculating Repository Size...')}
+                          </span>
+                    % endif
                 </div>
             </div>
           </div>

@@ -106,8 +106,8 @@ $(document).ready(function(){
     });
 
 
-    // load details on summary page expand
-    $('#summary_details_expand').on('click', function() {
+    // calculate size of repository
+    calculateSize = function () {
 
         var callback = function (data) {
             % if c.show_stats:
@@ -115,13 +115,9 @@ $(document).ready(function(){
             % endif
         };
 
-        showRepoSize(
-            'repo_size_container',
-            templateContext.repo_name,
-            templateContext.repo_landing_commit,
-            callback);
+        showRepoSize('repo_size_container', templateContext.repo_name, templateContext.repo_landing_commit, callback);
 
-    })
+    }
 
 })
 </script>
