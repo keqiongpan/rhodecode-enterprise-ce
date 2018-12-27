@@ -45,7 +45,7 @@ def route_path(name, params=None, **kwargs):
         'pullrequest_show_all': '/{repo_name}/pull-request',
         'pullrequest_show_all_data': '/{repo_name}/pull-request-data',
         'pullrequest_repo_refs': '/{repo_name}/pull-request/refs/{target_repo_name:.*?[^/]}',
-        'pullrequest_repo_destinations': '/{repo_name}/pull-request/repo-destinations',
+        'pullrequest_repo_targets': '/{repo_name}/pull-request/repo-destinations',
         'pullrequest_new': '/{repo_name}/pull-request/new',
         'pullrequest_create': '/{repo_name}/pull-request/create',
         'pullrequest_update': '/{repo_name}/pull-request/{pull_request_id}/update',

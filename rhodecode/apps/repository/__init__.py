@@ -271,8 +271,8 @@ def includeme(config):
         repo_route=True)
 
     config.add_route(
-        name='pullrequest_repo_destinations',
-        pattern='/{repo_name:.*?[^/]}/pull-request/repo-destinations',
+        name='pullrequest_repo_targets',
+        pattern='/{repo_name:.*?[^/]}/pull-request/repo-targets',
         repo_route=True)
 
     config.add_route(

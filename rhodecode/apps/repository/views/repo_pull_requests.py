@@ -812,37 +812,50 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
-        route_name='pullrequest_repo_destinations', request_method='GET',
+        route_name='pullrequest_repo_targets', request_method='GET',
         renderer='json_ext', xhr=True)
-    def pull_request_repo_destinations(self):
+    def pullrequest_repo_targets(self):
         _ = self.request.translate
         filter_query = self.request.GET.get('query')
 
+        # get the parents
+        parent_target_repos = []
+        if self.db_repo.parent:
+            parents_query = Repository.query() \
+                .order_by(func.length(Repository.repo_name)) \
+                .filter(Repository.fork_id == self.db_repo.parent.repo_id)
+
+            if filter_query:
+                ilike_expression = u'%{}%'.format(safe_unicode(filter_query))
+                parents_query = parents_query.filter(
+                    Repository.repo_name.ilike(ilike_expression))
+            parents = parents_query.limit(20).all()
+
+            for parent in parents:
+                parent_vcs_obj = parent.scm_instance()
+                if parent_vcs_obj and not parent_vcs_obj.is_empty():
+                    parent_target_repos.append(parent)
+
+        # get other forks, and repo itself
         query = Repository.query() \
             .order_by(func.length(Repository.repo_name)) \
             .filter(
-                or_(Repository.repo_name == self.db_repo.repo_name,
-                    Repository.fork_id == self.db_repo.repo_id))
+                or_(Repository.repo_id == self.db_repo.repo_id,  # repo itself
+                    Repository.fork_id == self.db_repo.repo_id)  # forks of this repo
+            )  \
+            .filter(~Repository.repo_id.in_([x.repo_id for x in parent_target_repos]))
 
         if filter_query:
             ilike_expression = u'%{}%'.format(safe_unicode(filter_query))
-            query = query.filter(
-                Repository.repo_name.ilike(ilike_expression))
+            query = query.filter(Repository.repo_name.ilike(ilike_expression))
 
-        add_parent = False
-        if self.db_repo.parent:
-            if filter_query in self.db_repo.parent.repo_name:
-                parent_vcs_obj = self.db_repo.parent.scm_instance()
-                if parent_vcs_obj and not parent_vcs_obj.is_empty():
-                    add_parent = True
+        limit = max(20 - len(parent_target_repos), 5)  # not less then 5
+        target_repos = query.limit(limit).all()
 
-        limit = 20 - 1 if add_parent else 20
-        all_repos = query.limit(limit).all()
-        if add_parent:
-            all_repos += [self.db_repo.parent]
+        all_target_repos = target_repos + parent_target_repos
 
         repos = []
-        for obj in ScmModel().get_repos(all_repos):
+        for obj in ScmModel().get_repos(all_target_repos):
             repos.append({
                 'id': obj['name'],
                 'text': obj['name'],
