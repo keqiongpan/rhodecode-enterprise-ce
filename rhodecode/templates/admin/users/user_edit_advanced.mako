@@ -2,6 +2,7 @@
 
 <%
  elems = [
+    (_('User ID'), c.user.user_id, '', ''),
     (_('Created on'), h.format_date(c.user.created_on), '', ''),
     (_('Source of Record'), c.user.extern_type, '', ''),
 

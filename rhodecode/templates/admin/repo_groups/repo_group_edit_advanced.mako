@@ -2,6 +2,7 @@
 
 <%
  elems = [
+    (_('Repository Group ID'), c.repo_group.group_id, '', ''),
     (_('Owner'), lambda:base.gravatar_with_user(c.repo_group.user.email), '', ''),
     (_('Created on'), h.format_date(c.repo_group.created_on), '', ''),
     (_('Is Personal Group'), c.repo_group.personal or False, '', ''),

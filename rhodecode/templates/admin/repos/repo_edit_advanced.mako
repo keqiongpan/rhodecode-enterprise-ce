@@ -2,6 +2,7 @@
 
 <%
  elems = [
+    (_('Repository ID'), c.rhodecode_db_repo.repo_id, '', ''),
     (_('Owner'), lambda:base.gravatar_with_user(c.rhodecode_db_repo.user.email), '', ''),
     (_('Created on'), h.format_date(c.rhodecode_db_repo.created_on), '', ''),
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
