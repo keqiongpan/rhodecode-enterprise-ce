@@ -170,7 +170,7 @@ def task_failure_signal(
 
     # simulate sys.exc_info()
     exc_info = (einfo.type, einfo.exception, einfo.tb)
-    store_exception(id(exc_info), exc_info, prefix='celery_rhodecode')
+    store_exception(id(exc_info), exc_info, prefix='rhodecode-celery')
 
     closer = celery_app.conf['PYRAMID_CLOSER']
     if closer:
