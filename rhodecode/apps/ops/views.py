@@ -49,9 +49,13 @@ class OpsView(BaseAppView):
             'instance': self.request.registry.settings.get('instance_id'),
         }
         if getattr(self.request, 'user'):
+            caller_name = 'anonymous'
+            if self.request.user.user_id:
+                caller_name = self.request.user.username
+
             data.update({
                 'caller_ip': self.request.user.ip_addr,
-                'caller_name': self.request.user.username,
+                'caller_name': caller_name,
             })
         return {'ok': data}
 
