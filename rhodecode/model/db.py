@@ -3577,7 +3577,33 @@ class _PullRequestBase(BaseModel):
             'org_repo_id', Integer(), ForeignKey('repositories.repo_id'),
             nullable=False)
 
-    source_ref = Column('org_ref', Unicode(255), nullable=False)
+    _source_ref = Column('org_ref', Unicode(255), nullable=False)
+
+    @hybrid_property
+    def source_ref(self):
+        return self._source_ref
+
+    @source_ref.setter
+    def source_ref(self, val):
+        parts = (val or '').split(':')
+        if len(parts) != 3:
+            raise ValueError(
+                'Invalid reference format given: {}, expected X:Y:Z'.format(val))
+        self._source_ref = safe_unicode(val)
+
+    _target_ref = Column('other_ref', Unicode(255), nullable=False)
+
+    @hybrid_property
+    def target_ref(self):
+        return self._target_ref
+
+    @target_ref.setter
+    def target_ref(self, val):
+        parts = (val or '').split(':')
+        if len(parts) != 3:
+            raise ValueError(
+                'Invalid reference format given: {}, expected X:Y:Z'.format(val))
+        self._target_ref = safe_unicode(val)
 
     @declared_attr
     def target_repo_id(cls):
@@ -3586,7 +3612,6 @@ class _PullRequestBase(BaseModel):
             'other_repo_id', Integer(), ForeignKey('repositories.repo_id'),
             nullable=False)
 
-    target_ref = Column('other_ref', Unicode(255), nullable=False)
     _shadow_merge_ref = Column('shadow_merge_ref', Unicode(255), nullable=True)
 
     # TODO: dan: rename column to last_merge_source_rev
@@ -3659,7 +3684,8 @@ class _PullRequestBase(BaseModel):
     def shadow_merge_ref(self, ref):
         self._shadow_merge_ref = self.reference_to_unicode(ref)
 
-    def unicode_to_reference(self, raw):
+    @staticmethod
+    def unicode_to_reference(raw):
         """
         Convert a unicode (or string) to a reference object.
         If unicode evaluates to False it returns None.
@@ -3670,7 +3696,8 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-    def reference_to_unicode(self, ref):
+    @staticmethod
+    def reference_to_unicode(ref):
         """
         Convert a reference object to unicode.
         If reference is None it returns None.
