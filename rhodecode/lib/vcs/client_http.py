@@ -35,7 +35,9 @@ import msgpack
 import requests
 from requests.packages.urllib3.util.retry import Retry
 
-from . import exceptions, CurlSession
+import rhodecode
+from rhodecode.lib.system_info import get_cert_path
+from rhodecode.lib.vcs import exceptions, CurlSession
 
 
 log = logging.getLogger(__name__)
@@ -121,6 +123,8 @@ class RemoteRepo(object):
         if log.isEnabledFor(logging.DEBUG):
             self._call = self._call_with_logging
 
+        self.cert_dir = get_cert_path(rhodecode.CONFIG.get('__file__'))
+
     def __getattr__(self, name):
         def f(*args, **kwargs):
             return self._call(name, *args, **kwargs)
@@ -132,6 +136,8 @@ class RemoteRepo(object):
         # config object is being changed for hooking scenarios
         wire = copy.deepcopy(self._wire)
         wire["config"] = wire["config"].serialize()
+
+        wire["config"].append(('vcs', 'ssl_dir', self.cert_dir))
         payload = {
             'id': str(uuid.uuid4()),
             'method': name,
