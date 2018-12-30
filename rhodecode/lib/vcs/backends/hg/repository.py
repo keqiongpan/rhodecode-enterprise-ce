@@ -610,7 +610,7 @@ class MercurialRepository(BaseRepository):
         Returns the commit id of the merge and a boolean indicating if the
         commit needs to be pushed.
         """
-        self._update(target_ref.commit_id)
+        self._update(target_ref.commit_id, clean=True)
 
         ancestor = self._ancestor(target_ref.commit_id, source_ref.commit_id)
         is_the_same_branch = self._is_the_same_branch(target_ref, source_ref)
@@ -631,7 +631,7 @@ class MercurialRepository(BaseRepository):
                 self._remote.rebase(
                     source=source_ref.commit_id, dest=target_ref.commit_id)
                 self._remote.invalidate_vcs_cache()
-                self._update(bookmark_name)
+                self._update(bookmark_name, clean=True)
                 return self._identify(), True
             except RepositoryError:
                 # The rebase-abort may raise another exception which 'hides'
@@ -710,18 +710,21 @@ class MercurialRepository(BaseRepository):
                   'rebase' if use_rebase else 'merge', dry_run)
         if target_ref.commit_id not in self._heads():
             return MergeResponse(
-                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
+                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD,
+                metadata={'target_ref': target_ref})
 
         try:
-            if (target_ref.type == 'branch' and
-                    len(self._heads(target_ref.name)) != 1):
+            if target_ref.type == 'branch' and len(self._heads(target_ref.name)) != 1:
+                heads = ','.join(self._heads(target_ref.name))
                 return MergeResponse(
                     False, False, None,
-                    MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+                    MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS,
+                    metadata={'heads': heads})
         except CommitDoesNotExistError:
             log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF,
+                metadata={'target_ref': target_ref})
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
@@ -730,6 +733,7 @@ class MercurialRepository(BaseRepository):
         log.debug('Pulling in target reference %s', target_ref)
         self._validate_pull_reference(target_ref)
         shadow_repo._local_pull(self.path, target_ref)
+
         try:
             log.debug('Pulling in source reference %s', source_ref)
             source_repo._validate_pull_reference(source_ref)
@@ -737,12 +741,14 @@ class MercurialRepository(BaseRepository):
         except CommitDoesNotExistError:
             log.exception('Failure when doing local pull on hg shadow repo')
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF,
+                metadata={'source_ref': source_ref})
 
         merge_ref = None
         merge_commit_id = None
         close_commit_id = None
         merge_failure_reason = MergeFailureReason.NONE
+        metadata = {}
 
         # enforce that close branch should be used only in case we source from
         # an actual Branch
@@ -758,8 +764,8 @@ class MercurialRepository(BaseRepository):
                     target_ref, merger_name, merger_email, source_ref)
                 merge_possible = True
             except RepositoryError:
-                log.exception(
-                    'Failure when doing close branch on hg shadow repo')
+                log.exception('Failure when doing close branch on '
+                              'shadow repo: %s', shadow_repo)
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
         else:
@@ -824,19 +830,21 @@ class MercurialRepository(BaseRepository):
                 except RepositoryError:
                     log.exception(
                         'Failure when doing local push from the shadow '
-                        'repository to the target repository.')
+                        'repository to the target repository at %s.', self.path)
                     merge_succeeded = False
                     merge_failure_reason = MergeFailureReason.PUSH_FAILED
+                    metadata['target'] = 'hg shadow repo'
+                    metadata['merge_commit'] = merge_commit_id
             else:
                 merge_succeeded = True
         else:
             merge_succeeded = False
 
         return MergeResponse(
-            merge_possible, merge_succeeded, merge_ref, merge_failure_reason)
+            merge_possible, merge_succeeded, merge_ref, merge_failure_reason,
+            metadata=metadata)
 
-    def _get_shadow_instance(
-            self, shadow_repository_path, enable_hooks=False):
+    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
         config = self.config.copy()
         if not enable_hooks:
             config.clear_section('hooks')

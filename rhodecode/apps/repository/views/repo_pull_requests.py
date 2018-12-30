@@ -1181,10 +1181,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             h.flash(msg, category='success')
         else:
             log.debug(
-                "The merge was not successful. Merge response: %s",
-                merge_resp)
-            msg = PullRequestModel().merge_status_message(
-                merge_resp.failure_reason)
+                "The merge was not successful. Merge response: %s", merge_resp)
+            msg = merge_resp.merge_status_message
             h.flash(msg, category='error')
 
     def _update_reviewers(self, pull_request, review_members, reviewer_rules):

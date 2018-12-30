@@ -33,7 +33,7 @@ import collections
 from pyramid.threadlocal import get_current_request
 
 from rhodecode import events
-from rhodecode.translation import lazy_ugettext#, _
+from rhodecode.translation import lazy_ugettext
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib import audit_logger
 from rhodecode.lib.compat import OrderedDict
@@ -74,43 +74,6 @@ class PullRequestModel(BaseModel):
     cls = PullRequest
 
     DIFF_CONTEXT = diffs.DEFAULT_CONTEXT
-
-    MERGE_STATUS_MESSAGES = {
-        MergeFailureReason.NONE: lazy_ugettext(
-            'This pull request can be automatically merged.'),
-        MergeFailureReason.UNKNOWN: lazy_ugettext(
-            'This pull request cannot be merged because of an unhandled'
-            ' exception.'),
-        MergeFailureReason.MERGE_FAILED: lazy_ugettext(
-            'This pull request cannot be merged because of merge conflicts.'),
-        MergeFailureReason.PUSH_FAILED: lazy_ugettext(
-            'This pull request could not be merged because push to target'
-            ' failed.'),
-        MergeFailureReason.TARGET_IS_NOT_HEAD: lazy_ugettext(
-            'This pull request cannot be merged because the target is not a'
-            ' head.'),
-        MergeFailureReason.HG_SOURCE_HAS_MORE_BRANCHES: lazy_ugettext(
-            'This pull request cannot be merged because the source contains'
-            ' more branches than the target.'),
-        MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS: lazy_ugettext(
-            'This pull request cannot be merged because the target has'
-            ' multiple heads.'),
-        MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
-            'This pull request cannot be merged because the target repository'
-            ' is locked.'),
-        MergeFailureReason._DEPRECATED_MISSING_COMMIT: lazy_ugettext(
-            'This pull request cannot be merged because the target or the '
-            'source reference is missing.'),
-        MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(
-            'This pull request cannot be merged because the target '
-            'reference is missing.'),
-        MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
-            'This pull request cannot be merged because the source '
-            'reference is missing.'),
-        MergeFailureReason.SUBREPO_MERGE_FAILED: lazy_ugettext(
-            'This pull request cannot be merged because of conflicts related '
-            'to sub repositories.'),
-    }
 
     UPDATE_STATUS_MESSAGES = {
         UpdateFailureReason.NONE: lazy_ugettext(
@@ -593,8 +556,7 @@ class PullRequestModel(BaseModel):
         extras['user_agent'] = 'internal-merge'
         merge_state = self._merge_pull_request(pull_request, user, extras)
         if merge_state.executed:
-            log.debug(
-                "Merge was successful, updating the pull request comments.")
+            log.debug("Merge was successful, updating the pull request comments.")
             self._comment_and_close_pr(pull_request, user, merge_state)
 
             self._log_audit_action(
@@ -1254,8 +1216,7 @@ class PullRequestModel(BaseModel):
                 pull_request,
                 force_shadow_repo_refresh=force_shadow_repo_refresh)
             log.debug("Merge response: %s", resp)
-            status = resp.possible, self.merge_status_message(
-                resp.failure_reason)
+            status = resp.possible, resp.merge_status_message
         except NotImplementedError:
             status = False, _('Pull request merging is not supported.')
 
@@ -1297,21 +1258,23 @@ class PullRequestModel(BaseModel):
             "Trying out if the pull request %s can be merged. Force_refresh=%s",
             pull_request.pull_request_id, force_shadow_repo_refresh)
         target_vcs = pull_request.target_repo.scm_instance()
-
         # Refresh the target reference.
         try:
             target_ref = self._refresh_reference(
                 pull_request.target_ref_parts, target_vcs)
         except CommitDoesNotExistError:
             merge_state = MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_TARGET_REF)
+                False, False, None, MergeFailureReason.MISSING_TARGET_REF,
+                metadata={'target_ref': pull_request.target_ref_parts})
             return merge_state
 
         target_locked = pull_request.target_repo.locked
         if target_locked and target_locked[0]:
-            log.debug("The target repository is locked.")
+            locked_by = 'user:{}'.format(target_locked[0])
+            log.debug("The target repository is locked by %s.", locked_by)
             merge_state = MergeResponse(
-                False, False, None, MergeFailureReason.TARGET_IS_LOCKED)
+                False, False, None, MergeFailureReason.TARGET_IS_LOCKED,
+                metadata={'locked_by': locked_by})
         elif force_shadow_repo_refresh or self._needs_merge_state_refresh(
                 pull_request, target_ref):
             log.debug("Refreshing the merge status of the repository.")
@@ -1368,12 +1331,6 @@ class PullRequestModel(BaseModel):
     def _workspace_id(self, pull_request):
         workspace_id = 'pr-%s' % pull_request.pull_request_id
         return workspace_id
-
-    def merge_status_message(self, status_code):
-        """
-        Return a human friendly error message for the given merge status code.
-        """
-        return self.MERGE_STATUS_MESSAGES[status_code]
 
     def generate_repo_data(self, repo, commit_id=None, branch=None,
                            bookmark=None, translator=None):

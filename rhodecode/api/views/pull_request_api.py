@@ -313,7 +313,7 @@ def merge_pull_request(
     # In previous versions the merge response directly contained the merge
     # commit id. It is now contained in the merge reference object. To be
     # backwards compatible we have to extract it again.
-    merge_response = merge_response._asdict()
+    merge_response = merge_response.asdict()
     merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
 
     return merge_response

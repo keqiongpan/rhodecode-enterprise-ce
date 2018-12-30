@@ -911,11 +911,15 @@ class GitRepository(BaseRepository):
                     source_repo, source_ref, merge_message,
                     merger_name, merger_email, dry_run=False,
                     use_rebase=False, close_branch=False):
+
+        log.debug('Executing merge_repo with %s strategy, dry_run mode:%s',
+                  'rebase' if use_rebase else 'merge', dry_run)
         if target_ref.commit_id != self.branches[target_ref.name]:
             log.warning('Target ref %s commit mismatch %s vs %s', target_ref,
                         target_ref.commit_id, self.branches[target_ref.name])
             return MergeResponse(
-                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
+                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD,
+                metadata={'target_ref': target_ref})
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
@@ -943,7 +947,8 @@ class GitRepository(BaseRepository):
                         target_ref, target_ref.commit_id,
                         shadow_repo.branches[target_ref.name])
             return MergeResponse(
-                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
+                False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD,
+                metadata={'target_ref': target_ref})
 
         # calculate new branch
         pr_branch = shadow_repo._get_new_pr_branch(
@@ -954,12 +959,15 @@ class GitRepository(BaseRepository):
         try:
             shadow_repo._local_fetch(source_repo.path, source_ref.name)
         except RepositoryError:
-            log.exception('Failure when doing local fetch on git shadow repo')
+            log.exception('Failure when doing local fetch on '
+                          'shadow repo: %s', shadow_repo)
             return MergeResponse(
-                False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
+                False, False, None, MergeFailureReason.MISSING_SOURCE_REF,
+                metadata={'source_ref': source_ref})
 
         merge_ref = None
         merge_failure_reason = MergeFailureReason.NONE
+        metadata = {}
         try:
             shadow_repo._local_merge(merge_message, merger_name, merger_email,
                                      [source_ref.commit_id])
@@ -988,12 +996,15 @@ class GitRepository(BaseRepository):
                 merge_succeeded = True
             except RepositoryError:
                 log.exception(
-                    'Failure when doing local push on git shadow repo')
+                    'Failure when doing local push from the shadow '
+                    'repository to the target repository at %s.', self.path)
                 merge_succeeded = False
                 merge_failure_reason = MergeFailureReason.PUSH_FAILED
+                metadata['target'] = 'git shadow repo'
+                metadata['merge_commit'] = pr_branch
         else:
             merge_succeeded = False
 
         return MergeResponse(
-            merge_possible, merge_succeeded, merge_ref,
-            merge_failure_reason)
+            merge_possible, merge_succeeded, merge_ref, merge_failure_reason,
+            metadata=metadata)

@@ -21,20 +21,20 @@
 """
 Base module for all VCS systems
 """
-
-import collections
+import os
+import re
+import time
+import shutil
 import datetime
 import fnmatch
 import itertools
 import logging
-import os
-import re
-import time
+import collections
 import warnings
-import shutil
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+from rhodecode.translation import lazy_ugettext
 from rhodecode.lib.utils2 import safe_str, safe_unicode
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.utils import author_name, author_email
@@ -54,9 +54,6 @@ FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
 
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
-MergeResponse = collections.namedtuple(
-    'MergeResponse',
-    ('possible', 'executed', 'merge_ref', 'failure_reason'))
 
 
 class MergeFailureReason(object):
@@ -140,6 +137,92 @@ class UpdateFailureReason(object):
 
     # Update failed because the source reference is missing.
     MISSING_SOURCE_REF = 5
+
+
+class MergeResponse(object):
+
+    # uses .format(**metadata) for variables
+    MERGE_STATUS_MESSAGES = {
+        MergeFailureReason.NONE: lazy_ugettext(
+            u'This pull request can be automatically merged.'),
+        MergeFailureReason.UNKNOWN: lazy_ugettext(
+            u'This pull request cannot be merged because of an unhandled exception. '
+            u'{exception}'),
+        MergeFailureReason.MERGE_FAILED: lazy_ugettext(
+            u'This pull request cannot be merged because of merge conflicts.'),
+        MergeFailureReason.PUSH_FAILED: lazy_ugettext(
+            u'This pull request could not be merged because push to '
+            u'target:`{target}@{merge_commit}` failed.'),
+        MergeFailureReason.TARGET_IS_NOT_HEAD: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'`{target_ref.name}` is not a head.'),
+        MergeFailureReason.HG_SOURCE_HAS_MORE_BRANCHES: lazy_ugettext(
+            u'This pull request cannot be merged because the source contains '
+            u'more branches than the target.'),
+        MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'has multiple heads: `{heads}`.'),
+        MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
+            u'This pull request cannot be merged because the target repository is '
+            u'locked by {locked_by}.'),
+
+        MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'reference `{target_ref.name}` is missing.'),
+        MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            u'This pull request cannot be merged because the source '
+            u'reference `{source_ref.name}` is missing.'),
+        MergeFailureReason.SUBREPO_MERGE_FAILED: lazy_ugettext(
+            u'This pull request cannot be merged because of conflicts related '
+            u'to sub repositories.'),
+
+        # Deprecations
+        MergeFailureReason._DEPRECATED_MISSING_COMMIT: lazy_ugettext(
+            u'This pull request cannot be merged because the target or the '
+            u'source reference is missing.'),
+
+    }
+
+    def __init__(self, possible, executed, merge_ref, failure_reason, metadata=None):
+        self.possible = possible
+        self.executed = executed
+        self.merge_ref = merge_ref
+        self.failure_reason = failure_reason
+        self.metadata = metadata or {}
+
+    def __repr__(self):
+        return '<MergeResponse:{} {}>'.format(self.label, self.failure_reason)
+
+    def __eq__(self, other):
+        same_instance = isinstance(other, self.__class__)
+        return same_instance \
+               and self.possible == other.possible \
+               and self.executed == other.executed \
+               and self.failure_reason == other.failure_reason
+
+    @property
+    def label(self):
+        label_dict = dict((v, k) for k, v in MergeFailureReason.__dict__.items() if
+                          not k.startswith('_'))
+        return label_dict.get(self.failure_reason)
+
+    @property
+    def merge_status_message(self):
+        """
+        Return a human friendly error message for the given merge status code.
+        """
+        msg = safe_unicode(self.MERGE_STATUS_MESSAGES[self.failure_reason])
+        try:
+            return msg.format(**self.metadata)
+        except Exception:
+            log.exception('Failed to format %s message', self)
+            return msg
+
+    def asdict(self):
+        data = {}
+        for k in ['possible', 'executed', 'merge_ref', 'failure_reason']:
+            data[k] = getattr(self, k)
+        return data
 
 
 class BaseRepository(object):
@@ -501,12 +584,11 @@ class BaseRepository(object):
                 repo_id, workspace_id, target_ref, source_repo,
                 source_ref, message, user_name, user_email, dry_run=dry_run,
                 use_rebase=use_rebase, close_branch=close_branch)
-        except RepositoryError:
-            log.exception(
-                'Unexpected failure when running merge, dry-run=%s',
-                dry_run)
+        except RepositoryError as exc:
+            log.exception('Unexpected failure when running merge, dry-run=%s', dry_run)
             return MergeResponse(
-                False, False, None, MergeFailureReason.UNKNOWN)
+                False, False, None, MergeFailureReason.UNKNOWN,
+                metadata={'exception': str(exc)})
 
     def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
