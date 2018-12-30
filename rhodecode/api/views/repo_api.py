@@ -1543,9 +1543,18 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    perm_additions = [[user.user_id, perm.permission_name, "user"]]
     try:
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_additions=perm_additions, cur_user=apiuser)
 
-        RepoModel().grant_user_permission(repo=repo, user=user, perm=perm)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {
@@ -1555,8 +1564,7 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
             'success': True
         }
     except Exception:
-        log.exception(
-            "Exception occurred while trying edit permissions for repo")
+        log.exception("Exception occurred while trying edit permissions for repo")
         raise JSONRPCError(
             'failed to edit permission for user: `%s` in repo: `%s`' % (
                 userid, repoid
@@ -1597,8 +1605,19 @@ def revoke_user_permission(request, apiuser, repoid, userid):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    perm_deletions = [[user.user_id, None, "user"]]
     try:
-        RepoModel().revoke_user_permission(repo=repo, user=user)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_deletions=perm_deletions, cur_user=user)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
+
         Session().commit()
         return {
             'msg': 'Revoked perm for user: `%s` in repo: `%s`' % (
@@ -1607,8 +1626,7 @@ def revoke_user_permission(request, apiuser, repoid, userid):
             'success': True
         }
     except Exception:
-        log.exception(
-            "Exception occurred while trying revoke permissions to repo")
+        log.exception("Exception occurred while trying revoke permissions to repo")
         raise JSONRPCError(
             'failed to edit permission for user: `%s` in repo: `%s`' % (
                 userid, repoid
@@ -1674,9 +1692,17 @@ def grant_user_group_permission(request, apiuser, repoid, usergroupid, perm):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    perm_additions = [[user_group.users_group_id, perm.permission_name, "user_group"]]
     try:
-        RepoModel().grant_user_group_permission(
-            repo=repo, group_name=user_group, perm=perm)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_additions=perm_additions, cur_user=apiuser)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {
@@ -1739,9 +1765,17 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    perm_deletions = [[user_group.users_group_id, None, "user_group"]]
     try:
-        RepoModel().revoke_user_group_permission(
-            repo=repo, group_name=user_group)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_deletions=perm_deletions, cur_user=apiuser)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {
