@@ -24,6 +24,7 @@ import os
 import shutil
 import tempfile
 import collections
+import urllib
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound
 from pyramid.view import view_config
@@ -708,9 +709,14 @@ class RepoFilesView(RepoAppView):
 
         return Response(html)
 
-    def _get_attachement_disposition(self, f_path):
-        return 'attachment; filename=%s' % \
-            safe_str(f_path.split(Repository.NAME_SEP)[-1])
+    def _get_attachement_headers(self, f_path):
+        f_name = safe_str(f_path.split(Repository.NAME_SEP)[-1])
+        safe_path = f_name.replace('"', '\\"')
+        encoded_path = urllib.quote(f_name)
+
+        return "attachment; " \
+               "filename=\"{}\"; " \
+               "filename*=UTF-8\'\'{}".format(safe_path, encoded_path)
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
@@ -765,7 +771,7 @@ class RepoFilesView(RepoAppView):
                 mimetype, disposition = 'text/plain', 'inline'
 
         if disposition == 'attachment':
-            disposition = self._get_attachement_disposition(f_path)
+            disposition = self._get_attachement_headers(f_path)
 
         def stream_node():
             yield file_node.raw_bytes
@@ -804,7 +810,7 @@ class RepoFilesView(RepoAppView):
                 # overwrite our pointer with the REAL large-file
                 file_node = lf_node
 
-        disposition = self._get_attachement_disposition(f_path)
+        disposition = self._get_attachement_headers(f_path)
 
         def stream_node():
             yield file_node.raw_bytes
