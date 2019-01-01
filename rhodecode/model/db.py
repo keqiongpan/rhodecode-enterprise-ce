@@ -3378,7 +3378,10 @@ class ChangesetComment(Base, BaseModel):
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
-    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, backref='resolved_by')
+
+    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, back_populates='resolved_by')
+    resolved_by = relationship('ChangesetComment', back_populates='resolved_comment')
+
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
     status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
