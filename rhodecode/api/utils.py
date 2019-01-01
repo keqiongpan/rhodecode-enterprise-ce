@@ -30,7 +30,7 @@ from rhodecode.lib.auth import (
     HasPermissionAnyApi, HasRepoPermissionAnyApi, HasRepoGroupPermissionAnyApi)
 from rhodecode.lib.utils import safe_unicode
 from rhodecode.lib.vcs.exceptions import RepositoryError
-from rhodecode.controllers.utils import get_commit_from_ref_name
+from rhodecode.lib.view_utils import get_commit_from_ref_name
 from rhodecode.lib.utils2 import str2bool
 
 log = logging.getLogger(__name__)
