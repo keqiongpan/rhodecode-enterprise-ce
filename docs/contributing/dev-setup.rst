@@ -65,6 +65,18 @@ run::
     nix-env -i nix-prefetch-git
 
 
+Speed up JS build by installing PhantomJS
+-----------------------------------------
+
+PhantomJS will be downloaded each time nix-shell is invoked. To speed this by
+setting already downloaded version do this::
+
+    nix-env -i phantomjs-2.1.1
+
+    # and set nix bin path
+    export PATH=$PATH:~/.nix-profile/bin
+
+
 Clone the required repositories
 -------------------------------
 
