@@ -718,11 +718,11 @@ self: super: {
     };
   };
   "iso8601" = super.buildPythonPackage {
-    name = "iso8601-0.1.11";
+    name = "iso8601-0.1.12";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c0/75/c9209ee4d1b5975eb8c2cba4428bde6b61bd55664a98290dd015cdb18e98/iso8601-0.1.11.tar.gz";
-      sha256 = "0c7gh3lsdjds262h0v1sqc66l7hqgfwbakn96qrhdbl0i3vm5yz8";
+      url = "https://files.pythonhosted.org/packages/45/13/3db24895497345fb44c4248c08b16da34a9eb02643cea2754b21b5ed08b0/iso8601-0.1.12.tar.gz";
+      sha256 = "10nyvvnrhw2w3p09v1ica4lgj6f4g9j3kkfx17qmraiq3w7b5i29";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
