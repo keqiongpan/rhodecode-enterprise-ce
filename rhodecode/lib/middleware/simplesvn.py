@@ -51,7 +51,8 @@ class SimpleSvnApp(object):
         data = environ['wsgi.input']
         req_method = environ['REQUEST_METHOD']
         has_content_length = 'CONTENT_LENGTH' in environ
-        path_info = self._get_url(environ['PATH_INFO'])
+        path_info = self._get_url(
+            self.config.get('subversion_http_server_url', ''), environ['PATH_INFO'])
         transfer_encoding = environ.get('HTTP_TRANSFER_ENCODING', '')
         log.debug('Handling: %s method via `%s`', req_method, path_info)
 
@@ -117,9 +118,9 @@ class SimpleSvnApp(object):
             response_headers)
         return response.iter_content(chunk_size=1024)
 
-    def _get_url(self, path):
-        url_path = urlparse.urljoin(
-            self.config.get('subversion_http_server_url', ''), path)
+    def _get_url(self, svn_http_server, path):
+        svn_http_server_url = (svn_http_server or '').rstrip('/')
+        url_path = urlparse.urljoin(svn_http_server_url + '/', (path or '').lstrip('/'))
         url_path = urllib.quote(url_path, safe="/:=~+!$,;'")
         return url_path
 

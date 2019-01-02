@@ -428,7 +428,7 @@ class TestRawFileHandling(object):
                        repo_name=backend.repo_name,
                        commit_id=commit.raw_id, f_path='vcs/nodes.py'),)
 
-        assert response.content_disposition == "attachment; filename=nodes.py"
+        assert response.content_disposition == 'attachment; filename="nodes.py"; filename*=UTF-8\'\'nodes.py'
         assert response.content_type == "text/x-python"
 
     def test_download_file_wrong_cs(self, backend):

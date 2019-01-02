@@ -84,11 +84,11 @@ class TestResolveRefOrError(object):
 
     def test_non_supported_refs(self):
         repo = Mock()
-        ref = 'ancestor:ref'
+        ref = 'bookmark:ref'
         with pytest.raises(JSONRPCError) as excinfo:
             utils.resolve_ref_or_error(ref, repo)
         expected_message = (
-            'The specified value:ancestor:`ref` does not exist, or is not allowed.')
+            'The specified value:bookmark:`ref` does not exist, or is not allowed.')
         assert excinfo.value.message == expected_message
 
     def test_branch_is_not_found(self):

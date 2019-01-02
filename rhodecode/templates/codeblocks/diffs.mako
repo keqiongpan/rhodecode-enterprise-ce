@@ -909,6 +909,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             };
 
             var animateText =  $.debounce(100, function(fPath, anchorId) {
+                fPath = Select2.util.escapeMarkup(fPath);
+
                 // animate setting the text
                 var callback = function () {
                     $('.fpath-placeholder-text').animate({'opacity': 1.00}, 200)

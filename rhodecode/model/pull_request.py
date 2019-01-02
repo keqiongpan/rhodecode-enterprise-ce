@@ -92,6 +92,8 @@ class PullRequestModel(BaseModel):
             'This pull request cannot be updated because the source '
             'reference is missing.'),
     }
+    REF_TYPES = ['bookmark', 'book', 'tag', 'branch']
+    UPDATABLE_REF_TYPES = ['bookmark', 'book', 'branch']
 
     def __get_pull_request(self, pull_request):
         return self._get_instance((
@@ -633,7 +635,7 @@ class PullRequestModel(BaseModel):
 
     def has_valid_update_type(self, pull_request):
         source_ref_type = pull_request.source_ref_parts.type
-        return source_ref_type in ['book', 'branch', 'tag']
+        return source_ref_type in self.REF_TYPES
 
     def update_commits(self, pull_request):
         """
@@ -713,7 +715,7 @@ class PullRequestModel(BaseModel):
             pull_request_version = pull_request
 
         try:
-            if target_ref_type in ('tag', 'branch', 'book'):
+            if target_ref_type in self.REF_TYPES:
                 target_commit = target_repo.get_commit(target_ref_name)
             else:
                 target_commit = target_repo.get_commit(target_ref_id)
@@ -1289,7 +1291,7 @@ class PullRequestModel(BaseModel):
         return merge_state
 
     def _refresh_reference(self, reference, vcs_repository):
-        if reference.type in ('branch', 'book'):
+        if reference.type in self.UPDATABLE_REF_TYPES:
             name_or_id = reference.name
         else:
             name_or_id = reference.commit_id
