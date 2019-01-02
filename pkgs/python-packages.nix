@@ -1225,25 +1225,25 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.4";
+    name = "pyasn1-0.4.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/46/059775dc8e50f722d205452bced4b3cc965d27e8c3389156acd3b1123ae3/pyasn1-0.4.4.tar.gz";
-      sha256 = "0drilmx5j25aplfr5wrml0030cs5fgxp9yp94fhllxgx28yjm3zm";
+      url = "https://files.pythonhosted.org/packages/46/60/b7e32f6ff481b8a1f6c8f02b0fd9b693d1c92ddd2efb038ec050d99a7245/pyasn1-0.4.5.tar.gz";
+      sha256 = "1xqh3jh2nfi2bflk5a0vn59y3pp1vn54f3ksx652sid92gz2096s";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.2";
+    name = "pyasn1-modules-0.2.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/37/33/74ebdc52be534e683dc91faf263931bc00ae05c6073909fde53999088541/pyasn1-modules-0.2.2.tar.gz";
-      sha256 = "0ivm850yi7ajjbi8j115qpsj95bgxdsx48nbjzg0zip788c3xkx0";
+      url = "https://files.pythonhosted.org/packages/c8/0e/3fe59edc782faf8b429f4a1db734418d0f68a7e50f43095747c08330e952/pyasn1-modules-0.2.3.tar.gz";
+      sha256 = "0qdjk7lnqmjzpvv3qq2xi8j8bhr6ghr75gv0ngbs7jxyv8lwnkyi";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
