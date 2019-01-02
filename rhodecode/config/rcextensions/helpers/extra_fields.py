@@ -18,11 +18,26 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 """
-us in hooks::
+example usage in hooks::
 
     from .helpers import extra_fields
     # returns list of dicts with key-val fetched from extra fields
     repo_extra_fields = extra_fields.run(**kwargs)
+    repo_extra_fields.get('endpoint_url')
+
+    # the field stored the following example values
+    {u'created_on': datetime.datetime(),
+     u'field_key': u'endpoint_url',
+     u'field_label': u'Endpoint URL',
+     u'field_desc': u'Full HTTP endpoint to call if given',
+     u'field_type': u'str',
+     u'field_value': u'http://server.com/post',
+     u'repo_field_id': 1,
+     u'repository_id': 1}
+    # for example to obtain the value:
+    endpoint_field = repo_extra_fields.get('endpoint_url')
+    if endpoint_field:
+        url = endpoint_field['field_value']
 
 """
 

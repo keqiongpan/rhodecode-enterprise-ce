@@ -54,10 +54,11 @@ def _pre_push_hook(*args, **kwargs):
     repo_extra_fields = extra_fields.run(**kwargs)
 
     # optionally use 'extra fields' to control the logic per repo
-    should_validate = str2bool(repo_extra_fields.get('validate_author', True))
+    validate_author = repo_extra_fields.get('validate_author', {}).get('field_value')
+    should_validate = str2bool(validate_author)
 
     # optionally store validation regex into extra fields
-    validation_regex = repo_extra_fields.get('validation_regex', '')
+    validation_regex = repo_extra_fields.get('validation_regex', {}).get('field_value')
 
     def validate_commit_message(commit_message, message_regex=None):
         """

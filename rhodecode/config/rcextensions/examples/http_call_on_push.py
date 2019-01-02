@@ -25,12 +25,13 @@ def _push_hook(*args, **kwargs):
     repo_extra_fields = extra_fields.run(**kwargs)
 
     if repo_extra_fields.get('endpoint_url'):
-        endpoint = repo_extra_fields['endpoint_url']
+        field_metadata = repo_extra_fields['endpoint_url']
+        endpoint = field_metadata['field_value']
         if endpoint:
             data = {
-                'some_key': 'val'
+                'project': kwargs['repository'],
             }
-            response = http_call.run(url=endpoint, json_data=data)
-            return HookResponse(0, 'Called endpoint {}, with response {}'.format(endpoint, response))
+            response = http_call.run(url=endpoint, params=data)
+            return HookResponse(0, 'Called endpoint {}, with response {}\n'.format(endpoint, response))
 
     return HookResponse(0, '')
