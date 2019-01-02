@@ -22,15 +22,28 @@ us in hooks::
 
     from .helpers import http_call
     # returns response after making a POST call
-    response = http_call.run(url=url, json_data=data)
+    response = http_call.run(url=url, json_data={"key": "val"})
+
+    # returns response after making a GET call
+    response = http_call.run(url=url, params={"key": "val"}, method='get')
 
 """
 
 from rhodecode.integrations.types.base import requests_retry_call
 
 
-def run(url, json_data, method='post'):
+def run(url, json_data=None, params=None, method='post'):
     requests_session = requests_retry_call()
     requests_session.verify = True  # Verify SSL
-    resp = requests_session.post(url, json=json_data, timeout=60)
-    return resp.raise_for_status()  # raise exception on a failed request
+    method_caller = getattr(requests_session, method, 'post')
+
+    timeout = 60
+    if json_data:
+        resp = method_caller(url, json=json_data, timeout=timeout)
+    elif params:
+        resp = method_caller(url, params=json_data, timeout=timeout)
+    else:
+        raise AttributeError('Provide json_data= or params= in function call')
+    resp.raise_for_status()  # raise exception on a failed request
+    return resp
+
