@@ -1365,7 +1365,7 @@ self: super: {
     };
   };
   "pyramid-debugtoolbar" = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-4.4";
+    name = "pyramid-debugtoolbar-4.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyramid"
@@ -1375,8 +1375,8 @@ self: super: {
       self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/00/6f/c04eb4e715a7a5a4b24079ab7ffd1dceb1f70b2e24fc17686a2922dbac0a/pyramid_debugtoolbar-4.4.tar.gz";
-      sha256 = "17p7nxvapvy2hab1rah3ndq2kbs4v83pixj8x2n4m7008ai9lxsz";
+      url = "https://files.pythonhosted.org/packages/14/28/1f240239af340d19ee271ac62958158c79edb01a44ad8c9885508dd003d2/pyramid_debugtoolbar-4.5.tar.gz";
+      sha256 = "0x2p3409pnx66n6dx5vc0mk2r1cp1ydr8mp120w44r9pwcngbibl";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
@@ -1701,6 +1701,7 @@ self: super: {
       self."cov-core"
       self."coverage"
       self."webtest"
+      self."beautifulsoup4"
       self."configobj"
     ];
     doCheck = true;
@@ -1826,6 +1827,7 @@ self: super: {
       self."cov-core"
       self."coverage"
       self."webtest"
+      self."beautifulsoup4"
     ];
     src = ./.;
     meta = {

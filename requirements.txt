@@ -53,7 +53,7 @@ pyflakes==0.8.1
 pygments==2.3.1
 pyparsing==2.3.0
 pyramid-beaker==0.8
-pyramid-debugtoolbar==4.4.0
+pyramid-debugtoolbar==4.5.0
 pyramid-jinja2==2.7
 pyramid-mako==1.0.2
 pyramid==1.10.1
