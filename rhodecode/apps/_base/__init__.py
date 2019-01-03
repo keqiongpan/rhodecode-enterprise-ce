@@ -249,6 +249,12 @@ class RepoAppView(BaseAppView):
             else:  # redirect if we don't show missing requirements
                 raise HTTPFound(h.route_path('home'))
 
+        c.has_origin_repo_read_perm = False
+        if self.db_repo.fork:
+            c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
+                'repository.write', 'repository.read', 'repository.admin')(
+                self.db_repo.fork.repo_name, 'summary fork link')
+
         return c
 
     def _get_f_path_unchecked(self, matchdict, default=None):

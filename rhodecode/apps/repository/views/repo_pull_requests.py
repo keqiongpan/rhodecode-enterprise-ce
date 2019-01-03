@@ -755,7 +755,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         default_target_repo = source_repo
 
-        if source_repo.parent:
+        if source_repo.parent and c.has_origin_repo_read_perm:
             parent_vcs_obj = source_repo.parent.scm_instance()
             if parent_vcs_obj and not parent_vcs_obj.is_empty():
                 # change default if we have a parent repo
@@ -855,6 +855,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         all_target_repos = target_repos + parent_target_repos
 
         repos = []
+        # This checks permissions to the repositories
         for obj in ScmModel().get_repos(all_target_repos):
             repos.append({
                 'id': obj['name'],

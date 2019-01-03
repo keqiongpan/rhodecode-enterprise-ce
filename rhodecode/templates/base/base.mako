@@ -188,7 +188,7 @@
     %if repo_instance.fork:
     <p>
         <i class="icon-code-fork"></i> ${_('Fork of')}
-        <a href="${h.route_path('repo_summary',repo_name=repo_instance.fork.repo_name)}">${repo_instance.fork.repo_name}</a>
+        ${h.link_to_if(c.has_origin_repo_read_perm,repo_instance.fork.repo_name, h.route_path('repo_summary', repo_name=repo_instance.fork.repo_name))}
     </p>
     %endif
 
