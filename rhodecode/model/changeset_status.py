@@ -312,6 +312,7 @@ class ChangesetStatusModel(BaseModel):
             for st in cur_statuses:
                 st.version += 1
                 Session().add(st)
+            Session().flush()
 
         def _create_status(user, repo, status, comment, revision, pull_request):
             new_status = ChangesetStatus()

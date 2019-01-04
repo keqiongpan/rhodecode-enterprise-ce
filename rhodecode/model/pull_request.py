@@ -530,7 +530,7 @@ class PullRequestModel(BaseModel):
         )
         # we commit early at this point. This has to do with a fact
         # that before queries do some row-locking. And because of that
-        # we need to commit and finish transation before below validate call
+        # we need to commit and finish transaction before below validate call
         # that for large repos could be long resulting in long row locks
         Session().commit()
 
