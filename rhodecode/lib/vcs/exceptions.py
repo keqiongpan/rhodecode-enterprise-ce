@@ -24,6 +24,7 @@ Custom vcs exceptions module.
 import logging
 import functools
 import urllib2
+import rhodecode
 
 log = logging.getLogger(__name__)
 
@@ -180,17 +181,26 @@ def map_vcs_exceptions(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
+            from rhodecode.lib.utils2 import str2bool
+            debug = str2bool(rhodecode.CONFIG.get('debug'))
+
             # The error middleware adds information if it finds
             # __traceback_info__ in a frame object. This way the remote
             # traceback information is made available in error reports.
             remote_tb = getattr(e, '_vcs_server_traceback', None)
+            org_remote_tb = getattr(e, '_vcs_server_org_exc_tb', '')
             __traceback_info__ = None
             if remote_tb:
                 if isinstance(remote_tb, basestring):
                     remote_tb = [remote_tb]
                 __traceback_info__ = (
-                    'Found VCSServer remote traceback information:\n\n' +
-                    '\n'.join(remote_tb))
+                    'Found VCSServer remote traceback information:\n'
+                    '{}\n'
+                    '+++ BEG SOURCE EXCEPTION +++\n\n'
+                    '{}\n'
+                    '+++ END SOURCE EXCEPTION +++\n'
+                    ''.format('\n'.join(remote_tb), org_remote_tb)
+                )
 
                 # Avoid that remote_tb also appears in the frame
                 del remote_tb
@@ -205,9 +215,9 @@ def map_vcs_exceptions(func):
                     args = e.args
                 else:
                     args = [__traceback_info__ or 'unhandledException']
-                if __traceback_info__ and kind not in ['unhandled', 'lookup']:
+                if debug or __traceback_info__ and kind not in ['unhandled', 'lookup']:
                     # for other than unhandled errors also log the traceback
-                    # can be usefull for debugging
+                    # can be useful for debugging
                     log.error(__traceback_info__)
                 raise _EXCEPTION_MAP[kind](*args)
             else:

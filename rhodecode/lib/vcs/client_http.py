@@ -237,6 +237,8 @@ def _remote_call(url, payload, exceptions_map, session):
 
         try:
             exc._vcs_server_traceback = error['traceback']
+            exc._vcs_server_org_exc_name = error['org_exc']
+            exc._vcs_server_org_exc_tb = error['org_exc_tb']
         except KeyError:
             pass
 
@@ -249,8 +251,6 @@ class VcsHttpProxy(object):
     CHUNK_SIZE = 16384
 
     def __init__(self, server_and_port, backend_endpoint):
-
-
         retries = Retry(total=5, connect=None, read=None, redirect=None)
 
         adapter = requests.adapters.HTTPAdapter(max_retries=retries)
