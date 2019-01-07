@@ -121,7 +121,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
             ${h.age_component(commit.date)}
             % if diffset.limited_diff:
-                - ${_('The requested commit is too big and content was truncated.')}
+                - ${_('The requested changes are too big and content was truncated.')}
                 ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
                 <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
             % elif hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
@@ -180,22 +180,22 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         %if filediff.limited_diff:
                 <tr class="cb-warning cb-collapser">
                     <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
-                        ${_('The requested commit is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+                        ${_('The requested commit or file is too big and content was truncated.')} <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
                     </td>
                 </tr>
         %else:
             %if over_lines_changed_limit:
-                    <tr class="cb-warning cb-collapser">
-                        <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
-                            ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
-                            <a href="#" class="cb-expand"
-                               onclick="$(this).closest('table').removeClass('cb-collapsed'); updateSticky(); return false;">${_('Show them')}
-                            </a>
-                            <a href="#" class="cb-collapse"
-                               onclick="$(this).closest('table').addClass('cb-collapsed'); updateSticky(); return false;">${_('Hide them')}
-                            </a>
-                        </td>
-                    </tr>
+                <tr class="cb-warning cb-collapser">
+                    <td class="cb-text" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=6')}>
+                        ${_('This diff has been collapsed as it changes many lines, (%i lines changed)' % lines_changed)}
+                        <a href="#" class="cb-expand"
+                           onclick="$(this).closest('table').removeClass('cb-collapsed'); updateSticky(); return false;">${_('Show them')}
+                        </a>
+                        <a href="#" class="cb-collapse"
+                           onclick="$(this).closest('table').addClass('cb-collapsed'); updateSticky(); return false;">${_('Hide them')}
+                        </a>
+                    </td>
+                </tr>
             %endif
         %endif
 

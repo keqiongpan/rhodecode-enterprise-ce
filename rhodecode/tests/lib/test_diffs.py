@@ -20,12 +20,16 @@
 
 import textwrap
 
+import mock
 import pytest
 
+from rhodecode.lib.codeblocks import DiffSet
 from rhodecode.lib.diffs import (
     DiffProcessor,
     NEW_FILENODE, DEL_FILENODE, MOD_FILENODE, RENAMED_FILENODE,
     CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE)
+from rhodecode.lib.utils2 import AttributeDict
+from rhodecode.lib.vcs.backends.git import GitCommit
 from rhodecode.tests.fixture import Fixture, no_newline_id_generator
 from rhodecode.lib.vcs.backends.git.repository import GitDiff
 from rhodecode.lib.vcs.backends.hg.repository import MercurialDiff
@@ -596,57 +600,6 @@ DIFF_FIXTURES = [
         }),
       ]),
 
-
-    # TODO: mikhail: do we still need this?
-    # (
-    #     'hg',
-    #     'large_diff.diff',
-    #     [
-    #         ('.hgignore', 'A', {
-    #             'deleted': 0, 'binary': False, 'added': 3, 'ops': {
-    #                 1: 'new file 100644'}}),
-    #         (
-    #             'MANIFEST.in', 'A',
-    #             {'deleted': 0, 'binary': False, 'added': 3, 'ops': {
-    #                 1: 'new file 100644'}}),
-    #         (
-    #             'README.txt', 'A',
-    #             {'deleted': 0, 'binary': False, 'added': 19, 'ops': {
-    #                 1: 'new file 100644'}}),
-    #         (
-    #             'development.ini', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 116, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'docs/index.txt', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 19, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'ez_setup.py', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 276, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'hgapp.py', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 26, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'hgwebdir.config', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 21, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'pylons_app.egg-info/PKG-INFO', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 10, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'pylons_app.egg-info/SOURCES.txt', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 33, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #         (
-    #             'pylons_app.egg-info/dependency_links.txt', 'A', {
-    #                 'deleted': 0, 'binary': False, 'added': 1, 'ops': {
-    #                     1: 'new file 100644'}}),
-    #     ]
-    # ),
 ]
 
 DIFF_FIXTURES_WITH_CONTENT = [
@@ -802,6 +755,39 @@ def diff_fixture_w_content(request):
     diff_txt = fixture.load_resource(diff_fixture)
     diff = diff_class[vcs](diff_txt)
     return diff, expected
+
+
+def test_diff_over_limit(request):
+
+    diff_limit = 1024
+    file_limit = 1024
+
+    raw_diff = fixture.load_resource('large_diff.diff')
+    vcs_diff = GitDiff(raw_diff)
+    diff_processor = DiffProcessor(
+        vcs_diff, format='newdiff', diff_limit=diff_limit, file_limit=file_limit,
+        show_full_diff=False)
+
+    _parsed = diff_processor.prepare()
+
+    commit1 = GitCommit(repository=mock.Mock(), raw_id='abcdef12', idx=1)
+    commit2 = GitCommit(repository=mock.Mock(), raw_id='abcdef34', idx=2)
+
+    diffset = DiffSet(
+        repo_name='repo_name',
+        source_node_getter=lambda *a, **kw: AttributeDict({'commit': commit1}),
+        target_node_getter=lambda *a, **kw: AttributeDict({'commit': commit2})
+    )
+
+    diffset = diffset.render_patchset(_parsed, commit1, commit2)
+
+    assert len(diffset.files) == 2
+    assert diffset.limited_diff is True
+    assert diffset.files[0].patch['filename'] == 'example.go'
+    assert diffset.files[0].limited_diff is True
+
+    assert diffset.files[1].patch['filename'] == 'README.md'
+    assert diffset.files[1].limited_diff is False
 
 
 def test_diff_lib_newlines(diff_fixture_w_content):

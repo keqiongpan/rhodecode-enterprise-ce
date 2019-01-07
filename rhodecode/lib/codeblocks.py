@@ -519,7 +519,7 @@ class DiffSet(object):
             'operation': patch['operation'],
             'source_mode': patch['stats']['old_mode'],
             'target_mode': patch['stats']['new_mode'],
-            'limited_diff': isinstance(patch, LimitedDiffContainer),
+            'limited_diff': patch['is_limited_diff'],
             'hunks': [],
             'hunk_ops': None,
             'diffset': self,
