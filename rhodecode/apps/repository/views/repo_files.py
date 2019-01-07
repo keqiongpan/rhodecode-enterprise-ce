@@ -1191,9 +1191,9 @@ class RepoFilesView(RepoAppView):
         first_line = sl[0] if sl else ''
 
         r_post = self.request.POST
-        # modes:  0 - Unix, 1 - Mac, 2 - DOS
-        mode = detect_mode(first_line, 0)
-        content = convert_line_endings(r_post.get('content', ''), mode)
+        # line endings:  0 - Unix, 1 - Mac, 2 - DOS
+        line_ending_mode = detect_mode(first_line, 0)
+        content = convert_line_endings(r_post.get('content', ''), line_ending_mode)
 
         message = r_post.get('message') or c.default_message
         org_f_path = c.file.unicode_path
@@ -1213,6 +1213,7 @@ class RepoFilesView(RepoAppView):
                     'content': content,
                     'lexer': '',
                     'op': 'mod',
+                    'mode': c.file.mode
                 }
             }
 
