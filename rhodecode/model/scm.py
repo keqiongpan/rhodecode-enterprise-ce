@@ -675,8 +675,8 @@ class ScmModel(BaseModel):
             filename = self._sanitize_path(data['filename'])
             old_filename = self._sanitize_path(_filename)
             content = data['content']
-
-            filenode = FileNode(old_filename, content=content)
+            file_mode = data.get('mode')
+            filenode = FileNode(old_filename, content=content, mode=file_mode)
             op = data['op']
             if op == 'add':
                 imc.add(filenode)
@@ -684,16 +684,14 @@ class ScmModel(BaseModel):
                 imc.remove(filenode)
             elif op == 'mod':
                 if filename != old_filename:
-                    # TODO: handle renames more efficient, needs vcs lib
-                    # changes
+                    # TODO: handle renames more efficient, needs vcs lib changes
                     imc.remove(filenode)
-                    imc.add(FileNode(filename, content=content))
+                    imc.add(FileNode(filename, content=content, mode=file_mode))
                 else:
                     imc.change(filenode)
 
         try:
-            # TODO: handle pre push scenario
-            # commit changes
+            # TODO: handle pre push scenario commit changes
             tip = imc.commit(message=message,
                              author=author,
                              parents=parents,
