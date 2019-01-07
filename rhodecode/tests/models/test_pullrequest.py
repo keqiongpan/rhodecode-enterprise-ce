@@ -257,8 +257,7 @@ class TestPullRequestModel(object):
         def has_largefiles(self, repo):
             return repo == pull_request.source_repo
 
-        patcher = mock.patch.object(
-            PullRequestModel, '_has_largefiles', has_largefiles)
+        patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
             status, msg = PullRequestModel().merge_status(pull_request)
 
@@ -270,8 +269,7 @@ class TestPullRequestModel(object):
         def has_largefiles(self, repo):
             return repo == pull_request.target_repo
 
-        patcher = mock.patch.object(
-            PullRequestModel, '_has_largefiles', has_largefiles)
+        patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
             status, msg = PullRequestModel().merge_status(pull_request)
 
@@ -314,9 +312,50 @@ class TestPullRequestModel(object):
             self.pull_request, self.pull_request.author, 'merge')
 
         pull_request = PullRequest.get(pull_request.pull_request_id)
-        assert (
-            pull_request.merge_rev ==
-            '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
+        assert pull_request.merge_rev == '6126b7bfcc82ad2d3deaee22af926b082ce54cc6'
+
+    def test_merge_with_status_lock(self, pull_request, merge_extras):
+        user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        merge_ref = Reference(
+            'type', 'name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
+        self.merge_mock.return_value = MergeResponse(
+            True, True, merge_ref, MergeFailureReason.NONE)
+
+        merge_extras['repository'] = pull_request.target_repo.repo_name
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            assert pull_request.pull_request_state == PullRequest.STATE_UPDATING
+            PullRequestModel().merge_repo(
+                pull_request, pull_request.author, extras=merge_extras)
+
+        assert pull_request.pull_request_state == PullRequest.STATE_CREATED
+
+        message = (
+            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'\n\n {pr_title}'.format(
+                pr_id=pull_request.pull_request_id,
+                source_repo=safe_unicode(
+                    pull_request.source_repo.scm_instance().name),
+                source_ref_name=pull_request.source_ref_parts.name,
+                pr_title=safe_unicode(pull_request.title)
+            )
+        )
+        self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
+            pull_request.target_ref_parts,
+            pull_request.source_repo.scm_instance(),
+            pull_request.source_ref_parts,
+            user_name=user.short_contact, user_email=user.email, message=message,
+            use_rebase=False, close_branch=False
+        )
+        self.invalidation_mock.assert_called_once_with(
+            pull_request.target_repo.repo_name)
+
+        self.hook_mock.assert_called_with(
+            self.pull_request, self.pull_request.author, 'merge')
+
+        pull_request = PullRequest.get(pull_request.pull_request_id)
+        assert pull_request.merge_rev == '6126b7bfcc82ad2d3deaee22af926b082ce54cc6'
 
     def test_merge_failed(self, pull_request, merge_extras):
         user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)

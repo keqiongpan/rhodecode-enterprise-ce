@@ -273,9 +273,22 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_show', request_method='GET',
         renderer='rhodecode:templates/pullrequests/pullrequest_show.mako')
     def pull_request_show(self):
-        pull_request_id = self.request.matchdict['pull_request_id']
-
+        _ = self.request.translate
         c = self.load_default_context()
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+
+        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+            log.debug('show: forbidden because pull request is in state %s',
+                      pull_request.pull_request_state)
+            msg = _(u'Cannot show pull requests in state other than `{}`. '
+                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
+                                                      pull_request.pull_request_state)
+            h.flash(msg, category='error')
+            raise HTTPFound(h.route_path('pullrequest_show_all',
+                                         repo_name=self.db_repo_name))
 
         version = self.request.GET.get('version')
         from_version = self.request.GET.get('from_version') or version
@@ -919,12 +932,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
         target_db_repo = Repository.get_by_repo_name(_form['target_repo'])
 
+        if not (source_db_repo or target_db_repo):
+            h.flash(_('source_repo or target repo not found'), category='error')
+            raise HTTPFound(
+                h.route_path('pullrequest_new', repo_name=self.db_repo_name))
+
         # re-check permissions again here
         # source_repo we must have read permissions
 
         source_perm = HasRepoPermissionAny(
-            'repository.read',
-            'repository.write', 'repository.admin')(source_db_repo.repo_name)
+            'repository.read', 'repository.write', 'repository.admin')(
+            source_db_repo.repo_name)
         if not source_perm:
             msg = _('Not Enough permissions to source repo `{}`.'.format(
                 source_db_repo.repo_name))
@@ -938,8 +956,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # target repo we must have read permissions, and also later on
         # we want to check branch permissions here
         target_perm = HasRepoPermissionAny(
-            'repository.read',
-            'repository.write', 'repository.admin')(target_db_repo.repo_name)
+            'repository.read', 'repository.write', 'repository.admin')(
+            target_db_repo.repo_name)
         if not target_perm:
             msg = _('Not Enough permissions to target repo `{}`.'.format(
                 target_db_repo.repo_name))
@@ -1042,6 +1060,15 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             h.flash(msg, category='error')
             return True
 
+        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+            log.debug('update: forbidden because pull request is in state %s',
+                      pull_request.pull_request_state)
+            msg = _(u'Cannot update pull requests in state other than `{}`. '
+                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
+                                                      pull_request.pull_request_state)
+            h.flash(msg, category='error')
+            return True
+
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
@@ -1084,7 +1111,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _update_commits(self, pull_request):
         _ = self.request.translate
-        resp = PullRequestModel().update_commits(pull_request)
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            resp = PullRequestModel().update_commits(pull_request)
 
         if resp.executed:
 
@@ -1097,10 +1126,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             else:
                 changed = 'nothing'
 
-            msg = _(
-                u'Pull request updated to "{source_commit_id}" with '
-                u'{count_added} added, {count_removed} removed commits. '
-                u'Source of changes: {change_source}')
+            msg = _(u'Pull request updated to "{source_commit_id}" with '
+                    u'{count_added} added, {count_removed} removed commits. '
+                    u'Source of changes: {change_source}')
             msg = msg.format(
                 source_commit_id=pull_request.source_ref_parts.commit_id,
                 count_added=len(resp.changes.added),
@@ -1109,8 +1137,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             h.flash(msg, category='success')
 
             channel = '/repo${}$/pr/{}'.format(
-                pull_request.target_repo.repo_name,
-                pull_request.pull_request_id)
+                pull_request.target_repo.repo_name, pull_request.pull_request_id)
             message = msg + (
                 ' - <a onclick="window.location.reload()">'
                 '<strong>{}</strong></a>'.format(_('Reload page')))
@@ -1143,11 +1170,26 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         """
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
+        _ = self.request.translate
+
+        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+            log.debug('show: forbidden because pull request is in state %s',
+                      pull_request.pull_request_state)
+            msg = _(u'Cannot merge pull requests in state other than `{}`. '
+                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
+                                                      pull_request.pull_request_state)
+            h.flash(msg, category='error')
+            raise HTTPFound(
+                h.route_path('pullrequest_show',
+                             repo_name=pull_request.target_repo.repo_name,
+                             pull_request_id=pull_request.pull_request_id))
 
         self.load_default_context()
-        check = MergeCheck.validate(
-            pull_request, auth_user=self._rhodecode_user,
-            translator=self.request.translate)
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            check = MergeCheck.validate(
+                pull_request, auth_user=self._rhodecode_user,
+                translator=self.request.translate)
         merge_possible = not check.failed
 
         for err_type, error_msg in check.errors:
@@ -1159,8 +1201,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 self.request.environ, repo_name=pull_request.target_repo.repo_name,
                 username=self._rhodecode_db_user.username, action='push',
                 scm=pull_request.target_repo.repo_type)
-            self._merge_pull_request(
-                pull_request, self._rhodecode_db_user, extras)
+            with pull_request.set_state(PullRequest.STATE_UPDATING):
+                self._merge_pull_request(
+                    pull_request, self._rhodecode_db_user, extras)
         else:
             log.debug("Pre-conditions failed, NOT merging.")
 

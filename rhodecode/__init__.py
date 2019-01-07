@@ -18,12 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-"""
-
-RhodeCode, a web based repository management software
-versioning implementation: http://www.python.org/dev/peps/pep-0386/
-"""
-
 import os
 import sys
 import platform
@@ -51,7 +45,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 91  # defines current db version for migrations
+__dbversion__ = 93  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

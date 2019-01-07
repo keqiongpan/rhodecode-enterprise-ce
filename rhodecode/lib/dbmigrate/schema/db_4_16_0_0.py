@@ -3538,32 +3538,6 @@ class ChangesetStatus(Base, BaseModel):
         return data
 
 
-class _SetState(object):
-    """
-    Context processor allowing changing state for sensitive operation such as
-    pull request update or merge
-    """
-
-    def __init__(self, pull_request, pr_state, back_state=None):
-        self._pr = pull_request
-        self._org_state = back_state or pull_request.pull_request_state
-        self._pr_state = pr_state
-
-    def __enter__(self):
-        log.debug('StateLock: entering set state context, setting state to: `%s`',
-                  self._pr_state)
-        self._pr.pull_request_state = self._pr_state
-        Session().add(self._pr)
-        Session().commit()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        log.debug('StateLock: exiting set state context, setting state to: `%s`',
-                  self._org_state)
-        self._pr.pull_request_state = self._org_state
-        Session().add(self._pr)
-        Session().commit()
-
-
 class _PullRequestBase(BaseModel):
     """
     Common attributes of pull request and version entries.
@@ -3771,7 +3745,6 @@ class _PullRequestBase(BaseModel):
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
-            'state': pull_request.pull_request_state,
             'created_on': pull_request.created_on,
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,
@@ -3811,20 +3784,6 @@ class _PullRequestBase(BaseModel):
         }
 
         return data
-
-    def set_state(self, pull_request_state, final_state=None):
-        """
-        # goes from initial state to updating to initial state.
-        # initial state can be changed by specifying back_state=
-        with pull_request_obj.set_state(PullRequest.STATE_UPDATING):
-           pull_request.merge()
-
-        :param pull_request_state:
-        :param final_state:
-
-        """
-
-        return _SetState(self, pull_request_state, back_state=final_state)
 
 
 class PullRequest(Base, _PullRequestBase):

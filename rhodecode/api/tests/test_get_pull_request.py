@@ -65,6 +65,7 @@ class TestGetPullRequest(object):
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
+            'state': pull_request.pull_request_state,
             'created_on': pull_request.created_on,
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,

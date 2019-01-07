@@ -138,7 +138,7 @@ class PullRequestModel(BaseModel):
 
     def _prepare_get_all_query(self, repo_name, source=False, statuses=None,
                                opened_by=None, order_by=None,
-                               order_dir='desc'):
+                               order_dir='desc', only_created=True):
         repo = None
         if repo_name:
             repo = self._get_repo(repo_name)
@@ -158,6 +158,10 @@ class PullRequestModel(BaseModel):
         # opened by filter
         if opened_by:
             q = q.filter(PullRequest.user_id.in_(opened_by))
+
+        # only get those that are in "created" state
+        if only_created:
+            q = q.filter(PullRequest.pull_request_state == PullRequest.STATE_CREATED)
 
         if order_by:
             order_map = {
@@ -429,7 +433,7 @@ class PullRequestModel(BaseModel):
         pull_request.description_renderer = description_renderer
         pull_request.author = created_by_user
         pull_request.reviewer_data = reviewer_data
-
+        pull_request.pull_request_state = pull_request.STATE_CREATING
         Session().add(pull_request)
         Session().flush()
 
@@ -497,9 +501,16 @@ class PullRequestModel(BaseModel):
         # that for large repos could be long resulting in long row locks
         Session().commit()
 
-        # prepare workspace, and run initial merge simulation
-        MergeCheck.validate(
-            pull_request, auth_user=auth_user, translator=translator)
+        # prepare workspace, and run initial merge simulation. Set state during that
+        # operation
+        pull_request = PullRequest.get(pull_request.pull_request_id)
+
+        # set as merging, for simulation, and if finished to created so we mark
+        # simulation is working fine
+        with pull_request.set_state(PullRequest.STATE_MERGING,
+                                    final_state=PullRequest.STATE_CREATED):
+            MergeCheck.validate(
+                pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
         self._trigger_pull_request_hook(
@@ -653,9 +664,8 @@ class PullRequestModel(BaseModel):
         target_ref_id = pull_request.target_ref_parts.commit_id
 
         if not self.has_valid_update_type(pull_request):
-            log.debug(
-                "Skipping update of pull request %s due to ref type: %s",
-                pull_request, source_ref_type)
+            log.debug("Skipping update of pull request %s due to ref type: %s",
+                      pull_request, source_ref_type)
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.WRONG_REF_TYPE,
@@ -801,8 +811,7 @@ class PullRequestModel(BaseModel):
             pull_request.source_ref_parts.commit_id,
             pull_request_version.pull_request_version_id)
         Session().commit()
-        self._trigger_pull_request_hook(
-            pull_request, pull_request.author, 'update')
+        self._trigger_pull_request_hook(pull_request, pull_request.author, 'update')
 
         return UpdateResponse(
             executed=True, reason=UpdateFailureReason.NONE,
@@ -814,6 +823,7 @@ class PullRequestModel(BaseModel):
         version.title = pull_request.title
         version.description = pull_request.description
         version.status = pull_request.status
+        version.pull_request_state = pull_request.pull_request_state
         version.created_on = datetime.datetime.now()
         version.updated_on = pull_request.updated_on
         version.user_id = pull_request.user_id
@@ -1614,8 +1624,7 @@ class MergeCheck(object):
 
             msg = _('Pull request reviewer approval is pending.')
 
-            merge_check.push_error(
-                'warning', msg, cls.REVIEW_CHECK, review_status)
+            merge_check.push_error('warning', msg, cls.REVIEW_CHECK, review_status)
 
             if fail_early:
                 return merge_check
@@ -1624,7 +1633,7 @@ class MergeCheck(object):
         todos = CommentsModel().get_unresolved_todos(pull_request)
         if todos:
             log.debug("MergeCheck: cannot merge, {} "
-                      "unresolved todos left.".format(len(todos)))
+                      "unresolved TODOs left.".format(len(todos)))
 
             if len(todos) == 1:
                 msg = _('Cannot merge, {} TODO still not resolved.').format(
@@ -1645,8 +1654,7 @@ class MergeCheck(object):
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
         if not merge_status:
-            log.debug(
-                "MergeCheck: cannot merge, pull request merge not possible.")
+            log.debug("MergeCheck: cannot merge, pull request merge not possible.")
             merge_check.push_error('warning', msg, cls.MERGE_CHECK, None)
 
             if fail_early:
@@ -1677,6 +1685,7 @@ class MergeCheck(object):
         close_branch = model._close_branch_before_merging(pull_request)
         if close_branch:
             repo_type = pull_request.target_repo.repo_type
+            close_msg = ''
             if repo_type == 'hg':
                 close_msg = _('Source branch will be closed after merge.')
             elif repo_type == 'git':
@@ -1688,6 +1697,7 @@ class MergeCheck(object):
             )
 
         return merge_details
+
 
 ChangeTuple = collections.namedtuple(
     'ChangeTuple', ['added', 'common', 'removed', 'total'])

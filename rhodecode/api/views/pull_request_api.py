@@ -32,7 +32,7 @@ from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
+from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment, PullRequest
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.validation_schema import Invalid
@@ -128,11 +128,15 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
     else:
         repo = pull_request.target_repo
 
-    if not PullRequestModel().check_user_read(
-            pull_request, apiuser, api=True):
+    if not PullRequestModel().check_user_read(pull_request, apiuser, api=True):
         raise JSONRPCError('repository `%s` or pull request `%s` '
                            'does not exist' % (repoid, pullrequestid))
-    data = pull_request.get_api_data()
+
+    # NOTE(marcink): only calculate and return merge state if the pr state is 'created'
+    # otherwise we can lock the repo on calculation of merge state while update/merge
+    # is happening.
+    merge_state = pull_request.pull_request_state == pull_request.STATE_CREATED
+    data = pull_request.get_api_data(with_merge_state=merge_state)
     return data
 
 
@@ -283,8 +287,16 @@ def merge_pull_request(
         else:
             raise JSONRPCError('userid is not the same as your user')
 
-    check = MergeCheck.validate(
-        pull_request, auth_user=apiuser, translator=request.translate)
+    if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+        raise JSONRPCError(
+            'Operation forbidden because pull request is in state {}, '
+            'only state {} is allowed.'.format(
+                pull_request.pull_request_state, PullRequest.STATE_CREATED))
+
+    with pull_request.set_state(PullRequest.STATE_UPDATING):
+        check = MergeCheck.validate(
+            pull_request, auth_user=apiuser,
+            translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:
@@ -302,8 +314,9 @@ def merge_pull_request(
         request.environ, repo_name=target_repo.repo_name,
         username=apiuser.username, action='push',
         scm=target_repo.repo_type)
-    merge_response = PullRequestModel().merge_repo(
-        pull_request, apiuser, extras=extras)
+    with pull_request.set_state(PullRequest.STATE_UPDATING):
+        merge_response = PullRequestModel().merge_repo(
+            pull_request, apiuser, extras=extras)
     if merge_response.executed:
         PullRequestModel().close_pull_request(
             pull_request.pull_request_id, apiuser)
@@ -829,11 +842,18 @@ def update_pull_request(
 
     commit_changes = {"added": [], "common": [], "removed": []}
     if str2bool(Optional.extract(update_commits)):
-        if PullRequestModel().has_valid_update_type(pull_request):
-            update_response = PullRequestModel().update_commits(
-                pull_request)
-            commit_changes = update_response.changes or commit_changes
-        Session().commit()
+
+        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+            raise JSONRPCError(
+                'Operation forbidden because pull request is in state {}, '
+                'only state {} is allowed.'.format(
+                    pull_request.pull_request_state, PullRequest.STATE_CREATED))
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            if PullRequestModel().has_valid_update_type(pull_request):
+                update_response = PullRequestModel().update_commits(pull_request)
+                commit_changes = update_response.changes or commit_changes
+            Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:
