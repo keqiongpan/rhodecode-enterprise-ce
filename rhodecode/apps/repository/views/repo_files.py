@@ -84,6 +84,7 @@ class RepoFilesView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
         c.rhodecode_repo = self.rhodecode_vcs_repo
+        c.enable_downloads = self.db_repo.enable_downloads
         return c
 
     def _ensure_not_locked(self):

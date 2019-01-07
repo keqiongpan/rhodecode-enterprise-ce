@@ -27,6 +27,14 @@
                     ${_('Add File')}</a>
               </div>
             % endif
+            % if c.enable_downloads:
+              <% at_path = '{}.zip'.format(request.GET.get('at') or c.commit.raw_id[:6]) %>
+              <div title="${_('Download tree at {}').format(at_path)}" class="btn btn-default new-file">
+                <a href="${h.route_path('repo_archivefile',repo_name=c.repo_name, fname=c.commit.raw_id)}">
+                    ${_('Download tree at {}').format(at_path)}
+                </a>
+              </div>
+            % endif
         </div>
 
         <div class="browser-search">
