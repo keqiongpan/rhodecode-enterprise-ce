@@ -9,14 +9,15 @@
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate
-        % if h.HasRepoPermissionAny('repository.write','repository.read','repository.admin')(entry['repository'], 'search results path check'):
+        % if c.rhodecode_user.is_admin or h.HasRepoPermissionAny('repository.write','repository.read','repository.admin')(entry['repository'], 'search results path check'):
             <tr class="body">
                 <td class="td-componentname">
-                    %if h.get_repo_type_by_name(entry.get('repository')) == 'hg':
+                    <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
+                    %if repo_type == 'hg':
                         <i class="icon-hg"></i>
-                    %elif h.get_repo_type_by_name(entry.get('repository')) == 'git':
+                    %elif repo_type == 'git':
                         <i class="icon-git"></i>
-                    %elif h.get_repo_type_by_name(entry.get('repository')) == 'svn':
+                    %elif repo_type == 'svn':
                         <i class="icon-svn"></i>
                     %endif
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}

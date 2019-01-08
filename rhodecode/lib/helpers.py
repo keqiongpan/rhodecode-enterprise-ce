@@ -736,6 +736,7 @@ class _RepoChecker(object):
             _type = repository
         return _type == self._backend_alias
 
+
 is_git = _RepoChecker('git')
 is_hg = _RepoChecker('hg')
 is_svn = _RepoChecker('svn')
@@ -743,7 +744,8 @@ is_svn = _RepoChecker('svn')
 
 def get_repo_type_by_name(repo_name):
     repo = Repository.get_by_repo_name(repo_name)
-    return repo.repo_type
+    if repo:
+        return repo.repo_type
 
 
 def is_svn_without_proxy(repository):
