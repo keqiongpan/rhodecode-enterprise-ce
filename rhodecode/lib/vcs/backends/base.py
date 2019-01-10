@@ -779,6 +779,9 @@ class BaseRepository(object):
     def install_hooks(self, force=False):
         return self._remote.install_hooks(force)
 
+    def get_hooks_info(self):
+        return self._remote.get_hooks_info()
+
 
 class BaseCommit(object):
     """

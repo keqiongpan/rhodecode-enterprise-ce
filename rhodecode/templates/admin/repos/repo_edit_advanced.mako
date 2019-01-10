@@ -113,6 +113,37 @@
 </div>
 
 
+<div class="panel panel-default">
+    <div class="panel-heading" id="advanced-hooks">
+        <h3 class="panel-title">${_('Hooks')} <a class="permalink" href="#advanced-hooks"> ¶</a></h3>
+    </div>
+    <div class="panel-body">
+        <% ver_info_dict = c.rhodecode_db_repo.scm_instance().get_hooks_info() %>
+
+        <table class="rctable">
+            <th>${_('Hook type')}</th>
+            <th>${_('Hook version')}</th>
+            <th>${_('Current version')}</th>
+
+            <tr>
+                <td>${_('PRE HOOK')}</td>
+                <td>${ver_info_dict['pre_version']}</td>
+                <td>${c.rhodecode_version}</td>
+            </tr>
+            <tr>
+                <td>${_('POST HOOK')}</td>
+                <td>${ver_info_dict['post_version']}</td>
+                <td>${c.rhodecode_version}</td>
+            </tr>
+        </table>
+
+        <a href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
+           onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
+            ${_('Update Hooks')}
+        </a>
+    </div>
+</div>
+
 <div class="panel panel-warning">
     <div class="panel-heading" id="advanced-archive">
         <h3 class="panel-title">${_('Archive repository')} <a class="permalink" href="#advanced-archive"> ¶</a></h3>
