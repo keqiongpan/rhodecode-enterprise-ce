@@ -86,7 +86,7 @@
                 </div>
                 <div class="checkboxes">
                     ${h.checkbox('copy_permissions',value="True", checked="checked")}
-                    <span class="help-block">${_('Copy permissions from forked repository')}</span>
+                    <span class="help-block">${_('Copy permissions from parent repository.')}</span>
                 </div>
             </div>
 

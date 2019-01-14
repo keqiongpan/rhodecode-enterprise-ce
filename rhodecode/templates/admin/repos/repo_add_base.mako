@@ -90,7 +90,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             </div>
             <div class="checkboxes">
                 ${h.checkbox('repo_copy_permissions', value="True", checked="checked")}
-                <span class="help-block">${_('Copy permission set from the parent repository group.')}</span>
+                <span class="help-block">${_('Copy permissions from parent repository group.')}</span>
             </div>
         </div>
         <div class="field">

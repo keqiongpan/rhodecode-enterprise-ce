@@ -70,7 +70,7 @@
                 </div>
                 <div class="checkboxes">
                     ${h.checkbox('group_copy_permissions', value="True", checked="checked")}
-                    <span class="help-block">${_('Copy permission settings from parent repository group.')}</span>
+                    <span class="help-block">${_('Copy permissions from parent repository group.')}</span>
                 </div>
             </div>
 

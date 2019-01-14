@@ -462,8 +462,7 @@ class RepoModel(BaseModel):
                     UserGroupRepoToPerm.create(
                         perm.users_group, new_repo, perm.permission)
                 # in case we copy permissions and also set this repo to private
-                # override the default user permission to make it a private
-                # repo
+                # override the default user permission to make it a private repo
                 if private:
                     RepoModel(self.sa).grant_user_permission(
                         repo=new_repo, user=User.DEFAULT_USER, perm=EMPTY_PERM)
@@ -485,8 +484,7 @@ class RepoModel(BaseModel):
                     perm_name = perm.permission.permission_name.replace(
                         'group.', 'repository.')
                     perm_obj = Permission.get_by_key(perm_name)
-                    UserGroupRepoToPerm.create(
-                        perm.users_group, new_repo, perm_obj)
+                    UserGroupRepoToPerm.create(perm.users_group, new_repo, perm_obj)
 
                 if private:
                     RepoModel(self.sa).grant_user_permission(
@@ -497,8 +495,7 @@ class RepoModel(BaseModel):
                 self.sa.add(perm_obj)
 
             # now automatically start following this repository as owner
-            ScmModel(self.sa).toggle_following_repo(new_repo.repo_id,
-                                                    owner.user_id)
+            ScmModel(self.sa).toggle_following_repo(new_repo.repo_id, owner.user_id)
 
             # we need to flush here, in order to check if database won't
             # throw any exceptions, create filesystem dirs at the very end
