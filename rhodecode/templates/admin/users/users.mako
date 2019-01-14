@@ -81,7 +81,7 @@ $(document).ready(function() {
          { data: {"_": "active",
                   "sort": "active"}, title: "${_('Active')}", className: "td-active" },
          { data: {"_": "admin",
-                  "sort": "admin"}, title: "${_('Admin')}", className: "td-admin" },
+                  "sort": "admin"}, title: "${_('Super admin')}", className: "td-admin" },
          { data: {"_": "extern_type",
                   "sort": "extern_type"}, title: "${_('Auth type')}", className: "td-type"  },
          { data: {"_": "action",
