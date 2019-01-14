@@ -32,7 +32,7 @@ from pyramid.response import Response
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
-from rhodecode.events import trigger
+from rhodecode import events
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
@@ -141,6 +141,9 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
+        affected_user_ids = [User.get_default_user().user_id]
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
         raise HTTPFound(h.route_path('admin_permissions_application'))
 
     @LoginRequired()
@@ -213,6 +216,9 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             log.exception("Exception during update of permissions")
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
+
+        affected_user_ids = [User.get_default_user().user_id]
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(h.route_path('admin_permissions_object'))
 
@@ -312,6 +318,9 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             log.exception("Exception during update of permissions")
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
+
+        affected_user_ids = [User.get_default_user().user_id]
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(h.route_path('admin_permissions_global'))
 
@@ -499,7 +508,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
         key_file = self.request.registry.settings.get(
             'ssh.authorized_keys_file_path')
         if ssh_enabled:
-            trigger(SshKeyFileChangeEvent(), self.request.registry)
+            events.trigger(SshKeyFileChangeEvent(), self.request.registry)
             h.flash(_('Updated SSH keys file: {}').format(key_file),
                     category='success')
         else:
