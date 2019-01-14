@@ -146,14 +146,14 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
         form_result = {}
         self._load_form_data(c)
-        task_id = None
+
         try:
             # CanWriteToGroup validators checks permissions of this POST
             form = RepoForm(
                 self.request.translate, repo_groups=c.repo_groups_choices,
                 landing_revs=c.landing_revs_choices)()
             form_result = form.to_python(dict(self.request.POST))
-
+            copy_permissions = form_result.get('repo_copy_permissions')
             # create is done sometimes async on celery, db transaction
             # management is handled there.
             task = RepoModel().create(form_result, self._rhodecode_user.user_id)
@@ -176,9 +176,19 @@ class AdminReposView(BaseAppView, DataGridAppView):
             h.flash(msg, category='error')
             raise HTTPFound(h.route_path('home'))
 
-        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
+        repo_name = form_result.get('repo_name_full')
+
+        affected_user_ids = [self._rhodecode_user.user_id]
+        if copy_permissions:
+            repository = Repository.get_by_repo_name(repo_name)
+            # also include those newly created by copy
+            user_group_perms = repository.permissions(expand_from_user_groups=True)
+            copy_perms = [perm['user_id'] for perm in user_group_perms]
+            # also include those newly created by copy
+            affected_user_ids.extend(copy_perms)
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(
-            h.route_path('repo_creating',
-                         repo_name=form_result['repo_name_full'],
+            h.route_path('repo_creating', repo_name=repo_name,
                          _query=dict(task_id=task_id)))

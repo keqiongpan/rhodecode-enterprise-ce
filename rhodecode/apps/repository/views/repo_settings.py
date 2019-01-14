@@ -168,8 +168,8 @@ class RepoSettingsView(RepoAppView):
 
             Session().commit()
 
-            h.flash(_('Repository `{}` updated successfully').format(
-                old_repo_name), category='success')
+            h.flash(_('Repository `{}` updated successfully').format(old_repo_name),
+                    category='success')
         except Exception:
             log.exception("Exception during update of repository")
             h.flash(_('Error occurred during update of repository {}').format(
@@ -177,10 +177,14 @@ class RepoSettingsView(RepoAppView):
 
         name_changed = old_repo_name != new_repo_name
         if name_changed:
+            current_perms = self.db_repo.permissions(expand_from_user_groups=True)
+            affected_user_ids = [perm['user_id'] for perm in current_perms]
+
+            # NOTE(marcink): also add owner maybe it has changed
             owner = User.get_by_username(schema_data['repo_owner'])
             owner_id = owner.user_id if owner else self._rhodecode_user.user_id
-            events.trigger(events.UserPermissionsChange([
-                self._rhodecode_user.user_id, owner_id]))
+            affected_user_ids.extend([self._rhodecode_user.user_id, owner_id])
+            events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(
             h.route_path('edit_repo', repo_name=new_repo_name))

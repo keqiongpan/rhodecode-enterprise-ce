@@ -28,6 +28,7 @@ from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
+from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView, UserAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
 from rhodecode.authentication.plugins import auth_rhodecode
@@ -573,6 +574,7 @@ class UsersView(UserAppView):
             # audit_log.store_web('user.edit.permissions')
 
             Session().commit()
+
             h.flash(_('User global permissions updated successfully'),
                     category='success')
 
@@ -593,6 +595,9 @@ class UsersView(UserAppView):
             log.exception("Exception during permissions saving")
             h.flash(_('An error occurred during permissions saving'),
                     category='error')
+
+        affected_user_ids = [user_id]
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
         raise HTTPFound(h.route_path('user_edit_global_perms', user_id=user_id))
 
     @LoginRequired()

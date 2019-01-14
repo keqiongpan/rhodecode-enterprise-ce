@@ -959,12 +959,14 @@ class User(Base, BaseModel):
         return user
 
     @classmethod
-    def get_all_super_admins(cls):
+    def get_all_super_admins(cls, only_active=False):
         """
         Returns all admin accounts sorted by username
         """
-        return User.query().filter(User.admin == true())\
-            .order_by(User.username.asc()).all()
+        qry = User.query().filter(User.admin == true()).order_by(User.username.asc())
+        if only_active:
+            qry = qry.filter(User.active == true())
+        return qry.all()
 
     @classmethod
     def get_default_user(cls, cache=False, refresh=False):
@@ -1390,7 +1392,8 @@ class UserGroup(Base, BaseModel):
                 FromCache("sql_cache_short", "get_users_group_%s" % user_group_id))
         return user_group.get(user_group_id)
 
-    def permissions(self, with_admins=True, with_owner=True):
+    def permissions(self, with_admins=True, with_owner=True,
+                    expand_from_user_groups=False):
         """
         Permissions for user groups
         """
@@ -1441,19 +1444,29 @@ class UserGroup(Base, BaseModel):
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
 
-        return super_admin_rows + owner_row + perm_rows
+        user_groups_rows = []
+        if expand_from_user_groups:
+            for ug in self.permission_user_groups(with_members=True):
+                for user_data in ug.members:
+                    user_groups_rows.append(user_data)
 
-    def permission_user_groups(self):
-        q = UserGroupUserGroupToPerm.query().filter(UserGroupUserGroupToPerm.target_user_group == self)
+        return super_admin_rows + owner_row + perm_rows + user_groups_rows
+
+    def permission_user_groups(self, with_members=False):
+        q = UserGroupUserGroupToPerm.query()\
+            .filter(UserGroupUserGroupToPerm.target_user_group == self)
         q = q.options(joinedload(UserGroupUserGroupToPerm.user_group),
                       joinedload(UserGroupUserGroupToPerm.target_user_group),
                       joinedload(UserGroupUserGroupToPerm.permission),)
 
         perm_rows = []
         for _user_group in q.all():
-            usr = AttributeDict(_user_group.user_group.get_dict())
-            usr.permission = _user_group.permission.permission_name
-            perm_rows.append(usr)
+            entry = AttributeDict(_user_group.user_group.get_dict())
+            entry.permission = _user_group.permission.permission_name
+            if with_members:
+                entry.members = [x.user.get_dict()
+                                 for x in _user_group.users_group.members]
+            perm_rows.append(entry)
 
         perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
@@ -1928,7 +1941,8 @@ class Repository(Base, BaseModel):
         from rhodecode.lib.utils import make_db_config
         return make_db_config(clear_session=False, repo=self)
 
-    def permissions(self, with_admins=True, with_owner=True):
+    def permissions(self, with_admins=True, with_owner=True,
+                    expand_from_user_groups=False):
         """
         Permissions for repositories
         """
@@ -1986,20 +2000,29 @@ class Repository(Base, BaseModel):
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
 
-        return super_admin_rows + owner_row + perm_rows
+        user_groups_rows = []
+        if expand_from_user_groups:
+            for ug in self.permission_user_groups(with_members=True):
+                for user_data in ug.members:
+                    user_groups_rows.append(user_data)
 
-    def permission_user_groups(self):
-        q = UserGroupRepoToPerm.query().filter(
-            UserGroupRepoToPerm.repository == self)
+        return super_admin_rows + owner_row + perm_rows + user_groups_rows
+
+    def permission_user_groups(self, with_members=True):
+        q = UserGroupRepoToPerm.query()\
+            .filter(UserGroupRepoToPerm.repository == self)
         q = q.options(joinedload(UserGroupRepoToPerm.repository),
                       joinedload(UserGroupRepoToPerm.users_group),
                       joinedload(UserGroupRepoToPerm.permission),)
 
         perm_rows = []
         for _user_group in q.all():
-            usr = AttributeDict(_user_group.users_group.get_dict())
-            usr.permission = _user_group.permission.permission_name
-            perm_rows.append(usr)
+            entry = AttributeDict(_user_group.users_group.get_dict())
+            entry.permission = _user_group.permission.permission_name
+            if with_members:
+                entry.members = [x.user.get_dict()
+                                 for x in _user_group.users_group.members]
+            perm_rows.append(entry)
 
         perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
@@ -2641,7 +2664,8 @@ class RepoGroup(Base, BaseModel):
                        self.parent_group else [])
         return RepoGroup.url_sep().join(path_prefix + [group_name])
 
-    def permissions(self, with_admins=True, with_owner=True):
+    def permissions(self, with_admins=True, with_owner=True,
+                    expand_from_user_groups=False):
         """
         Permissions for repository groups
         """
@@ -2692,20 +2716,29 @@ class RepoGroup(Base, BaseModel):
         # each group
         perm_rows = sorted(perm_rows, key=display_user_sort)
 
-        return super_admin_rows + owner_row + perm_rows
+        user_groups_rows = []
+        if expand_from_user_groups:
+            for ug in self.permission_user_groups(with_members=True):
+                for user_data in ug.members:
+                    user_groups_rows.append(user_data)
 
-    def permission_user_groups(self):
-        q = UserGroupRepoGroupToPerm.query().filter(
-            UserGroupRepoGroupToPerm.group == self)
+        return super_admin_rows + owner_row + perm_rows + user_groups_rows
+
+    def permission_user_groups(self, with_members=False):
+        q = UserGroupRepoGroupToPerm.query()\
+            .filter(UserGroupRepoGroupToPerm.group == self)
         q = q.options(joinedload(UserGroupRepoGroupToPerm.group),
                       joinedload(UserGroupRepoGroupToPerm.users_group),
                       joinedload(UserGroupRepoGroupToPerm.permission),)
 
         perm_rows = []
         for _user_group in q.all():
-            usr = AttributeDict(_user_group.users_group.get_dict())
-            usr.permission = _user_group.permission.permission_name
-            perm_rows.append(usr)
+            entry = AttributeDict(_user_group.users_group.get_dict())
+            entry.permission = _user_group.permission.permission_name
+            if with_members:
+                entry.members = [x.user.get_dict()
+                                 for x in _user_group.users_group.members]
+            perm_rows.append(entry)
 
         perm_rows = sorted(perm_rows, key=display_user_group_sort)
         return perm_rows
