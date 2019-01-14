@@ -180,10 +180,14 @@ class RepoGroupSettingsView(RepoGroupAppView):
 
         name_changed = old_repo_group_name != new_repo_group_name
         if name_changed:
+            current_perms = self.db_repo_group.permissions(expand_from_user_groups=True)
+            affected_user_ids = [perm['user_id'] for perm in current_perms]
+
+            # NOTE(marcink): also add owner maybe it has changed
             owner = User.get_by_username(schema_data['repo_group_owner'])
             owner_id = owner.user_id if owner else self._rhodecode_user.user_id
-            events.trigger(events.UserPermissionsChange([
-                self._rhodecode_user.user_id, owner_id]))
+            affected_user_ids.extend([self._rhodecode_user.user_id, owner_id])
+            events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(
             h.route_path('edit_repo_group', repo_group_name=new_repo_group_name))

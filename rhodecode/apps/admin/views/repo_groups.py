@@ -159,6 +159,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         try:
             owner = self._rhodecode_user
             form_result = repo_group_form.to_python(dict(self.request.POST))
+            copy_permissions = form_result.get('group_copy_permissions')
             repo_group = RepoGroupModel().create(
                 group_name=form_result['group_name_full'],
                 group_description=form_result['group_description'],
@@ -201,7 +202,14 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
                     % repo_group_name, category='error')
             raise HTTPFound(h.route_path('home'))
 
-        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
+        affected_user_ids = [self._rhodecode_user.user_id]
+        if copy_permissions:
+            user_group_perms = repo_group.permissions(expand_from_user_groups=True)
+            copy_perms = [perm['user_id'] for perm in user_group_perms]
+            # also include those newly created by copy
+            affected_user_ids.extend(copy_perms)
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
         raise HTTPFound(
             h.route_path('repo_group_home',
                          repo_group_name=form_result['group_name_full']))

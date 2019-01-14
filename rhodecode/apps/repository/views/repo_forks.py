@@ -224,6 +224,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
         task_id = None
         try:
             form_result = _form.to_python(post_data)
+            copy_permissions = form_result.get('copy_permissions')
             # create fork is done sometimes async on celery, db transaction
             # management is handled there.
             task = RepoModel().create_fork(
@@ -246,18 +247,24 @@ class RepoForksView(RepoAppView, DataGridAppView):
             return Response(html)
         except Exception:
             log.exception(
-                u'Exception while trying to fork the repository %s',
-                self.db_repo_name)
-            msg = (
-                _('An error occurred during repository forking %s') % (
-                    self.db_repo_name, ))
+                u'Exception while trying to fork the repository %s', self.db_repo_name)
+            msg = _('An error occurred during repository forking %s') % (self.db_repo_name, )
             h.flash(msg, category='error')
+            raise HTTPFound(h.route_path('home'))
 
         repo_name = form_result.get('repo_name_full', self.db_repo_name)
 
-        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
+        affected_user_ids = [self._rhodecode_user.user_id]
+        if copy_permissions:
+            repository = Repository.get_by_repo_name(repo_name)
+            # also include those newly created by copy
+            user_group_perms = repository.permissions(expand_from_user_groups=True)
+            copy_perms = [perm['user_id'] for perm in user_group_perms]
+            # also include those newly created by copy
+            affected_user_ids.extend(copy_perms)
+
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
 
         raise HTTPFound(
-            h.route_path('repo_creating',
-                         repo_name=repo_name,
+            h.route_path('repo_creating', repo_name=repo_name,
                          _query=dict(task_id=task_id)))
