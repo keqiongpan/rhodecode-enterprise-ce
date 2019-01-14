@@ -73,6 +73,8 @@ class RepoSettingsView(RepoAppView):
                 'repository.write', 'repository.read', 'repository.admin')(
                 self.db_repo.fork.repo_name, 'repo set as fork page')
 
+        c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
+
         return self._get_template_context(c)
 
     @LoginRequired()

@@ -118,23 +118,26 @@
         <h3 class="panel-title">${_('Hooks')} <a class="permalink" href="#advanced-hooks"> ¶</a></h3>
     </div>
     <div class="panel-body">
-        <% ver_info_dict = c.rhodecode_db_repo.scm_instance().get_hooks_info() %>
-
         <table class="rctable">
             <th>${_('Hook type')}</th>
             <th>${_('Hook version')}</th>
             <th>${_('Current version')}</th>
-
+            % if c.ver_info_dict:
             <tr>
                 <td>${_('PRE HOOK')}</td>
-                <td>${ver_info_dict['pre_version']}</td>
+                <td>${c.ver_info_dict['pre_version']}</td>
                 <td>${c.rhodecode_version}</td>
             </tr>
             <tr>
                 <td>${_('POST HOOK')}</td>
-                <td>${ver_info_dict['post_version']}</td>
+                <td>${c.ver_info_dict['post_version']}</td>
                 <td>${c.rhodecode_version}</td>
             </tr>
+            % else:
+                <tr>
+                    <td>${_('Unable to read hook information from VCS Server')}</td>
+                </tr>
+            % endif
         </table>
 
         <a href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
