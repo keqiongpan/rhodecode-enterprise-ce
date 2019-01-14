@@ -84,22 +84,22 @@
 <script>
     $(document).ready(function(){
         var setCopyPermsOption = function(group_val){
-            if(group_val != "-1"){
+            if(group_val !== "-1"){
                 $('#copy_perms').show()
             }
             else{
                 $('#copy_perms').hide();
             }
-        }
+        };
         $("#group_parent_id").select2({
             'containerCssClass': "drop-menu",
             'dropdownCssClass': "drop-menu-dropdown",
             'dropdownAutoWidth': true
         });
-        setCopyPermsOption($('#group_parent_id').val())
+        setCopyPermsOption($('#group_parent_id').val());
         $("#group_parent_id").on("change", function(e) {
             setCopyPermsOption(e.val)
-        })
+        });
         $('#group_name').focus();
     })
 </script>
