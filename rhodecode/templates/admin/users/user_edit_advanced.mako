@@ -35,15 +35,23 @@
         <h3 class="panel-title">${_('Force Password Reset')}</h3>
     </div>
     <div class="panel-body">
-        ${h.secure_form(h.route_path('user_force_password_reset', user_id=c.user.user_id), request=request)}
+        ${h.secure_form(h.route_path('user_disable_force_password_reset', user_id=c.user.user_id), request=request)}
             <div class="field">
                 <button class="btn btn-default" type="submit">
-                    <i class="icon-lock"></i>
-                    %if c.user.user_data.get('force_password_change'):
-                        ${_('Disable forced password reset')}
-                    %else:
-                        ${_('Enable forced password reset')}
-                    %endif
+                    <i class="icon-unlock"></i> ${_('Disable forced password reset')}
+                </button>
+            </div>
+            <div class="field">
+                <span class="help-block">
+                    ${_("Clear the forced password change flag.")}
+                </span>
+            </div>
+        ${h.end_form()}
+
+        ${h.secure_form(h.route_path('user_enable_force_password_reset', user_id=c.user.user_id), request=request)}
+            <div class="field">
+                <button class="btn btn-default" type="submit" onclick="return confirm('${_('Confirm to enable forced password change')}');">
+                    <i class="icon-lock"></i> ${_('Enable forced password reset')}
                 </button>
             </div>
             <div class="field">
@@ -52,6 +60,7 @@
                 </span>
             </div>
         ${h.end_form()}
+
     </div>
 </div>
 

@@ -102,7 +102,8 @@ function registerRCRoutes() {
     pyroutes.register('user_edit_global_perms_update', '/_admin/users/%(user_id)s/edit/global_permissions/update', ['user_id']);
     pyroutes.register('user_update', '/_admin/users/%(user_id)s/update', ['user_id']);
     pyroutes.register('user_delete', '/_admin/users/%(user_id)s/delete', ['user_id']);
-    pyroutes.register('user_force_password_reset', '/_admin/users/%(user_id)s/password_reset', ['user_id']);
+    pyroutes.register('user_enable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_enable', ['user_id']);
+    pyroutes.register('user_disable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_disable', ['user_id']);
     pyroutes.register('user_create_personal_repo_group', '/_admin/users/%(user_id)s/create_repo_group', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '/_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
     pyroutes.register('edit_user_ssh_keys', '/_admin/users/%(user_id)s/edit/ssh_keys', ['user_id']);

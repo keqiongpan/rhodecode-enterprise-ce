@@ -59,8 +59,6 @@ def route_path(name, params=None, **kwargs):
             ADMIN_PREFIX + '/users/{user_id}/update',
         'user_delete':
             ADMIN_PREFIX + '/users/{user_id}/delete',
-        'user_force_password_reset':
-            ADMIN_PREFIX + '/users/{user_id}/password_reset',
         'user_create_personal_repo_group':
             ADMIN_PREFIX + '/users/{user_id}/create_repo_group',
 
