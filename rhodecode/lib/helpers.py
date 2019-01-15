@@ -650,10 +650,9 @@ flash = Flash()
 # SCM FILTERS available via h.
 #==============================================================================
 from rhodecode.lib.vcs.utils import author_name, author_email
-from rhodecode.lib.utils2 import credentials_filter, age as _age
+from rhodecode.lib.utils2 import credentials_filter, age, age_from_seconds
 from rhodecode.model.db import User, ChangesetStatus
 
-age = _age
 capitalize = lambda x: x.capitalize()
 email = author_email
 short_id = lambda x: x[:12]

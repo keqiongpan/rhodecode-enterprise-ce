@@ -24,6 +24,9 @@ RhodeCode authentication plugin for built in internal auth
 
 import logging
 
+import colander
+
+from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.translation import _
 
 from rhodecode.authentication.base import RhodeCodeAuthPluginBase, hybrid_property
@@ -41,6 +44,18 @@ def plugin_factory(plugin_id, *args, **kwargs):
 
 class RhodecodeAuthnResource(AuthnPluginResourceBase):
     pass
+
+
+class RhodeCodeSettingsSchema(AuthnPluginSettingsSchemaBase):
+
+    superadmin_restriction = colander.SchemaNode(
+        colander.Bool(),
+        default=False,
+        description=_('Only allow super-admins to log-in using this plugin.'),
+        missing=False,
+        title=_('Enabled'),
+        widget='bool',
+    )
 
 
 class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
@@ -63,6 +78,9 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             request_method='POST',
             route_name='auth_home',
             context=RhodecodeAuthnResource)
+
+    def get_settings_schema(self):
+        return RhodeCodeSettingsSchema()
 
     def get_display_name(self):
         return _('RhodeCode Internal')

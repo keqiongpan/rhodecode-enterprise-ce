@@ -564,6 +564,12 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
     return _(u'just now')
 
 
+def age_from_seconds(seconds):
+    seconds = safe_int(seconds) or 0
+    prevdate = time_to_datetime(time.time() + seconds)
+    return age(prevdate, show_suffix=False, show_short_version=True)
+
+
 def cleaned_uri(uri):
     """
     Quotes '[' and ']' from uri if there is only one of them.

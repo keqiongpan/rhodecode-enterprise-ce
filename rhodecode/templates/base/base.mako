@@ -299,87 +299,54 @@
 <%def name="usermenu(active=False)">
     ## USER MENU
     <li id="quick_login_li" class="${'active' if active else ''}">
-      <a id="quick_login_link" class="menulink childs">
-        ${gravatar(c.rhodecode_user.email, 20)}
-        <span class="user">
-          %if c.rhodecode_user.username != h.DEFAULT_USER:
-            <span class="menu_link_user">${c.rhodecode_user.username}</span><div class="show_more"></div>
-          %else:
-            <span>${_('Sign in')}</span>
-          %endif
-        </span>
-      </a>
-
-  <div class="user-menu submenu">
-      <div id="quick_login">
-        %if c.rhodecode_user.username == h.DEFAULT_USER:
-            <h4>${_('Sign in to your account')}</h4>
-            ${h.form(h.route_path('login', _query={'came_from': h.current_route_path(request)}), needs_csrf_token=False)}
-            <div class="form form-vertical">
-                <div class="fields">
-                    <div class="field">
-                        <div class="label">
-                            <label for="username">${_('Username')}:</label>
-                        </div>
-                        <div class="input">
-                            ${h.text('username',class_='focus',tabindex=1)}
-                        </div>
-
+        % if c.rhodecode_user.username == h.DEFAULT_USER:
+          <a id="quick_login_link" class="menulink childs" href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">
+            ${gravatar(c.rhodecode_user.email, 20)}
+            <span class="user">
+                <span>${_('Sign in')}</span>
+            </span>
+          </a>
+        % else:
+          ## logged in user
+          <a id="quick_login_link" class="menulink childs">
+            ${gravatar(c.rhodecode_user.email, 20)}
+            <span class="user">
+                <span class="menu_link_user">${c.rhodecode_user.username}</span>
+                <div class="show_more"></div>
+            </span>
+          </a>
+          ## subnav with menu for logged in user
+          <div class="user-menu submenu">
+              <div id="quick_login">
+                %if c.rhodecode_user.username != h.DEFAULT_USER:
+                    <div class="">
+                        <div class="big_gravatar">${gravatar(c.rhodecode_user.email, 48)}</div>
+                        <div class="full_name">${c.rhodecode_user.full_name_or_username}</div>
+                        <div class="email">${c.rhodecode_user.email}</div>
                     </div>
-                    <div class="field">
-                        <div class="label">
-                            <label for="password">${_('Password')}:</label>
-                            %if h.HasPermissionAny('hg.password_reset.enabled')():
-                              <span class="forgot_password">${h.link_to(_('(Forgot password?)'),h.route_path('reset_password'), class_='pwd_reset')}</span>
-                            %endif
-                        </div>
-                        <div class="input">
-                            ${h.password('password',class_='focus',tabindex=2)}
-                        </div>
-                    </div>
-                    <div class="buttons">
-                        <div class="register">
-                        %if h.HasPermissionAny('hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')():
-                         ${h.link_to(_("Don't have an account?"),h.route_path('register'))} <br/>
-                        %endif
-                        ${h.link_to(_("Using external auth? Sign In here."),h.route_path('login'))}
-                        </div>
-                        <div class="submit">
-                            ${h.submit('sign_in',_('Sign In'),class_="btn btn-small",tabindex=3)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            ${h.end_form()}
-        %else:
-            <div class="">
-                <div class="big_gravatar">${gravatar(c.rhodecode_user.email, 48)}</div>
-                <div class="full_name">${c.rhodecode_user.full_name_or_username}</div>
-                <div class="email">${c.rhodecode_user.email}</div>
-            </div>
-            <div class="">
-            <ol class="links">
-              <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
-              % if c.rhodecode_user.personal_repo_group:
-              <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
-              % endif
-              <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
+                    <div class="">
+                    <ol class="links">
+                      <li>${h.link_to(_(u'My account'),h.route_path('my_account_profile'))}</li>
+                      % if c.rhodecode_user.personal_repo_group:
+                      <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
+                      % endif
+                      <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
 
-              <li class="logout">
-              ${h.secure_form(h.route_path('logout'), request=request)}
-                  ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}
-              ${h.end_form()}
-              </li>
-            </ol>
-            </div>
-        %endif
-      </div>
-  </div>
-      %if c.rhodecode_user.username != h.DEFAULT_USER:
-        <div class="pill_container">
-          <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
-        </div>
-      % endif
+                      <li class="logout">
+                      ${h.secure_form(h.route_path('logout'), request=request)}
+                          ${h.submit('log_out', _(u'Sign Out'),class_="btn btn-primary")}
+                      ${h.end_form()}
+                      </li>
+                    </ol>
+                    </div>
+                %endif
+              </div>
+          </div>
+          ## unread counter
+          <div class="pill_container">
+            <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
+          </div>
+        % endif
     </li>
 </%def>
 

@@ -74,20 +74,17 @@ class TestPasswordReset(TestController):
             'default_password_reset': pwd_reset_setting,
             'default_extern_activate': 'hg.extern_activate.auto',
         }
-        resp = self.app.post(route_path('admin_permissions_application_update'), params=params)
+        resp = self.app.post(
+            route_path('admin_permissions_application_update'), params=params)
         self.logout_user()
 
         login_page = self.app.get(route_path('login'))
         asr_login = AssertResponse(login_page)
-        index_page = self.app.get(h.route_path('home'))
-        asr_index = AssertResponse(index_page)
 
         if show_link:
             asr_login.one_element_exists('a.pwd_reset')
-            asr_index.one_element_exists('a.pwd_reset')
         else:
             asr_login.no_element_exists('a.pwd_reset')
-            asr_index.no_element_exists('a.pwd_reset')
 
         response = self.app.get(route_path('reset_password'))
         
