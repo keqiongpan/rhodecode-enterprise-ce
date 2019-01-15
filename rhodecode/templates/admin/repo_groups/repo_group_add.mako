@@ -33,12 +33,21 @@
         <div class="fields">
              <div class="field">
                 <div class="label">
-                    <label for="group_name">${_('Group Name')}:</label>
+                    <label for="group_name">${_('Group name')}:</label>
                 </div>
                 <div class="input">
                     ${h.text('group_name', class_="medium")}
                 </div>
              </div>
+
+            <div class="field">
+                 <div class="label">
+                     <label for="group_parent_id">${_('Repository group')}:</label>
+                 </div>
+                 <div class="select">
+                     ${h.select('group_parent_id',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
+                 </div>
+            </div>
 
             <div class="field">
                 <div class="label">
@@ -53,15 +62,6 @@
                         ${dt.metatags_help()}
                     </span>
                 </div>
-            </div>
-
-            <div class="field">
-                 <div class="label">
-                     <label for="group_parent_id">${_('Group Parent')}:</label>
-                 </div>
-                 <div class="select">
-                     ${h.select('group_parent_id',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
-                 </div>
             </div>
 
             <div id="copy_perms" class="field">
