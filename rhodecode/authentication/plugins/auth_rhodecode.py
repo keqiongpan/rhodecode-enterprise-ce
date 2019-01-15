@@ -46,20 +46,10 @@ class RhodecodeAuthnResource(AuthnPluginResourceBase):
     pass
 
 
-class RhodeCodeSettingsSchema(AuthnPluginSettingsSchemaBase):
-
-    superadmin_restriction = colander.SchemaNode(
-        colander.Bool(),
-        default=False,
-        description=_('Only allow super-admins to log-in using this plugin.'),
-        missing=False,
-        title=_('Enabled'),
-        widget='bool',
-    )
-
-
 class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     uid = 'rhodecode'
+    LOGIN_RESTRICTION_NONE = 'none'
+    LOGIN_RESTRICTION_SUPER_ADMIN = 'super_admin'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -112,10 +102,18 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
         if not userobj:
             log.debug('userobj was:%s skipping', userobj)
             return None
+
         if userobj.extern_type != self.name:
             log.warning(
                 "userobj:%s extern_type mismatch got:`%s` expected:`%s`",
                 userobj, userobj.extern_type, self.name)
+            return None
+
+        login_restriction = settings.get('login_restriction', '')
+        if login_restriction == self.LOGIN_RESTRICTION_SUPER_ADMIN and userobj.admin is False:
+            log.info(
+                "userobj:%s is not super-admin and login restriction is set to %s",
+                userobj, login_restriction)
             return None
 
         user_attrs = {
@@ -149,8 +147,8 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                 user_attrs['_hash_migrate'] = new_hash
 
             if userobj.username == User.DEFAULT_USER and userobj.active:
-                log.info(
-                    'user `%s` authenticated correctly as anonymous user', userobj.username)
+                log.info('user `%s` authenticated correctly as anonymous user',
+                         userobj.username)
                 return user_attrs
 
             elif userobj.username == username and password_match:
@@ -164,6 +162,23 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                 'user `%s` failed to authenticate via %s, reason: account not '
                 'active.', username, self.name)
             return None
+
+
+class RhodeCodeSettingsSchema(AuthnPluginSettingsSchemaBase):
+    login_restriction_choices = [
+        (RhodeCodeAuthPlugin.LOGIN_RESTRICTION_NONE, 'All users'),
+        (RhodeCodeAuthPlugin.LOGIN_RESTRICTION_SUPER_ADMIN, 'Super admins only')
+    ]
+
+    login_restriction = colander.SchemaNode(
+        colander.String(),
+        default=login_restriction_choices[0],
+        description=_('Choose login restrition for users.'),
+        title=_('Login restriction'),
+        validator=colander.OneOf([x[0] for x in login_restriction_choices]),
+        widget='select_with_labels',
+        choices=login_restriction_choices
+    )
 
 
 def includeme(config):

@@ -107,6 +107,16 @@ class TestLoginController(object):
 
         response.mustcontain('/%s' % HG_REPO)
 
+    def test_login_regular_forbidden_when_super_admin_restriction(self):
+        from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
+        with fixture.login_restriction(RhodeCodeAuthPlugin.LOGIN_RESTRICTION_SUPER_ADMIN):
+            response = self.app.post(route_path('login'),
+                                     {'username': 'test_regular',
+                                      'password': 'test12'})
+
+            response.mustcontain('invalid user name')
+            response.mustcontain('invalid password')
+
     def test_login_ok_came_from(self):
         test_came_from = '/_admin/users?branch=stable'
         _url = '{}?came_from={}'.format(route_path('login'), test_came_from)

@@ -38,6 +38,8 @@ from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.gist import GistModel
 from rhodecode.model.auth_token import AuthTokenModel
+from rhodecode.authentication.plugins.auth_rhodecode import \
+    RhodeCodeAuthPlugin
 
 dn = os.path.dirname
 FIXTURES = os.path.join(dn(dn(os.path.abspath(__file__))), 'tests', 'fixtures')
@@ -116,6 +118,38 @@ class Fixture(object):
                 anon = User.get_default_user()
                 anon.active = not status
                 Session().add(anon)
+                Session().commit()
+
+        return context()
+
+    def login_restriction(self, login_restriction):
+        """
+        Context process for changing the builtin rhodecode plugin login restrictions.
+        Use like:
+        fixture = Fixture()
+        with fixture.login_restriction('super_admin'):
+            #tests
+
+        after this block login restriction will be taken off
+        """
+
+        class context(object):
+            def _get_pluing(self):
+                plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(
+                    RhodeCodeAuthPlugin.uid)
+                plugin = RhodeCodeAuthPlugin(plugin_id)
+                return plugin
+
+            def __enter__(self):
+                plugin = self._get_pluing()
+                plugin.create_or_update_setting(
+                    'login_restriction', login_restriction)
+                Session().commit()
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                plugin = self._get_pluing()
+                plugin.create_or_update_setting(
+                    'login_restriction', RhodeCodeAuthPlugin.LOGIN_RESTRICTION_NONE)
                 Session().commit()
 
         return context()
