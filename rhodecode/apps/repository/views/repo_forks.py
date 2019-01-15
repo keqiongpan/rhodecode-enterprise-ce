@@ -256,12 +256,8 @@ class RepoForksView(RepoAppView, DataGridAppView):
 
         affected_user_ids = [self._rhodecode_user.user_id]
         if copy_permissions:
-            repository = Repository.get_by_repo_name(repo_name)
-            # also include those newly created by copy
-            user_group_perms = repository.permissions(expand_from_user_groups=True)
-            copy_perms = [perm['user_id'] for perm in user_group_perms]
-            # also include those newly created by copy
-            affected_user_ids.extend(copy_perms)
+            # permission flush is done in repo creating
+            pass
 
         events.trigger(events.UserPermissionsChange(affected_user_ids))
 

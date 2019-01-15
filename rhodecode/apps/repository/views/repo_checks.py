@@ -23,6 +23,7 @@ import logging
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 
+from rhodecode import events
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (NotAnonymous, HasRepoPermissionAny)
@@ -50,6 +51,8 @@ class RepoChecksView(BaseAppView):
 
         # check if maybe repo is already created
         if db_repo and db_repo.repo_state in [Repository.STATE_CREATED]:
+            self.flush_permissions_on_creation(db_repo)
+
             # re-check permissions before redirecting to prevent resource
             # discovery by checking the 302 code
             perm_set = ['repository.read', 'repository.write', 'repository.admin']
@@ -110,5 +113,13 @@ class RepoChecksView(BaseAppView):
                 else:
                     h.flash(h.literal(_('Created repository %s') % repo_url),
                             category='success')
+            self.flush_permissions_on_creation(db_repo)
+
             return {'result': True}
         return {'result': False}
+
+    def flush_permissions_on_creation(self, db_repo):
+        # repo is finished and created, we flush the permissions now
+        user_group_perms = db_repo.permissions(expand_from_user_groups=True)
+        affected_user_ids = [perm['user_id'] for perm in user_group_perms]
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
