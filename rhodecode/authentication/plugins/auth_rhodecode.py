@@ -26,13 +26,13 @@ import logging
 
 import colander
 
-from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.translation import _
-
-from rhodecode.authentication.base import RhodeCodeAuthPluginBase, hybrid_property
-from rhodecode.authentication.routes import AuthnPluginResourceBase
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model.db import User
+from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
+from rhodecode.authentication.base import (
+    RhodeCodeAuthPluginBase, hybrid_property, HTTP_TYPE, VCS_TYPE)
+from rhodecode.authentication.routes import AuthnPluginResourceBase
 
 log = logging.getLogger(__name__)
 
@@ -48,8 +48,11 @@ class RhodecodeAuthnResource(AuthnPluginResourceBase):
 
 class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     uid = 'rhodecode'
-    LOGIN_RESTRICTION_NONE = 'none'
-    LOGIN_RESTRICTION_SUPER_ADMIN = 'super_admin'
+    AUTH_RESTRICTION_NONE = 'user_all'
+    AUTH_RESTRICTION_SUPER_ADMIN = 'user_super_admin'
+    AUTH_RESTRICTION_SCOPE_ALL = 'scope_all'
+    AUTH_RESTRICTION_SCOPE_HTTP = 'scope_http'
+    AUTH_RESTRICTION_SCOPE_VCS = 'scope_vcs'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -104,16 +107,32 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             return None
 
         if userobj.extern_type != self.name:
-            log.warning(
-                "userobj:%s extern_type mismatch got:`%s` expected:`%s`",
-                userobj, userobj.extern_type, self.name)
+            log.warning("userobj:%s extern_type mismatch got:`%s` expected:`%s`",
+                        userobj, userobj.extern_type, self.name)
             return None
 
-        login_restriction = settings.get('login_restriction', '')
-        if login_restriction == self.LOGIN_RESTRICTION_SUPER_ADMIN and userobj.admin is False:
-            log.info(
-                "userobj:%s is not super-admin and login restriction is set to %s",
-                userobj, login_restriction)
+        # check scope of auth
+        scope_restriction = settings.get('scope_restriction', '')
+
+        if scope_restriction == self.AUTH_RESTRICTION_SCOPE_HTTP \
+                and self.auth_type != HTTP_TYPE:
+            log.warning("userobj:%s tried scope type %s and scope restriction is set to %s",
+                        userobj, self.auth_type, scope_restriction)
+            return None
+
+        if scope_restriction == self.AUTH_RESTRICTION_SCOPE_VCS \
+                and self.auth_type != VCS_TYPE:
+            log.warning("userobj:%s tried scope type %s and scope restriction is set to %s",
+                        userobj, self.auth_type, scope_restriction)
+            return None
+
+        # check super-admin restriction
+        auth_restriction = settings.get('auth_restriction', '')
+
+        if auth_restriction == self.AUTH_RESTRICTION_SUPER_ADMIN \
+                and userobj.admin is False:
+            log.warning("userobj:%s is not super-admin and auth restriction is set to %s",
+                        userobj, auth_restriction)
             return None
 
         user_attrs = {
@@ -154,30 +173,45 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             elif userobj.username == username and password_match:
                 log.info('user `%s` authenticated correctly', userobj.username)
                 return user_attrs
-            log.warn("user `%s` used a wrong password when "
-                     "authenticating on this plugin", userobj.username)
+            log.warning("user `%s` used a wrong password when "
+                        "authenticating on this plugin", userobj.username)
             return None
         else:
-            log.warning(
-                'user `%s` failed to authenticate via %s, reason: account not '
-                'active.', username, self.name)
+            log.warning('user `%s` failed to authenticate via %s, reason: account not '
+                        'active.', username, self.name)
             return None
 
 
 class RhodeCodeSettingsSchema(AuthnPluginSettingsSchemaBase):
-    login_restriction_choices = [
-        (RhodeCodeAuthPlugin.LOGIN_RESTRICTION_NONE, 'All users'),
-        (RhodeCodeAuthPlugin.LOGIN_RESTRICTION_SUPER_ADMIN, 'Super admins only')
+
+    auth_restriction_choices = [
+        (RhodeCodeAuthPlugin.AUTH_RESTRICTION_NONE, 'All users'),
+        (RhodeCodeAuthPlugin.AUTH_RESTRICTION_SUPER_ADMIN, 'Super admins only'),
     ]
 
-    login_restriction = colander.SchemaNode(
+    auth_scope_choices = [
+        (RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_ALL, 'HTTP and VCS'),
+        (RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_HTTP, 'HTTP only'),
+    ]
+
+    auth_restriction = colander.SchemaNode(
         colander.String(),
-        default=login_restriction_choices[0],
-        description=_('Choose login restrition for users.'),
-        title=_('Login restriction'),
-        validator=colander.OneOf([x[0] for x in login_restriction_choices]),
+        default=auth_restriction_choices[0],
+        description=_('Allowed user types for authentication using this plugin.'),
+        title=_('User restriction'),
+        validator=colander.OneOf([x[0] for x in auth_restriction_choices]),
         widget='select_with_labels',
-        choices=login_restriction_choices
+        choices=auth_restriction_choices
+    )
+    scope_restriction = colander.SchemaNode(
+        colander.String(),
+        default=auth_scope_choices[0],
+        description=_('Allowed protocols for authentication using this plugin. '
+                      'VCS means GIT/HG/SVN. HTTP is web based login.'),
+        title=_('Scope restriction'),
+        validator=colander.OneOf([x[0] for x in auth_scope_choices]),
+        widget='select_with_labels',
+        choices=auth_scope_choices
     )
 
 

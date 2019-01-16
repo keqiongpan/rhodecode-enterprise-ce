@@ -122,15 +122,15 @@ class Fixture(object):
 
         return context()
 
-    def login_restriction(self, login_restriction):
+    def auth_restriction(self, auth_restriction):
         """
-        Context process for changing the builtin rhodecode plugin login restrictions.
+        Context process for changing the builtin rhodecode plugin auth restrictions.
         Use like:
         fixture = Fixture()
-        with fixture.login_restriction('super_admin'):
+        with fixture.auth_restriction('super_admin'):
             #tests
 
-        after this block login restriction will be taken off
+        after this block auth restriction will be taken off
         """
 
         class context(object):
@@ -143,13 +143,45 @@ class Fixture(object):
             def __enter__(self):
                 plugin = self._get_pluing()
                 plugin.create_or_update_setting(
-                    'login_restriction', login_restriction)
+                    'auth_restriction', auth_restriction)
                 Session().commit()
 
             def __exit__(self, exc_type, exc_val, exc_tb):
                 plugin = self._get_pluing()
                 plugin.create_or_update_setting(
-                    'login_restriction', RhodeCodeAuthPlugin.LOGIN_RESTRICTION_NONE)
+                    'auth_restriction', RhodeCodeAuthPlugin.AUTH_RESTRICTION_NONE)
+                Session().commit()
+
+        return context()
+
+    def scope_restriction(self, scope_restriction):
+        """
+        Context process for changing the builtin rhodecode plugin scope restrictions.
+        Use like:
+        fixture = Fixture()
+        with fixture.scope_restriction('scope_http'):
+            #tests
+
+        after this block scope restriction will be taken off
+        """
+
+        class context(object):
+            def _get_pluing(self):
+                plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(
+                    RhodeCodeAuthPlugin.uid)
+                plugin = RhodeCodeAuthPlugin(plugin_id)
+                return plugin
+
+            def __enter__(self):
+                plugin = self._get_pluing()
+                plugin.create_or_update_setting(
+                    'scope_restriction', scope_restriction)
+                Session().commit()
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                plugin = self._get_pluing()
+                plugin.create_or_update_setting(
+                    'scope_restriction', RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_ALL)
                 Session().commit()
 
         return context()
