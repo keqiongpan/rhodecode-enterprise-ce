@@ -1,35 +1,36 @@
 <div class="panel panel-default">
-  <div class="panel-heading">
+    <div class="panel-heading">
     <h3 class="panel-title">${_('Authentication Tokens')}</h3>
-  </div>
-  <div class="panel-body">
+    </div>
+    <div class="panel-body">
     <div class="apikeys_wrap">
       <p>
-         ${_('Each token can have a role. Token with a role can be used only in given context, '
+         ${_('Authentication tokens can be used to interact with the API, or VCS-over-http. '
+         'Each token can have a role. Token with a role can be used only in given context, '
          'e.g. VCS tokens can be used together with the authtoken auth plugin for git/hg/svn operations only.')}
       </p>
       <table class="rctable auth_tokens">
         <tr>
             <th>${_('Token')}</th>
-            <th>${_('Scope')}</th>
             <th>${_('Description')}</th>
             <th>${_('Role')}</th>
+            <th>${_('Repository Scope')}</th>
             <th>${_('Expiration')}</th>
             <th>${_('Action')}</th>
         </tr>
         %if c.user_auth_tokens:
             %for auth_token in c.user_auth_tokens:
-              <tr class="${'expired' if auth_token.expired else ''}">
+              <tr class="${('expired' if auth_token.expired else '')}">
                 <td class="truncate-wrap td-authtoken">
                     <div class="user_auth_tokens truncate autoexpand">
                     <code>${auth_token.api_key}</code>
                     </div>
                 </td>
-                <td class="td">${auth_token.scope_humanized}</td>
                 <td class="td-wrap">${auth_token.description}</td>
                 <td class="td-tags">
                     <span class="tag disabled">${auth_token.role_humanized}</span>
                 </td>
+                <td class="td">${auth_token.scope_humanized}</td>
                 <td class="td-exp">
                      %if auth_token.expires == -1:
                       ${_('never')}
@@ -58,40 +59,41 @@
       </table>
     </div>
 
-        <div class="user_auth_tokens">
-            ${h.secure_form(h.route_path('my_account_auth_tokens_add'), request=request)}
-            <div class="form form-vertical">
-                <!-- fields -->
-                <div class="fields">
-                     <div class="field">
-                        <div class="label">
-                            <label for="new_email">${_('New authentication token')}:</label>
-                        </div>
-                        <div class="input">
-                            ${h.text('description', class_='medium', placeholder=_('Description'))}
-                            ${h.hidden('lifetime')}
-                            ${h.select('role', '', c.role_options)}
-
-                            % if c.allow_scoped_tokens:
-                                ${h.hidden('scope_repo_id')}
-                            % else:
-                                ${h.select('scope_repo_id_disabled', '', ['Scopes available in EE edition'], disabled='disabled')}
-                            % endif
-                        </div>
-                        <p class="help-block">
-                          ${_('Repository scope works only with tokens with VCS type.')}
-                        </p>
-                     </div>
-                    <div class="buttons">
-                      ${h.submit('save',_('Add'),class_="btn")}
-                      ${h.reset('reset',_('Reset'),class_="btn")}
+    <div class="user_auth_tokens">
+        ${h.secure_form(h.route_path('my_account_auth_tokens_add'), request=request)}
+        <div class="form form-vertical">
+            <!-- fields -->
+            <div class="fields">
+                 <div class="field">
+                    <div class="label">
+                        <label for="new_email">${_('New authentication token')}:</label>
                     </div>
+                    <div class="input">
+                        ${h.text('description', class_='medium', placeholder=_('Description'))}
+                        ${h.hidden('lifetime')}
+                        ${h.select('role', '', c.role_options)}
+
+                        % if c.allow_scoped_tokens:
+                            ${h.hidden('scope_repo_id')}
+                        % else:
+                            ${h.select('scope_repo_id_disabled', '', ['Scopes available in EE edition'], disabled='disabled')}
+                        % endif
+                    </div>
+                    <p class="help-block">
+                      ${_('Repository scope works only with tokens with VCS type.')}
+                    </p>
+                 </div>
+                <div class="buttons">
+                  ${h.submit('save',_('Add'),class_="btn")}
+                  ${h.reset('reset',_('Reset'),class_="btn")}
                 </div>
             </div>
-            ${h.end_form()}
         </div>
+        ${h.end_form()}
+    </div>
     </div>
 </div>
+
 <script>
 $(document).ready(function(){
 

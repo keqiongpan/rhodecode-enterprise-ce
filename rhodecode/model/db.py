@@ -1130,10 +1130,10 @@ class UserApiKeys(Base, BaseModel):
 
     def _get_scope(self):
         if self.repo:
-            return repr(self.repo)
+            return 'Repository: {}'.format(self.repo.repo_name)
         if self.repo_group:
-            return repr(self.repo_group) + ' (recursive)'
-        return 'global'
+            return 'RepositoryGroup: {} (recursive)'.format(self.repo_group.group_name)
+        return 'Global'
 
     @property
     def scope_humanized(self):
