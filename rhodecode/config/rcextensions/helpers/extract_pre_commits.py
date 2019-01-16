@@ -48,9 +48,10 @@ def get_git_commits(repo, refs):
             return commits
 
         git_env = dict(data['git_env'])
+        # https://github.com/git/git/blob/master/Documentation/pretty-formats.txt
         cmd = [
             'log',
-            '--pretty=format:{"commit_id": "%H",  "author": "%aN <%aE>",  "date": "%ad",  "message": "%f"}',
+            '--pretty=format:{"commit_id": "%H",  "author": "%aN <%aE>",  "date": "%ad",  "message": "%s"}',
             '{}...{}'.format(old_rev, new_rev)
         ]
 
