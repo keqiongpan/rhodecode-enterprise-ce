@@ -2128,11 +2128,11 @@ self: super: {
     };
   };
   "vine" = super.buildPythonPackage {
-    name = "vine-1.1.4";
+    name = "vine-1.2.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/32/23/36284986e011f3c130d802c3c66abd8f1aef371eae110ddf80c5ae22e1ff/vine-1.1.4.tar.gz";
-      sha256 = "0wkskb2hb494v9gixqnf4bl972p4ibcmxdykzpwjlfa5picns4aj";
+      url = "https://files.pythonhosted.org/packages/46/1a/c94317efa98040c5d50fe3cf9080cafb0372ff5afb0283dc018c751c6746/vine-1.2.0.tar.gz";
+      sha256 = "0xjz2sjbr5jrpjk411b7alkghdskhphgsqqrbi7abqfh2pli6j7f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
