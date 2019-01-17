@@ -1,8 +1,8 @@
-# This code allows override the integrations templates. Put this into the __init__.py
-# file of rcextensions
+# This code allows override the integrations templates.
+# Put this into the __init__.py file of rcextensions to override the templates
 
 
-# EMAIL
+# EMAIL Integration
 from rhodecode.integrations import email
 email.REPO_PUSH_TEMPLATE_HTML = email.Template('''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -108,15 +108,14 @@ email.REPO_PUSH_TEMPLATE_HTML = email.Template('''
 ''')
 
 
-# JIRA (EE ONLY)
+# JIRA Integration (EE ONLY)
+# available variables:
+# url, short_id ,author
+# branch, commit_message
+# commit (dict data for commit)
 from rc_integrations import jira_tracker
 
-jira_tracker.COMMENT_TEMPLATE_PULL_REQUEST = jira_tracker.Template('''
-${action} by ${author} (status: ${status}). \n
-pull-request: ${url}
-''')
-
-
+# used for references issues without transition, e.g `This ticket references PROJ-123`
 jira_tracker.COMMENT_TEMPLATE_COMMIT = jira_tracker.Template('''
 Commit `${short_id}` by ${author} on `${branch}` branch references this issue. \n
 ${url}\n
@@ -125,7 +124,8 @@ ${url}\n
 ${commit['message']}
 ''')
 
-
+# used when there's a transition, e.g referenced issues status goes from
+# open to resolved this is used in correlation with something like `closes PROJ-123`
 jira_tracker.COMMENT_TEMPLATE_COMMIT_WITH_STATUS = jira_tracker.Template('''
 Commit `${short_id}` by ${author} on `${branch}` branch changed this issue. \n
 '{url}\n
@@ -134,10 +134,20 @@ Commit `${short_id}` by ${author} on `${branch}` branch changed this issue. \n
 ${commit['message']} 
 ''')
 
+jira_tracker.COMMENT_TEMPLATE_PULL_REQUEST = jira_tracker.Template('''
+${action} by ${author} (status: ${status}). \n
+pull-request: ${url}
+''')
+
 
 # REDMINE (EE ONLY)
+# available variables:
+# url, short_id ,author
+# branch, commit_message
+# commit (dict data for commit)
 from rc_integrations import redmine_tracker
 
+# used for references issues without transition, e.g `This ticket references #123`
 redmine_tracker.COMMENT_TEMPLATE_COMMIT = redmine_tracker.Template('''
 Commit `${short_id}` by ${author} on `${branch}` branch references this issue. \n
 commit: ${url}\n
@@ -150,6 +160,8 @@ ${commit['message']}
 
 ''')
 
+# used when there's a transition, e.g referenced issues status goes from
+# open to resolved this is used in correlation with something like `closes #123`
 redmine_tracker.COMMENT_TEMPLATE_COMMIT_WITH_STATUS = redmine_tracker.Template('''
 Commit `${short_id}` by ${author} on `${branch}` branch changed this issue. \n
 commit: ${url}\n
