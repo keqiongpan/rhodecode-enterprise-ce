@@ -78,7 +78,7 @@ Configuration Files
 -------------------
 
 * :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini`
-* :file:`/home/{user}/.rccontrol/{instance-id}/mapping.ini`
+* :file:`/home/{user}/.rccontrol/{instance-id}/search_mapping.ini`
 * :file:`/home/{user}/.rccontrol/{vcsserver-id}/vcsserver.ini`
 * :file:`/home/{user}/.rccontrol/supervisor/supervisord.ini`
 * :file:`/home/{user}/.rccontrol.ini`

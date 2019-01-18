@@ -6,22 +6,21 @@ Full-text Search
 By default RhodeCode is configured to use `Whoosh`_ to index |repos| and
 provide full-text search.
 
-|RCE| also provides support for `Elasticsearch`_ as a backend for scalable
-search. See :ref:`enable-elasticsearch` for details.
+|RCE| also provides support for `Elasticsearch 6`_ as a backend more for advanced
+and scalable search. See :ref:`enable-elasticsearch` for details.
 
 Indexing
 ^^^^^^^^
 
-To run the indexer you need to use an |authtoken| with admin rights to all
-|repos|.
+To run the indexer you need to have an |authtoken| with admin rights to all |repos|.
 
 To index new content added, you have the option to set the indexer up in a
 number of ways, for example:
 
-* Call the indexer via a cron job. We recommend running this nightly,
-  unless you need everything indexed immediately.
-* Set the indexer to infinitely loop and reindex as soon as it has run its
-  cycle.
+* Call the indexer via a cron job. We recommend running this once at night.
+  In case you need everything indexed immediately it's possible to index few
+  times during the day.
+* Set the indexer to infinitely loop and reindex as soon as it has run its previous cycle.
 * Hook the indexer up with your CI server to reindex after each push.
 
 The indexer works by indexing new commits added since the last run. If you
@@ -31,7 +30,7 @@ use the ``force`` option in the configuration file.
 .. important::
 
    You need to have |RCT| installed, see :ref:`install-tools`. Since |RCE|
-   3.5.0 they are installed by default.
+   3.5.0 they are installed by default and available with community/enterprise installations.
 
 To set up indexing, use the following steps:
 
@@ -45,6 +44,13 @@ To set up indexing, use the following steps:
 Configure the ``.rhoderc`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+
+    Optionally it's possible to use indexer without the ``.rhoderc``. Simply instead of
+    executing with `--instance-name=enterprise-1` execute providing the host and token
+    directly: `--api-host=http://127.0.0.1:10000 --api-key=<auth token goes here>
+
+
 |RCT| uses the :file:`/home/{user}/.rhoderc` file for connection details
 to |RCE| instances. If this file is not automatically created,
 you can configure it using the following example. You need to configure the
@@ -56,11 +62,11 @@ details for each instance you want to index.
     # of the instance you want to index
     $ rccontrol status
 
-     - NAME: enterprise-1
-     - STATUS: RUNNING
-     - TYPE: Momentum
-     - VERSION: 1.5.0
-     - URL: http://127.0.0.1:10000
+    - NAME: enterprise-1
+    - STATUS: RUNNING
+    - TYPE: Enterprise
+    - VERSION: 4.1.0
+    - URL: http://127.0.0.1:10003
 
 To get your API Token, on the |RCE| interface go to
 :menuselection:`username --> My Account --> Auth tokens`
@@ -72,20 +78,16 @@ To get your API Token, on the |RCE| interface go to
     [instance:enterprise-1]
     api_host = http://127.0.0.1:10000
     api_key = <auth token goes here>
-    repo_dir = /home/<username>/repos
+
 
 .. _run-index:
 
 Run the Indexer
 ^^^^^^^^^^^^^^^
 
-Run the indexer using the following command, and specify the instance you
-want to index:
+Run the indexer using the following command, and specify the instance you want to index:
 
 .. code-block:: bash
-
-   # From inside a virtualevv
-   (venv)$ rhodecode-index --instance-name=enterprise-1
 
    # Using default installation
    $ /home/user/.rccontrol/enterprise-1/profile/bin/rhodecode-index \
@@ -94,7 +96,16 @@ want to index:
    # Using a custom mapping file
    $ /home/user/.rccontrol/enterprise-1/profile/bin/rhodecode-index \
        --instance-name=enterprise-1 \
-       --mapping=/home/user/.rccontrol/enterprise-1/mapping.ini
+       --mapping=/home/user/.rccontrol/enterprise-1/search_mapping.ini
+
+   # Using a custom mapping file and invocation without ``.rhoderc``
+   $ /home/user/.rccontrol/enterprise-1/profile/bin/rhodecode-index \
+       --api-host=http://rhodecodecode.myserver.com --api-key=xxxxx \
+       --mapping=/home/user/.rccontrol/enterprise-1/search_mapping.ini
+
+   # From inside a virtualev on your local machine or CI server.
+   (venv)$ rhodecode-index --instance-name=enterprise-1
+
 
 .. note::
 
@@ -136,118 +147,184 @@ your |RCT| virtualenv using the following steps.
     # using a specially configured mapping file
     */15 * * * * ~/.rccontrol/enterprise-4/profile/bin/rhodecode-index \
        --instance-name=enterprise-4 \
-       --mapping=/home/user/.rccontrol/enterprise-4/mapping.ini
+       --mapping=/home/user/.rccontrol/enterprise-4/search_mapping.ini
 
 .. _advanced-indexing:
 
 Advanced Indexing
 ^^^^^^^^^^^^^^^^^
 
-|RCT| indexes based on the :file:`mapping.ini` file. To configure your index,
-you can specify different options in this file. The default location is:
 
-* :file:`/home/{user}/.rccontrol/{instance-id}/mapping.ini`, using default
-  |RCT|.
+Force Re-Indexing single repository
++++++++++++++++++++++++++++++++++++
+
+Often it's required to re-index whole repository because of some repository changes,
+or to remove some indexed secrets, or files. There's a special `--repo-name=` flag
+for the indexer that limits execution to a single repository. For example to force-reindex
+single repository such call can be made::
+
+    rhodecode-index --instance-name=enterprise-1 --force --repo-name=rhodecode-vcsserver
+
+
+Removing repositories from index
+++++++++++++++++++++++++++++++++
+
+The indexer automatically removes renamed repositories and builds index for new names.
+In case that you wish to remove indexed repository manually such call would allow that::
+
+    rhodecode-index --instance-name=enterprise-1 --remove-only --repo-name=rhodecode-vcsserver
+
+
+Using search_mapping.ini file for advanced index rules
+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+By default rhodecode-index runs for all repositories, all files with parsing limits
+defined by the CLI default arguments. You can change those limits by calling with
+different flags such as `--max-filesize 2048kb` or `--repo-limit 10`
+
+For more advanced execution logic it's possible to use a configuration file that
+would define detailed rules which repositories and how should be indexed.
+
+|RCT| provides an example index configuration file called :file:`search_mapping.ini`.
+This file is created by default during installation and is located at:
+
+* :file:`/home/{user}/.rccontrol/{instance-id}/search_mapping.ini`, using default |RCT|.
 * :file:`~/venv/lib/python2.7/site-packages/rhodecode_tools/templates/mapping.ini`,
   when using ``virtualenv``.
 
 .. note::
 
-    If you need to create the :file:`mapping.ini` file, use the |RCT|
-    ``rhodecode-index --create-mapping path/to/file`` API call. For details,
-    see the :ref:`tools-cli` section.
+    If you need to create the :file:`search_mapping.ini` file manually, use the |RCT|
+    ``rhodecode-index --create-mapping path/to/search_mapping.ini`` API call.
+    For details, see the :ref:`tools-cli` section.
 
-The indexer runs in a random order to prevent a failing |repo| from stopping
-a build. To configure different indexing scenarios, set the following options
-inside the :file:`mapping.ini` and specify the altered file using the
-``--mapping`` option.
+To Run the indexer with mapping file provide it using `--mapping` flag::
 
-* ``index_files`` : Index the specified file types.
-* ``skip_files`` : Do not index the specified file types.
-* ``index_files_content`` : Index the content of the specified file types.
-* ``skip_files_content`` : Do not index the content of the specified files.
-* ``force`` : Create a fresh index on each run.
-* ``max_filesize`` : Files larger than the set size will not be indexed.
-* ``commit_parse_limit`` : Set the batch size when indexing commit messages.
-  Set to a lower number to lessen memory load.
-* ``repo_limit`` : Set the maximum number or |repos| indexed per run.
-* ``[INCLUDE]`` : Set |repos| you want indexed. This takes precedent over
-  ``[EXCLUDE]``.
-* ``[EXCLUDE]`` : Set |repos| you do not want indexed. Exclude can be used to
-  not index branches, forks, or log |repos|.
+    rhodecode-index --instance-name=enterprise-1 --mapping=/my/path/search_mapping.ini
 
-At the end of the file you can specify conditions for specific |repos| that
-will override the default values. To configure your indexer,
-use the following example :file:`mapping.ini` file.
+
+Here's a detailed example of using :file:`search_mapping.ini` file.
 
 .. code-block:: ini
 
     [__DEFAULT__]
-    # default patterns for indexing files and content of files.
-    # Binary files are skipped by default.
+    ; Create index on commits data, and files data in this order. Available options
+    ; are `commits`, `files`
+    index_types = commits,files
 
-    # Index python and markdown files
-    index_files = *.py, *.md
+    ; Commit fetch limit. In what amount of chunks commits should be fetched
+    ; via api and parsed. This allows server to transfer smaller chunks and be less loaded
+    commit_fetch_limit = 1000
 
-    # Do not index these file types
-    skip_files = *.svg, *.log, *.dump, *.txt
+    ; Commit process limit. Limit the number of commits indexer should fetch, and
+    ; store inside the full text search index. eg. if repo has 2000 commits, and
+    ; limit is 1000, on the first run it will process commits 0-1000 and on the
+    ; second 1000-2000 commits. Help reduce memory usage, default is 50000
+    ; (set -1 for unlimited)
+    commit_process_limit = 50000
 
-    # Index both file types and their content
-    index_files_content = *.cpp, *.ini, *.py
+    ; Limit of how many repositories each run can process, default is -1 (unlimited)
+    ; in case of 1000s of repositories it's better to execute in chunks to not overload
+    ; the server.
+    repo_limit = -1
 
-    # Index file names, but not file content
-    skip_files_content = *.svg,
+    ; Default patterns for indexing files and content of files. Binary files
+    ; are skipped by default.
 
-    # Force rebuilding an index from scratch. Each repository will be rebuild
-    # from scratch with a global flag. Use local flag to rebuild single repos
+    ; Add to index those comma separated files; globs syntax
+    ; e.g index_files = *.py, *.c, *.h, *.js
+    index_files = *,
+
+    ; Do not add to index those comma separated files, this excludes
+    ; both search by name and content; globs syntax
+    ; e.g index_files = *.key, *.sql, *.xml
+    skip_files = ,
+
+    ; Add to index content of those comma separated files; globs syntax
+    ; e.g index_files = *.h, *.obj
+    index_files_content = *,
+
+    ; Do not add to index content of those comma separated files; globs syntax
+    ; e.g index_files = *.exe, *.bin, *.log, *.dump
+    skip_files_content = ,
+
+    ; Force rebuilding an index from scratch. Each repository will be rebuild from
+    ; scratch with a global flag. Use --repo-name=NAME --force to rebuild single repo
     force = false
 
-    # Do not index files larger than 385KB
-    max_filesize = 385KB
+    ; maximum file size that indexer will use, files above that limit are not going
+    ; to have they content indexed.
+    ; Possible options are KB (kilobytes), MB (megabytes), eg 1MB or 1024KB
+    max_filesize = 2MB
 
-    # Limit commit indexing to 500 per batch
-    commit_parse_limit = 500
 
-    # Limit each index run to 25 repos
-    repo_limit = 25
+    [__INDEX_RULES__]
+    ; Ordered match rules for repositories. A list of all repositories will be fetched
+    ; using API and this list will be filtered using those rules.
+    ; Syntax for entry: `glob_pattern_OR_full_repo_name = 0 OR 1` where 0=exclude, 1=include
+    ; When this ordered list is traversed first match will return the include/exclude marker
+    ; For example:
+    ;    upstream/binary_repo = 0
+    ;    upstream/subrepo/xml_files = 0
+    ;    upstream/* = 1
+    ;    special-repo = 1
+    ;    * = 0
+    ; This will index all repositories under upstream/*, but skip upstream/binary_repo
+    ; and upstream/sub_repo/xml_files, last * = 0 means skip all other matches
 
-    # __INCLUDE__ is more important that __EXCLUDE__.
+    ; Another example:
+    ;    *-fork = 0
+    ;    * = 1
+    ; This will index all repositories, except those that have -fork as suffix.
 
-    [__INCLUDE__]
-    # Include all repos with these names
+    rhodecode-vcsserver = 1
+    rhodecode-enterprise-ce = 1
+    upstream/mozilla/firefox-repo = 0
+    upstream/git-binaries = 0
+    upstream/* = 1
+    * = 0
 
-    docs/* = 1
-    lib/* = 1
+    ; == EXPLICIT REPOSITORY INDEXING ==
+    ; If defined this will skip using __INDEX_RULES__, and will not use API to fetch
+    ; list of repositories, it will explicitly take names defined with [NAME] format and
+    ; try to build the index, to build index just for repo_name_1 and special-repo use:
+    ;    [repo_name_1]
+    ;    [special-repo]
 
-    [__EXCLUDE__]
-    # Do not include the following repo in index
+    ; == PER REPOSITORY CONFIGURATION ==
+    ; This allows overriding the global configuration per repository.
+    ; example to set specific file limit, and skip certain files for repository special-repo
+    ;    [conf:special-repo]
+    ;    max_filesize = 5mb
+    ;    skip_files = *.xml, *.sql
+    ;    index_types = files,
 
-    dev-docs/* = 1
-    legacy-repos/* = 1
-    *-dev/* = 1
+    [conf:rhodecode-vcsserver]
+    index_types = files,
+    max_filesize = 5mb
+    skip_files = *.xml, *.sql
+    index_files = *.py, *.c, *.h, *.js
 
-    # Each repo that needs special indexing is a separate section below.
-    # In each section set the options to override the global configuration
-    # parameters above.
-    # If special settings are not configured, the global configuration values
-    # above are inherited. If no special repositories are
-    # defined here RhodeCode will use the API to ask for all repositories
 
-    # For this repo use different settings
-    [special-repo]
-    commit_parse_limit = 20,
-    skip_files = *.idea, *.xml,
+In case of 1000s of repositories it can be tricky to write the include/exclude rules at first.
+There's a special flag to test the mapping file rules and list repositories that would
+be indexed. Run the indexer with `--show-matched-repos` to list only the match rules::
 
-    # For another repo use different settings
-    [another-special-repo]
-    index_files = *,
-    max_filesize = 800MB
-    commit_parse_limit = 20000
+    rhodecode-index --instance-name=enterprise-1 --show-matched-repos --mapping=/my/path/search_mapping.ini
+
 
 .. _enable-elasticsearch:
 
 Enabling Elasticsearch
 ^^^^^^^^^^^^^^^^^^^^^^
+
+Elasticsearch is available in EE edition only. It provides much scalable and more advanced
+search capabilities. While Whoosh is fine for upto 1-2GB of data beyond that amount of
+data it starts slowing down, and can cause other problems. Elasticsearch 6 also provides
+much more advanced query language allowing advanced filtering by file paths, extensions
+OR statements, ranges etc. Please check query language examples in the search field for
+some advanced query language usage.
+
 
 1. Open the :file:`rhodecode.ini` file for the instance you wish to edit. The
    default location is
@@ -268,9 +345,19 @@ and change it to:
 .. code-block:: ini
 
     search.module = rc_elasticsearch
-    search.location = http://localhost:9200/
+    search.location = http://localhost:9200
+    ## specify Elastic Search version, 6 for latest or 2 for legacy
+    search.es_version = 6
 
-where ``search.location`` points to the elasticsearch server.
+where ``search.location`` points to the elasticsearch server
+by default running on port 9200.
+
+Index invocation also needs change. Please provide --es-version= and
+--engine-location= parameters to define elasticsearch server location and it's version.
+For example::
+
+    rhodecode-index --instace-name=enterprise-1 --es-version=6 --engine-location=http://localhost:9200
+
 
 .. _Whoosh: https://pypi.python.org/pypi/Whoosh/
-.. _Elasticsearch: https://www.elastic.co/
+.. _Elasticsearch 6: https://www.elastic.co/
