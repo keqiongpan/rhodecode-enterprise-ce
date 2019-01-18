@@ -69,7 +69,7 @@
 
                     <p class="links">
                     %if h.HasPermissionAny('hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')():
-                        ${h.link_to(_("Create a new account."), request.route_path('register'))}
+                        ${h.link_to(_("Create a new account."), request.route_path('register'), class_='new_account')}
                     %endif
                     </p>
 
