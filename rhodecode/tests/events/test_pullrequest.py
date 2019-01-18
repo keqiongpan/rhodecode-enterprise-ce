@@ -44,7 +44,10 @@ from rhodecode.events import (
 ])
 def test_pullrequest_events_serialized(EventClass, pr_util, config_stub):
     pr = pr_util.create_pull_request()
-    event = EventClass(pr)
+    if EventClass == PullRequestReviewEvent:
+        event = EventClass(pr, 'approved')
+    else:
+        event = EventClass(pr)
     data = event.as_dict()
     assert data['name'] == EventClass.name
     assert data['repo']['repo_name'] == pr.target_repo.repo_name
