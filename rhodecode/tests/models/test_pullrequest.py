@@ -71,7 +71,7 @@ class TestPullRequestModel(object):
         self.helper_patcher.start()
 
         self.hook_patcher = mock.patch.object(PullRequestModel,
-                                              '_trigger_pull_request_hook')
+                                              'trigger_pull_request_hook')
         self.hook_mock = self.hook_patcher.start()
 
         self.invalidation_patcher = mock.patch(

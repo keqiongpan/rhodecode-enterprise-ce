@@ -100,10 +100,14 @@ class PullRequestUpdateEvent(PullRequestEvent):
 class PullRequestReviewEvent(PullRequestEvent):
     """
     An instance of this class is emitted as an :term:`event` after a pull
-    request review has changed.
+    request review has changed. A status defines new status of review.
     """
     name = 'pullrequest-review'
     display_name = lazy_ugettext('pullrequest review changed')
+
+    def __init__(self, pullrequest, status):
+        super(PullRequestReviewEvent, self).__init__(pullrequest)
+        self.status = status
 
 
 class PullRequestMergeEvent(PullRequestEvent):
