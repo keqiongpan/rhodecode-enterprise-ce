@@ -553,6 +553,7 @@ def comment_pull_request(
     )
 
     if allowed_to_change_status and status:
+        old_calculated_status = pull_request.calculated_review_status()
         ChangesetStatusModel().set_status(
             pull_request.target_repo.repo_id,
             status,
@@ -563,6 +564,20 @@ def comment_pull_request(
         Session().flush()
 
     Session().commit()
+
+    PullRequestModel().trigger_pull_request_hook(
+        pull_request, apiuser, 'comment',
+        data={'comment': comment})
+
+    if allowed_to_change_status and status:
+        # we now calculate the status of pull request, and based on that
+        # calculation we set the commits status
+        calculated_status = pull_request.calculated_review_status()
+        if old_calculated_status != calculated_status:
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, apiuser, 'review_status_change',
+                data={'status': calculated_status})
+
     data = {
         'pull_request_id': pull_request.pull_request_id,
         'comment_id': comment.comment_id if comment else None,
@@ -837,6 +852,7 @@ def update_pull_request(
 
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:
+        old_calculated_status = pull_request.calculated_review_status()
         added_reviewers, removed_reviewers = \
             PullRequestModel().update_reviewers(pull_request, reviewers, apiuser)
 
@@ -845,6 +861,13 @@ def update_pull_request(
         reviewers_changes['removed'] = sorted(
             [get_user_or_error(n).username for n in removed_reviewers])
         Session().commit()
+
+        # trigger status changed if change in reviewers changes the status
+        calculated_status = pull_request.calculated_review_status()
+        if old_calculated_status != calculated_status:
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, apiuser, 'review_status_change',
+                data={'status': calculated_status})
 
     data = {
         'msg': 'Updated pull request `{}`'.format(
