@@ -82,12 +82,14 @@ class Serializer(object):
                 raise
 
 
+import fcntl
+flock_org = fcntl.flock
+
+
 class CustomLockFactory(FileLock):
 
     @memoized_property
     def _module(self):
-        import fcntl
-        flock_org = fcntl.flock
 
         def gevent_flock(fd, operation):
             """
