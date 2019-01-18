@@ -539,7 +539,7 @@ class PullRequestModel(BaseModel):
             pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
-        self._trigger_pull_request_hook(
+        self.trigger_pull_request_hook(
             pull_request, created_by_user, 'create')
 
         creation_data = pull_request.get_api_data(with_merge_state=False)
@@ -549,7 +549,7 @@ class PullRequestModel(BaseModel):
 
         return pull_request
 
-    def _trigger_pull_request_hook(self, pull_request, user, action):
+    def trigger_pull_request_hook(self, pull_request, user, action, data=None):
         pull_request = self.__get_pull_request(pull_request)
         target_scm = pull_request.target_repo.scm_instance()
         if action == 'create':
@@ -562,6 +562,12 @@ class PullRequestModel(BaseModel):
             trigger_hook = hooks_utils.trigger_log_review_pull_request_hook
         elif action == 'update':
             trigger_hook = hooks_utils.trigger_log_update_pull_request_hook
+        elif action == 'comment':
+            # dummy hook ! for comment. We want this function to handle all cases
+            def trigger_hook(*args, **kwargs):
+                pass
+            comment = data['comment']
+            events.trigger(events.PullRequestCommentEvent(pull_request, comment))
         else:
             return
 
@@ -569,7 +575,8 @@ class PullRequestModel(BaseModel):
             username=user.username,
             repo_name=pull_request.target_repo.repo_name,
             repo_alias=target_scm.alias,
-            pull_request=pull_request)
+            pull_request=pull_request,
+            data=data)
 
     def _get_commit_ids(self, pull_request):
         """
@@ -669,7 +676,7 @@ class PullRequestModel(BaseModel):
         # TODO: paris: replace invalidation with less radical solution
         ScmModel().mark_for_invalidation(
             pull_request.target_repo.repo_name)
-        self._trigger_pull_request_hook(pull_request, user, 'merge')
+        self.trigger_pull_request_hook(pull_request, user, 'merge')
 
     def has_valid_update_type(self, pull_request):
         source_ref_type = pull_request.source_ref_parts.type
@@ -839,8 +846,7 @@ class PullRequestModel(BaseModel):
             pull_request.source_ref_parts.commit_id,
             pull_request_version.pull_request_version_id)
         Session().commit()
-        self._trigger_pull_request_hook(
-            pull_request, pull_request.author, 'update')
+        self.trigger_pull_request_hook(pull_request, pull_request.author, 'update')
 
         return UpdateResponse(
             executed=True, reason=UpdateFailureReason.NONE,
@@ -1174,7 +1180,7 @@ class PullRequestModel(BaseModel):
         pull_request.status = PullRequest.STATUS_CLOSED
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
-        self._trigger_pull_request_hook(
+        self.trigger_pull_request_hook(
             pull_request, pull_request.author, 'close')
 
         pr_data = pull_request.get_api_data(with_merge_state=False)
@@ -1228,8 +1234,9 @@ class PullRequestModel(BaseModel):
         # change the status, while if he's a reviewer this might change it.
         calculated_status = pull_request.calculated_review_status()
         if old_calculated_status != calculated_status:
-            self._trigger_pull_request_hook(
-                pull_request, user, 'review_status_change')
+            self.trigger_pull_request_hook(
+                pull_request, user, 'review_status_change',
+                data={'status': calculated_status})
 
         # finally close the PR
         PullRequestModel().close_pull_request(

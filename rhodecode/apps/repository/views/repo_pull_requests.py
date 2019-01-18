@@ -29,7 +29,6 @@ from pyramid.httpexceptions import (
 from pyramid.view import view_config
 from pyramid.renderers import render
 
-from rhodecode import events
 from rhodecode.apps._base import RepoAppView, DataGridAppView
 
 from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
@@ -1176,6 +1175,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _update_reviewers(self, pull_request, review_members, reviewer_rules):
         _ = self.request.translate
+
         get_default_reviewers_data, validate_default_reviewers = \
             PullRequestModel().get_reviewer_functions()
 
@@ -1186,10 +1186,18 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             h.flash(e, category='error')
             return
 
+        old_calculated_status = pull_request.calculated_review_status()
         PullRequestModel().update_reviewers(
             pull_request, reviewers, self._rhodecode_user)
         h.flash(_('Pull request reviewers updated.'), category='success')
         Session().commit()
+
+        # trigger status changed if change in reviewers changes the status
+        calculated_status = pull_request.calculated_review_status()
+        if old_calculated_status != calculated_status:
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, self._rhodecode_user, 'review_status_change',
+                data={'status': calculated_status})
 
     @LoginRequired()
     @NotAnonymous()
@@ -1269,12 +1277,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 log.debug('comment: forbidden because not allowed to close '
                           'pull request %s', pull_request_id)
                 raise HTTPForbidden()
+
+            # This also triggers `review_status_change`
             comment, status = PullRequestModel().close_pull_request_with_comment(
                 pull_request, self._rhodecode_user, self.db_repo, message=text,
                 auth_user=self._rhodecode_user)
             Session().flush()
-            events.trigger(
-                events.PullRequestCommentEvent(pull_request, comment))
+
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, self._rhodecode_user, 'comment',
+                data={'comment': comment})
 
         else:
             # regular comment case, could be inline, or one with status.
@@ -1324,15 +1336,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 # loaded on comment
                 Session().refresh(comment)
 
-                events.trigger(
-                    events.PullRequestCommentEvent(pull_request, comment))
+                PullRequestModel().trigger_pull_request_hook(
+                    pull_request, self._rhodecode_user, 'comment',
+                    data={'comment': comment})
 
                 # we now calculate the status of pull request, and based on that
                 # calculation we set the commits status
                 calculated_status = pull_request.calculated_review_status()
                 if old_calculated_status != calculated_status:
-                    PullRequestModel()._trigger_pull_request_hook(
-                        pull_request, self._rhodecode_user, 'review_status_change')
+                    PullRequestModel().trigger_pull_request_hook(
+                        pull_request, self._rhodecode_user, 'review_status_change',
+                        data={'status': calculated_status})
 
         Session().commit()
 
@@ -1392,8 +1406,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             Session().commit()
             calculated_status = comment.pull_request.calculated_review_status()
             if old_calculated_status != calculated_status:
-                PullRequestModel()._trigger_pull_request_hook(
-                    comment.pull_request, self._rhodecode_user, 'review_status_change')
+                PullRequestModel().trigger_pull_request_hook(
+                    comment.pull_request, self._rhodecode_user, 'review_status_change',
+                    data={'status': calculated_status})
             return True
         else:
             log.warning('No permissions for user %s to delete comment_id: %s',

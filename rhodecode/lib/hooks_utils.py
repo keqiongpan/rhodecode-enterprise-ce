@@ -64,7 +64,7 @@ def trigger_post_push_hook(
 
 
 def trigger_log_create_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request):
+                                         pull_request, data=None):
     """
     Triggers create pull request action hooks
 
@@ -72,6 +72,7 @@ def trigger_log_create_pull_request_hook(username, repo_name, repo_alias,
     :param repo_name: name of target repo
     :param repo_alias: the type of SCM target repo
     :param pull_request: the pull request that was created
+    :param data: extra data for specific events e.g {'comment': comment_obj}
     """
     if repo_alias not in ('hg', 'git'):
         return
@@ -84,7 +85,7 @@ def trigger_log_create_pull_request_hook(username, repo_name, repo_alias,
 
 
 def trigger_log_merge_pull_request_hook(username, repo_name, repo_alias,
-                                        pull_request):
+                                        pull_request, data=None):
     """
     Triggers merge pull request action hooks
 
@@ -92,6 +93,7 @@ def trigger_log_merge_pull_request_hook(username, repo_name, repo_alias,
     :param repo_name: name of target repo
     :param repo_alias: the type of SCM target repo
     :param pull_request: the pull request that was merged
+    :param data: extra data for specific events e.g {'comment': comment_obj}
     """
     if repo_alias not in ('hg', 'git'):
         return
@@ -104,7 +106,7 @@ def trigger_log_merge_pull_request_hook(username, repo_name, repo_alias,
 
 
 def trigger_log_close_pull_request_hook(username, repo_name, repo_alias,
-                                        pull_request):
+                                        pull_request, data=None):
     """
     Triggers close pull request action hooks
 
@@ -112,6 +114,7 @@ def trigger_log_close_pull_request_hook(username, repo_name, repo_alias,
     :param repo_name: name of target repo
     :param repo_alias: the type of SCM target repo
     :param pull_request: the pull request that was closed
+    :param data: extra data for specific events e.g {'comment': comment_obj}
     """
     if repo_alias not in ('hg', 'git'):
         return
@@ -124,7 +127,7 @@ def trigger_log_close_pull_request_hook(username, repo_name, repo_alias,
 
 
 def trigger_log_review_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request):
+                                         pull_request, data=None):
     """
     Triggers review status change pull request action hooks
 
@@ -132,19 +135,21 @@ def trigger_log_review_pull_request_hook(username, repo_name, repo_alias,
     :param repo_name: name of target repo
     :param repo_alias: the type of SCM target repo
     :param pull_request: the pull request that review status changed
+    :param data: extra data for specific events e.g {'comment': comment_obj}
     """
     if repo_alias not in ('hg', 'git'):
         return
 
     extras = _get_rc_scm_extras(username, repo_name, repo_alias,
                                 'review_pull_request')
-    events.trigger(events.PullRequestReviewEvent(pull_request))
+    status = data.get('status')
+    events.trigger(events.PullRequestReviewEvent(pull_request, status))
     extras.update(pull_request.get_api_data())
     hooks_base.log_review_pull_request(**extras)
 
 
 def trigger_log_update_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request):
+                                         pull_request, data=None):
     """
     Triggers update pull request action hooks
 
@@ -152,6 +157,7 @@ def trigger_log_update_pull_request_hook(username, repo_name, repo_alias,
     :param repo_name: name of target repo
     :param repo_alias: the type of SCM target repo
     :param pull_request: the pull request that was updated
+    :param data: extra data for specific events e.g {'comment': comment_obj}
     """
     if repo_alias not in ('hg', 'git'):
         return
