@@ -138,8 +138,10 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
             log.debug('event not valid: %r', event)
             return
 
-        if event.name not in self.settings['events']:
-            log.debug('event ignored: %r', event)
+        allowed_events = self.settings['events']
+        if event.name not in allowed_events:
+            log.debug('event ignored: %r event %s not in allowed events %s',
+                      event, event.name, allowed_events)
             return
 
         data = event.as_dict()
