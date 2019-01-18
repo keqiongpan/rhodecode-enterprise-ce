@@ -35,6 +35,7 @@ from paste.httpexceptions import HTTPUnauthorized, HTTPForbidden, get_exception
 from paste.httpheaders import WWW_AUTHENTICATE, AUTHORIZATION
 
 import rhodecode
+from rhodecode.apps._base import TemplateArgs
 from rhodecode.authentication.base import VCS_TYPE
 from rhodecode.lib import auth, utils2
 from rhodecode.lib import helpers as h
@@ -312,6 +313,10 @@ def attach_context_attributes(context, request, user_id):
         rc_config.get('rhodecode_dashboard_items', 100))
     context.visual.admin_grid_items = safe_int(
         rc_config.get('rhodecode_admin_grid_items', 100))
+    context.visual.show_revision_number = str2bool(
+        rc_config.get('rhodecode_show_revision_number', True))
+    context.visual.show_sha_length = safe_int(
+        rc_config.get('rhodecode_show_sha_length', 100))
     context.visual.repository_fields = str2bool(
         rc_config.get('rhodecode_repository_fields'))
     context.visual.show_version = str2bool(
@@ -551,7 +556,11 @@ def bootstrap_request(**kwargs):
             from rhodecode.lib.partial_renderer import get_partial_renderer
             return get_partial_renderer(request=self, tmpl_name=tmpl_name)
 
-        _call_context = {}
+        _call_context = TemplateArgs()
+        _call_context.visual = TemplateArgs()
+        _call_context.visual.show_sha_length = 12
+        _call_context.visual.show_revision_number = True
+
         @property
         def call_context(self):
             return self._call_context

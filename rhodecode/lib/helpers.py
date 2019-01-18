@@ -683,23 +683,25 @@ def age_component(datetime_iso, value=None, time_is_local=False):
             datetime_iso, title, tzinfo))
 
 
-def _shorten_commit_id(commit_id):
-    from rhodecode import CONFIG
-    def_len = safe_int(CONFIG.get('rhodecode_show_sha_length', 12))
-    return commit_id[:def_len]
+def _shorten_commit_id(commit_id, commit_len=None):
+    if commit_len is None:
+        request = get_current_request()
+        commit_len = request.call_context.visual.show_sha_length
+    return commit_id[:commit_len]
 
 
-def show_id(commit):
+def show_id(commit, show_idx=None, commit_len=None):
     """
     Configurable function that shows ID
     by default it's r123:fffeeefffeee
 
     :param commit: commit instance
     """
-    from rhodecode import CONFIG
-    show_idx = str2bool(CONFIG.get('rhodecode_show_revision_number', True))
+    if show_idx is None:
+        request = get_current_request()
+        show_idx = request.call_context.visual.show_revision_number
 
-    raw_id = _shorten_commit_id(commit.raw_id)
+    raw_id = _shorten_commit_id(commit.raw_id, commit_len=commit_len)
     if show_idx:
         return 'r%s:%s' % (commit.idx, raw_id)
     else:
