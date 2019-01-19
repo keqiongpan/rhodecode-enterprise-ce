@@ -156,8 +156,11 @@ class DbManage(object):
                              'rhodecode/lib/dbmigrate')
         db_uri = self.dburi
 
+        if version:
+            DbMigrateVersion.set_version(version)
+
         try:
-            curr_version = version or api.db_version(db_uri, repository_path)
+            curr_version = api.db_version(db_uri, repository_path)
             msg = ('Found current database db_uri under version '
                    'control with version {}'.format(curr_version))
 

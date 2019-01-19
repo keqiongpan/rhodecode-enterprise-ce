@@ -25,6 +25,7 @@ import pyramid.paster
 
 from rhodecode.lib.pyramid_utils import bootstrap
 from rhodecode.lib.db_manage import DbManage
+from rhodecode.lib.utils2 import safe_int
 
 log = logging.getLogger(__name__)
 
@@ -33,11 +34,13 @@ log = logging.getLogger(__name__)
 @click.argument('ini_path', type=click.Path(exists=True))
 @click.option('--force-yes/--force-no', default=None,
               help="Force yes/no to every question")
-def main(ini_path, force_yes):
-    return command(ini_path, force_yes)
+@click.option('--force-version', default=None,
+              help="Force upgrade from version")
+def main(ini_path, force_yes, force_version):
+    return command(ini_path, force_yes, force_version)
 
 
-def command(ini_path, force_yes):
+def command(ini_path, force_yes, force_version):
     pyramid.paster.setup_logging(ini_path)
 
     with bootstrap(ini_path, env={'RC_CMD_UPGRADE_DB': '1'}) as env:
@@ -49,4 +52,4 @@ def command(ini_path, force_yes):
         dbmanage = DbManage(
             log_sql=True, dbconf=db_uri, root='.', tests=False,
             cli_args=options)
-        dbmanage.upgrade()
+        dbmanage.upgrade(version=safe_int(force_version))
