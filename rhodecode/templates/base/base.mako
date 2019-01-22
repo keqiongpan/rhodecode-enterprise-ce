@@ -52,7 +52,7 @@
            <p class="server-instance" style="display:${sid}">
                ## display hidden instance ID if specially defined
                % if c.rhodecode_instanceid:
-                   ${_('RhodeCode instance id: %s') % c.rhodecode_instanceid}
+                   ${_('RhodeCode instance id: {}').format(c.rhodecode_instanceid)}
                % endif
            </p>
        </div>
@@ -331,6 +331,50 @@
                       <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
                       % endif
                       <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
+                      ## bookmark-items
+                      <li class="bookmark-items">
+                          ${_('Bookmarks')}
+                          <div class="pull-right">
+                              <a href="${h.route_path('my_account_bookmarks')}">${_('Manage')}</a>
+                          </div>
+                      </li>
+                      % if not c.bookmark_items:
+                          <li>
+                              <a href="${h.route_path('my_account_bookmarks')}">${_('No Bookmarks yet.')}</a>
+                          </li>
+                      % endif
+                      % for item in c.bookmark_items:
+                      <li>
+                          % if item.repository:
+                              <div>
+                                <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
+                                ${item.position}
+                                % if item.repository.repo_type == 'hg':
+                                    <i class="icon-hg" title="${_('Repository')}" style="font-size: 16px"></i>
+                                % elif item.repository.repo_type == 'git':
+                                    <i class="icon-git" title="${_('Repository')}" style="font-size: 16px"></i>
+                                % elif item.repository.repo_type == 'svn':
+                                    <i class="icon-svn" title="${_('Repository')}" style="font-size: 16px"></i>
+                                % endif
+                                ${(item.title or h.shorter(item.repository.repo_name, 30))}
+                              </a>
+                              </div>
+                          % elif item.repository_group:
+                              <div>
+                                <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
+                                ${item.position}
+                                <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
+                                ${(item.title or h.shorter(item.repository_group.group_name, 30))}
+                              </a>
+                              </div>
+                          % else:
+                              <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
+                                ${item.position}
+                                ${item.title}
+                              </a>
+                          % endif
+                      </li>
+                      % endfor
 
                       <li class="logout">
                       ${h.secure_form(h.route_path('logout'), request=request)}
@@ -483,6 +527,26 @@ commit:efced4, to search for commits
             }(result, escapeMarkup);
         };
 
+        var formatRepoGroupResult = function(result, container, query, escapeMarkup) {
+            return function(data, escapeMarkup) {
+                if (!data.repo_group_id){
+                  return data.text; // optgroup text Repositories
+                }
+
+                var tmpl = '';
+                var repoGroupName = data['text'];
+
+                if(data){
+
+                    tmpl += '<i class="icon-folder-close"></i> ';
+
+                }
+                tmpl += escapeMarkup(repoGroupName);
+                return tmpl;
+
+            }(result, escapeMarkup);
+        };
+
 
         var autocompleteMainFilterFormatResult = function (data, value, org_formatter) {
 
@@ -610,6 +674,7 @@ commit:efced4, to search for commits
                          ('g h', 'Goto home page'),
                          ('g g', 'Goto my private gists page'),
                          ('g G', 'Goto my public gists page'),
+                         ('g 0-9', 'Goto bookmarked items from 0-9'),
                          ('n r', 'New repository page'),
                          ('n g', 'New gist page'),
                      ]

@@ -95,6 +95,18 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/my_account/watched')
 
     config.add_route(
+        name='my_account_bookmarks',
+        pattern=ADMIN_PREFIX + '/my_account/bookmarks')
+
+    config.add_route(
+        name='my_account_bookmarks_update',
+        pattern=ADMIN_PREFIX + '/my_account/bookmarks/update')
+
+    config.add_route(
+        name='my_account_goto_bookmark',
+        pattern=ADMIN_PREFIX + '/my_account/bookmark/{bookmark_id}')
+
+    config.add_route(
         name='my_account_perms',
         pattern=ADMIN_PREFIX + '/my_account/perms')
 

@@ -4821,24 +4821,6 @@ class UserBookmark(Base, BaseModel):
     repository = relationship("Repository")
     repository_group = relationship("RepoGroup")
 
-    @classmethod
-    def get_by_position_for_user(cls, position, user_id):
-        return cls.query() \
-            .filter(UserBookmark.user_id == user_id) \
-            .filter(UserBookmark.position == position).scalar()
-
-    @classmethod
-    def get_bookmarks_for_user(cls, user_id):
-        return cls.query() \
-            .filter(UserBookmark.user_id == user_id) \
-            .options(joinedload(UserBookmark.repository)) \
-            .options(joinedload(UserBookmark.repository_group)) \
-            .order_by(UserBookmark.position.asc()) \
-            .all()
-
-    def __unicode__(self):
-        return u'<UserBookmark(%d @ %r)>' % (self.position, self.redirect_url)
-
 
 class DbMigrateVersion(Base, BaseModel):
     __tablename__ = 'db_migrate_version'

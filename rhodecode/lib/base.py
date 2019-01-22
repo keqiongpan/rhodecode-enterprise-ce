@@ -44,7 +44,7 @@ from rhodecode.lib.exceptions import UserCreationError
 from rhodecode.lib.utils import (password_changed, get_enabled_hook_classes)
 from rhodecode.lib.utils2 import (
     str2bool, safe_unicode, AttributeDict, safe_int, sha1, aslist, safe_str)
-from rhodecode.model.db import Repository, User, ChangesetComment
+from rhodecode.model.db import Repository, User, ChangesetComment, UserBookmark
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 
@@ -282,7 +282,7 @@ def get_current_lang(request):
     return getattr(request, '_LOCALE_', request.locale_name)
 
 
-def attach_context_attributes(context, request, user_id):
+def attach_context_attributes(context, request, user_id=None):
     """
     Attach variables into template context called `c`.
     """
@@ -422,7 +422,13 @@ def attach_context_attributes(context, request, user_id):
     context.csrf_token = auth.get_csrf_token(session=request.session)
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
-    context.unread_notifications = NotificationModel().get_unread_cnt_for_user(user_id)
+    unread_count = 0
+    user_bookmark_list = []
+    if user_id:
+        unread_count = NotificationModel().get_unread_cnt_for_user(user_id)
+        user_bookmark_list = UserBookmark.get_bookmarks_for_user(user_id)
+    context.unread_notifications = unread_count
+    context.bookmark_items = user_bookmark_list
 
     # web case
     if hasattr(request, 'user'):

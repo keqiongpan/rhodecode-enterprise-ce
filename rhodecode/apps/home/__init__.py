@@ -56,6 +56,10 @@ def includeme(config):
         pattern='/_repos')
 
     config.add_route(
+        name='repo_group_list_data',
+        pattern='/_repo_groups')
+
+    config.add_route(
         name='goto_switcher_data',
         pattern='/_goto_data')
 

@@ -172,7 +172,9 @@ class HomeView(BaseAppView):
                 'id': obj.group_name,
                 'value': org_query,
                 'value_display': obj.group_name,
+                'text': obj.group_name,
                 'type': 'repo_group',
+                'repo_group_id': obj.group_id,
                 'url': h.route_path(
                     'repo_group_home', repo_group_name=obj.group_name)
             }
@@ -294,6 +296,33 @@ class HomeView(BaseAppView):
             res.append({
                 'text': _('Repositories'),
                 'children': repos
+            })
+
+        data = {
+            'more': False,
+            'results': res
+        }
+        return data
+
+    @LoginRequired()
+    @view_config(
+        route_name='repo_group_list_data', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def repo_group_list_data(self):
+        _ = self.request.translate
+        self.load_default_context()
+
+        query = self.request.GET.get('query')
+
+        log.debug('generating repo group list, query:%s',
+                  query)
+
+        res = []
+        repo_groups = self._get_repo_group_list(query)
+        if repo_groups:
+            res.append({
+                'text': _('Repository Groups'),
+                'children': repo_groups
             })
 
         data = {

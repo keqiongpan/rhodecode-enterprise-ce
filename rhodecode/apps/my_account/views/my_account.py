@@ -20,29 +20,30 @@
 
 import logging
 import datetime
+import string
 
 import formencode
 import formencode.htmlfill
+import peppercorn
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
-from pyramid.renderers import render
-from pyramid.response import Response
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
+from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, \
+    HasRepoPermissionAny, HasRepoGroupPermissionAny
 from rhodecode.lib.channelstream import (
     channelstream_request, ChannelstreamException)
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    Repository, UserEmailMap, UserApiKeys, UserFollowing, joinedload,
-    PullRequest)
-from rhodecode.model.forms import UserForm, UserExtraEmailForm
+    IntegrityError, joinedload,
+    Repository, UserEmailMap, UserApiKeys, UserFollowing,
+    PullRequest, UserBookmark, RepoGroup)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.scm import RepoList
@@ -388,6 +389,140 @@ class MyAccountView(BaseAppView, DataGridAppView):
         # json used to render the grid
         c.data = self._load_my_repos_data(watched=True)
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_bookmarks', request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_bookmarks(self):
+        c = self.load_default_context()
+        c.active = 'bookmarks'
+        return self._get_template_context(c)
+
+    def _process_entry(self, entry, user_id):
+        position = safe_int(entry.get('position'))
+        if position is None:
+            return
+
+        # check if this is an existing entry
+        is_new = False
+        db_entry = UserBookmark().get_by_position_for_user(position, user_id)
+
+        if db_entry and str2bool(entry.get('remove')):
+            log.debug('Marked bookmark %s for deletion', db_entry)
+            Session().delete(db_entry)
+            return
+
+        if not db_entry:
+            # new
+            db_entry = UserBookmark()
+            is_new = True
+
+        should_save = False
+        default_redirect_url = ''
+
+        # save repo
+        if entry.get('bookmark_repo'):
+            repo = Repository.get(entry['bookmark_repo'])
+            perm_check = HasRepoPermissionAny(
+                'repository.read', 'repository.write', 'repository.admin')
+            if repo and perm_check(repo_name=repo.repo_name):
+                db_entry.repository = repo
+                should_save = True
+                default_redirect_url = '${repo_url}'
+        # save repo group
+        elif entry.get('bookmark_repo_group'):
+            repo_group = RepoGroup.get(entry['bookmark_repo_group'])
+            perm_check = HasRepoGroupPermissionAny(
+                'group.read', 'group.write', 'group.admin')
+
+            if repo_group and perm_check(group_name=repo_group.group_name):
+                db_entry.repository_group = repo_group
+                should_save = True
+                default_redirect_url = '${repo_group_url}'
+        # save generic info
+        elif entry.get('title') and entry.get('redirect_url'):
+            should_save = True
+
+        if should_save:
+            log.debug('Saving bookmark %s, new:%s', db_entry, is_new)
+            # mark user and position
+            db_entry.user_id = user_id
+            db_entry.position = position
+            db_entry.title = entry.get('title')
+            db_entry.redirect_url = entry.get('redirect_url') or default_redirect_url
+
+            Session().add(db_entry)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_bookmarks_update', request_method='POST')
+    def my_account_bookmarks_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.active = 'bookmarks'
+
+        controls = peppercorn.parse(self.request.POST.items())
+        user_id = c.user.user_id
+
+        try:
+            for entry in controls.get('bookmarks', []):
+                self._process_entry(entry, user_id)
+
+            Session().commit()
+            h.flash(_("Update Bookmarks"), category='success')
+        except IntegrityError:
+            h.flash(_("Failed to update bookmarks. "
+                      "Make sure an unique position is used"), category='error')
+
+        return HTTPFound(h.route_path('my_account_bookmarks'))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @view_config(
+        route_name='my_account_goto_bookmark', request_method='GET',
+        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_goto_bookmark(self):
+
+        bookmark_id = self.request.matchdict['bookmark_id']
+        user_bookmark = UserBookmark().query()\
+            .filter(UserBookmark.user_id == self.request.user.user_id) \
+            .filter(UserBookmark.position == bookmark_id).scalar()
+
+        redirect_url = h.route_path('my_account_bookmarks')
+        if not user_bookmark:
+            raise HTTPFound(redirect_url)
+
+        if user_bookmark.repository:
+            repo_name = user_bookmark.repository.repo_name
+            base_redirect_url = h.route_path(
+                'repo_summary', repo_name=repo_name)
+            if user_bookmark.redirect_url and \
+                    '${repo_url}' in user_bookmark.redirect_url:
+                redirect_url = string.Template(user_bookmark.redirect_url)\
+                    .safe_substitute({'repo_url': base_redirect_url})
+            else:
+                redirect_url = base_redirect_url
+
+        elif user_bookmark.repository_group:
+            repo_group_name = user_bookmark.repository_group.group_name
+            base_redirect_url = h.route_path(
+                'repo_group_home', repo_group_name=repo_group_name)
+            if user_bookmark.redirect_url and \
+                    '${repo_group_url}' in user_bookmark.redirect_url:
+                redirect_url = string.Template(user_bookmark.redirect_url)\
+                    .safe_substitute({'repo_group_url': base_redirect_url})
+            else:
+                redirect_url = base_redirect_url
+
+        elif user_bookmark.redirect_url:
+            redirect_url = user_bookmark.redirect_url
+
+        log.debug('Redirecting bookmark %s to %s', user_bookmark, redirect_url)
+        raise HTTPFound(redirect_url)
 
     @LoginRequired()
     @NotAnonymous()
