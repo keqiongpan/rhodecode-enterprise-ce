@@ -18,13 +18,15 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+from pyramid import compat
+
 
 def strip_whitespace(value):
     """
     Removes leading/trailing whitespace, newlines, and tabs from the value.
     Implements the `colander.interface.Preparer` interface.
     """
-    if isinstance(value, basestring):
+    if isinstance(value, compat.string_types):
         return value.strip(' \t\n\r')
     else:
         return value

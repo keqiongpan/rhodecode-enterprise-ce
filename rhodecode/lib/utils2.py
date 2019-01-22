@@ -43,6 +43,7 @@ import sqlalchemy.exc
 import sqlalchemy.sql
 import webob
 import pyramid.threadlocal
+from pyramid import compat
 from pyramid.settings import asbool
 
 import rhodecode
@@ -261,7 +262,7 @@ def safe_str(unicode_, to_encoding=None):
     """
 
     # if it's not basestr cast to str
-    if not isinstance(unicode_, basestring):
+    if not isinstance(unicode_, compat.string_types):
         return str(unicode_)
 
     if isinstance(unicode_, str):
@@ -687,7 +688,7 @@ def datetime_to_time(dt):
 
 def time_to_datetime(tm):
     if tm:
-        if isinstance(tm, basestring):
+        if isinstance(tm, compat.string_types):
             try:
                 tm = float(tm)
             except ValueError:
@@ -697,7 +698,7 @@ def time_to_datetime(tm):
 
 def time_to_utcdatetime(tm):
     if tm:
-        if isinstance(tm, basestring):
+        if isinstance(tm, compat.string_types):
             try:
                 tm = float(tm)
             except ValueError:

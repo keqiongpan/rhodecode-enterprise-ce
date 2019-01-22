@@ -26,6 +26,7 @@ from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
 from pygments.lexers.special import TextLexer, Token
 from pygments.lexers import get_lexer_by_name
+from pyramid import compat
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
@@ -695,7 +696,7 @@ class DiffSet(object):
         filenode = None
         filename = None
 
-        if isinstance(input_file, basestring):
+        if isinstance(input_file, compat.string_types):
             filename = input_file
         elif isinstance(input_file, FileNode):
             filenode = input_file

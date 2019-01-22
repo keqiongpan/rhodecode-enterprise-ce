@@ -28,6 +28,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, joinedload, class_mapper, validates
 from beaker.cache import cache_region, region_invalidate
+from pyramid import compat
 
 from rhodecode.lib.vcs import get_backend
 from rhodecode.lib.vcs.utils.helpers import get_scm
@@ -413,7 +414,7 @@ class UserGroup(Base, BaseModel):
                     Session.flush()
                     members_list = []
                     if v:
-                        v = [v] if isinstance(v, basestring) else v
+                        v = [v] if isinstance(v, compat.string_types) else v
                         for u_id in set(v):
                             member = UserGroupMember(users_group_id, u_id)
                             members_list.append(member)

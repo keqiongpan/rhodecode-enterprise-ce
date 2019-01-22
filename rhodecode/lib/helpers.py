@@ -34,7 +34,6 @@ import urllib
 import math
 import logging
 import re
-import urlparse
 import time
 import string
 import hashlib
@@ -45,6 +44,7 @@ import itertools
 import fnmatch
 import bleach
 
+from pyramid import compat
 from datetime import datetime
 from functools import partial
 from pygments.formatters.html import HtmlFormatter

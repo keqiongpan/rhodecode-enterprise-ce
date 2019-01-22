@@ -25,6 +25,7 @@ import logging
 import functools
 import urllib2
 import rhodecode
+from pyramid import compat
 
 log = logging.getLogger(__name__)
 
@@ -191,7 +192,7 @@ def map_vcs_exceptions(func):
             org_remote_tb = getattr(e, '_vcs_server_org_exc_tb', '')
             __traceback_info__ = None
             if remote_tb:
-                if isinstance(remote_tb, basestring):
+                if isinstance(remote_tb, compat.string_types):
                     remote_tb = [remote_tb]
                 __traceback_info__ = (
                     'Found VCSServer remote traceback information:\n'

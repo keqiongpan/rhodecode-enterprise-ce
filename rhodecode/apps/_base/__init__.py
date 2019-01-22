@@ -22,6 +22,7 @@ import time
 import logging
 import operator
 
+from pyramid import compat
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
 from rhodecode.lib import helpers as h, diffs
@@ -395,7 +396,7 @@ class DataGridAppView(object):
         return draw, start, length
 
     def _get_order_col(self, order_by, model):
-        if isinstance(order_by, basestring):
+        if isinstance(order_by, compat.string_types):
             try:
                 return operator.attrgetter(order_by)(model)
             except AttributeError:

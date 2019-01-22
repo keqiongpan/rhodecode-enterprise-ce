@@ -21,6 +21,8 @@
 import re
 
 import colander
+from pyramid import compat
+
 from rhodecode.model.validation_schema import preparers
 from rhodecode.model.db import User, UserGroup
 
@@ -106,7 +108,7 @@ class StringBooleanType(colander.String):
         if isinstance(cstruct, bool):
             return cstruct
 
-        if not isinstance(cstruct, basestring):
+        if not isinstance(cstruct, compat.string_types):
             raise colander.Invalid(node, '%r is not a string' % cstruct)
 
         value = cstruct.lower()
@@ -190,7 +192,7 @@ class UserGroupType(UserOrUserGroupType):
 
 class StrOrIntType(colander.String):
     def deserialize(self, node, cstruct):
-        if isinstance(cstruct, basestring):
+        if isinstance(cstruct, compat.string_types):
             return super(StrOrIntType, self).deserialize(node, cstruct)
         else:
             return colander.Integer().deserialize(node, cstruct)

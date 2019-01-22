@@ -30,6 +30,7 @@ import datetime
 import urllib
 import collections
 
+from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
 from rhodecode import events
@@ -1001,7 +1002,7 @@ class PullRequestModel(BaseModel):
 
         reviewers = {}
         for user_id, reasons, mandatory, rules in reviewer_data:
-            if isinstance(user_id, (int, basestring)):
+            if isinstance(user_id, (int, compat.string_types)):
                 user_id = self._get_user(user_id).user_id
             reviewers[user_id] = {
                 'reasons': reasons, 'mandatory': mandatory}

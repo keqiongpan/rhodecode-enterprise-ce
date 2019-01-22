@@ -11,12 +11,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import StaticPool
 
+from pyramid import compat
 from rhodecode.lib.dbmigrate.migrate import exceptions
 from rhodecode.lib.dbmigrate.migrate.versioning.util.keyedinstance import KeyedInstance
 from rhodecode.lib.dbmigrate.migrate.versioning.util.importpath import import_path
 
 
 log = logging.getLogger(__name__)
+
 
 def load_model(dotted_name):
     """Import module and use module-level variable".
@@ -26,7 +28,7 @@ def load_model(dotted_name):
     .. versionchanged:: 0.5.4
 
     """
-    if isinstance(dotted_name, basestring):
+    if isinstance(dotted_name, compat.string_types):
         if ':' not in dotted_name:
             # backwards compatibility
             warnings.warn('model should be in form of module.model:User '
@@ -39,7 +41,7 @@ def load_model(dotted_name):
 
 def asbool(obj):
     """Do everything to use object as bool"""
-    if isinstance(obj, basestring):
+    if isinstance(obj, compat.string_types):
         obj = obj.strip().lower()
         if obj in ['true', 'yes', 'on', 'y', 't', '1']:
             return True
@@ -112,7 +114,7 @@ def construct_engine(engine, **opts):
     """
     if isinstance(engine, Engine):
         return engine
-    elif not isinstance(engine, basestring):
+    elif not isinstance(engine, compat.string_types):
         raise ValueError("you need to pass either an existing engine or a database uri")
 
     # get options for create_engine

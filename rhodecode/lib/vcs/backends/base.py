@@ -33,6 +33,7 @@ import collections
 import warnings
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from pyramid import compat
 
 from rhodecode.translation import lazy_ugettext
 from rhodecode.lib.utils2 import safe_str, safe_unicode
@@ -692,7 +693,7 @@ class BaseRepository(object):
                 (commit, self, commit.repository))
 
     def _validate_commit_id(self, commit_id):
-        if not isinstance(commit_id, basestring):
+        if not isinstance(commit_id, compat.string_types):
             raise TypeError("commit_id must be a string value")
 
     def _validate_commit_idx(self, commit_idx):
@@ -729,7 +730,7 @@ class BaseRepository(object):
         warnings.warn("Use get_commit instead", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(revision, basestring):
+        if isinstance(revision, compat.string_types):
             commit_id = revision
         else:
             commit_idx = revision
@@ -756,7 +757,7 @@ class BaseRepository(object):
         if revision is None:
             return revision
 
-        if isinstance(revision, basestring):
+        if isinstance(revision, compat.string_types):
             commit_id = revision
         else:
             commit_id = self.commit_ids[revision]

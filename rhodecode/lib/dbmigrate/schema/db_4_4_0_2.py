@@ -35,7 +35,6 @@ import functools
 import traceback
 import collections
 
-
 from sqlalchemy import *
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
@@ -46,7 +45,7 @@ from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region, region_invalidate
 from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
-
+from pyramid import compat
 # replace pylons with fake url for migration
 from rhodecode.lib.dbmigrate.schema import url
 from rhodecode.translation import _
@@ -1816,7 +1815,7 @@ class Repository(Base, BaseModel):
         warnings.warn("Use get_commit", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(rev, basestring):
+        if isinstance(rev, compat.string_types):
             commit_id = rev
         else:
             commit_idx = rev

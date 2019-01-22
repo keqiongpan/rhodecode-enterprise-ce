@@ -35,7 +35,7 @@ import os
 import sys
 from os.path import join as jn
 from os.path import dirname as dn
-
+from pyramid import compat
 from sqlalchemy.util import OrderedSet
 
 __here__ = os.path.abspath(__file__)
@@ -77,7 +77,7 @@ urllib2.install_opener(o)
 
 
 def _get_repo(proj):
-    if isinstance(proj, basestring):
+    if isinstance(proj, compat.string_types):
         repo = vcs.get_repo(jn(PROJECT_PATH, proj))
         proj = proj
     else:

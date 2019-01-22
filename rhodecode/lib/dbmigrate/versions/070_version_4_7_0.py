@@ -2,6 +2,7 @@ import logging
 import datetime
 
 from sqlalchemy import *
+from pyramid import compat
 
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.model import meta
@@ -12,7 +13,7 @@ log = logging.getLogger(__name__)
 
 def time_to_datetime(tm):
     if tm:
-        if isinstance(tm, basestring):
+        if isinstance(tm, compat.string_types):
             try:
                 tm = float(tm)
             except ValueError:

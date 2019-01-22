@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
+from pyramid import compat
 
 from rhodecode.api import (
     jsonrpc_method, JSONRPCError, JSONRPCForbidden, JSONRPCValidationError)
@@ -241,7 +242,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
         # generate temporary password if user is external
         password = PasswordGenerator().gen_password(length=16)
     create_repo_group = Optional.extract(create_personal_repo_group)
-    if isinstance(create_repo_group, basestring):
+    if isinstance(create_repo_group, compat.string_types):
         create_repo_group = str2bool(create_repo_group)
 
     username = Optional.extract(username)

@@ -7,6 +7,7 @@ import logging
 import inspect
 from StringIO import StringIO
 
+from pyramid import compat
 from rhodecode.lib.dbmigrate import migrate
 from rhodecode.lib.dbmigrate.migrate.versioning import genmodel, schemadiff
 from rhodecode.lib.dbmigrate.migrate.versioning.config import operations
@@ -51,7 +52,7 @@ class PythonScript(base.BaseScript):
         :rtype: string
         """
 
-        if isinstance(repository, basestring):
+        if isinstance(repository, compat.string_types):
             # oh dear, an import cycle!
             from rhodecode.lib.dbmigrate.migrate.versioning.repository import Repository
             repository = Repository(repository)

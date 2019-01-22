@@ -26,6 +26,7 @@ by celery daemon
 import os
 import time
 
+from pyramid import compat
 from pyramid_mailer.mailer import Mailer
 from pyramid_mailer.message import Message
 
@@ -62,7 +63,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     subject = "%s %s" % (email_config.get('email_prefix', ''), subject)
 
     if recipients:
-        if isinstance(recipients, basestring):
+        if isinstance(recipients, compat.string_types):
             recipients = recipients.split(',')
     else:
         # if recipients are not defined we send to email_config + all admins

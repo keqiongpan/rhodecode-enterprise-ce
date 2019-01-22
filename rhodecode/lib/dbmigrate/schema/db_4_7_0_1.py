@@ -34,7 +34,6 @@ import functools
 import traceback
 import collections
 
-
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -44,6 +43,7 @@ from sqlalchemy.sql.expression import true
 from beaker.cache import cache_region
 from webob.exc import HTTPNotFound
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from pyramid import compat
 
 # replace pylons with fake url for migration
 from rhodecode.lib.dbmigrate.schema import url
@@ -1859,7 +1859,7 @@ class Repository(Base, BaseModel):
         warnings.warn("Use get_commit", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(rev, basestring):
+        if isinstance(rev, compat.string_types):
             commit_id = rev
         else:
             commit_idx = rev
@@ -3408,7 +3408,7 @@ class PullRequestReviewers(Base, BaseModel):
     @reasons.setter
     def reasons(self, val):
         val = val or []
-        if any(not isinstance(x, basestring) for x in val):
+        if any(not isinstance(x, compat.string_types) for x in val):
             raise Exception('invalid reasons type, must be list of strings')
         self._reasons = val
 

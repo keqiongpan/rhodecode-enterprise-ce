@@ -20,6 +20,7 @@
 
 import logging
 import traceback
+from pyramid import compat
 
 from rhodecode.lib.utils2 import safe_str, safe_unicode
 from rhodecode.lib.exceptions import (
@@ -247,7 +248,7 @@ class UserGroupModel(BaseModel):
         # handle owner change
         if 'user' in form_data:
             owner = form_data['user']
-            if isinstance(owner, basestring):
+            if isinstance(owner, compat.string_types):
                 owner = User.get_by_username(form_data['user'])
 
             if not isinstance(owner, User):
