@@ -1933,11 +1933,11 @@ self: super: {
     };
   };
   "simplejson" = super.buildPythonPackage {
-    name = "simplejson-3.11.1";
+    name = "simplejson-3.16.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/08/48/c97b668d6da7d7bebe7ea1817a6f76394b0ec959cb04214ca833c34359df/simplejson-3.11.1.tar.gz";
-      sha256 = "1rr58dppsq73p0qcd9bsw066cdd3v63sqv7j6sqni8frvm4jv8h1";
+      url = "https://files.pythonhosted.org/packages/e3/24/c35fb1c1c315fc0fffe61ea00d3f88e85469004713dab488dee4f35b0aff/simplejson-3.16.0.tar.gz";
+      sha256 = "19cws1syk8jzq2pw43878dv6fjkb0ifvjpx0i9aajix6kc9jkwxi";
     };
     meta = {
       license = [ { fullName = "Academic Free License (AFL)"; } pkgs.lib.licenses.mit ];
