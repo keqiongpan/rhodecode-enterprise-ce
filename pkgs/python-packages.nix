@@ -260,11 +260,11 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.5.0";
+    name = "configparser-3.5.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7c/69/c2ce7e91c89dc073eb1aa74c0621c3eefbffe8216b3f9af9d3885265c01c/configparser-3.5.0.tar.gz";
-      sha256 = "0fi7vf09vi1588jd8f16a021m5y6ih2hy7rpbjb408xw45qb822k";
+      url = "https://files.pythonhosted.org/packages/20/59/fc5d08966bbd13c5f5d647c8fdc9af5c62b998420652c3349584c0f80676/configparser-3.5.1.tar.gz";
+      sha256 = "0qlcijshmz3xbv2wf44myg48q6gc53rv69w6lyqwrgxy575ij7pl";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
