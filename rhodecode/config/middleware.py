@@ -98,7 +98,7 @@ def make_pyramid_app(global_config, **settings):
     global_config = _substitute_values(global_config, environ)
     settings = _substitute_values(settings, environ)
 
-    sanitize_settings_and_apply_defaults(settings)
+    sanitize_settings_and_apply_defaults(global_config, settings)
 
     config = Configurator(settings=settings)
 
@@ -381,7 +381,7 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     return pyramid_app_with_cleanup
 
 
-def sanitize_settings_and_apply_defaults(settings):
+def sanitize_settings_and_apply_defaults(global_config, settings):
     """
     Applies settings defaults and does all type conversion.
 
@@ -420,6 +420,7 @@ def sanitize_settings_and_apply_defaults(settings):
     # TODO: johbo: Re-think this, usually the call to config.include
     # should allow to pass in a prefix.
     settings.setdefault('rhodecode.api.url', '/_admin/api')
+    settings.setdefault('__file__', global_config.get('__file__'))
 
     # Sanitize generic settings.
     _list_setting(settings, 'default_encoding', 'UTF-8')
