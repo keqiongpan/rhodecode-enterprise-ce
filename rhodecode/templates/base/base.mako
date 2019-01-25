@@ -348,7 +348,7 @@
                           % if item.repository:
                               <div>
                                 <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
-                                ${item.position}
+                                <code>${item.position}</code>
                                 % if item.repository.repo_type == 'hg':
                                     <i class="icon-hg" title="${_('Repository')}" style="font-size: 16px"></i>
                                 % elif item.repository.repo_type == 'git':
@@ -362,14 +362,14 @@
                           % elif item.repository_group:
                               <div>
                                 <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
-                                ${item.position}
+                                <code>${item.position}</code>
                                 <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
                                 ${(item.title or h.shorter(item.repository_group.group_name, 30))}
                               </a>
                               </div>
                           % else:
                               <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
-                                ${item.position}
+                                <code>${item.position}</code>
                                 ${item.title}
                               </a>
                           % endif
