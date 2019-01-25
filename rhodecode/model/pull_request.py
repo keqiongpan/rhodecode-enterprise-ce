@@ -1639,7 +1639,7 @@ class MergeCheck(object):
                 return merge_check
 
         # left over TODOs
-        todos = CommentsModel().get_unresolved_todos(pull_request)
+        todos = CommentsModel().get_pull_request_unresolved_todos(pull_request)
         if todos:
             log.debug("MergeCheck: cannot merge, {} "
                       "unresolved TODOs left.".format(len(todos)))

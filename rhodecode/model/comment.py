@@ -125,7 +125,17 @@ class CommentsModel(BaseModel):
 
         return comment_versions
 
-    def get_unresolved_todos(self, pull_request, show_outdated=True):
+    def get_repository_unresolved_todos(self, repo):
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.repo == repo) \
+            .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+        todos = todos.all()
+
+        return todos
+
+    def get_pull_request_unresolved_todos(self, pull_request, show_outdated=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.pull_request == pull_request) \
