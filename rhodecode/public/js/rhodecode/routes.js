@@ -136,6 +136,8 @@ function registerRCRoutes() {
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
     pyroutes.register('channelstream_subscribe', '/_admin/channelstream/subscribe', []);
     pyroutes.register('channelstream_proxy', '/_channelstream', []);
+    pyroutes.register('upload_file', '/_file_store/upload', []);
+    pyroutes.register('download_file', '/_file_store/download/%(fid)s', ['fid']);
     pyroutes.register('logout', '/_admin/logout', []);
     pyroutes.register('reset_password', '/_admin/password_reset', []);
     pyroutes.register('reset_password_confirmation', '/_admin/password_reset_confirmation', []);

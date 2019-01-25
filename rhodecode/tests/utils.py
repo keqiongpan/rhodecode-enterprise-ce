@@ -101,8 +101,7 @@ class CustomTestResponse(TestResponse):
         """
 
         from pyramid_beaker import session_factory_from_settings
-        session = session_factory_from_settings(
-            self.test_app.app.config.get_settings())
+        session = session_factory_from_settings(self.test_app._pyramid_settings)
         return session(self.request)
 
 
@@ -139,6 +138,14 @@ class CustomTestApp(TestApp):
     @property
     def csrf_token(self):
         return self.rc_login_data['csrf_token']
+
+    @property
+    def _pyramid_registry(self):
+        return self.app.config.registry
+
+    @property
+    def _pyramid_settings(self):
+        return self._pyramid_registry.settings
 
 
 def set_anonymous_access(enabled):
