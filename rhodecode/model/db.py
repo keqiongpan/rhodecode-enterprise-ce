@@ -3497,7 +3497,8 @@ class ChangesetComment(Base, BaseModel):
             'comment_f_path': comment.f_path,
             'comment_lineno': comment.line_no,
             'comment_author': comment.author,
-            'comment_created_on': comment.created_on
+            'comment_created_on': comment.created_on,
+            'comment_resolved_by': self.resolved
         }
         return data
 

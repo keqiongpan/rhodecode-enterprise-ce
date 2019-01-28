@@ -1506,6 +1506,73 @@ def comment_commit(
 
 
 @jsonrpc_method()
+def get_repo_comments(request, apiuser, repoid,
+                      commit_id=Optional(None), comment_type=Optional(None),
+                      userid=Optional(None)):
+    """
+    Get all comments for a repository
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Set the repository name or repository ID.
+    :type repoid: str or int
+    :param commit_id: Optionally filter the comments by the commit_id
+    :type commit_id: Optional(str), default: None
+    :param comment_type: Optionally filter the comments by the comment_type
+        one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: None
+    :param userid: Optionally filter the comments by the author of comment
+    :type userid: Optional(str or int), Default: None
+
+    Example error output:
+
+    .. code-block:: bash
+
+        {
+            "id" : <id_given_in_input>,
+            "result" : [
+                {
+                  "comment_author": <USER_DETAILS>,
+                  "comment_created_on": "2017-02-01T14:38:16.309",
+                  "comment_f_path": "file.txt",
+                  "comment_id": 282,
+                  "comment_lineno": "n1",
+                  "comment_resolved_by": null,
+                  "comment_status": [],
+                  "comment_text": "This file needs a header",
+                  "comment_type": "todo"
+                }
+            ],
+            "error" :  null
+        }
+
+    """
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.read', 'repository.write', 'repository.admin')
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    commit_id = Optional.extract(commit_id)
+
+    userid = Optional.extract(userid)
+    if userid:
+        user = get_user_or_error(userid)
+    else:
+        user = None
+
+    comment_type = Optional.extract(comment_type)
+    if comment_type and comment_type not in ChangesetComment.COMMENT_TYPES:
+        raise JSONRPCError(
+                'comment_type must be one of `{}` got {}'.format(
+                    ChangesetComment.COMMENT_TYPES, comment_type)
+            )
+
+    comments = CommentsModel().get_repository_comments(
+        repo=repo, comment_type=comment_type, user=user, commit_id=commit_id)
+    return comments
+
+
+@jsonrpc_method()
 def grant_user_permission(request, apiuser, repoid, userid, perm):
     """
     Grant permissions for the specified user on the given repository,

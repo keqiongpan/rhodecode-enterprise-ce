@@ -59,6 +59,7 @@ class TestGetPullRequestComments(object):
                                 'status_lbl': 'Under Review'},
              'comment_text': 'Auto status change to |new_status|\n\n.. |new_status| replace:: *"Under Review"*',
              'comment_type': 'note',
+             'comment_resolved_by': None,
              'pull_request_version': None}
         ]
         assert_ok(id_, expected, response.body)
