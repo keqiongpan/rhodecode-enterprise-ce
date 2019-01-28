@@ -19,12 +19,15 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
+import time
 import shutil
 
 from rhodecode.lib.ext_json import json
 from rhodecode.apps.upload_store import utils
 from rhodecode.apps.upload_store.extensions import resolve_extensions
 from rhodecode.apps.upload_store.exceptions import FileNotAllowedException
+
+METADATA_VER = 'v1'
 
 
 class LocalFileStorage(object):
@@ -157,7 +160,8 @@ class LocalFileStorage(object):
 
         if metadata:
             size = os.stat(path).st_size
-            metadata.update({'size': size})
+            metadata.update({'size': size, "time": time.time(),
+                             "meta_ver": METADATA_VER})
             with open(os.path.join(dest_directory, filename_meta), "wb") as dest_meta:
                 dest_meta.write(json.dumps(metadata))
 
