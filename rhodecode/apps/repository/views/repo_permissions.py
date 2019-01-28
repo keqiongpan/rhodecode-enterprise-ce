@@ -50,8 +50,13 @@ class RepoSettingsPermissionsView(RepoAppView):
         route_name='edit_repo_perms', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_permissions(self):
+        _ = self.request.translate
         c = self.load_default_context()
         c.active = 'permissions'
+        if self.request.GET.get('branch_permissions'):
+            h.flash(_('Explicitly add user or user group with write+ '
+                      'permission to modify their branch permissions.'),
+                    category='notice')
         return self._get_template_context(c)
 
     @LoginRequired()
