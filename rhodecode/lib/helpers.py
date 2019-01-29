@@ -1547,8 +1547,7 @@ def urlify_commits(text_, repository):
         return tmpl % {
             'pref': pref,
             'cls': 'revision-link',
-            'url': route_url('repo_commit', repo_name=repository,
-                             commit_id=commit_id),
+            'url': route_url('repo_commit', repo_name=repository, commit_id=commit_id),
             'commit_id': commit_id,
             'suf': suf
         }
@@ -1579,8 +1578,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         raise ValueError('Bad link_format:{}'.format(link_format))
 
     (repo_name_cleaned,
-     parent_group_name) = RepoGroupModel().\
-        _get_group_name_and_parent(repo_name)
+     parent_group_name) = RepoGroupModel()._get_group_name_and_parent(repo_name)
 
     # variables replacement
     named_vars = {
@@ -1593,10 +1591,14 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
 
+    def quote_cleaner(input_str):
+        """Remove quotes as it's HTML"""
+        return input_str.replace('"', '')
+
     data = {
         'pref': pref,
-        'cls': 'issue-tracker-link',
-        'url': _url,
+        'cls': quote_cleaner('issue-tracker-link'),
+        'url': quote_cleaner(_url),
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
@@ -1621,8 +1623,7 @@ def get_active_pattern_entries(repo_name):
     return active_entries
 
 
-def process_patterns(text_string, repo_name, link_format='html',
-                     active_entries=None):
+def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
     allowed_formats = ['html', 'rst', 'markdown']
     if link_format not in allowed_formats:
@@ -1668,8 +1669,7 @@ def process_patterns(text_string, repo_name, link_format='html',
     return newtext, issues_data
 
 
-def urlify_commit_message(commit_text, repository=None,
-                          active_pattern_entries=None):
+def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
