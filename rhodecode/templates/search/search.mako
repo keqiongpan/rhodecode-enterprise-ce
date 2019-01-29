@@ -31,7 +31,7 @@
 
 <%def name="menu_bar_subnav()">
     %if c.repo_name:
-    ${self.repo_menu(active='options')}
+    ${self.repo_menu(active='search')}
     %endif
 </%def>
 

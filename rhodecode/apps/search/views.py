@@ -123,7 +123,7 @@ class SearchView(BaseAppView):
 class SearchRepoView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
+        c.active = 'search'
         return c
 
     @LoginRequired()

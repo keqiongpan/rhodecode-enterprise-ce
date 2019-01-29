@@ -231,6 +231,8 @@
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
+        <li class="${is_active('search')}"><a class="menulink" href="${h.route_path('search_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Search')}</div></a></li>
+
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
@@ -242,6 +244,7 @@
             </a>
           </li>
         %endif
+
         <li class="${is_active('options')}">
           <a class="menulink dropdown">
               <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
@@ -265,8 +268,6 @@
                    </a>
                </li>
               %endif
-
-              <li><a href="${h.route_path('search_repo',repo_name=c.repo_name)}">${_('Search')}</a></li>
 
               %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
                 %if c.rhodecode_db_repo.locked[0]:
