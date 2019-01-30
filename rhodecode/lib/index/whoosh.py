@@ -100,8 +100,8 @@ class WhooshSearcher(BaseSearcher):
         return query
 
     def search(self, query, document_type, search_user,
-               repo_name=None, requested_page=1, page_limit=10, sort=None,
-               raise_on_exc=True):
+               repo_name=None, repo_group_name=None,
+               requested_page=1, page_limit=10, sort=None, raise_on_exc=True):
 
         original_query = query
         query = self._extend_query(query)

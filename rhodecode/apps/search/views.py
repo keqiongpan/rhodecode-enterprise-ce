@@ -23,8 +23,9 @@ import urllib
 from pyramid.view import view_config
 from webhelpers.util import update_params
 
-from rhodecode.apps._base import BaseAppView, RepoAppView
-from rhodecode.lib.auth import (LoginRequired, HasRepoPermissionAnyDecorator)
+from rhodecode.apps._base import BaseAppView, RepoAppView, RepoGroupAppView
+from rhodecode.lib.auth import (
+    LoginRequired, HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.helpers import Page
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.index import searcher_from_config
@@ -34,7 +35,7 @@ from rhodecode.model.validation_schema.schemas import search_schema
 log = logging.getLogger(__name__)
 
 
-def search(request, tmpl_context, repo_name):
+def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     searcher = searcher_from_config(request.registry.settings)
     formatted_results = []
     execution_time = ''
@@ -60,7 +61,8 @@ def search(request, tmpl_context, repo_name):
     def url_generator(**kw):
         q = urllib.quote(safe_str(search_query))
         return update_params(
-            "?q=%s&type=%s&max_lines=%s" % (q, safe_str(search_type), search_max_lines), **kw)
+            "?q=%s&type=%s&max_lines=%s" % (
+                q, safe_str(search_type), search_max_lines), **kw)
 
     c = tmpl_context
     search_query = search_params.get('search_query')
@@ -73,8 +75,8 @@ def search(request, tmpl_context, repo_name):
 
         try:
             search_result = searcher.search(
-                search_query, search_type, c.auth_user, repo_name,
-                requested_page, page_limit, search_sort)
+                search_query, search_type, c.auth_user, repo_name, repo_group_name,
+                requested_page=requested_page, page_limit=page_limit, sort=search_sort)
 
             formatted_results = Page(
                 search_result['results'], page=requested_page,
@@ -94,6 +96,7 @@ def search(request, tmpl_context, repo_name):
 
     c.perm_user = c.auth_user
     c.repo_name = repo_name
+    c.repo_group_name = repo_group_name
     c.sort = search_sort
     c.url_generator = url_generator
     c.errors = errors
@@ -107,7 +110,6 @@ def search(request, tmpl_context, repo_name):
 class SearchView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
     @LoginRequired()
@@ -116,7 +118,7 @@ class SearchView(BaseAppView):
         renderer='rhodecode:templates/search/search.mako')
     def search(self):
         c = self.load_default_context()
-        search(self.request, c, repo_name=None)
+        perform_search(self.request, c)
         return self._get_template_context(c)
 
 
@@ -132,7 +134,28 @@ class SearchRepoView(RepoAppView):
     @view_config(
         route_name='search_repo', request_method='GET',
         renderer='rhodecode:templates/search/search.mako')
+    @view_config(
+        route_name='search_repo_alt', request_method='GET',
+        renderer='rhodecode:templates/search/search.mako')
     def search_repo(self):
         c = self.load_default_context()
-        search(self.request, c, repo_name=self.db_repo_name)
+        perform_search(self.request, c, repo_name=self.db_repo_name)
+        return self._get_template_context(c)
+
+
+class SearchRepoGroupView(RepoGroupAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        c.active = 'search'
+        return c
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator(
+        'group.read', 'group.write', 'group.admin')
+    @view_config(
+        route_name='search_repo_group', request_method='GET',
+        renderer='rhodecode:templates/search/search.mako')
+    def search_repo_group(self):
+        c = self.load_default_context()
+        perform_search(self.request, c, repo_group_name=self.db_repo_group_name)
         return self._get_template_context(c)

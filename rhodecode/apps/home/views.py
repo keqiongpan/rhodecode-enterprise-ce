@@ -347,51 +347,75 @@ class HomeView(BaseAppView):
             repo_context = search_context.get('search_context[repo_view_type]')
 
         if is_es_6 and repo_name:
+            # files
             def query_modifier():
-                qry = '{} repo_name.raw:{} '.format(
-                    query, searcher.escape_specials(repo_name))
+                qry = query
                 return {'q': qry, 'type': 'content'}
-            label = u'Search for `{}` through files in this repository.'.format(query)
+            label = u'File search for `{}` in this repository.'.format(query)
             queries.append(
                 {
                     'id': -10,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
-                    'url': h.route_path(
-                        'search_repo', repo_name=repo_name, _query=query_modifier())
+                    'url': h.route_path('search_repo',
+                                        repo_name=repo_name,
+                                        _query=query_modifier())
                 }
             )
 
+            # commits
             def query_modifier():
-                qry = '{} repo_name.raw:{} '.format(
-                    query, searcher.escape_specials(repo_name))
+                qry = query
                 return {'q': qry, 'type': 'commit'}
-            label = u'Search for `{}` through commits in this repository.'.format(query)
+
+            label = u'Commit search for `{}` in this repository.'.format(query)
             queries.append(
                 {
                     'id': -10,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
-                    'url': h.route_path(
-                        'search_repo', repo_name=repo_name, _query=query_modifier())
+                    'url': h.route_path('search_repo',
+                                        repo_name=repo_name,
+                                        _query=query_modifier())
                 }
             )
 
         elif is_es_6 and repo_group_name:
+            # files
             def query_modifier():
-                qry = '{} repo_name.raw:{} '.format(
-                    query, searcher.escape_specials(repo_group_name + '/*'))
+                qry = query
                 return {'q': qry, 'type': 'content'}
-            label = u'Search for `{}` through files in this repository group'.format(query)
+
+            label = u'File search for `{}` in this repository group'.format(query)
             queries.append(
                 {
                     'id': -20,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
-                    'url': h.route_path('search', _query=query_modifier())
+                    'url': h.route_path('search_repo_group',
+                                        repo_group_name=repo_group_name,
+                                        _query=query_modifier())
+                }
+            )
+
+            # commits
+            def query_modifier():
+                qry = query
+                return {'q': qry, 'type': 'commit'}
+
+            label = u'Commit search for `{}` in this repository group'.format(query)
+            queries.append(
+                {
+                    'id': -20,
+                    'value': query,
+                    'value_display': label,
+                    'type': 'search',
+                    'url': h.route_path('search_repo_group',
+                                        repo_group_name=repo_group_name,
+                                        _query=query_modifier())
                 }
             )
 
