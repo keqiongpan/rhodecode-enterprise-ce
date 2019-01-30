@@ -3,7 +3,9 @@
 
 <%def name="title()">
     %if c.repo_name:
-        ${_('Search inside repository %(repo_name)s') % {'repo_name': c.repo_name}}
+        ${_('Search inside repository {repo_name}').format(repo_name=c.repo_name)}
+    %elif c.repo_group_name:
+        ${_('Search inside repository group {repo_group_name}').format(repo_group_name=c.repo_group_name)}
     %else:
         ${_('Search inside all accessible repositories')}
     %endif
@@ -14,7 +16,9 @@
 
 <%def name="breadcrumbs_links()">
   %if c.repo_name:
-    ${_('Search inside repository %(repo_name)s') % {'repo_name': c.repo_name}}
+    ${_('Search inside repository {repo_name}').format(repo_name=c.repo_name)}
+  %elif c.repo_group_name:
+    ${_('Search inside repository group {repo_group_name}').format(repo_group_name=c.repo_group_name)}
   %else:
     ${_('Search inside all accessible repositories')}
   %endif
@@ -23,7 +27,9 @@
 
 <%def name="menu_bar_nav()">
     %if c.repo_name:
-    ${self.menu_items(active='repositories')}
+    ${self.menu_items(active='search')}
+    %elif c.repo_group_name:
+    ${self.menu_items(active='search')}
     %else:
     ${self.menu_items(active='search')}
     %endif
@@ -31,7 +37,9 @@
 
 <%def name="menu_bar_subnav()">
     %if c.repo_name:
-    ${self.repo_menu(active='search')}
+        ${self.repo_menu(active='search')}
+    %elif c.repo_group_name:
+        ${self.repo_group_menu(active='search')}
     %endif
 </%def>
 
@@ -43,6 +51,12 @@
             ${self.repo_page_title(c.rhodecode_db_repo)}
         </div>
         ${h.form(h.route_path('search_repo',repo_name=c.repo_name),method='get')}
+    %elif c.repo_group_name:
+        <!-- box / title -->
+        <div class="title">
+            ${self.repo_group_page_title(c.repo_group)}
+        </div>
+        ${h.form(h.route_path('search_repo_group',repo_group_name=c.repo_group_name),method='get')}
     %else:
         <!-- box / title -->
         <div class="title">
@@ -54,12 +68,42 @@
     %endif
     <div class="form search-form">
         <div class="fields">
+
             ${h.text('q', c.cur_query, placeholder="Enter query...")}
 
             ${h.select('type',c.search_type,[('content',_('Files')), ('path',_('File path')),('commit',_('Commits'))],id='id_search_type')}
             ${h.hidden('max_lines', '10')}
+
             <input type="submit" value="${_('Search')}" class="btn"/>
             <br/>
+
+            <div class="search-tags">
+            %if c.repo_name:
+                <span class="tag tag-ok disabled">
+                    %if h.is_hg(c.rhodecode_db_repo):
+                        <i class="icon-hg"></i>
+                    %endif
+                    %if h.is_git(c.rhodecode_db_repo):
+                        <i class="icon-git"></i>
+                    %endif
+                    %if h.is_svn(c.rhodecode_db_repo):
+                        <i class="icon-svn"></i>
+                    %endif
+                    ${c.repo_name}
+                </span>
+
+            %elif c.repo_group_name:
+                <span class="tag tag-ok disabled">
+                    <i class="icon-folder-close"></i>
+                    ${c.repo_group_name}
+                </span>
+            %endif
+
+            % for search_tag in c.search_tags:
+                <span class="tag tag-ok disabled">${search_tag}</span>
+            % endfor
+
+            </div>
 
             <div class="search-feedback-items">
             % for error in c.errors:
@@ -140,13 +184,18 @@ search type: ${handler.search_type_label}
 </div>
 <script>
     $(document).ready(function(){
-        $('#q').autoGrowInput();
         $("#id_search_type").select2({
             'containerCssClass': "drop-menu",
             'dropdownCssClass': "drop-menu-dropdown",
             'dropdownAutoWidth': true,
             'minimumResultsForSearch': -1
         });
+
+        $('#q').autoGrowInput({maxWidth: 920});
+
+        setTimeout(function() {
+            $('#q').keyup()
+        }, 1);
     })
 </script>
 </%def>

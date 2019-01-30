@@ -1495,6 +1495,28 @@ def breadcrumb_repo_link(repo):
     return literal(' &raquo; '.join(path))
 
 
+def breadcrumb_repo_group_link(repo_group):
+    """
+    Makes a breadcrumbs path link to repo
+
+    ex::
+        group >> subgroup
+
+    :param repo_group: a Repository Group instance
+    """
+
+    path = [
+        link_to(group.name,
+                route_path('repo_group_home', repo_group_name=group.group_name))
+        for group in repo_group.parents
+    ] + [
+        link_to(repo_group.name,
+                route_path('repo_group_home', repo_group_name=repo_group.group_name))
+    ]
+
+    return literal(' &raquo; '.join(path))
+
+
 def format_byte_size_binary(file_size):
     """
     Formats file/folder sizes to standard.

@@ -36,7 +36,7 @@
 <div class="box">
   <div class="title">
       ${self.repo_page_title(c.rhodecode_db_repo)}
-      ${self.breadcrumbs()}
+
   </div>
 
   <div class="sidebar-col-wrapper scw-small">

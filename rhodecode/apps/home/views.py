@@ -334,6 +334,7 @@ class HomeView(BaseAppView):
     def _get_default_search_queries(self, search_context, searcher, query):
         if not searcher:
             return []
+
         is_es_6 = searcher.is_es_6
 
         queries = []
@@ -424,12 +425,20 @@ class HomeView(BaseAppView):
                 {
                     'id': -1,
                     'value': query,
-                    'value_display': u'Search for: `{}`'.format(query),
+                    'value_display': u'Commit search for: `{}`'.format(query),
                     'type': 'search',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'content'})
-                }
-            )
+                })
+            queries.append(
+                {
+                    'id': -1,
+                    'value': query,
+                    'value_display': u'File search for: `{}`'.format(query),
+                    'type': 'search',
+                    'url': h.route_path('search',
+                                        _query={'q': query, 'type': 'commit'})
+                })
 
         return queries
 

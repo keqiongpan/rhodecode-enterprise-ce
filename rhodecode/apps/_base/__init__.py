@@ -334,6 +334,13 @@ class RepoGroupAppView(BaseAppView):
         self.db_repo_group = request.db_repo_group
         self.db_repo_group_name = self.db_repo_group.group_name
 
+    def _get_local_tmpl_context(self, include_app_defaults=True):
+        _ = self.request.translate
+        c = super(RepoGroupAppView, self)._get_local_tmpl_context(
+            include_app_defaults=include_app_defaults)
+        c.repo_group = self.db_repo_group
+        return c
+
     def _revoke_perms_on_yourself(self, form_result):
         _updates = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
                           form_result['perm_updates'])

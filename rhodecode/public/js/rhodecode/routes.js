@@ -281,7 +281,9 @@ function registerRCRoutes() {
     pyroutes.register('edit_user_group_advanced_sync', '/_admin/user_groups/%(user_group_id)s/edit/advanced/sync', ['user_group_id']);
     pyroutes.register('user_groups_delete', '/_admin/user_groups/%(user_group_id)s/delete', ['user_group_id']);
     pyroutes.register('search', '/_admin/search', []);
-    pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
+    pyroutes.register('search_repo', '/%(repo_name)s/_search', ['repo_name']);
+    pyroutes.register('search_repo_alt', '/%(repo_name)s/search', ['repo_name']);
+    pyroutes.register('search_repo_group', '/%(repo_group_name)s/_search', ['repo_group_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);
     pyroutes.register('user_group_profile', '/_profile_user_group/%(user_group_name)s', ['user_group_name']);
     pyroutes.register('my_account_profile', '/_admin/my_account/profile', []);

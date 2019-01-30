@@ -8,26 +8,12 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
-    &raquo;
-    ${h.link_to(_('Repository Groups'),h.route_path('repo_groups'))}
-    %if c.repo_group.parent_group:
-        &raquo; ${h.link_to(c.repo_group.parent_group.name, h.route_path('repo_group_home', repo_group_name=c.repo_group.parent_group.group_name))}
-    %endif
-    &raquo; ${c.repo_group.name}
-</%def>
-
-<%def name="breadcrumbs_side_links()">
-    <ul class="links">
-      <li>
-          <a href="${h.route_path('repo_group_new', _query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-success">${_(u'Add Child Group')}</a>
-      </li>
-    </ul>
-</%def>
-
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
+</%def>
+
+<%def name="menu_bar_subnav()">
+    ${self.repo_group_menu(active='options')}
 </%def>
 
 <%def name="main_content()">
@@ -35,10 +21,10 @@
 </%def>
 
 <%def name="main()">
+
 <div class="box">
   <div class="title">
-      ${self.breadcrumbs()}
-      ${self.breadcrumbs_side_links()}
+    ${self.repo_group_page_title(c.repo_group)}
   </div>
 
   <div class="sidebar-col-wrapper">
@@ -58,4 +44,5 @@
 
   </div>
 </div>
+
 </%def>

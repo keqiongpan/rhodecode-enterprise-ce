@@ -33,7 +33,7 @@
 
 
                 <div class="pr-details-title">
-                    ${_('Pull request summary')}
+                    ${_('Summary')}
                 </div>
 
                 <div class="form" style="padding-top: 10px">

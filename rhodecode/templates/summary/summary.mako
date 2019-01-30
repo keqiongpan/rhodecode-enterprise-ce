@@ -11,15 +11,18 @@
 
 <div class="title">
     ${self.repo_page_title(c.rhodecode_db_repo)}
-    <ul class="links icon-only-links block-right">
-      <li>
-     %if c.rhodecode_user.username != h.DEFAULT_USER:
-       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
-     %else:
-       <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}"><i class="icon-rss-sign"></i></a>
-     %endif
-      </li>
-    </ul>
+    ## Context Action
+    <div>
+        <ul class="links icon-only-links block-right">
+            <li>
+                %if c.rhodecode_user.username != h.DEFAULT_USER:
+                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                %else:
+                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                %endif
+            </li>
+        </ul>
+    </div>
 </div>
 
 <div id="repo-summary" class="summary">

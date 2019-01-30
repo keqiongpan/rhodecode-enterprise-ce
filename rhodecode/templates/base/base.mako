@@ -180,7 +180,7 @@
         %endif
 
         ## repo name with group name
-        ${h.breadcrumb_repo_link(c.rhodecode_db_repo)}
+        ${h.breadcrumb_repo_link(repo_instance)}
 
     </div>
 
@@ -251,7 +251,7 @@
           </a>
           <ul class="submenu">
              %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
-                   <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Settings')}</a></li>
+                   <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Repository Settings')}</a></li>
              %endif
               %if c.rhodecode_db_repo.fork:
                <li>
@@ -296,6 +296,73 @@
   <!--- END CONTEXT BAR -->
 
 </%def>
+
+<%def name="repo_group_page_title(repo_group_instance)">
+<div class="title-content">
+    <div class="title-main">
+        ## Repository Group icon
+        <i class="icon-folder-close"></i>
+
+        ## repo name with group name
+        ${h.breadcrumb_repo_group_link(repo_group_instance)}
+    </div>
+
+    <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+    <div class="repo-group-desc">
+    ${dt.repo_group_desc(repo_group_instance.description_safe, repo_group_instance.personal, c.visual.stylify_metatags)}
+    </div>
+
+</div>
+</%def>
+
+<%def name="repo_group_menu(active=None)">
+    <%
+    def is_active(selected):
+        if selected == active:
+            return "active"
+
+    is_admin = h.HasPermissionAny('hg.admin')('can create repos index page')
+
+    gr_name = c.repo_group.group_name if c.repo_group else None
+    # create repositories with write permission on group is set to true
+    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
+    group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
+    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
+
+    %>
+
+  <!--- CONTEXT BAR -->
+  <div id="context-bar">
+    <div class="wrapper">
+      <ul id="context-pages" class="navigation horizontal-list">
+        <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
+        <li class="${is_active('search')}"><a class="menulink" href="${h.route_path('search_repo_group', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Search')}</div></a></li>
+
+        <li class="${is_active('options')}">
+          <a class="menulink dropdown">
+              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
+          </a>
+          <ul class="submenu">
+                %if is_admin or group_admin:
+                   <li><a href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}">${_('Group Settings')}</a></li>
+                %endif
+                %if is_admin or group_admin or (group_write and create_on_write):
+                    <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
+                %endif
+                %if is_admin or group_admin:
+                    <li><a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'Add Parent Group')}</a></li>
+                %endif
+             </ul>
+        </li>
+      </ul>
+    </div>
+    <div class="clear"></div>
+  </div>
+
+  <!--- END CONTEXT BAR -->
+
+</%def>
+
 
 <%def name="usermenu(active=False)">
     ## USER MENU

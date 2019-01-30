@@ -76,6 +76,10 @@ class BaseSearcher(object):
     def get_handlers(self):
         return {}
 
+    @staticmethod
+    def extract_search_tags(query):
+        return []
+
 
 def search_config(config, prefix='search.'):
     _config = {}

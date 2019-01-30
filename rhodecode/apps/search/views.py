@@ -41,7 +41,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     execution_time = ''
 
     schema = search_schema.SearchParamsSchema()
-
+    search_tags = []
     search_params = {}
     errors = []
     try:
@@ -85,6 +85,8 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
         finally:
             searcher.cleanup()
 
+        search_tags = searcher.extract_search_tags(search_query)
+
         if not search_result['error']:
             execution_time = '%s results (%.3f seconds)' % (
                 search_result['count'],
@@ -105,6 +107,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.cur_query = search_query
     c.search_type = search_type
     c.searcher = searcher
+    c.search_tags = search_tags
 
 
 class SearchView(BaseAppView):
