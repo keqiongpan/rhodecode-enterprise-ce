@@ -636,8 +636,10 @@ ul#context-pages {
     border-bottom: 1px solid @grey4;
     display: inline-block;
     vertical-align: top;
-    margin-left: -7px;
-    background: @grey3;
+    background: inherit;
+    position: absolute;
+    right: 8px;
+    top: 9px;
 }
 
 .main_filter_input_box {
@@ -652,24 +654,36 @@ ul#context-pages {
     background: @grey3;
     border: 1px solid black;
     position: absolute;
-    white-space: pre-wrap;
+    white-space: pre;
     z-index: 9999;
     color: @nav-grey;
     margin: 1px 7px;
-    padding: 0 2px;
+    padding: 0 10px;
 }
 
 .main_filter_input {
     padding: 5px;
-    min-width: 220px;
+    min-width: 260px;
     color: @nav-grey;
     background: @grey3;
     min-height: 18px;
+
+
+    &:active {
+      color: @grey2 !important;
+      background: white !important;
+    }
+    &:focus {
+      color: @grey2 !important;
+      background: white !important;
+    }
 }
 
+
+
 .main_filter_input::placeholder {
-   color: @nav-grey;
-   opacity: 1;
+    color: @nav-grey;
+    opacity: 1;
 }
 
 .notice-box {

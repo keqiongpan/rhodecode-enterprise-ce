@@ -32,7 +32,13 @@ def assert_and_get_main_filter_content(result):
 
         if data_item['type'] == 'search':
             display_val = data_item['value_display']
-            assert 'Search for:' in display_val, display_val
+            if data_item['id'] == -1:
+                assert 'File search for:' in display_val, display_val
+            elif data_item['id'] == -2:
+                assert 'Commit search for:' in display_val, display_val
+            else:
+                assert False, 'No Proper ID returned {}'.format(data_item['id'])
+
         elif data_item['type'] == 'repo':
             repos.append(data_item)
         elif data_item['type'] == 'repo_group':

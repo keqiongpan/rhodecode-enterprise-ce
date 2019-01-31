@@ -263,19 +263,30 @@ class HomeView(BaseAppView):
             'commit_id:{}*'.format(commit_hash), 'commit', auth_user,
             raise_on_exc=False)
 
-        return [
-            {
+        commits = []
+        for entry in result['results']:
+            repo_data = {
+                'repository_id': entry.get('repository_id'),
+                'repository_type': entry.get('repo_type'),
+                'repository_name': entry.get('repository'),
+            }
+
+            commit_entry = {
                 'id': entry['commit_id'],
                 'value': org_query,
-                'value_display': 'repo `{}` commit: {}'.format(
+                'value_display': '`{}` commit: {}'.format(
                     entry['repository'], entry['commit_id']),
                 'type': 'commit',
                 'repo': entry['repository'],
+                'repo_data': repo_data,
+
                 'url': h.route_path(
                     'repo_commit',
                     repo_name=entry['repository'], commit_id=entry['commit_id'])
             }
-            for entry in result['results']]
+
+            commits.append(commit_entry)
+        return commits
 
     @LoginRequired()
     @view_config(
@@ -373,7 +384,7 @@ class HomeView(BaseAppView):
             label = u'Commit search for `{}` in this repository.'.format(query)
             queries.append(
                 {
-                    'id': -10,
+                    'id': -20,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
@@ -392,7 +403,7 @@ class HomeView(BaseAppView):
             label = u'File search for `{}` in this repository group'.format(query)
             queries.append(
                 {
-                    'id': -20,
+                    'id': -30,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
@@ -410,7 +421,7 @@ class HomeView(BaseAppView):
             label = u'Commit search for `{}` in this repository group'.format(query)
             queries.append(
                 {
-                    'id': -20,
+                    'id': -40,
                     'value': query,
                     'value_display': label,
                     'type': 'search',
@@ -425,16 +436,16 @@ class HomeView(BaseAppView):
                 {
                     'id': -1,
                     'value': query,
-                    'value_display': u'Commit search for: `{}`'.format(query),
+                    'value_display': u'File search for: `{}`'.format(query),
                     'type': 'search',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'content'})
                 })
             queries.append(
                 {
-                    'id': -1,
+                    'id': -2,
                     'value': query,
-                    'value_display': u'File search for: `{}`'.format(query),
+                    'value_display': u'Commit search for: `{}`'.format(query),
                     'type': 'search',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'commit'})

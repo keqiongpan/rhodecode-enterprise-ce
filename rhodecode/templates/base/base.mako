@@ -492,17 +492,17 @@
         </div>
 
         <div id="main_filter_help" style="display: none">
-Use '/' key to quickly access this field.
-Enter name of repository, or repository group for quick search.
+- Use '/' key to quickly access this field.
 
-Prefix query to allow special search:
+- Enter a name of repository, or repository group for quick search.
 
-user:admin, to search for usernames
+- Prefix query to allow special search:
 
-user_group:devops, to search for user groups
+   user:admin, to search for usernames
 
-commit:efced4, to search for commits
+   user_group:devops, to search for user groups
 
+   commit:efced4, to search for commits
         </div>
        </li>
 
@@ -626,9 +626,22 @@ commit:efced4, to search for commits
             var valueDisplay = data['value_display'];
 
             var escapeRegExChars = function (value) {
-            return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+                return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
             };
             var pattern = '(' + escapeRegExChars(value) + ')';
+
+            var getRepoIcon = function(repo_type) {
+                if (repo_type === 'hg') {
+                    return '<i class="icon-hg"></i> ';
+                }
+                else if (repo_type === 'git') {
+                    return '<i class="icon-git"></i> ';
+                }
+                else if (repo_type === 'svn') {
+                    return '<i class="icon-svn"></i> ';
+                }
+                return ''
+            };
 
             // highlight match
             valueDisplay = Select2.util.escapeMarkup(valueDisplay);
@@ -639,19 +652,16 @@ commit:efced4, to search for commits
             if (searchType === 'hint') {
                 icon += '<i class="icon-folder-close"></i> ';
             }
+            // full text search
             else if (searchType === 'search') {
                 icon += '<i class="icon-more"></i> ';
             }
+            // repository
             else if (searchType === 'repo') {
-                if (data['repo_type'] === 'hg') {
-                    icon += '<i class="icon-hg"></i> ';
-                }
-                else if (data['repo_type'] === 'git') {
-                    icon += '<i class="icon-git"></i> ';
-                }
-                else if (data['repo_type'] === 'svn') {
-                    icon += '<i class="icon-svn"></i> ';
-                }
+
+                var repoIcon = getRepoIcon(data['repo_type']);
+                icon += repoIcon;
+
                 if (data['private']) {
                     icon += '<i class="icon-lock" ></i> ';
                 }
@@ -659,17 +669,26 @@ commit:efced4, to search for commits
                     icon += '<i class="icon-unlock-alt"></i> ';
                 }
             }
+            // repository groups
             else if (searchType === 'repo_group') {
                 icon += '<i class="icon-folder-close"></i> ';
             }
+            // user group
             else if (searchType === 'user_group') {
                 icon += '<i class="icon-group"></i> ';
             }
             else if (searchType === 'user') {
                 icon += '<img class="gravatar" src="{0}"/>'.format(data['icon_link']);
             }
+            // commit
             else if (searchType === 'commit') {
-                icon += '<i class="icon-tag"></i>';
+                var repo_data = data['repo_data'];
+                var repoIcon = getRepoIcon(repo_data['repository_type']);
+                if (repoIcon) {
+                    icon += repoIcon;
+                } else {
+                    icon += '<i class="icon-tag"></i>';
+                }
             }
 
             var tmpl = '<div class="ac-container-wrap">{0}{1}</div>';
@@ -715,7 +734,7 @@ commit:efced4, to search for commits
 
         showMainFilterBox = function () {
             $('#main_filter_help').toggle();
-        }
+        };
 
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
