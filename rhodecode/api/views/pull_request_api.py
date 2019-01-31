@@ -141,7 +141,8 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
 
 
 @jsonrpc_method()
-def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
+def get_pull_requests(request, apiuser, repoid, status=Optional('new'),
+                      merge_state=Optional(True)):
     """
     Get all pull requests from the repository specified in `repoid`.
 
@@ -155,6 +156,9 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
         * ``open``
         * ``closed``
     :type status: str
+    :param merge_state: Optional calculate merge state for each repository.
+        This could result in longer time to fetch the data
+    :type merge_state: bool
 
     Example output:
 
@@ -232,8 +236,10 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     status = Optional.extract(status)
-    pull_requests = PullRequestModel().get_all(repo, statuses=[status])
-    data = [pr.get_api_data() for pr in pull_requests]
+    merge_state = Optional.extract(merge_state, binary=True)
+    pull_requests = PullRequestModel().get_all(repo, statuses=[status],
+                                               order_by='id', order_dir='desc')
+    data = [pr.get_api_data(with_merge_state=merge_state) for pr in pull_requests]
     return data
 
 

@@ -167,6 +167,7 @@ class PullRequestModel(BaseModel):
         if order_by:
             order_map = {
                 'name_raw': PullRequest.pull_request_id,
+                'id': PullRequest.pull_request_id,
                 'title': PullRequest.title,
                 'updated_on_raw': PullRequest.updated_on,
                 'target_repo': PullRequest.target_repo_id
