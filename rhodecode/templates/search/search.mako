@@ -78,8 +78,19 @@
             <br/>
 
             <div class="search-tags">
+                <span class="tag tag8">
+                    %if c.repo_name:
+                        <a href="${h.route_path('search', _query={'q': c.cur_query})}">${_('Global Search')}</a>
+                    %elif c.repo_group_name:
+                        <a href="${h.route_path('search', _query={'q': c.cur_query})}">${_('Global Search')}</a>
+                    % else:
+                        ${_('Global Search')}
+                    %endif
+                </span>
+
             %if c.repo_name:
-                <span class="tag tag-ok disabled">
+                »
+                <span class="tag tag8">
                     %if h.is_hg(c.rhodecode_db_repo):
                         <i class="icon-hg"></i>
                     %endif
@@ -93,14 +104,16 @@
                 </span>
 
             %elif c.repo_group_name:
-                <span class="tag tag-ok disabled">
+                »
+                <span class="tag tag8">
                     <i class="icon-folder-close"></i>
                     ${c.repo_group_name}
                 </span>
             %endif
 
+
             % for search_tag in c.search_tags:
-                <span class="tag tag-ok disabled">${search_tag}</span>
+                <br/><span class="tag disabled" style="margin-top: 3px">${search_tag}</span>
             % endfor
 
             </div>
