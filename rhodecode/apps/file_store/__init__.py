@@ -18,7 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import os
-from rhodecode.apps.upload_store import config_keys
+from rhodecode.apps.file_store import config_keys
 from rhodecode.config.middleware import _bool_setting, _string_setting
 
 

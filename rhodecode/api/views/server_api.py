@@ -39,8 +39,8 @@ from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import UserIpMap
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel
-from rhodecode.apps.upload_store import utils
-from rhodecode.apps.upload_store.exceptions import FileNotAllowedException, \
+from rhodecode.apps.file_store import utils
+from rhodecode.apps.file_store.exceptions import FileNotAllowedException, \
     FileOverSizeException
 
 log = logging.getLogger(__name__)
@@ -469,7 +469,7 @@ def upload_file(request, apiuser, filename, content):
                           'user_id': apiuser.user_id,
                           'ip': apiuser.ip_addr}}
     try:
-        store_fid = storage.save_file(file_obj, filename, metadata=metadata)
+        store_fid, metadata = storage.save_file(file_obj, filename, metadata=metadata)
     except FileNotAllowedException:
         raise JSONRPCError('File `{}` is not allowed.'.format(filename))
 

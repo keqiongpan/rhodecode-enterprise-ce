@@ -24,8 +24,8 @@ from pyramid.response import FileResponse
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 
 from rhodecode.apps._base import BaseAppView
-from rhodecode.apps.upload_store import utils
-from rhodecode.apps.upload_store.exceptions import (
+from rhodecode.apps.file_store import utils
+from rhodecode.apps.file_store.exceptions import (
     FileNotAllowedException,FileOverSizeException)
 
 from rhodecode.lib import helpers as h
@@ -69,8 +69,7 @@ class FileStoreView(BaseAppView):
                               'user_id': self._rhodecode_user.user_id,
                               'ip': self._rhodecode_user.ip_addr}}
         try:
-            store_fid = self.storage.save_file(file_obj.file, filename,
-                                               metadata=metadata)
+            store_fid, metadata = self.storage.save_file(file_obj.file, filename, metadata=metadata)
         except FileNotAllowedException:
             return {'store_fid': None,
                     'access_path': None,

@@ -23,9 +23,9 @@ import time
 import shutil
 
 from rhodecode.lib.ext_json import json
-from rhodecode.apps.upload_store import utils
-from rhodecode.apps.upload_store.extensions import resolve_extensions
-from rhodecode.apps.upload_store.exceptions import FileNotAllowedException
+from rhodecode.apps.file_store import utils
+from rhodecode.apps.file_store.extensions import resolve_extensions
+from rhodecode.apps.file_store.exceptions import FileNotAllowedException
 
 METADATA_VER = 'v1'
 
@@ -110,7 +110,8 @@ class LocalFileStorage(object):
         Checks if an extension is permitted. Both e.g. ".jpg" and
         "jpg" can be passed in. Extension lookup is case-insensitive.
 
-        :param extensions: iterable of extensions (or self.extensions)
+        :param ext: extension to check
+        :param extensions: iterable of extensions to validate against (or self.extensions)
         """
 
         extensions = extensions or self.extensions
@@ -160,12 +161,15 @@ class LocalFileStorage(object):
 
         if metadata:
             size = os.stat(path).st_size
-            metadata.update({'size': size, "time": time.time(),
-                             "meta_ver": METADATA_VER})
+            metadata.update(
+                {"size": size,
+                 "time": time.time(),
+                 "meta_ver": METADATA_VER})
+
             with open(os.path.join(dest_directory, filename_meta), "wb") as dest_meta:
                 dest_meta.write(json.dumps(metadata))
 
         if directory:
             filename = os.path.join(directory, filename)
 
-        return filename
+        return filename, metadata

@@ -22,7 +22,7 @@ import pytest
 
 from rhodecode.lib.ext_json import json
 from rhodecode.tests import TestController
-from rhodecode.apps.upload_store import utils, config_keys
+from rhodecode.apps.file_store import utils, config_keys
 
 
 def route_path(name, params=None, **kwargs):
@@ -58,7 +58,7 @@ class TestFileStoreViews(TestController):
                 f.write(content)
 
             with open(filesystem_file, 'rb') as f:
-                fid = store.save_file(f, fid, metadata={'filename': fid})
+                fid, metadata = store.save_file(f, fid, metadata={'filename': fid})
 
         else:
             status = 404

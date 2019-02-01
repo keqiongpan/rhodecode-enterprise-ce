@@ -24,8 +24,8 @@ import uuid
 
 
 def get_file_storage(settings):
-    from rhodecode.apps.upload_store.local_store import LocalFileStorage
-    from rhodecode.apps.upload_store import config_keys
+    from rhodecode.apps.file_store.local_store import LocalFileStorage
+    from rhodecode.apps.file_store import config_keys
     store_path = settings.get(config_keys.store_path)
     return LocalFileStorage(base_path=store_path)
 
