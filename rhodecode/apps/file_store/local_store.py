@@ -47,10 +47,21 @@ class LocalFileStorage(object):
         counter = 0
         while True:
             name = '%s-%d%s' % (basename, counter, ext)
-            path = os.path.join(directory, name)
+
+            # sub_store prefix to optimize disk usage, e.g some_path/ab/final_file
+            sub_store = cls._sub_store_from_filename(basename)
+            sub_store_path = os.path.join(directory, sub_store)
+            if not os.path.exists(sub_store_path):
+                os.makedirs(sub_store_path)
+
+            path = os.path.join(sub_store_path, name)
             if not os.path.exists(path):
                 return name, path
             counter += 1
+
+    @classmethod
+    def _sub_store_from_filename(cls, filename):
+        return filename[:2]
 
     def __init__(self, base_path, extension_groups=None):
 
@@ -72,7 +83,8 @@ class LocalFileStorage(object):
 
         :param filename: base name of file
         """
-        return os.path.join(self.base_path, filename)
+        sub_store = self._sub_store_from_filename(filename)
+        return os.path.join(self.base_path, sub_store, filename)
 
     def delete(self, filename):
         """
@@ -152,7 +164,6 @@ class LocalFileStorage(object):
         filename = utils.uid_filename(filename)
 
         filename, path = self.resolve_name(filename, dest_directory)
-        filename_meta = filename + '.meta'
 
         file_obj.seek(0)
 
@@ -166,7 +177,9 @@ class LocalFileStorage(object):
                  "time": time.time(),
                  "meta_ver": METADATA_VER})
 
-            with open(os.path.join(dest_directory, filename_meta), "wb") as dest_meta:
+            stored_file_path = os.path.dirname(path)
+            filename_meta = filename + '.meta'
+            with open(os.path.join(stored_file_path, filename_meta), "wb") as dest_meta:
                 dest_meta.write(json.dumps(metadata))
 
         if directory:

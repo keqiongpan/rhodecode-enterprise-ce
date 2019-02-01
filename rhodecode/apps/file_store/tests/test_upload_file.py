@@ -67,9 +67,10 @@ class TestFileStoreViews(TestController):
 
         if exists:
             assert response.text == content
-            metadata = os.path.join(store_path, fid + '.meta')
-            assert os.path.exists(metadata)
-            with open(metadata, 'rb') as f:
+            file_store_path = os.path.dirname(store.resolve_name(fid, store_path)[1])
+            metadata_file = os.path.join(file_store_path, fid + '.meta')
+            assert os.path.exists(metadata_file)
+            with open(metadata_file, 'rb') as f:
                 json_data = json.loads(f.read())
 
             assert json_data
