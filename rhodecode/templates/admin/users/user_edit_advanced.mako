@@ -96,20 +96,16 @@
     <div class="panel-body">
         ${h.secure_form(h.route_path('user_delete', user_id=c.user.user_id), request=request)}
 
-            <table class="display">
+            <table class="display rctable">
                 <tr>
                     <td>
                         ${_ungettext('This user owns %s repository.', 'This user owns %s repositories.', len(c.user.repositories)) % len(c.user.repositories)}
                     </td>
                     <td>
-                        %if len(c.user.repositories) > 0:
-                            <input type="radio" id="user_repos_1" name="user_repos" value="detach" checked="checked"/> <label for="user_repos_1">${_('Detach repositories')}</label>
-                        %endif
+                        <input type="radio" id="user_repos_1" name="user_repos" value="detach" checked="checked" ${'disabled=1' if len(c.user.repositories) == 0 else ''} /> <label for="user_repos_1">${_('Detach repositories')}</label>
                     </td>
                     <td>
-                        %if len(c.user.repositories) > 0:
-                            <input type="radio" id="user_repos_2" name="user_repos" value="delete" /> <label for="user_repos_2">${_('Delete repositories')}</label>
-                        %endif
+                        <input type="radio" id="user_repos_2" name="user_repos" value="delete" ${'disabled=1' if len(c.user.repositories) == 0 else ''} /> <label for="user_repos_2">${_('Delete repositories')}</label>
                     </td>
                 </tr>
 
@@ -118,14 +114,10 @@
                         ${_ungettext('This user owns %s repository group.', 'This user owns %s repository groups.', len(c.user.repository_groups)) % len(c.user.repository_groups)}
                     </td>
                     <td>
-                        %if len(c.user.repository_groups) > 0:
-                            <input type="radio" id="user_repo_groups_1" name="user_repo_groups" value="detach" checked="checked"/> <label for="user_repo_groups_1">${_('Detach repository groups')}</label>
-                        %endif
+                        <input type="radio" id="user_repo_groups_1" name="user_repo_groups" value="detach" checked="checked" ${'disabled=1' if len(c.user.repository_groups) == 0 else ''} /> <label for="user_repo_groups_1">${_('Detach repository groups')}</label>
                     </td>
                     <td>
-                        %if len(c.user.repository_groups) > 0:
-                            <input type="radio" id="user_repo_groups_2" name="user_repo_groups" value="delete" /> <label for="user_repo_groups_2">${_('Delete repositories')}</label>
-                        %endif
+                        <input type="radio" id="user_repo_groups_2" name="user_repo_groups" value="delete" ${'disabled=1' if len(c.user.repository_groups) == 0 else ''}/> <label for="user_repo_groups_2">${_('Delete repositories')}</label>
                     </td>
                 </tr>
 
@@ -134,17 +126,36 @@
                         ${_ungettext('This user owns %s user group.', 'This user owns %s user groups.', len(c.user.user_groups)) % len(c.user.user_groups)}
                     </td>
                     <td>
-                        %if len(c.user.user_groups) > 0:
-                            <input type="radio" id="user_user_groups_1" name="user_user_groups" value="detach" checked="checked"/> <label for="user_user_groups_1">${_('Detach user groups')}</label>
-                        %endif
+                        <input type="radio" id="user_user_groups_1" name="user_user_groups" value="detach" checked="checked" ${'disabled=1' if len(c.user.user_groups) == 0 else ''}/> <label for="user_user_groups_1">${_('Detach user groups')}</label>
                     </td>
                     <td>
-                        %if len(c.user.user_groups) > 0:
-                            <input type="radio" id="user_user_groups_2" name="user_user_groups" value="delete" /> <label for="user_user_groups_2">${_('Delete repositories')}</label>
-                        %endif
+                        <input type="radio" id="user_user_groups_2" name="user_user_groups" value="delete" ${'disabled=1' if len(c.user.user_groups) == 0 else ''}/> <label for="user_user_groups_2">${_('Delete repositories')}</label>
                     </td>
                 </tr>
             </table>
+            <div style="margin: 0 0 20px 0" class="fake-space"></div>
+            <div class="pull-left">
+                % if len(c.user.repositories) > 0 or len(c.user.repository_groups) > 0 or len(c.user.user_groups) > 0:
+                % endif
+
+                <span style="padding: 0 5px 0 0">${_('New owner for detached objects')}:</span>
+                <div class="pull-right">${base.gravatar_with_user(c.first_admin.email, 16)}</div>
+            </div>
+            <div style="clear: both">
+
+            <div>
+            <p class="help-block">
+                ${_("When selecting the detach option, the depending objects owned by this user will be assigned to the above user.")}
+                <br/>
+                ${_("The delete option will delete the user and all his owned objects!")}
+            </p>
+            </div>
+
+            % if c.can_delete_user_message:
+            <p class="pre-formatting">${c.can_delete_user_message}</p>
+            % endif
+            </div>
+
             <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
             <div class="field">
@@ -153,17 +164,6 @@
                         ${"disabled" if not c.can_delete_user else ""}>
                     ${_('Delete this user')}
                 </button>
-            </div>
-            % if c.can_delete_user_message:
-            <p class="help-block pre-formatting">${c.can_delete_user_message}</p>
-            % endif
-
-            <div class="field">
-                <span class="help-block">
-                    %if len(c.user.repositories) > 0 or len(c.user.repository_groups) > 0 or len(c.user.user_groups) > 0:
-                        <p class="help-block">${_("When selecting the detach option, the depending objects owned by this user will be assigned to the `%s` super admin in the system. The delete option will delete the user's repositories!") % (c.first_admin.full_name)}</p>
-                    %endif
-                </span>
             </div>
 
         ${h.end_form()}
