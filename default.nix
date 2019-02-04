@@ -19,14 +19,15 @@
 #  }
 
 args@
-{ pythonPackages ? "python27Packages"
+{ system ? builtins.currentSystem
+, pythonPackages ? "python27Packages"
 , pythonExternalOverrides ? self: super: {}
 , doCheck ? false
 , ...
 }:
 
 let
-  pkgs_ = (import <nixpkgs> {});
+  pkgs_ = args.pkgs or (import <nixpkgs> { inherit system; });
 in
 
 let
@@ -80,7 +81,8 @@ let
 
   nodeEnv = import ./pkgs/node-default.nix {
     inherit
-      pkgs;
+      pkgs
+      system;
   };
   nodeDependencies = nodeEnv.shell.nodeDependencies;
 
