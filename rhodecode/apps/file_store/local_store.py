@@ -21,6 +21,7 @@
 import os
 import time
 import shutil
+import hashlib
 
 from rhodecode.lib.ext_json import json
 from rhodecode.apps.file_store import utils
@@ -62,6 +63,21 @@ class LocalFileStorage(object):
     @classmethod
     def _sub_store_from_filename(cls, filename):
         return filename[:2]
+
+    @classmethod
+    def calculate_path_hash(cls, file_path):
+        """
+        Efficient calculation of file_path sha256 sum
+
+        :param file_path:
+        :return: sha256sum
+        """
+        digest = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(1024 * 100), b""):
+                digest.update(chunk)
+
+        return digest.hexdigest()
 
     def __init__(self, base_path, extension_groups=None):
 
@@ -134,7 +150,7 @@ class LocalFileStorage(object):
         return ext.lower() in extensions
 
     def save_file(self, file_obj, filename, directory=None, extensions=None,
-                  metadata=None, **kwargs):
+                  extra_metadata=None, **kwargs):
         """
         Saves a file object to the uploads location.
         Returns the resolved filename, i.e. the directory +
@@ -144,8 +160,7 @@ class LocalFileStorage(object):
         :param filename: original filename
         :param directory: relative path of sub-directory
         :param extensions: iterable of allowed extensions, if not default
-        :param metadata: JSON metadata to store next to the file with .meta suffix
-        :returns: modified filename
+        :param extra_metadata: extra JSON metadata to store next to the file with .meta suffix
         """
 
         extensions = extensions or self.extensions
@@ -163,24 +178,32 @@ class LocalFileStorage(object):
 
         filename = utils.uid_filename(filename)
 
+        # resolve also produces special sub-dir for file optimized store
         filename, path = self.resolve_name(filename, dest_directory)
+        stored_file_dir = os.path.dirname(path)
 
         file_obj.seek(0)
 
         with open(path, "wb") as dest:
             shutil.copyfileobj(file_obj, dest)
 
-        if metadata:
-            size = os.stat(path).st_size
-            metadata.update(
-                {"size": size,
-                 "time": time.time(),
-                 "meta_ver": METADATA_VER})
+        metadata = {}
+        if extra_metadata:
+            metadata = extra_metadata
 
-            stored_file_path = os.path.dirname(path)
-            filename_meta = filename + '.meta'
-            with open(os.path.join(stored_file_path, filename_meta), "wb") as dest_meta:
-                dest_meta.write(json.dumps(metadata))
+        size = os.stat(path).st_size
+        file_hash = self.calculate_path_hash(path)
+
+        metadata.update(
+            {"filename": filename,
+             "size": size,
+             "time": time.time(),
+             "sha256": file_hash,
+             "meta_ver": METADATA_VER})
+
+        filename_meta = filename + '.meta'
+        with open(os.path.join(stored_file_dir, filename_meta), "wb") as dest_meta:
+            dest_meta.write(json.dumps(metadata))
 
         if directory:
             filename = os.path.join(directory, filename)

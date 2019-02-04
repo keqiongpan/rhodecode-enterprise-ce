@@ -58,7 +58,7 @@ class TestFileStoreViews(TestController):
                 f.write(content)
 
             with open(filesystem_file, 'rb') as f:
-                fid, metadata = store.save_file(f, fid, metadata={'filename': fid})
+                fid, metadata = store.save_file(f, fid, extra_metadata={'filename': fid})
 
         else:
             status = 404

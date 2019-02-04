@@ -63,13 +63,12 @@ class FileStoreView(BaseAppView):
         filename = file_obj.filename
 
         metadata = {
-            'filename': filename,
-            'size': '',  # filled by save_file
             'user_uploaded': {'username': self._rhodecode_user.username,
                               'user_id': self._rhodecode_user.user_id,
                               'ip': self._rhodecode_user.ip_addr}}
         try:
-            store_fid, metadata = self.storage.save_file(file_obj.file, filename, metadata=metadata)
+            store_fid, metadata = self.storage.save_file(
+                file_obj.file, filename, extra_metadata=metadata)
         except FileNotAllowedException:
             return {'store_fid': None,
                     'access_path': None,
