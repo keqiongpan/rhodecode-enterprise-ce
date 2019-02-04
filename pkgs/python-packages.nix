@@ -260,11 +260,11 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.5.1";
+    name = "configparser-3.7.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/20/59/fc5d08966bbd13c5f5d647c8fdc9af5c62b998420652c3349584c0f80676/configparser-3.5.1.tar.gz";
-      sha256 = "0qlcijshmz3xbv2wf44myg48q6gc53rv69w6lyqwrgxy575ij7pl";
+      url = "https://files.pythonhosted.org/packages/b6/a6/eceea7c5a5dbcf56815bed411c38cabd8a879386be10717b160e7362b5a2/configparser-3.7.1.tar.gz";
+      sha256 = "0cnz213il9lhgda6x70fw7mfqr8da43s3wm343lwzhqx94mgmmav";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1239,14 +1239,14 @@ self: super: {
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.3";
+    name = "pyasn1-modules-0.2.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c8/0e/3fe59edc782faf8b429f4a1db734418d0f68a7e50f43095747c08330e952/pyasn1-modules-0.2.3.tar.gz";
-      sha256 = "0qdjk7lnqmjzpvv3qq2xi8j8bhr6ghr75gv0ngbs7jxyv8lwnkyi";
+      url = "https://files.pythonhosted.org/packages/bd/a5/ef7bf693e8a8f015386c9167483199f54f8a8ec01d1c737e05524f16e792/pyasn1-modules-0.2.4.tar.gz";
+      sha256 = "0z3w5dqrrvdplg9ma45j8n23xvyrj9ki8mg4ibqbn7l4qpl90855";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1552,11 +1552,11 @@ self: super: {
     };
   };
   "python-editor" = super.buildPythonPackage {
-    name = "python-editor-1.0.3";
+    name = "python-editor-1.0.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/65/1e/adf6e000ea5dc909aa420352d6ba37f16434c8a3c2fa030445411a1ed545/python-editor-1.0.3.tar.gz";
-      sha256 = "0rf5xz8vw93v7mhdcvind7fkykipzga430wkcd7wk892xsn6dh53";
+      url = "https://files.pythonhosted.org/packages/0a/85/78f4a216d28343a67b7397c99825cff336330893f00601443f7c7b2f2234/python-editor-1.0.4.tar.gz";
+      sha256 = "0yrjh8w72ivqxi4i7xsg5b1vz15x8fg51xra7c3bgfyxqnyadzai";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 { fullName = "Apache"; } ];
@@ -1900,11 +1900,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.6.3";
+    name = "setuptools-40.7.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/37/1b/b25507861991beeade31473868463dad0e58b1978c209de27384ae541b0b/setuptools-40.6.3.zip";
-      sha256 = "1y085dnk574sxw9aymdng9gijvrsbw86hsv9hqnhv7y4d6nlsirv";
+      url = "https://files.pythonhosted.org/packages/90/86/00ab839a8647e0fee435fe77f70795865ca4534387872a6c23b22fd85ac8/setuptools-40.7.3.zip";
+      sha256 = "0c54kklk7c97g0dhm7ilg9cd4n4s464ps6mspsa5m9hhrcqxsbvh";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
