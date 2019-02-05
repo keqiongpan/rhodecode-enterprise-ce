@@ -816,14 +816,14 @@ self: super: {
     };
   };
   "kombu" = super.buildPythonPackage {
-    name = "kombu-4.2.0";
+    name = "kombu-4.2.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."amqp"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ab/b1/46a7a8babf5e60f3b2ca081a100af8edfcf132078a726375f52a054e70cf/kombu-4.2.0.tar.gz";
-      sha256 = "1yz19qlqf0inl1mnwlpq9j6kj9r67clpy0xg99phyg4329rw80fn";
+      url = "https://files.pythonhosted.org/packages/39/9f/556b988833abede4a80dbd18b2bdf4e8ff4486dd482ed45da961347e8ed2/kombu-4.2.1.tar.gz";
+      sha256 = "10lh3hncvw67fz0k5vgbx3yh9gjfpqdlia1f13i28cgnc1nfrbc6";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
