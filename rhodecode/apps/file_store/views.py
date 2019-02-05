@@ -26,11 +26,12 @@ from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps.file_store import utils
 from rhodecode.apps.file_store.exceptions import (
-    FileNotAllowedException,FileOverSizeException)
+    FileNotAllowedException, FileOverSizeException)
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (CSRFRequired, NotAnonymous)
+from rhodecode.model.db import Session, FileStore
 
 log = logging.getLogger(__name__)
 
@@ -79,6 +80,22 @@ class FileStoreView(BaseAppView):
                     'access_path': None,
                     'error': 'File {} is exceeding allowed limit.'.format(filename)}
 
+        try:
+            entry = FileStore.create(
+                file_uid=store_fid, filename=metadata["filename"],
+                file_hash=metadata["sha256"], file_size=metadata["size"],
+                file_description='upload attachment',
+                check_acl=False, user_id=self._rhodecode_user.user_id
+            )
+            Session().add(entry)
+            Session().commit()
+            log.debug('Stored upload in DB as %s', entry)
+        except Exception:
+            log.exception('Failed to store file %s', filename)
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': 'File {} failed to store in DB.'.format(filename)}
+
         return {'store_fid': store_fid,
                 'access_path': h.route_path('download_file', fid=store_fid)}
 
@@ -87,9 +104,12 @@ class FileStoreView(BaseAppView):
         self.load_default_context()
         file_uid = self.request.matchdict['fid']
         log.debug('Requesting FID:%s from store %s', file_uid, self.storage)
+
         if not self.storage.exists(file_uid):
             log.debug('File with FID:%s not found in the store', file_uid)
             raise HTTPNotFound()
+
+        FileStore.bump_access_counter(file_uid)
 
         file_path = self.storage.store_path(file_uid)
         return FileResponse(file_path)

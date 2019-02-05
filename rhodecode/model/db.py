@@ -4893,6 +4893,36 @@ class FileStore(Base, BaseModel):
         nullable=True, unique=None, default=None)
     repo_group = relationship('RepoGroup', lazy='joined')
 
+    @classmethod
+    def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
+               file_description='', enabled=True, check_acl=True,
+               user_id=None, scope_repo_id=None, scope_repo_group_id=None):
+
+        store_entry = FileStore()
+        store_entry.file_uid = file_uid
+        store_entry.file_display_name = file_display_name
+        store_entry.file_org_name = filename
+        store_entry.file_size = file_size
+        store_entry.file_hash = file_hash
+        store_entry.file_description = file_description
+
+        store_entry.check_acl = check_acl
+        store_entry.enabled = enabled
+
+        store_entry.user_id = user_id
+        store_entry.scope_repo_id = scope_repo_id
+        store_entry.scope_repo_group_id = scope_repo_group_id
+        return store_entry
+
+    @classmethod
+    def bump_access_counter(cls, file_uid, commit=True):
+        FileStore().query()\
+            .filter(FileStore.file_uid == file_uid)\
+            .update({FileStore.accessed_count: (FileStore.accessed_count + 1),
+                     FileStore.accessed_on: datetime.datetime.now()})
+        if commit:
+            Session().commit()
+
     def __repr__(self):
         return '<FileStore({})>'.format(self.file_store_id)
 
