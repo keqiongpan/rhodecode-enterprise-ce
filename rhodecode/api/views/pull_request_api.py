@@ -267,10 +267,11 @@ def merge_pull_request(
 
         "id": <id_given_in_input>,
         "result": {
-            "executed":         "<bool>",
-            "failure_reason":   "<int>",
-            "merge_commit_id":  "<merge_commit_id>",
-            "possible":         "<bool>",
+            "executed":               "<bool>",
+            "failure_reason":         "<int>",
+            "merge_status_message":   "<str>",
+            "merge_commit_id":        "<merge_commit_id>",
+            "possible":               "<bool>",
             "merge_ref":        {
                                     "commit_id": "<commit_id>",
                                     "type":      "<type>",

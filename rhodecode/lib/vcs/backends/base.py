@@ -221,7 +221,8 @@ class MergeResponse(object):
 
     def asdict(self):
         data = {}
-        for k in ['possible', 'executed', 'merge_ref', 'failure_reason']:
+        for k in ['possible', 'executed', 'merge_ref', 'failure_reason',
+                  'merge_status_message']:
             data[k] = getattr(self, k)
         return data
 

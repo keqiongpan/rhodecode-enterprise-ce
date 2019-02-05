@@ -109,6 +109,7 @@ class TestMergePullRequest(object):
         expected = {
             'executed': True,
             'failure_reason': 0,
+            'merge_status_message': 'This pull request can be automatically merged.',
             'possible': True,
             'merge_commit_id': pull_request.shadow_merge_ref.commit_id,
             'merge_ref': pull_request.shadow_merge_ref._asdict()
