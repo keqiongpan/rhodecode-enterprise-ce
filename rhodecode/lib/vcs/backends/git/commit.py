@@ -309,10 +309,14 @@ class GitCommit(base.BaseCommit):
         self._get_filectx(path)
         f_path = safe_str(path)
 
-        cmd = ['log']
-        if limit:
-            cmd.extend(['-n', str(safe_int(limit, 0))])
-        cmd.extend(['--pretty=format: %H', '-s', self.raw_id, '--', f_path])
+        # optimize for n==1, rev-list is much faster for that use-case
+        if limit == 1:
+            cmd = ['rev-list', '-1', self.raw_id, '--', f_path]
+        else:
+            cmd = ['log']
+            if limit:
+                cmd.extend(['-n', str(safe_int(limit, 0))])
+            cmd.extend(['--pretty=format: %H', '-s', self.raw_id, '--', f_path])
 
         output, __ = self.repository.run_git_command(cmd)
         commit_ids = re.findall(r'[0-9a-fA-F]{40}', output)
