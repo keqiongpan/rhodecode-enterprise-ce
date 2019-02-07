@@ -513,6 +513,8 @@ class ScmModel(BaseModel):
         :param commit_id: commit id for which to list nodes
         :param root_path: root path to list
         :param flat: return as a list, if False returns a dict with description
+        :param extended_info: show additional info such as md5, binary, size etc
+        :param content: add nodes content to the return data
         :param max_file_bytes: will not return file contents over this limit
 
         """
@@ -523,15 +525,14 @@ class ScmModel(BaseModel):
             commit = _repo.scm_instance().get_commit(commit_id=commit_id)
             root_path = root_path.lstrip('/')
             for __, dirs, files in commit.walk(root_path):
+
                 for f in files:
                     _content = None
-                    _data = f.unicode_path
-                    over_size_limit = (max_file_bytes is not None
-                                       and f.size > max_file_bytes)
+                    _data = f_name = f.unicode_path
 
                     if not flat:
                         _data = {
-                            "name": h.escape(f.unicode_path),
+                            "name": h.escape(f_name),
                             "type": "file",
                             }
                         if extended_info:
@@ -545,6 +546,8 @@ class ScmModel(BaseModel):
                             })
 
                         if content:
+                            over_size_limit = (max_file_bytes is not None
+                                               and f.size > max_file_bytes)
                             full_content = None
                             if not f.is_binary and not over_size_limit:
                                 full_content = safe_str(f.content)
@@ -553,11 +556,12 @@ class ScmModel(BaseModel):
                                 "content": full_content,
                             })
                     _files.append(_data)
+
                 for d in dirs:
-                    _data = d.unicode_path
+                    _data = d_name = d.unicode_path
                     if not flat:
                         _data = {
-                            "name": h.escape(d.unicode_path),
+                            "name": h.escape(d_name),
                             "type": "dir",
                             }
                     if extended_info:
