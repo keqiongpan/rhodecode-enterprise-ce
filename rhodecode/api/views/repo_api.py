@@ -428,8 +428,8 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         ``all`` (default), ``files`` and ``dirs``.
     :type ret_type: Optional(str)
     :param details: Returns extended information about nodes, such as
-        md5, binary, and or content.  The valid options are ``basic`` and
-        ``full``.
+        md5, binary, and or content.
+        The valid options are ``basic`` and ``full``.
     :type details: Optional(str)
     :param max_file_bytes: Only return file content under this file size bytes
     :type details: Optional(int)
@@ -440,12 +440,17 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
         id : <id_given_in_input>
         result: [
-                  {
-                    "name" : "<name>"
-                    "type" : "<type>",
-                    "binary": "<true|false>" (only in extended mode)
-                    "md5"  : "<md5 of file content>" (only in extended mode)
-                  },
+                    {
+                      "binary": false,
+                      "content": "File line\nLine2\n",
+                      "extension": "md",
+                      "lines": 2,
+                      "md5": "059fa5d29b19c0657e384749480f6422",
+                      "mimetype": "text/x-minidsrc",
+                      "name": "file.md",
+                      "size": 580,
+                      "type": "file"
+                    },
                   ...
                 ]
         error:  null
@@ -453,16 +458,14 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        _perms = (
-            'repository.admin', 'repository.write', 'repository.read',)
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     ret_type = Optional.extract(ret_type)
     details = Optional.extract(details)
     _extended_types = ['basic', 'full']
     if details not in _extended_types:
-        raise JSONRPCError(
-            'ret_type must be one of %s' % (','.join(_extended_types)))
+        raise JSONRPCError('ret_type must be one of %s' % (','.join(_extended_types)))
     extended_info = False
     content = False
     if details == 'basic':
@@ -496,6 +499,117 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         raise JSONRPCError(
             'failed to get repo: `%s` nodes' % repo.repo_name
         )
+
+
+@jsonrpc_method()
+def get_repo_file(request, apiuser, repoid, commit_id, file_path,
+                  max_file_bytes=Optional(None), details=Optional('basic')):
+    """
+    Returns a single file from repository at given revision.
+
+    This command can only be run using an |authtoken| with admin rights,
+    or users with at least read rights to |repos|.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository ID.
+    :type repoid: str or int
+    :param commit_id: The revision for which listing should be done.
+    :type commit_id: str
+    :param file_path: The path from which to start displaying.
+    :type file_path: str
+    :param details: Returns different set of information about nodes.
+        The valid options are ``minimal`` ``basic`` and ``full``.
+    :type details: Optional(str)
+    :param max_file_bytes: Only return file content under this file size bytes
+    :type details: Optional(int)
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result: {
+            "binary": false,
+            "extension": "py",
+            "lines": 35,
+            "content": "....",
+            "md5": "76318336366b0f17ee249e11b0c99c41",
+            "mimetype": "text/x-python",
+            "name": "python.py",
+            "size": 817,
+            "type": "file",
+        }
+        error:  null
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    details = Optional.extract(details)
+    _extended_types = ['minimal', 'minimal+search', 'basic', 'full']
+    if details not in _extended_types:
+        raise JSONRPCError(
+            'ret_type must be one of %s, got %s' % (','.join(_extended_types)), details)
+    extended_info = False
+    content = False
+
+    if details == 'minimal':
+        extended_info = False
+
+    elif details == 'basic':
+        extended_info = True
+
+    elif details == 'full':
+        extended_info = content = True
+
+    try:
+        # check if repo is not empty by any chance, skip quicker if it is.
+        _scm = repo.scm_instance()
+        if _scm.is_empty():
+            return None
+
+        node = ScmModel().get_node(
+            repo, commit_id, file_path, extended_info=extended_info,
+            content=content, max_file_bytes=max_file_bytes)
+
+    except Exception:
+        log.exception("Exception occurred while trying to get repo node")
+        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
+
+    return node
+
+
+@jsonrpc_method()
+def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
+    """
+    Returns a list of tree nodes for path at given revision. This api is built
+    strictly for usage in full text search building, and shouldn't be consumed
+
+    This command can only be run using an |authtoken| with admin rights,
+    or users with at least read rights to |repos|.
+
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    try:
+        # check if repo is not empty by any chance, skip quicker if it is.
+        _scm = repo.scm_instance()
+        if _scm.is_empty():
+            return []
+
+        tree_files = ScmModel().get_fts_data(repo, commit_id, root_path)
+        return tree_files
+
+    except Exception:
+        log.exception("Exception occurred while trying to get repo nodes")
+        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
 
 
 @jsonrpc_method()

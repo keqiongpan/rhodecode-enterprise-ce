@@ -372,6 +372,22 @@ class FileNode(Node):
         """
         return md5(self.raw_bytes)
 
+    def metadata_uncached(self):
+        """
+        Returns md5, binary flag of the file node, without any cache usage.
+        """
+
+        if self.commit:
+            content = self.commit.get_file_content(self.path)
+        else:
+            content = self._content
+
+        is_binary = content and '\0' in content
+        size = 0
+        if content:
+            size = len(content)
+        return is_binary, md5(content), size
+
     @LazyProperty
     def content(self):
         """

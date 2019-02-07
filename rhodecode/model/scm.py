@@ -573,10 +573,92 @@ class ScmModel(BaseModel):
                         })
                     _dirs.append(_data)
         except RepositoryError:
-            log.debug("Exception in get_nodes", exc_info=True)
+            log.exception("Exception in get_nodes")
             raise
 
         return _dirs, _files
+
+    def get_node(self, repo_name, commit_id, file_path,
+                 extended_info=False, content=False, max_file_bytes=None):
+        """
+        retrieve single node from commit
+        """
+        try:
+
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+
+            file_node = commit.get_node(file_path)
+            if file_node.is_dir():
+                raise RepositoryError('The given path is a directory')
+
+            _content = None
+            f_name = file_node.unicode_path
+
+            file_data = {
+                "name": h.escape(f_name),
+                "type": "file",
+            }
+
+            if extended_info:
+                file_data.update({
+                    "md5": file_node.md5,
+                    "binary": file_node.is_binary,
+                    "size": file_node.size,
+                    "extension": file_node.extension,
+                    "mimetype": file_node.mimetype,
+                    "lines": file_node.lines()[0]
+                })
+
+            if content:
+                over_size_limit = (max_file_bytes is not None
+                                   and file_node.size > max_file_bytes)
+                full_content = None
+                if not file_node.is_binary and not over_size_limit:
+                    full_content = safe_str(file_node.content)
+
+                file_data.update({
+                    "content": full_content,
+                })
+
+        except RepositoryError:
+            log.exception("Exception in get_node")
+            raise
+
+        return file_data
+
+    def get_fts_data(self, repo_name, commit_id, root_path='/'):
+        """
+        Fetch node tree for usage in full text search
+        """
+
+        tree_info = list()
+
+        try:
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+            root_path = root_path.lstrip('/')
+            for __, dirs, files in commit.walk(root_path):
+
+                for f in files:
+                    _content = None
+                    _data = f_name = f.unicode_path
+                    is_binary, md5, size = f.metadata_uncached()
+                    _data = {
+                        "name": h.escape(f_name),
+                        "md5": md5,
+                        "extension": f.extension,
+                        "binary": is_binary,
+                        "size": size
+                    }
+
+                    tree_info.append(_data)
+
+        except RepositoryError:
+            log.exception("Exception in get_nodes")
+            raise
+
+        return tree_info
 
     def create_nodes(self, user, repo, message, nodes, parent_commit=None,
                      author=None, trigger_push_hook=True):
