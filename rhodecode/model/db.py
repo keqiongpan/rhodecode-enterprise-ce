@@ -732,8 +732,6 @@ class User(Base, BaseModel):
         if not auth_token:
             return False
 
-        crypto_backend = auth.crypto_backend()
-
         roles = (roles or []) + [UserApiKeys.ROLE_ALL]
         tokens_q = UserApiKeys.query()\
             .filter(UserApiKeys.user_id == self.user_id)\
@@ -742,39 +740,42 @@ class User(Base, BaseModel):
 
         tokens_q = tokens_q.filter(UserApiKeys.role.in_(roles))
 
-        plain_tokens = []
-        hash_tokens = []
+        crypto_backend = auth.crypto_backend()
+        enc_token_map = {}
+        plain_token_map = {}
+        for token in tokens_q:
+            if token.api_key.startswith(crypto_backend.ENC_PREF):
+                enc_token_map[token.api_key] = token
+            else:
+                plain_token_map[token.api_key] = token
+        log.debug(
+            'Found %s plain and %s encrypted user tokens to check for authentication',
+            len(plain_token_map), len(enc_token_map))
 
-        user_tokens = tokens_q.all()
-        log.debug('Found %s user tokens to check for authentication', len(user_tokens))
-        for token in user_tokens:
-            log.debug('AUTH_TOKEN: checking if user token with id `%s` matches',
-                      token.user_api_key_id)
-            # verify scope first, since it's way faster than hash calculation of
-            # encrypted tokens
-            if token.repo_id:
-                # token has a scope, we need to verify it
-                if scope_repo_id != token.repo_id:
+        # plain token match comes first
+        match = plain_token_map.get(auth_token)
+
+        # check encrypted tokens now
+        if not match:
+            for token_hash, token in enc_token_map.items():
+                # NOTE(marcink): this is expensive to calculate, but most secure
+                if crypto_backend.hash_check(auth_token, token_hash):
+                    match = token
+                    break
+
+        if match:
+            log.debug('Found matching token %s', match)
+            if match.repo_id:
+                log.debug('Found scope, checking for scope match of token %s', match)
+                if match.repo_id == scope_repo_id:
+                    return True
+                else:
                     log.debug(
                         'AUTH_TOKEN: scope mismatch, token has a set repo scope: %s, '
                         'and calling scope is:%s, skipping further checks',
-                         token.repo, scope_repo_id)
-                    # token has a scope, and it doesn't match, skip token
-                    continue
-
-            if token.api_key.startswith(crypto_backend.ENC_PREF):
-                hash_tokens.append(token.api_key)
+                         match.repo, scope_repo_id)
+                    return False
             else:
-                plain_tokens.append(token.api_key)
-
-        is_plain_match = auth_token in plain_tokens
-        if is_plain_match:
-            return True
-
-        for hashed in hash_tokens:
-            # NOTE(marcink): this is expensive to calculate, but most secure
-            match = crypto_backend.hash_check(auth_token, hashed)
-            if match:
                 return True
 
         return False
