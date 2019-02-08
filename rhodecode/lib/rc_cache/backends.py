@@ -203,3 +203,12 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
             for key, value in mapping.items():
                 pipe.setex(key, self.redis_expiration_time, value)
             pipe.execute()
+
+    def get_mutex(self, key):
+        u = redis_backend.u
+        if self.distributed_lock:
+            lock_key = u('_lock_{0}').format(key)
+            log.debug('Trying to acquire Redis lock for key %s', lock_key)
+            return self.client.lock(lock_key, self.lock_timeout, self.lock_sleep)
+        else:
+            return None
