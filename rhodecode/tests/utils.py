@@ -117,7 +117,7 @@ class TestRequest(webob.BaseRequest):
 
 class CustomTestApp(TestApp):
     """
-    Custom app to make mustcontain more usefull, and extract special methods
+    Custom app to make mustcontain more Useful, and extract special methods
     """
     RequestClass = TestRequest
     rc_login_data = {}

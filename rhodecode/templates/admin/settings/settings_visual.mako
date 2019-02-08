@@ -181,7 +181,7 @@ ${h.secure_form(h.route_path('admin_settings_visual_update'), request=request)}
                 ${_('''Schema of clone url construction eg. '{scheme}://{user}@{netloc}/{repo}', available vars:
                        {scheme} 'http' or 'https' sent from running RhodeCode server,
                        {user}   current user username,
-                       {sys_user} current system user running this process, usefull for ssh,
+                       {sys_user} current system user running this process, Useful for ssh,
                        {hostname} hostname of this server running RhodeCode,
                        {netloc} network location/server host of running RhodeCode server,
                        {repo}   full repository name,
