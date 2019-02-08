@@ -29,13 +29,14 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
-from rhodecode.lib import audit_logger
+from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.celerylib.utils import get_task_id
-from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str
+from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
+from rhodecode.lib.vcs import RepositoryError
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
@@ -598,13 +599,37 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    repo_id = repo.repo_id
+    cache_seconds = safe_int(rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+    cache_on = cache_seconds > 0
+
+    cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+    region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+
+    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                           condition=cache_on)
+    def compute_fts_tree(repo_id, commit_id, root_path, cache_ver):
+        return ScmModel().get_fts_data(repo_id, commit_id, root_path)
+
     try:
         # check if repo is not empty by any chance, skip quicker if it is.
         _scm = repo.scm_instance()
         if _scm.is_empty():
             return []
+    except RepositoryError:
+        log.exception("Exception occurred while trying to get repo nodes")
+        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
 
-        tree_files = ScmModel().get_fts_data(repo, commit_id, root_path)
+    try:
+        # we need to resolve commit_id to a FULL sha for cache to work correctly.
+        # sending 'master' is a pointer that needs to be translated to current commit.
+        commit_id = _scm.get_commit(commit_id=commit_id).raw_id
+        log.debug(
+            'Computing FTS REPO TREE for repo_id %s commit_id `%s` '
+            'with caching: %s[TTL: %ss]' % (
+                repo_id, commit_id, cache_on, cache_seconds or 0))
+
+        tree_files = compute_fts_tree(repo_id, commit_id, root_path, 'v1')
         return tree_files
 
     except Exception:
