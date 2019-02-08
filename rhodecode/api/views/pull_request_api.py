@@ -502,6 +502,11 @@ def comment_pull_request(
         else:
             raise JSONRPCError('userid is not the same as your user')
 
+    if pull_request.is_closed():
+        raise JSONRPCError(
+            'pull request `%s` comment failed, pull request is closed' % (
+                pullrequestid,))
+
     if not PullRequestModel().check_user_read(
             pull_request, apiuser, api=True):
         raise JSONRPCError('repository `%s` does not exist' % (repoid,))
