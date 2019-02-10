@@ -43,6 +43,22 @@
     %endif
 </%def>
 
+<%def name="repo_icon(db_repo)">
+    %if h.is_hg(db_repo):
+        <i class="icon-hg"></i>
+    %endif
+    %if h.is_git(db_repo):
+        <i class="icon-git"></i>
+    %endif
+    %if h.is_svn(db_repo):
+        <i class="icon-svn"></i>
+    %endif
+</%def>
+
+<%def name="repo_group_icon()">
+    <i class="icon-folder-close"></i>
+</%def>
+
 <%def name="main()">
 <div class="box">
     %if c.repo_name:
@@ -80,9 +96,9 @@
             <div class="search-tags">
                 <span class="tag tag8">
                     %if c.repo_name:
-                        <a href="${h.route_path('search', _query={'q': c.cur_query})}">${_('Global Search')}</a>
+                        <a href="${h.route_path('search', _query={'q': c.cur_query, 'type': request.GET.get('type', 'content')})}">${_('Global Search')}</a>
                     %elif c.repo_group_name:
-                        <a href="${h.route_path('search', _query={'q': c.cur_query})}">${_('Global Search')}</a>
+                        <a href="${h.route_path('search', _query={'q': c.cur_query, 'type': request.GET.get('type', 'content')})}">${_('Global Search')}</a>
                     % else:
                         ${_('Global Search')}
                     %endif
@@ -91,22 +107,14 @@
             %if c.repo_name:
                 »
                 <span class="tag tag8">
-                    %if h.is_hg(c.rhodecode_db_repo):
-                        <i class="icon-hg"></i>
-                    %endif
-                    %if h.is_git(c.rhodecode_db_repo):
-                        <i class="icon-git"></i>
-                    %endif
-                    %if h.is_svn(c.rhodecode_db_repo):
-                        <i class="icon-svn"></i>
-                    %endif
+                    ${repo_icon(c.rhodecode_db_repo)}
                     ${c.repo_name}
                 </span>
 
             %elif c.repo_group_name:
                 »
                 <span class="tag tag8">
-                    <i class="icon-folder-close"></i>
+                    ${repo_group_icon()}
                     ${c.repo_group_name}
                 </span>
             %endif

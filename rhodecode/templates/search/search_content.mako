@@ -1,3 +1,4 @@
+<%namespace name="search" file="/search/search.mako"/>
 
 <%def name="highlight_text_file(has_matched_content, file_content, lexer, html_formatter, matching_lines, shown_matching_lines, url, use_hl_filter)">
 % if has_matched_content:
@@ -61,56 +62,83 @@
         <div class="codeblock-header">
           <h1>
             <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
-            %if repo_type == 'hg':
-                <i class="icon-hg"></i>
-            %elif repo_type == 'git':
-                <i class="icon-git"></i>
-            %elif repo_type == 'svn':
-                <i class="icon-svn"></i>
-            %endif
+            ${search.repo_icon(repo_type)}
             ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
           </h1>
+          ## level 1
+          <div class="file-container">
 
-          <div class="stats">
-            <span class="stats-filename">
-                <strong>
-                    <i class="icon-file-text"></i>
-                    ${h.link_to(h.literal(entry['f_path']), h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
-                </strong>
-            </span>
-            <span class="item last"><i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${entry['f_path']}" title="${_('Copy the full path')}"></i></span>
-            <br/>
-            <span class="stats-first-item">
-                ${len(matching_lines)} ${_ungettext('search match', 'search matches', len(matching_lines))}
-            </span>
+            <div class="pull-left">
+                <span class="stats-filename">
+                    <strong>
+                        <i class="icon-file-text"></i>
+                        ${h.link_to(h.literal(entry['f_path']), h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
+                    </strong>
+                </span>
+                <span class="item last">
+                    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${entry['f_path']}" title="${_('Copy the full path')}"></i>
+                </span>
+            </div>
 
-            <span >
-                %if entry.get('lines'):
-                  | ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
-                %endif
-            </span>
-
-            <span>
-                %if entry.get('size'):
-                  | ${h.format_byte_size_binary(entry['size'])}
-                %endif
-            </span>
-
-            <span>
-                %if entry.get('mimetype'):
-                  | ${entry.get('mimetype', "unknown mimetype")}
-                %endif
-            </span>
+            <div class="pull-right">
+              <div class="buttons">
+                <a id="file_history_overview_full" href="${h.route_path('repo_changelog_file',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
+                   ${_('Show Full History')}
+                </a>
+                 | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+                 | ${h.link_to(_('Raw'), h.route_path('repo_file_raw', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+                 | ${h.link_to(_('Download'), h.route_path('repo_file_download',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+              </div>
+            </div>
 
           </div>
-          <div class="buttons">
-            <a id="file_history_overview_full" href="${h.route_path('repo_changelog_file',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
-               ${_('Show Full History')}
-            </a>
-             | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-             | ${h.link_to(_('Raw'), h.route_path('repo_file_raw', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-             | ${h.link_to(_('Download'), h.route_path('repo_file_download',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+          ## level 2
+          <div class="file-container">
+
+            <div class="pull-left">
+                <span class="stats-first-item">
+                    %if entry.get('lines'):
+                      ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
+                      (${len(matching_lines)} ${_ungettext('matched', 'matched', len(matching_lines))})
+                    %endif
+                </span>
+
+                <span>
+                    %if entry.get('size'):
+                      | ${h.format_byte_size_binary(entry['size'])}
+                    %endif
+                </span>
+
+                <span>
+                    %if entry.get('mimetype'):
+                      | ${entry.get('mimetype', "unknown mimetype")}
+                    %endif
+                </span>
+            </div>
+
+            <div class="pull-right">
+                <div class="search-tags">
+
+                    <% repo_group = entry.get('repository_group')%>
+                    ## hiden if in repo group view
+                    % if repo_group and not c.repo_group_name:
+                    <span class="tag tag8">
+                        ${search.repo_group_icon()}
+                        <a href="${h.route_path('search_repo_group', repo_group_name=repo_group, _query={'q': c.cur_query})}">${_('Narrow to this repository group')}</a>
+                    </span>
+                    % endif
+                    ## hiden if in repo view
+                    % if not c.repo_name:
+                    <span class="tag tag8">
+                        ${search.repo_icon(repo_type)}
+                        <a href="${h.route_path('search_repo', repo_name=entry.get('repo_name'), _query={'q': c.cur_query})}">${_('Narrow to this repository')}</a>
+                    </span>
+                    % endif
+                </div>
+            </div>
+
           </div>
+
         </div>
         <div class="code-body search-code-body">
 

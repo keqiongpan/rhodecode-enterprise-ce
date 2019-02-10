@@ -1,4 +1,5 @@
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="search" file="/search/search.mako"/>
 
 % if c.formatted_results:
 
@@ -23,13 +24,7 @@
             <tr class="body">
                 <td class="td-componentname">
                     <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
-                    %if repo_type == 'hg':
-                        <i class="icon-hg"></i>
-                    %elif repo_type == 'git':
-                        <i class="icon-git"></i>
-                    %elif repo_type == 'svn':
-                        <i class="icon-svn"></i>
-                    %endif
+                    ${search.repo_icon(repo_type)}
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
                 <td class="td-commit">
