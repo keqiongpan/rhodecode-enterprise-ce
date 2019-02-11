@@ -426,7 +426,7 @@ class GitRepository(BaseRepository):
         except Exception:
             return
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=True):
         """
         Returns `GitCommit` object representing commit from git repository
         at the given `commit_id` or head (most recent commit) if None given.
@@ -438,8 +438,9 @@ class GitRepository(BaseRepository):
             commit_id = commit_idx
         commit_id = self._get_commit_id(commit_id)
         try:
-            # Need to call remote to translate id for tagging scenario
-            commit_id = self._remote.get_object(commit_id)["commit_id"]
+            if translate_tag:
+                # Need to call remote to translate id for tagging scenario
+                commit_id = self._remote.get_object(commit_id)["commit_id"]
             idx = self._commit_ids[commit_id]
         except KeyError:
             raise RepositoryError("Cannot get object with id %s" % commit_id)
@@ -448,7 +449,7 @@ class GitRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, show_hidden=False, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None, translate_tags=True):
         """
         Returns generator of `GitCommit` objects from start to end (both
         are inclusive), in ascending date order.
@@ -528,7 +529,8 @@ class GitRepository(BaseRepository):
         if start_pos or end_pos:
             commit_ids = commit_ids[start_pos: end_pos]
 
-        return CollectionGenerator(self, commit_ids, pre_load=pre_load)
+        return CollectionGenerator(self, commit_ids, pre_load=pre_load,
+                                   translate_tag=translate_tags)
 
     def get_diff(
             self, commit1, commit2, path='', ignore_whitespace=False,

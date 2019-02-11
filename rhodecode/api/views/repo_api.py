@@ -381,7 +381,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
 
     try:
         commits = vcs_repo.get_commits(
-            start_id=start_rev, pre_load=pre_load)
+            start_id=start_rev, pre_load=pre_load, translate_tags=False)
     except TypeError as e:
         raise JSONRPCError(safe_str(e))
     except Exception:

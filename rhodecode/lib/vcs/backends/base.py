@@ -401,7 +401,7 @@ class BaseRepository(object):
     # COMMITS
     # ==========================================================================
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
         Returns instance of `BaseCommit` class. If `commit_id` and `commit_idx`
         are both None, most recent commit is returned.
@@ -418,7 +418,7 @@ class BaseRepository(object):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, show_hidden=False, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None, translate_tags=None):
         """
         Returns iterator of `BaseCommit` objects from start to end
         not inclusive. This should behave just like a list, ie. end is not
@@ -431,6 +431,7 @@ class BaseRepository(object):
         :param branch_name:
         :param show_hidden:
         :param pre_load:
+        :param translate_tags:
         """
         raise NotImplementedError
 
@@ -1646,12 +1647,13 @@ class EmptyRepository(BaseRepository):
 
 class CollectionGenerator(object):
 
-    def __init__(self, repo, commit_ids, collection_size=None, pre_load=None):
+    def __init__(self, repo, commit_ids, collection_size=None, pre_load=None, translate_tag=None):
         self.repo = repo
         self.commit_ids = commit_ids
         # TODO: (oliver) this isn't currently hooked up
         self.collection_size = None
         self.pre_load = pre_load
+        self.translate_tag = translate_tag
 
     def __len__(self):
         if self.collection_size is not None:
@@ -1667,8 +1669,9 @@ class CollectionGenerator(object):
         """
         Allows backends to override the way commits are generated.
         """
-        return self.repo.get_commit(commit_id=commit_id,
-                                    pre_load=self.pre_load)
+        return self.repo.get_commit(
+            commit_id=commit_id, pre_load=self.pre_load,
+            translate_tag=self.translate_tag)
 
     def __getslice__(self, i, j):
         """
@@ -1676,7 +1679,8 @@ class CollectionGenerator(object):
         """
         commit_ids = self.commit_ids[i:j]
         return self.__class__(
-            self.repo, commit_ids, pre_load=self.pre_load)
+            self.repo, commit_ids, pre_load=self.pre_load,
+            translate_tag=self.translate_tag)
 
     def __repr__(self):
         return '<CollectionGenerator[len:%s]>' % (self.__len__())

@@ -141,7 +141,8 @@ class RepoSummaryView(RepoAppView):
 
         pre_load = ['author', 'branch', 'date', 'message']
         try:
-            collection = self.rhodecode_vcs_repo.get_commits(pre_load=pre_load)
+            collection = self.rhodecode_vcs_repo.get_commits(
+                pre_load=pre_load, translate_tags=False)
         except EmptyRepositoryError:
             collection = self.rhodecode_vcs_repo
 

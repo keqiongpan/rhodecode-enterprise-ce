@@ -414,7 +414,7 @@ class MercurialRepository(BaseRepository):
         """
         return os.path.join(self.path, '.hg', '.hgrc')
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
         Returns ``MercurialCommit`` object representing repository's
         commit at the given `commit_id` or `commit_idx`.
@@ -456,7 +456,7 @@ class MercurialRepository(BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, show_hidden=False, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None, translate_tags=None):
         """
         Returns generator of ``MercurialCommit`` objects from start to end
         (both are inclusive)

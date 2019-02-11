@@ -97,7 +97,7 @@ class RepoCommitsView(RepoAppView):
             if len(commit_range) == 2:
                 commits = self.rhodecode_vcs_repo.get_commits(
                     start_id=commit_range[0], end_id=commit_range[1],
-                    pre_load=pre_load)
+                    pre_load=pre_load, translate_tags=False)
                 commits = list(commits)
             else:
                 commits = [self.rhodecode_vcs_repo.get_commit(

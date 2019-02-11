@@ -269,7 +269,8 @@ class GitCommit(base.BaseCommit):
 
     def _make_commits(self, commit_ids, pre_load=None):
         return [
-            self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
+            self.repository.get_commit(commit_id=commit_id, pre_load=pre_load,
+                                       translate_tag=False)
             for commit_id in commit_ids]
 
     def get_file_mode(self, path):
