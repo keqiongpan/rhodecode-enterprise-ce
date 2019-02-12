@@ -303,10 +303,10 @@ class MercurialCommit(base.BaseCommit):
 
         alias = self.repository.alias
         for k, vals in self._submodules.iteritems():
-            loc = vals[0]
-            commit = vals[1]
-            dirnodes.append(
-                SubModuleNode(k, url=loc, commit=commit, alias=alias))
+            if vcspath.dirname(k) == path:
+                loc = vals[0]
+                commit = vals[1]
+                dirnodes.append(SubModuleNode(k, url=loc, commit=commit, alias=alias))
         nodes = dirnodes + filenodes
         # cache nodes
         for node in nodes:
