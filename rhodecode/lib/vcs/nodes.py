@@ -200,8 +200,12 @@ class Node(object):
         """
         Comparator using name of the node, needed for quick list sorting.
         """
+
         kind_cmp = cmp(self.kind, other.kind)
         if kind_cmp:
+            if isinstance(self, SubModuleNode):
+                # we make submodules equal to dirnode for "sorting" purposes
+                return NodeKind.DIR
             return kind_cmp
         return cmp(self.name, other.name)
 
