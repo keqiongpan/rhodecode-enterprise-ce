@@ -229,10 +229,11 @@ class RepoFilesView(RepoAppView):
             self, c, commit_id, f_path, full_load=False):
 
         repo_id = self.db_repo.repo_id
+        force_recache = self.get_recache_flag()
 
         cache_seconds = safe_int(
             rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
-        cache_on = cache_seconds > 0
+        cache_on = not force_recache and cache_seconds > 0
         log.debug(
             'Computing FILE TREE for repo_id %s commit_id `%s` and path `%s`'
             'with caching: %s[TTL: %ss]' % (

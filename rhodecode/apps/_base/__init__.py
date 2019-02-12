@@ -27,7 +27,7 @@ from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
 from rhodecode.lib import helpers as h, diffs
 from rhodecode.lib.utils2 import (
-    StrictAttributeDict, safe_int, datetime_to_time, safe_unicode)
+    StrictAttributeDict, str2bool, safe_int, datetime_to_time, safe_unicode)
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
@@ -277,6 +277,13 @@ class RepoAppView(BaseAppView):
         settings_model = VcsSettingsModel(repo=target_repo)
         settings = settings_model.get_general_settings()
         return settings.get(settings_key, default)
+
+    def get_recache_flag(self):
+        for flag_name in ['force_recache', 'force-recache', 'no-cache']:
+            flag_val = self.request.GET.get(flag_name)
+            if str2bool(flag_val):
+                return True
+        return False
 
 
 class PathFilter(object):

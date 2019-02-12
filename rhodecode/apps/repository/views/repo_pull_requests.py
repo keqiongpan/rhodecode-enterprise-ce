@@ -137,13 +137,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         })
         return data
 
-    def get_recache_flag(self):
-        for flag_name in ['force_recache', 'force-recache', 'no-cache']:
-            flag_val = self.request.GET.get(flag_name)
-            if str2bool(flag_val):
-                return True
-        return False
-
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
