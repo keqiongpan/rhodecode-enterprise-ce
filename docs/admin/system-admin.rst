@@ -30,3 +30,5 @@ The following are the most common system administration tasks.
     enable-debug
     admin-tricks
     cleanup-cmds
+    restore-deleted-repositories
+
