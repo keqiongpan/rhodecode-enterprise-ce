@@ -8,7 +8,7 @@ GRUNT=./node_binaries/grunt
 
 clean:
 	make test-clean
-	find . -type f \( -iname '*.c' -o -iname '*.pyc' -o -iname '*.so' \) -exec rm '{}' ';'
+	find . -type f \( -iname '*.c' -o -iname '*.pyc' -o -iname '*.so' -o -iname '*.orig' \) -exec rm '{}' ';'
 
 test:
 	make test-clean
