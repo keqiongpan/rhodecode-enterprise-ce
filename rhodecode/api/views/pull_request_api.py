@@ -26,7 +26,7 @@ from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
-    validate_repo_permissions, resolve_ref_or_error)
+    validate_repo_permissions, resolve_ref_or_error, validate_set_owner_permissions)
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
@@ -614,8 +614,8 @@ def comment_pull_request(
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
-        title=Optional(''), description=Optional(''), description_renderer=Optional(''),
-        reviewers=Optional(None)):
+        owner=Optional(OAttr('apiuser')), title=Optional(''), description=Optional(''),
+        description_renderer=Optional(''), reviewers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -636,6 +636,8 @@ def create_pull_request(
     :type source_ref: str
     :param target_ref: Set the target ref name.
     :type target_ref: str
+    :param owner: user_id or username
+    :type owner: Optional(str)
     :param title: Optionally Set the pull request title, it's generated otherwise
     :type title: str
     :param description: Set the pull request description.
@@ -658,6 +660,8 @@ def create_pull_request(
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, source_repo, source_db_repo, _perms)
+
+    owner = validate_set_owner_permissions(apiuser, owner)
 
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
@@ -704,7 +708,7 @@ def create_pull_request(
 
     # recalculate reviewers logic, to make sure we can validate this
     reviewer_rules = get_default_reviewers_data(
-        apiuser.get_instance(), source_db_repo,
+        owner, source_db_repo,
         source_commit, target_db_repo, target_commit)
 
     # now MERGE our given with the calculated
@@ -731,7 +735,7 @@ def create_pull_request(
     description_renderer = Optional.extract(description_renderer) or default_system_renderer
 
     pull_request = PullRequestModel().create(
-        created_by=apiuser.user_id,
+        created_by=owner.user_id,
         source_repo=source_repo,
         source_ref=full_source_ref,
         target_repo=target_repo,
