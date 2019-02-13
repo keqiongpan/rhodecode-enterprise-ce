@@ -78,15 +78,18 @@ def test_webook_parse_url_for_create_event(base_data, template, expected_urls):
     ('http://server.com/${repo_name}/${pull_request_id}',
      ['http://server.com/foo/999']),
     ('http://server.com/${repo_name}/${pull_request_url}',
-     ['http://server.com/foo/http://pr-url.com']),
+     ['http://server.com/foo/http%3A//pr-url.com']),
+    ('http://server.com/${repo_name}/${pull_request_url}/?TITLE=${pull_request_title}',
+     ['http://server.com/foo/http%3A//pr-url.com/?TITLE=example-pr-title%20Ticket%20%23123']),
+    ('http://server.com/${repo_name}/?SHADOW_URL=${pull_request_shadow_url}',
+     ['http://server.com/foo/?SHADOW_URL=http%3A//pr-url.com/repository']),
 ])
-def test_webook_parse_url_for_pull_request_event(
-        base_data, template, expected_urls):
+def test_webook_parse_url_for_pull_request_event(base_data, template, expected_urls):
 
     base_data['pullrequest'] = {
         'pull_request_id': 999,
         'url': 'http://pr-url.com',
-        'title': 'example-pr-title',
+        'title': 'example-pr-title Ticket #123',
         'commits_uid': 'abcdefg1234',
         'shadow_url': 'http://pr-url.com/repository'
     }

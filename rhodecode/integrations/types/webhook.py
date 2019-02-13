@@ -188,7 +188,7 @@ class WebhookIntegrationType(IntegrationTypeBase):
         handler = WebhookDataHandler(template_url, headers)
 
         url_calls = handler(event, data)
-        log.debug('webhook: calling following urls: %s', [x[0] for x in url_calls])
+        log.debug('Webhook: calling following urls: %s', [x[0] for x in url_calls])
 
         run_task(post_to_webhook, url_calls, self.settings)
 
