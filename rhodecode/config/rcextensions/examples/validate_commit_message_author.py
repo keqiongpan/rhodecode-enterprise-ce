@@ -14,19 +14,6 @@
     'hook_type': '',
     'user_agent': 'Client user agent, e.g git or mercurial CLI version',
 })
-@has_kwargs({
-    'server_url': 'url of instance that triggered this hook',
-    'config': 'path to .ini config used',
-    'scm': 'type of version control "git", "hg", "svn"',
-    'username': 'username of actor who triggered this event',
-    'ip': 'ip address of actor who triggered this hook',
-    'action': '',
-    'repository': 'repository name',
-    'repo_store_path': 'full path to where repositories are stored',
-    'commit_ids': 'pre transaction metadata for commit ids',
-    'hook_type': '',
-    'user_agent': 'Client user agent, e.g git or mercurial CLI version',
-})
 def _pre_push_hook(*args, **kwargs):
     """
     Post push hook
