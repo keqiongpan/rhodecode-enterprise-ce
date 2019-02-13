@@ -24,6 +24,7 @@
 generate_authorized_keyfile = 'ssh.generate_authorized_keyfile'
 authorized_keys_file_path = 'ssh.authorized_keys_file_path'
 authorized_keys_line_ssh_opts = 'ssh.authorized_keys_ssh_opts'
+ssh_key_generator_enabled = 'ssh.enable_ui_key_generator'
 wrapper_cmd = 'ssh.wrapper_cmd'
 wrapper_allow_shell = 'ssh.wrapper_cmd_allow_shell'
 enable_debug_logging = 'ssh.enable_debug_logging'

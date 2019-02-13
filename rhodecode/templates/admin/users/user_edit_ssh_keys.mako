@@ -50,7 +50,9 @@
                         </div>
                         <div class="input">
                             ${h.text('description', class_='medium', placeholder=_('Description'))}
-                            <a href="${h.route_path('edit_user_ssh_keys_generate_keypair', user_id=c.user.user_id)}">${_('Generate random RSA key')}</a>
+                            % if c.ssh_key_generator_enabled:
+                                <a href="${h.route_path('edit_user_ssh_keys_generate_keypair', user_id=c.user.user_id)}">${_('Generate random RSA key')}</a>
+                            % endif
                         </div>
                      </div>
 

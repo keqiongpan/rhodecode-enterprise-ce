@@ -55,7 +55,9 @@
                         </div>
                         <div class="input">
                             ${h.text('description', class_='medium', placeholder=_('Description'))}
-                            <a href="${h.route_path('my_account_ssh_keys_generate')}">${_('Generate random RSA key')}</a>
+                            % if c.ssh_key_generator_enabled:
+                                <a href="${h.route_path('my_account_ssh_keys_generate')}">${_('Generate random RSA key')}</a>
+                            % endif
                         </div>
                      </div>
 
@@ -70,7 +72,7 @@
                       ${h.reset('reset',_('Reset'),class_="btn")}
                     </div>
                     % if c.default_key:
-                        ${_('Click add to use this generate SSH key')}
+                        ${_('Click add to use this generated SSH key')}
                     % endif
                 </div>
             </div>

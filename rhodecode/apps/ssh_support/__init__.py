@@ -36,6 +36,7 @@ def _sanitize_settings_and_apply_defaults(settings):
     _bool_setting(settings, config_keys.generate_authorized_keyfile, 'false')
     _bool_setting(settings, config_keys.wrapper_allow_shell, 'false')
     _bool_setting(settings, config_keys.enable_debug_logging, 'false')
+    _bool_setting(settings, config_keys.ssh_key_generator_enabled, 'true')
 
     _string_setting(settings, config_keys.authorized_keys_file_path,
                     '~/.ssh/authorized_keys_rhodecode',

@@ -73,6 +73,10 @@ following instructions.
         ssh.executable.git = ~/.rccontrol/vcsserver-1/profile/bin/git
         ssh.executable.svn = ~/.rccontrol/vcsserver-1/profile/bin/svnserve
 
+        ## Enables SSH key generator web interface. Disabling this still allows users
+        ## to add their own keys.
+        ssh.enable_ui_key_generator = true
+
 
 3. Set base_url for instance to enable proper event handling (Optional):
 

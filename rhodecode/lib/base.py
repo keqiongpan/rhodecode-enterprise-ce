@@ -348,6 +348,8 @@ def attach_context_attributes(context, request, user_id=None):
         config.get('labs_settings_active', 'false'))
     context.ssh_enabled = str2bool(
         config.get('ssh.generate_authorized_keyfile', 'false'))
+    context.ssh_key_generator_enabled = str2bool(
+        config.get('ssh.enable_ui_key_generator', 'true'))
 
     context.visual.allow_repo_location_change = str2bool(
         config.get('allow_repo_location_change', True))
