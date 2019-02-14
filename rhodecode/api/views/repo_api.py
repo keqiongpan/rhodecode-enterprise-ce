@@ -581,8 +581,10 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
             content=content, max_file_bytes=max_file_bytes, cache=cache)
 
     except Exception:
-        log.exception("Exception occurred while trying to get repo node")
-        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
+        log.exception("Exception occurred while trying to get repo %s file",
+                      repo.repo_name)
+        raise JSONRPCError('failed to get repo: `{}` file at path {}'.format(
+            repo.repo_name, file_path))
 
     return node
 
