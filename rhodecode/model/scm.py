@@ -583,7 +583,7 @@ class ScmModel(BaseModel):
         return _dirs, _files
 
     def get_node(self, repo_name, commit_id, file_path,
-                 extended_info=False, content=False, max_file_bytes=None):
+                 extended_info=False, content=False, max_file_bytes=None, cache=True):
         """
         retrieve single node from commit
         """
@@ -606,12 +606,21 @@ class ScmModel(BaseModel):
 
             if extended_info:
                 file_data.update({
-                    "md5": file_node.md5,
-                    "binary": file_node.is_binary,
-                    "size": file_node.size,
                     "extension": file_node.extension,
                     "mimetype": file_node.mimetype,
-                    "lines": file_node.lines()[0]
+                })
+
+                if cache:
+                    md5 = file_node.md5
+                    is_binary = file_node.is_binary
+                    size = file_node.size
+                else:
+                    is_binary, md5, size, _content = file_node.metadata_uncached()
+
+                file_data.update({
+                    "md5": md5,
+                    "binary": is_binary,
+                    "size": size,
                 })
 
             if content:
@@ -619,7 +628,13 @@ class ScmModel(BaseModel):
                                    and file_node.size > max_file_bytes)
                 full_content = None
                 if not file_node.is_binary and not over_size_limit:
-                    full_content = safe_str(file_node.content)
+                    if cache:
+                        full_content = safe_str(file_node.content)
+                    else:
+                        if _content is None:
+                            is_binary, md5, size, _content = \
+                                file_node.metadata_uncached()
+                        full_content = safe_str(_content)
 
                 file_data.update({
                     "content": full_content,
@@ -647,7 +662,7 @@ class ScmModel(BaseModel):
                 for f in files:
                     _content = None
                     _data = f_name = f.unicode_path
-                    is_binary, md5, size = f.metadata_uncached()
+                    is_binary, md5, size, _content = f.metadata_uncached()
                     _data = {
                         "name": h.escape(f_name),
                         "md5": md5,

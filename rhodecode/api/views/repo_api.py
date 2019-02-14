@@ -504,7 +504,8 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
 @jsonrpc_method()
 def get_repo_file(request, apiuser, repoid, commit_id, file_path,
-                  max_file_bytes=Optional(None), details=Optional('basic')):
+                  max_file_bytes=Optional(None), details=Optional('basic'),
+                  cache=Optional(True)):
     """
     Returns a single file from repository at given revision.
 
@@ -523,8 +524,10 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
         The valid options are ``minimal`` ``basic`` and ``full``.
     :type details: Optional(str)
     :param max_file_bytes: Only return file content under this file size bytes
-    :type details: Optional(int)
-
+    :type max_file_bytes: Optional(int)
+    :param cache: Use internal caches for fetching files. If disabled fetching
+        files is slower but more memory efficient
+    :type cache: Optional(bool)
     Example output:
 
     .. code-block:: bash
@@ -549,6 +552,7 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    cache = Optional.extract(cache, binary=True)
     details = Optional.extract(details)
     _extended_types = ['minimal', 'minimal+search', 'basic', 'full']
     if details not in _extended_types:
@@ -574,7 +578,7 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
 
         node = ScmModel().get_node(
             repo, commit_id, file_path, extended_info=extended_info,
-            content=content, max_file_bytes=max_file_bytes)
+            content=content, max_file_bytes=max_file_bytes, cache=cache)
 
     except Exception:
         log.exception("Exception occurred while trying to get repo node")

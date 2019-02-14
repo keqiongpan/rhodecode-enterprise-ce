@@ -381,16 +381,25 @@ class FileNode(Node):
         Returns md5, binary flag of the file node, without any cache usage.
         """
 
-        if self.commit:
-            content = self.commit.get_file_content(self.path)
-        else:
-            content = self._content
+        content = self.content_uncached()
 
         is_binary = content and '\0' in content
         size = 0
         if content:
             size = len(content)
-        return is_binary, md5(content), size
+
+        return is_binary, md5(content), size, content
+
+    def content_uncached(self):
+        """
+        Returns lazily content of the FileNode. If possible, would try to
+        decode content from UTF-8.
+        """
+        if self.commit:
+            content = self.commit.get_file_content(self.path)
+        else:
+            content = self._content
+        return content
 
     @LazyProperty
     def content(self):
