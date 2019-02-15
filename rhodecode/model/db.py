@@ -2460,7 +2460,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         base_table_args,
     )
     __mapper_args__ = {'order_by': 'group_name'}
@@ -2481,8 +2480,7 @@ class RepoGroup(Base, BaseModel):
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
-    integrations = relationship('Integration',
-                                cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -2491,6 +2489,16 @@ class RepoGroup(Base, BaseModel):
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (
             self.__class__.__name__, self.group_id, self.group_name)
+
+    @validates('group_parent_id')
+    def validate_group_parent_id(self, key, val):
+        """
+        Check cycle references for a parent group to self
+        """
+        if self.group_id and val:
+            assert val != self.group_id
+
+        return val
 
     @hybrid_property
     def description_safe(self):

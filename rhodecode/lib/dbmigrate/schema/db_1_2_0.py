@@ -680,7 +680,7 @@ class Repository(Base, BaseModel):
 class Group(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (UniqueConstraint('group_name', 'group_parent_id'),
-                      CheckConstraint('group_id != group_parent_id'), {'extend_existing':True},)
+                      {'extend_existing':True},)
     __mapper_args__ = {'order_by':'group_name'}
 
     group_id = Column("group_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)

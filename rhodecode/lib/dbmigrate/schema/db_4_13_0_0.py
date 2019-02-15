@@ -2361,7 +2361,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )

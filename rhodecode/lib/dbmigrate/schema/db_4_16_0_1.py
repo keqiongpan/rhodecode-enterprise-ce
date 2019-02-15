@@ -2459,7 +2459,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         base_table_args,
     )
     __mapper_args__ = {'order_by': 'group_name'}
