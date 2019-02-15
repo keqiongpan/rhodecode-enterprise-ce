@@ -357,7 +357,9 @@ class MarkupRenderer(object):
         if leading_newline:
             source += '<br />'
         source += rendered_source.replace("\n", '<br />')
-        return source
+
+        rendered = cls.bleach_clean(source)
+        return rendered
 
     @classmethod
     def markdown(cls, source, safe=True, flavored=True, mentions=False,
