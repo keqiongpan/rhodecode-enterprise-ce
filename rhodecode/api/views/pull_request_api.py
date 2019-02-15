@@ -285,12 +285,13 @@ def merge_pull_request(
         repo = get_repo_or_error(repoid)
     else:
         repo = pull_request.target_repo
-
+    auth_user = apiuser
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
                     user=apiuser, repo_name=repo.repo_name)):
             apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
         else:
             raise JSONRPCError('userid is not the same as your user')
 
@@ -301,9 +302,8 @@ def merge_pull_request(
                 pull_request.pull_request_state, PullRequest.STATE_CREATED))
 
     with pull_request.set_state(PullRequest.STATE_UPDATING):
-        check = MergeCheck.validate(
-            pull_request, auth_user=apiuser,
-            translator=request.translate)
+        check = MergeCheck.validate(pull_request, auth_user=auth_user,
+                                    translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:
@@ -319,14 +319,13 @@ def merge_pull_request(
     target_repo = pull_request.target_repo
     extras = vcs_operation_context(
         request.environ, repo_name=target_repo.repo_name,
-        username=apiuser.username, action='push',
+        username=auth_user.username, action='push',
         scm=target_repo.repo_type)
     with pull_request.set_state(PullRequest.STATE_UPDATING):
         merge_response = PullRequestModel().merge_repo(
             pull_request, apiuser, extras=extras)
     if merge_response.executed:
-        PullRequestModel().close_pull_request(
-            pull_request.pull_request_id, apiuser)
+        PullRequestModel().close_pull_request(pull_request.pull_request_id, auth_user)
 
         Session().commit()
 
@@ -494,11 +493,13 @@ def comment_pull_request(
     else:
         repo = pull_request.target_repo
 
+    auth_user = apiuser
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
                     user=apiuser, repo_name=repo.repo_name)):
             apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
         else:
             raise JSONRPCError('userid is not the same as your user')
 
@@ -574,7 +575,7 @@ def comment_pull_request(
         renderer=renderer,
         comment_type=comment_type,
         resolves_comment_id=resolves_comment_id,
-        auth_user=apiuser
+        auth_user=auth_user
     )
 
     if allowed_to_change_status and status:
