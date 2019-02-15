@@ -219,11 +219,11 @@ self: super: {
     };
   };
   "click" = super.buildPythonPackage {
-    name = "click-6.6";
+    name = "click-7.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7a/00/c14926d8232b36b08218067bcd5853caefb4737cda3f0a47437151344792/click-6.6.tar.gz";
-      sha256 = "1sggipyz52crrybwbr9xvwxd4aqigvplf53k9w3ygxmzivd1jsnc";
+      url = "https://files.pythonhosted.org/packages/f8/5c/f60e9d8a1e77005f664b76ff8aeaee5bc05d0a91798afd7f53fc998dbc47/Click-7.0.tar.gz";
+      sha256 = "1mzjixd4vjbjvzb6vylki9w1556a9qmdh35kzmq6cign46av952v";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1838,7 +1838,7 @@ self: super: {
     };
   };
   "rhodecode-tools" = super.buildPythonPackage {
-    name = "rhodecode-tools-1.1.0";
+    name = "rhodecode-tools-1.2.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."click"
@@ -1855,8 +1855,8 @@ self: super: {
       self."elasticsearch1-dsl"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.1.0.tar.gz?md5=cc320c277cb2add546220290ac9be626";
-      sha256 = "1wbnnfrzyp0d4ys55vj5vnfrzfhwlqgdhc8yv8i6kwinizf8hfrn";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.2.0.tar.gz?md5=a98b13351d7a88b74a4030c8180dd9c3";
+      sha256 = "04xxvqz67rsqjzxia2j7wpwqk0k51gk6kfrafkbsiag5s3yqk1mk";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];
@@ -1900,11 +1900,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.7.3";
+    name = "setuptools-40.8.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/90/86/00ab839a8647e0fee435fe77f70795865ca4534387872a6c23b22fd85ac8/setuptools-40.7.3.zip";
-      sha256 = "0c54kklk7c97g0dhm7ilg9cd4n4s464ps6mspsa5m9hhrcqxsbvh";
+      url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
+      sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
