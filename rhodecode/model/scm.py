@@ -623,18 +623,26 @@ class ScmModel(BaseModel):
                     "size": size,
                 })
 
-            if content:
-                over_size_limit = (max_file_bytes is not None
-                                   and file_node.size > max_file_bytes)
+            if content and cache:
+                # get content + cache
+                size = file_node.size
+                over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
                 full_content = None
                 if not file_node.is_binary and not over_size_limit:
-                    if cache:
-                        full_content = safe_str(file_node.content)
-                    else:
-                        if _content is None:
-                            is_binary, md5, size, _content = \
-                                file_node.metadata_uncached()
-                        full_content = safe_str(_content)
+                    full_content = safe_unicode(file_node.content)
+
+                file_data.update({
+                    "content": full_content,
+                })
+            elif content:
+                # get content *without* cache
+                if _content is None:
+                    is_binary, md5, size, _content = file_node.metadata_uncached()
+
+                over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
+                full_content = None
+                if not is_binary and not over_size_limit:
+                    full_content = safe_unicode(_content)
 
                 file_data.update({
                     "content": full_content,
