@@ -668,11 +668,9 @@ class ScmModel(BaseModel):
             for __, dirs, files in commit.walk(root_path):
 
                 for f in files:
-                    _content = None
-                    _data = f_name = f.unicode_path
                     is_binary, md5, size, _content = f.metadata_uncached()
                     _data = {
-                        "name": h.escape(f_name),
+                        "name": f.unicode_path,
                         "md5": md5,
                         "extension": f.extension,
                         "binary": is_binary,
