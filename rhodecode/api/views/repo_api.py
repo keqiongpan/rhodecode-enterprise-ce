@@ -37,6 +37,7 @@ from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.vcs import RepositoryError
+from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
@@ -579,7 +580,9 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
         node = ScmModel().get_node(
             repo, commit_id, file_path, extended_info=extended_info,
             content=content, max_file_bytes=max_file_bytes, cache=cache)
-
+    except NodeDoesNotExistError:
+        raise JSONRPCError('There is no file in repo: `{}` at path `{}` for commit: `{}`'.format(
+            repo.repo_name, file_path, commit_id))
     except Exception:
         log.exception("Exception occurred while trying to get repo %s file",
                       repo.repo_name)
