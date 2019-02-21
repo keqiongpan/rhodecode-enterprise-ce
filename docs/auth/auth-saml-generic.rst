@@ -15,4 +15,5 @@ Please check for reference two example providers:
 
    auth-saml-duosecurity
    auth-saml-onelogin
+   auth-saml-bulk-enroll-users
 
