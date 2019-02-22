@@ -103,7 +103,7 @@ get_method
    :param apiuser: This is filled automatically from the |authtoken|.
    :type apiuser: AuthUser
    :param pattern: pattern to match method names against
-   :type older_then: Optional("*")
+   :type pattern: Optional("*")
 
    Example output:
 
@@ -230,5 +230,39 @@ rescan_repos
      error :  {
        'Error occurred during rescan repositories action'
      }
+
+
+store_exception 
+---------------
+
+.. py:function:: store_exception(apiuser, exc_data_json, prefix=<Optional:'rhodecode'>)
+
+   Stores sent exception inside the built-in exception tracker in |RCE| server.
+
+   This command can only be run using an |authtoken| with admin rights to
+   the specified repository.
+
+   This command takes the following options:
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+
+   :param exc_data_json: JSON data with exception e.g
+       {"exc_traceback": "Value `1` is not allowed", "exc_type_name": "ValueError"}
+   :type exc_data_json: JSON data
+
+   :param prefix: prefix for error type, e.g 'rhodecode', 'vcsserver', 'rhodecode-tools'
+   :type prefix: Optional("rhodecode")
+
+   Example output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     "result": {
+       "exc_id": 139718459226384,
+       "exc_url": "http://localhost:8080/_admin/settings/exceptions/139718459226384"
+     }
+     error :  null
 
 

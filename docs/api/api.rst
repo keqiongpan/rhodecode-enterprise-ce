@@ -196,7 +196,8 @@ are not required in args.
 .. --- API DEFS MARKER ---
 .. toctree::
 
-   methods/views
+   methods/repo-methods
+   methods/store-methods
    methods/license-methods
    methods/deprecated-methods
    methods/gist-methods

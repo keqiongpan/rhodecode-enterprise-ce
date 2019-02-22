@@ -394,15 +394,54 @@ get_repo_changesets
       of changed files.
 
 
-get_repo_nodes 
---------------
+get_repo_comments 
+-----------------
 
-.. py:function:: get_repo_nodes(apiuser, repoid, revision, root_path, ret_type=<Optional:'all'>, details=<Optional:'basic'>, max_file_bytes=<Optional:None>)
+.. py:function:: get_repo_comments(apiuser, repoid, commit_id=<Optional:None>, comment_type=<Optional:None>, userid=<Optional:None>)
 
-   Returns a list of nodes and children in a flat list for a given
-   path at given revision.
+   Get all comments for a repository
 
-   It's possible to specify ret_type to show only `files` or `dirs`.
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param repoid: Set the repository name or repository ID.
+   :type repoid: str or int
+   :param commit_id: Optionally filter the comments by the commit_id
+   :type commit_id: Optional(str), default: None
+   :param comment_type: Optionally filter the comments by the comment_type
+       one of: 'note', 'todo'
+   :type comment_type: Optional(str), default: None
+   :param userid: Optionally filter the comments by the author of comment
+   :type userid: Optional(str or int), Default: None
+
+   Example error output:
+
+   .. code-block:: bash
+
+       {
+           "id" : <id_given_in_input>,
+           "result" : [
+               {
+                 "comment_author": <USER_DETAILS>,
+                 "comment_created_on": "2017-02-01T14:38:16.309",
+                 "comment_f_path": "file.txt",
+                 "comment_id": 282,
+                 "comment_lineno": "n1",
+                 "comment_resolved_by": null,
+                 "comment_status": [],
+                 "comment_text": "This file needs a header",
+                 "comment_type": "todo"
+               }
+           ],
+           "error" :  null
+       }
+
+
+get_repo_file 
+-------------
+
+.. py:function:: get_repo_file(apiuser, repoid, commit_id, file_path, max_file_bytes=<Optional:None>, details=<Optional:'basic'>, cache=<Optional:True>)
+
+   Returns a single file from repository at given revision.
 
    This command can only be run using an |authtoken| with admin rights,
    or users with at least read rights to |repos|.
@@ -411,35 +450,102 @@ get_repo_nodes
    :type apiuser: AuthUser
    :param repoid: The repository name or repository ID.
    :type repoid: str or int
-   :param revision: The revision for which listing should be done.
-   :type revision: str
-   :param root_path: The path from which to start displaying.
-   :type root_path: str
-   :param ret_type: Set the return type. Valid options are
-       ``all`` (default), ``files`` and ``dirs``.
-   :type ret_type: Optional(str)
-   :param details: Returns extended information about nodes, such as
-       md5, binary, and or content.  The valid options are ``basic`` and
-       ``full``.
+   :param commit_id: The revision for which listing should be done.
+   :type commit_id: str
+   :param file_path: The path from which to start displaying.
+   :type file_path: str
+   :param details: Returns different set of information about nodes.
+       The valid options are ``minimal`` ``basic`` and ``full``.
    :type details: Optional(str)
    :param max_file_bytes: Only return file content under this file size bytes
-   :type details: Optional(int)
-
+   :type max_file_bytes: Optional(int)
+   :param cache: Use internal caches for fetching files. If disabled fetching
+       files is slower but more memory efficient
+   :type cache: Optional(bool)
    Example output:
 
    .. code-block:: bash
 
        id : <id_given_in_input>
-       result: [
-                 {
-                   "name" : "<name>"
-                   "type" : "<type>",
-                   "binary": "<true|false>" (only in extended mode)
-                   "md5"  : "<md5 of file content>" (only in extended mode)
-                 },
-                 ...
-               ]
+       result: {
+           "binary": false,
+           "extension": "py",
+           "lines": 35,
+           "content": "....",
+           "md5": "76318336366b0f17ee249e11b0c99c41",
+           "mimetype": "text/x-python",
+           "name": "python.py",
+           "size": 817,
+           "type": "file",
+       }
        error:  null
+
+
+get_repo_fts_tree 
+-----------------
+
+.. py:function:: get_repo_fts_tree(apiuser, repoid, commit_id, root_path)
+
+   Returns a list of tree nodes for path at given revision. This api is built
+   strictly for usage in full text search building, and shouldn't be consumed
+
+   This command can only be run using an |authtoken| with admin rights,
+   or users with at least read rights to |repos|.
+
+
+get_repo_nodes 
+--------------
+
+.. py:function:: get_repo_nodes(apiuser, repoid, revision, root_path, ret_type=<Optional:'all'>, details=<Optional:'basic'>, max_file_bytes=<Optional:None>)
+
+   Returns a list of nodes and children in a flat list for a given
+       path at given revision.
+
+       It's possible to specify ret_type to show only `files` or `dirs`.
+
+       This command can only be run using an |authtoken| with admin rights,
+       or users with at least read rights to |repos|.
+
+       :param apiuser: This is filled automatically from the |authtoken|.
+       :type apiuser: AuthUser
+       :param repoid: The repository name or repository ID.
+       :type repoid: str or int
+       :param revision: The revision for which listing should be done.
+       :type revision: str
+       :param root_path: The path from which to start displaying.
+       :type root_path: str
+       :param ret_type: Set the return type. Valid options are
+           ``all`` (default), ``files`` and ``dirs``.
+       :type ret_type: Optional(str)
+       :param details: Returns extended information about nodes, such as
+           md5, binary, and or content.
+           The valid options are ``basic`` and ``full``.
+       :type details: Optional(str)
+       :param max_file_bytes: Only return file content under this file size bytes
+       :type details: Optional(int)
+
+       Example output:
+
+       .. code-block:: bash
+
+           id : <id_given_in_input>
+           result: [
+                       {
+                         "binary": false,
+                         "content": "File line
+   Line2
+   ",
+                         "extension": "md",
+                         "lines": 2,
+                         "md5": "059fa5d29b19c0657e384749480f6422",
+                         "mimetype": "text/x-minidsrc",
+                         "name": "file.md",
+                         "size": 580,
+                         "type": "file"
+                       },
+                     ...
+                   ]
+           error:  null
 
 
 get_repo_refs 
