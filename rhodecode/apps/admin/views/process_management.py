@@ -119,8 +119,7 @@ class AdminProcessManagementView(BaseAppView):
         result = []
 
         def on_terminate(proc):
-            msg = "process `PID:{}` terminated with exit code {}".format(
-                proc.pid, proc.returncode or 0)
+            msg = "terminated"
             result.append(msg)
 
         procs = []
