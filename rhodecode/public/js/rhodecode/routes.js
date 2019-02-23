@@ -102,7 +102,8 @@ function registerRCRoutes() {
     pyroutes.register('user_edit_global_perms_update', '/_admin/users/%(user_id)s/edit/global_permissions/update', ['user_id']);
     pyroutes.register('user_update', '/_admin/users/%(user_id)s/update', ['user_id']);
     pyroutes.register('user_delete', '/_admin/users/%(user_id)s/delete', ['user_id']);
-    pyroutes.register('user_force_password_reset', '/_admin/users/%(user_id)s/password_reset', ['user_id']);
+    pyroutes.register('user_enable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_enable', ['user_id']);
+    pyroutes.register('user_disable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_disable', ['user_id']);
     pyroutes.register('user_create_personal_repo_group', '/_admin/users/%(user_id)s/create_repo_group', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '/_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
     pyroutes.register('edit_user_ssh_keys', '/_admin/users/%(user_id)s/edit/ssh_keys', ['user_id']);
@@ -135,6 +136,8 @@ function registerRCRoutes() {
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
     pyroutes.register('channelstream_subscribe', '/_admin/channelstream/subscribe', []);
     pyroutes.register('channelstream_proxy', '/_channelstream', []);
+    pyroutes.register('upload_file', '/_file_store/upload', []);
+    pyroutes.register('download_file', '/_file_store/download/%(fid)s', ['fid']);
     pyroutes.register('logout', '/_admin/logout', []);
     pyroutes.register('reset_password', '/_admin/password_reset', []);
     pyroutes.register('reset_password_confirmation', '/_admin/password_reset_confirmation', []);
@@ -142,6 +145,7 @@ function registerRCRoutes() {
     pyroutes.register('user_autocomplete_data', '/_users', []);
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);
+    pyroutes.register('repo_group_list_data', '/_repo_groups', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('markup_preview', '/_markup_preview', []);
     pyroutes.register('store_user_session_value', '/_store_session_attr', []);
@@ -212,7 +216,7 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_show_all', '/%(repo_name)s/pull-request', ['repo_name']);
     pyroutes.register('pullrequest_show_all_data', '/%(repo_name)s/pull-request-data', ['repo_name']);
     pyroutes.register('pullrequest_repo_refs', '/%(repo_name)s/pull-request/refs/%(target_repo_name)s', ['repo_name', 'target_repo_name']);
-    pyroutes.register('pullrequest_repo_destinations', '/%(repo_name)s/pull-request/repo-destinations', ['repo_name']);
+    pyroutes.register('pullrequest_repo_targets', '/%(repo_name)s/pull-request/repo-targets', ['repo_name']);
     pyroutes.register('pullrequest_new', '/%(repo_name)s/pull-request/new', ['repo_name']);
     pyroutes.register('pullrequest_create', '/%(repo_name)s/pull-request/create', ['repo_name']);
     pyroutes.register('pullrequest_update', '/%(repo_name)s/pull-request/%(pull_request_id)s/update', ['repo_name', 'pull_request_id']);
@@ -277,7 +281,9 @@ function registerRCRoutes() {
     pyroutes.register('edit_user_group_advanced_sync', '/_admin/user_groups/%(user_group_id)s/edit/advanced/sync', ['user_group_id']);
     pyroutes.register('user_groups_delete', '/_admin/user_groups/%(user_group_id)s/delete', ['user_group_id']);
     pyroutes.register('search', '/_admin/search', []);
-    pyroutes.register('search_repo', '/%(repo_name)s/search', ['repo_name']);
+    pyroutes.register('search_repo', '/%(repo_name)s/_search', ['repo_name']);
+    pyroutes.register('search_repo_alt', '/%(repo_name)s/search', ['repo_name']);
+    pyroutes.register('search_repo_group', '/%(repo_group_name)s/_search', ['repo_group_name']);
     pyroutes.register('user_profile', '/_profiles/%(username)s', ['username']);
     pyroutes.register('user_group_profile', '/_profile_user_group/%(user_group_name)s', ['user_group_name']);
     pyroutes.register('my_account_profile', '/_admin/my_account/profile', []);
@@ -296,6 +302,9 @@ function registerRCRoutes() {
     pyroutes.register('my_account_emails_delete', '/_admin/my_account/emails/delete', []);
     pyroutes.register('my_account_repos', '/_admin/my_account/repos', []);
     pyroutes.register('my_account_watched', '/_admin/my_account/watched', []);
+    pyroutes.register('my_account_bookmarks', '/_admin/my_account/bookmarks', []);
+    pyroutes.register('my_account_bookmarks_update', '/_admin/my_account/bookmarks/update', []);
+    pyroutes.register('my_account_goto_bookmark', '/_admin/my_account/bookmark/%(bookmark_id)s', ['bookmark_id']);
     pyroutes.register('my_account_perms', '/_admin/my_account/perms', []);
     pyroutes.register('my_account_notifications', '/_admin/my_account/notifications', []);
     pyroutes.register('my_account_notifications_toggle_visibility', '/_admin/my_account/toggle_visibility', []);

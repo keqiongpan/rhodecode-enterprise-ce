@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015-2018 RhodeCode GmbH
+# Copyright (C) 2015-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -98,7 +98,7 @@ class CustomLockFactory(FileLock):
             # set non-blocking, this will cause an exception if we cannot acquire a lock
             operation |= fcntl.LOCK_NB
             start_lock_time = time.time()
-            timeout = 60 * 5  # 5min
+            timeout = 60 * 15  # 15min
             while True:
                 try:
                     flock_org(fd, operation)
@@ -203,3 +203,12 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
             for key, value in mapping.items():
                 pipe.setex(key, self.redis_expiration_time, value)
             pipe.execute()
+
+    def get_mutex(self, key):
+        u = redis_backend.u
+        if self.distributed_lock:
+            lock_key = u('_lock_{0}').format(key)
+            log.debug('Trying to acquire Redis lock for key %s', lock_key)
+            return self.client.lock(lock_key, self.lock_timeout, self.lock_sleep)
+        else:
+            return None

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -71,10 +71,11 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         c.active = 'ssh_keys_generate'
-        comment = 'RhodeCode-SSH {}'.format(c.user.email or '')
-        c.private, c.public = SshKeyModel().generate_keypair(comment=comment)
-        c.target_form_url = h.route_path(
-            'my_account_ssh_keys', _query=dict(default_key=c.public))
+        if c.ssh_key_generator_enabled:
+            comment = 'RhodeCode-SSH {}'.format(c.user.email or '')
+            c.private, c.public = SshKeyModel().generate_keypair(comment=comment)
+            c.target_form_url = h.route_path(
+                'my_account_ssh_keys', _query=dict(default_key=c.public))
         return self._get_template_context(c)
 
     @LoginRequired()

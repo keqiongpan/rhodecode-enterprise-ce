@@ -33,7 +33,7 @@
 
 
                 <div class="pr-details-title">
-                    ${_('Pull request summary')}
+                    ${_('Summary')}
                 </div>
 
                 <div class="form" style="padding-top: 10px">
@@ -257,7 +257,7 @@
            query.callback({results: cachedData.results});
        } else {
            $.ajax({
-               url: pyroutes.url('pullrequest_repo_destinations', {'repo_name': templateContext.repo_name}),
+               url: pyroutes.url('pullrequest_repo_targets', {'repo_name': templateContext.repo_name}),
                data: {query: query.term},
                dataType: 'json',
                type: 'GET',

@@ -9,6 +9,9 @@ Use the following example to configure Nginx as a your web server.
     ## Rate limiter for certain pages to prevent brute force attacks
     limit_req_zone  $binary_remote_addr  zone=req_limit:10m   rate=1r/s;
 
+    ## cache zone
+    proxy_cache_path /etc/nginx/nginx_cache levels=1:2 use_temp_path=off keys_zone=cache_zone:10m inactive=720h max_size=10g;
+
     ## Custom log format
     log_format log_custom '$remote_addr - $remote_user [$time_local] '
                           '"$request" $status $body_bytes_sent '
@@ -140,6 +143,34 @@ Use the following example to configure Nginx as a your web server.
             limit_req  zone=req_limit  burst=10  nodelay;
             try_files $uri @rhodecode_http;
         }
+
+        ## Special Cache for file store, make sure you enable this intentionally as
+        ## it could bypass upload files permissions
+        # location /_file_store/download {
+        #
+        #    proxy_cache cache_zone;
+        #    # ignore Set-Cookie
+        #    proxy_ignore_headers Set-Cookie;
+        #    proxy_ignore_headers Cookie;
+        #
+        #    proxy_cache_key $host$uri$is_args$args;
+        #    proxy_cache_methods GET;
+        #
+        #    proxy_cache_bypass  $http_cache_control;
+        #    proxy_cache_valid 200 302 720h;
+        #
+        #    proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
+        #
+        #    # returns cache status in headers
+        #    add_header X-Proxy-Cache $upstream_cache_status;
+        #    add_header Cache-Control "public";
+        #
+        #    proxy_cache_lock on;
+        #    proxy_cache_lock_age 5m;
+        #
+        #    proxy_pass  http://rc;
+        #
+        # }
 
         location / {
             try_files $uri @rhodecode_http;

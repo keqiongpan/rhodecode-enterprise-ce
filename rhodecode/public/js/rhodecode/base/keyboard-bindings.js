@@ -51,6 +51,38 @@ function setRCMouseBindings(repoName, repoLandingRev) {
     Mousetrap.bind(['g G'], function(e) {
         window.location = pyroutes.url('gists_show', {'public': 1});
     });
+
+    Mousetrap.bind(['g 0'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 0});
+    });
+    Mousetrap.bind(['g 1'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 1});
+    });
+    Mousetrap.bind(['g 2'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 2});
+    });
+    Mousetrap.bind(['g 3'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 3});
+    });
+    Mousetrap.bind(['g 4'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 4});
+    });
+    Mousetrap.bind(['g 5'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 5});
+    });
+    Mousetrap.bind(['g 6'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 6});
+    });
+    Mousetrap.bind(['g 7'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 7});
+    });
+    Mousetrap.bind(['g 8'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 8});
+    });
+    Mousetrap.bind(['g 9'], function(e) {
+        window.location = pyroutes.url('my_account_goto_bookmark', {'bookmark_id': 9});
+    });
+
     Mousetrap.bind(['n g'], function(e) {
         window.location = pyroutes.url('gists_new');
     });
@@ -58,7 +90,7 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         window.location = pyroutes.url('repo_new');
     });
 
-    if (repoName && repoName != '') {
+    if (repoName && repoName !== '') {
         // nav in repo context
         Mousetrap.bind(['g s'], function(e) {
             window.location = pyroutes.url(

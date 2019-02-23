@@ -1,5 +1,5 @@
 
-.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build
+.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build generate-pkgs
 
 NODE_PATH=./node_modules
 WEBPACK=./node_binaries/webpack
@@ -8,7 +8,7 @@ GRUNT=./node_binaries/grunt
 
 clean:
 	make test-clean
-	find . -type f \( -iname '*.c' -o -iname '*.pyc' -o -iname '*.so' \) -exec rm '{}' ';'
+	find . -type f \( -iname '*.c' -o -iname '*.pyc' -o -iname '*.so' -o -iname '*.orig' \) -exec rm '{}' ';'
 
 test:
 	make test-clean
@@ -51,3 +51,5 @@ docs-cleanup:
 web-build:
 	NODE_PATH=$(NODE_PATH) $(GRUNT)
 
+generate-pkgs:
+	nix-shell pkgs/shell-generate.nix --command "pip2nix generate --licenses"

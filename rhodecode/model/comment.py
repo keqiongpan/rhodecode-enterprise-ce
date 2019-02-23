@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -125,7 +125,35 @@ class CommentsModel(BaseModel):
 
         return comment_versions
 
-    def get_unresolved_todos(self, pull_request, show_outdated=True):
+    def get_repository_comments(self, repo, comment_type=None, user=None, commit_id=None):
+        qry = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.repo == repo)
+
+        if comment_type and comment_type in ChangesetComment.COMMENT_TYPES:
+            qry = qry.filter(ChangesetComment.comment_type == comment_type)
+
+        if user:
+            user = self._get_user(user)
+            if user:
+                qry = qry.filter(ChangesetComment.user_id == user.user_id)
+
+        if commit_id:
+            qry = qry.filter(ChangesetComment.revision == commit_id)
+
+        qry = qry.order_by(ChangesetComment.created_on)
+        return qry.all()
+
+    def get_repository_unresolved_todos(self, repo):
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.repo == repo) \
+            .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+        todos = todos.all()
+
+        return todos
+
+    def get_pull_request_unresolved_todos(self, pull_request, show_outdated=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.pull_request == pull_request) \

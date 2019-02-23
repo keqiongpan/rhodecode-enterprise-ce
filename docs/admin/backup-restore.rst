@@ -116,7 +116,7 @@ Full-text Search Backup
 
 You may also have full text search set up, but the index can be rebuild from
 re-imported |repos| if necessary. You will most likely want to backup your
-:file:`mapping.ini` file if you've configured that. For more information, see
+:file:`search_mapping.ini` file if you've configured that. For more information, see
 the :ref:`indexing-ref` section.
 
 Restoration Steps
@@ -140,7 +140,7 @@ Post Restoration Steps
 Once you have restored your |RCE| instance to basic functionality, you can
 then work on restoring any specific setup changes you had made.
 
-* To recreate the |RCE| index, use the backed up :file:`mapping.ini` file if
+* To recreate the |RCE| index, use the backed up :file:`search_mapping.ini` file if
   you had made changes and rerun the indexer. See the
   :ref:`indexing-ref` section for details.
 * To reconfigure any extensions, copy the backed up extensions into the

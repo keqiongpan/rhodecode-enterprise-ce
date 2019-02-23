@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -203,7 +203,6 @@ class RepoChangelogView(RepoAppView):
         pre_load = self._get_preload_attrs()
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
-
         try:
             if f_path:
                 log.debug('generating changelog for path %s', f_path)
@@ -231,7 +230,7 @@ class RepoChangelogView(RepoAppView):
             else:
                 collection = self.rhodecode_vcs_repo.get_commits(
                     branch_name=branch_name, show_hidden=show_hidden,
-                    pre_load=pre_load)
+                    pre_load=pre_load, translate_tags=False)
 
             self._load_changelog_data(
                 c, collection, p, chunk_size, c.branch_name,
@@ -320,7 +319,8 @@ class RepoChangelogView(RepoAppView):
             collection = list(reversed(collection))
         else:
             collection = self.rhodecode_vcs_repo.get_commits(
-                branch_name=branch_name, show_hidden=show_hidden, pre_load=pre_load)
+                branch_name=branch_name, show_hidden=show_hidden, pre_load=pre_load,
+                translate_tags=False)
 
         p = safe_int(self.request.GET.get('page', 1), 1)
         try:

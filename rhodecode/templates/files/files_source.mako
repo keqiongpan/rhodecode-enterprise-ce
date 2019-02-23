@@ -107,3 +107,24 @@
      %endif
     </div>
 </div>
+
+<script type="text/javascript">
+% if request.GET.get('mark'):
+
+$(function(){
+  $(".codehilite").mark(
+      "${request.GET.get('mark')}",
+          {
+              "className": 'match',
+              "accuracy": "complementary",
+              "ignorePunctuation": ":._(){}[]!'+=".split(""),
+              "each": function(el) {
+                  // and also highlight lines !
+                  $($(el).closest('tr')).find('td.cb-lineno').addClass('cb-line-selected');
+              }
+          }
+  );
+
+});
+% endif
+</script>

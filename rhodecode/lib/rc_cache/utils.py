@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015-2018 RhodeCode GmbH
+# Copyright (C) 2015-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -102,6 +102,7 @@ class RhodeCodeCacheRegion(CacheRegion):
             decorate.get = get
             decorate.original = fn
             decorate.key_generator = key_generator
+            decorate.__wrapped__ = fn
 
             return decorate
 
@@ -120,7 +121,7 @@ def get_default_cache_settings(settings, prefixes=None):
             if key.startswith(prefix):
                 name = key.split(prefix)[1].strip()
                 val = settings[key]
-                if isinstance(val, basestring):
+                if isinstance(val, compat.string_types):
                     val = val.strip()
                 cache_settings[name] = val
     return cache_settings

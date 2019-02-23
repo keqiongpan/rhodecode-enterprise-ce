@@ -1,4 +1,3 @@
-#!/usr/bin/python2.4
 
 from __future__ import division
 
@@ -33,6 +32,8 @@ import re
 import sys
 import time
 import urllib
+from pyramid import compat
+
 
 class diff_match_patch:
   """Class containing the diff, match and patch methods.
@@ -1438,7 +1439,7 @@ class diff_match_patch:
     text1 = None
     diffs = None
     # Note that texts may arrive as 'str' or 'unicode'.
-    if isinstance(a, basestring) and isinstance(b, basestring) and c is None:
+    if isinstance(a, compat.string_types) and isinstance(b, compat.string_types) and c is None:
       # Method 1: text1, text2
       # Compute diffs from text1 and text2.
       text1 = a
@@ -1451,11 +1452,11 @@ class diff_match_patch:
       # Compute text1 from diffs.
       diffs = a
       text1 = self.diff_text1(diffs)
-    elif isinstance(a, basestring) and isinstance(b, list) and c is None:
+    elif isinstance(a, compat.string_types) and isinstance(b, list) and c is None:
       # Method 3: text1, diffs
       text1 = a
       diffs = b
-    elif (isinstance(a, basestring) and isinstance(b, basestring) and
+    elif (isinstance(a, compat.string_types) and isinstance(b, compat.string_types) and
           isinstance(c, list)):
       # Method 4: text1, text2, diffs
       # text2 is not used.

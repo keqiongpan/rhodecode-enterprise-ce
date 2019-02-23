@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -29,11 +29,10 @@ from rhodecode.api.tests.utils import (
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestMergePullRequest(object):
+
     @pytest.mark.backends("git", "hg")
     def test_api_merge_pull_request_merge_failed(self, pr_util, no_notifications):
         pull_request = pr_util.create_pull_request(mergeable=True)
-        author = pull_request.user_id
-        repo = pull_request.target_repo.repo_id
         pull_request_id = pull_request.pull_request_id
         pull_request_repo = pull_request.target_repo.repo_name
 
@@ -46,12 +45,34 @@ class TestMergePullRequest(object):
 
         # The above api call detaches the pull request DB object from the
         # session because of an unconditional transaction rollback in our
-        # middleware. Therefore we need to add it back here if we want to use
-        # it.
+        # middleware. Therefore we need to add it back here if we want to use it.
         Session().add(pull_request)
 
         expected = 'merge not possible for following reasons: ' \
                    'Pull request reviewer approval is pending.'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_merge_pull_request_merge_failed_disallowed_state(
+            self, pr_util, no_notifications):
+        pull_request = pr_util.create_pull_request(mergeable=True, approved=True)
+        pull_request_id = pull_request.pull_request_id
+        pull_request_repo = pull_request.target_repo.repo_name
+
+        pr = PullRequest.get(pull_request_id)
+        pr.pull_request_state = pull_request.STATE_UPDATING
+        Session().add(pr)
+        Session().commit()
+
+        id_, params = build_data(
+            self.apikey, 'merge_pull_request',
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id)
+
+        response = api_call(self.app, params)
+        expected = 'Operation forbidden because pull request is in state {}, '\
+                   'only state {} is allowed.'.format(PullRequest.STATE_UPDATING,
+                                                      PullRequest.STATE_CREATED)
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
@@ -88,6 +109,7 @@ class TestMergePullRequest(object):
         expected = {
             'executed': True,
             'failure_reason': 0,
+            'merge_status_message': 'This pull request can be automatically merged.',
             'possible': True,
             'merge_commit_id': pull_request.shadow_merge_ref.commit_id,
             'merge_ref': pull_request.shadow_merge_ref._asdict()
@@ -112,6 +134,107 @@ class TestMergePullRequest(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
+    def test_api_merge_pull_request_as_another_user_no_perms_to_merge(
+            self, pr_util, no_notifications, user_util):
+        merge_user = user_util.create_user()
+        merge_user_id = merge_user.user_id
+        merge_user_username = merge_user.username
+
+        pull_request = pr_util.create_pull_request(mergeable=True, approved=True)
+
+        pull_request_id = pull_request.pull_request_id
+        pull_request_repo = pull_request.target_repo.repo_name
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id,
+            status='approved')
+
+        response = api_call(self.app, params)
+        expected = {
+            'comment_id': response.json.get('result', {}).get('comment_id'),
+            'pull_request_id': pull_request_id,
+            'status': {'given': 'approved', 'was_changed': True}
+        }
+        assert_ok(id_, expected, given=response.body)
+        id_, params = build_data(
+            self.apikey, 'merge_pull_request',
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id,
+            userid=merge_user_id
+        )
+
+        response = api_call(self.app, params)
+        expected = 'merge not possible for following reasons: User `{}` ' \
+                   'not allowed to perform merge.'.format(merge_user_username)
+        assert_error(id_, expected, response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_merge_pull_request_as_another_user(self, pr_util, no_notifications, user_util):
+        merge_user = user_util.create_user()
+        merge_user_id = merge_user.user_id
+        pull_request = pr_util.create_pull_request(mergeable=True, approved=True)
+        user_util.grant_user_permission_to_repo(
+            pull_request.target_repo, merge_user, 'repository.write')
+        author = pull_request.user_id
+        repo = pull_request.target_repo.repo_id
+        pull_request_id = pull_request.pull_request_id
+        pull_request_repo = pull_request.target_repo.repo_name
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id,
+            status='approved')
+
+        response = api_call(self.app, params)
+        expected = {
+            'comment_id': response.json.get('result', {}).get('comment_id'),
+            'pull_request_id': pull_request_id,
+            'status': {'given': 'approved', 'was_changed': True}
+        }
+        assert_ok(id_, expected, given=response.body)
+
+        id_, params = build_data(
+            self.apikey, 'merge_pull_request',
+            repoid=pull_request_repo,
+            pullrequestid=pull_request_id,
+            userid=merge_user_id
+        )
+
+        response = api_call(self.app, params)
+
+        pull_request = PullRequest.get(pull_request_id)
+
+        expected = {
+            'executed': True,
+            'failure_reason': 0,
+            'merge_status_message': 'This pull request can be automatically merged.',
+            'possible': True,
+            'merge_commit_id': pull_request.shadow_merge_ref.commit_id,
+            'merge_ref': pull_request.shadow_merge_ref._asdict()
+        }
+
+        assert_ok(id_, expected, response.body)
+
+        journal = UserLog.query() \
+            .filter(UserLog.user_id == merge_user_id) \
+            .filter(UserLog.repository_id == repo) \
+            .order_by('user_log_id') \
+            .all()
+        assert journal[-2].action == 'repo.pull_request.merge'
+        assert journal[-1].action == 'repo.pull_request.close'
+
+        id_, params = build_data(
+            self.apikey, 'merge_pull_request',
+            repoid=pull_request_repo, pullrequestid=pull_request_id, userid=merge_user_id)
+        response = api_call(self.app, params)
+
+        expected = 'merge not possible for following reasons: This pull request is closed.'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
     def test_api_merge_pull_request_repo_error(self, pr_util):
         pull_request = pr_util.create_pull_request()
         id_, params = build_data(
@@ -123,8 +246,7 @@ class TestMergePullRequest(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
-    def test_api_merge_pull_request_non_admin_with_userid_error(self,
-                                                                pr_util):
+    def test_api_merge_pull_request_non_admin_with_userid_error(self, pr_util):
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
             self.apikey_regular, 'merge_pull_request',

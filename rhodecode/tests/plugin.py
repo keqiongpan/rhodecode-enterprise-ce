@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -661,8 +661,7 @@ class Backend(object):
 
     def _next_repo_name(self):
         return u"%s_%s" % (
-            self.invalid_repo_name.sub(u'_', self._test_name),
-            len(self._cleanup_repos))
+            self.invalid_repo_name.sub(u'_', self._test_name), len(self._cleanup_repos))
 
     def ensure_file(self, filename, content='Test content\n'):
         assert self._cleanup_repos, "Avoid writing into vcs_test repos"

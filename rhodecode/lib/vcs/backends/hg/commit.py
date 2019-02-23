@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2018 RhodeCode GmbH
+# Copyright (C) 2014-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -303,10 +303,10 @@ class MercurialCommit(base.BaseCommit):
 
         alias = self.repository.alias
         for k, vals in self._submodules.iteritems():
-            loc = vals[0]
-            commit = vals[1]
-            dirnodes.append(
-                SubModuleNode(k, url=loc, commit=commit, alias=alias))
+            if vcspath.dirname(k) == path:
+                loc = vals[0]
+                commit = vals[1]
+                dirnodes.append(SubModuleNode(k, url=loc, commit=commit, alias=alias))
         nodes = dirnodes + filenodes
         # cache nodes
         for node in nodes:

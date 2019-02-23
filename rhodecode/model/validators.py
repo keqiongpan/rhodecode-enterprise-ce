@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -37,6 +37,7 @@ from formencode.validators import (
 
 from sqlalchemy.sql.expression import true
 from sqlalchemy.util import OrderedSet
+from pyramid import compat
 
 from rhodecode.authentication import (
     legacy_plugin_prefix, _import_legacy_plugin)
@@ -125,7 +126,7 @@ def UniqueListFromString(localizer):
 
     class _validator(UniqueList(localizer)):
         def _to_python(self, value, state):
-            if isinstance(value, basestring):
+            if isinstance(value, compat.string_types):
                 value = aslist(value, ',')
             return super(_validator, self)._to_python(value, state)
     return _validator

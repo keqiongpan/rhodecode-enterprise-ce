@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -97,7 +97,7 @@ class RepoCommitsView(RepoAppView):
             if len(commit_range) == 2:
                 commits = self.rhodecode_vcs_repo.get_commits(
                     start_id=commit_range[0], end_id=commit_range[1],
-                    pre_load=pre_load)
+                    pre_load=pre_load, translate_tags=False)
                 commits = list(commits)
             else:
                 commits = [self.rhodecode_vcs_repo.get_commit(

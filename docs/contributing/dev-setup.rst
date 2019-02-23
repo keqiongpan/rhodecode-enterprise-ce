@@ -52,6 +52,7 @@ run::
 Followed by::
 
    nix-channel --update
+   nix-env -i nix-2.0.4
 
 
 Install required binaries
@@ -65,6 +66,18 @@ run::
     nix-env -i nix-prefetch-git
 
 
+Speed up JS build by installing PhantomJS
+-----------------------------------------
+
+PhantomJS will be downloaded each time nix-shell is invoked. To speed this by
+setting already downloaded version do this::
+
+    nix-env -i phantomjs-2.1.1
+
+    # and set nix bin path
+    export PATH=$PATH:~/.nix-profile/bin
+
+
 Clone the required repositories
 -------------------------------
 
@@ -76,8 +89,8 @@ you have it installed before continuing.
 To obtain the required sources, use the following commands::
 
     mkdir rhodecode-develop && cd rhodecode-develop
-    hg clone https://code.rhodecode.com/rhodecode-enterprise-ce
-    hg clone https://code.rhodecode.com/rhodecode-vcsserver
+    hg clone -u default https://code.rhodecode.com/rhodecode-enterprise-ce
+    hg clone -u default https://code.rhodecode.com/rhodecode-vcsserver
 
 .. note::
 
@@ -93,11 +106,15 @@ need to install the following.
 
 required libraries::
 
+    # svn related
     sudo apt-get install libapr1-dev libaprutil1-dev
     sudo apt-get install libsvn-dev
+    # libcurl required too
+    sudo apt-get install libcurl4-openssl-dev
+    # mysql/pg server for development, optional
     sudo apt-get install mysql-server libmysqlclient-dev
     sudo apt-get install postgresql postgresql-contrib libpq-dev
-    sudo apt-get install libcurl4-openssl-dev
+
 
 
 Enter the Development Shell
@@ -106,7 +123,7 @@ Enter the Development Shell
 The final step is to start the development shells. To do this, run the
 following command from inside the cloned repository::
 
-   #first, the vcsserver
+   # first, the vcsserver
    cd ~/rhodecode-vcsserver
    nix-shell
 
@@ -182,7 +199,7 @@ To use the application's frontend and prepare it for production deployment,
 you will need to compile the CSS and JavaScript with Grunt.
 This is easily done from within the nix-shell using the following command::
 
-    grunt
+    make web-build
 
 When developing new features you will need to recompile following any
 changes made to the CSS or JavaScript files when developing the code::

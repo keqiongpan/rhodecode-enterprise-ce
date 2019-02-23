@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -166,7 +166,6 @@ setup(
             'enterprise=rhodecode.tests.plugin',
         ],
         'console_scripts': [
-            'rc-server=rhodecode.rcserver:main',
             'rc-setup-app=rhodecode.lib.rc_commands.setup_rc:main',
             'rc-upgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
             'rc-ishell=rhodecode.lib.rc_commands.ishell:main',

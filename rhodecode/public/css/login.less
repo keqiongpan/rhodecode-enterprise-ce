@@ -73,9 +73,6 @@
     }
 
     .sign-in-title {
-        h1 {
-            margin: 0;
-        }
 
         h4 {
             margin: @padding*2 0;
@@ -108,6 +105,12 @@
             clear: both;
             width: 100%;
             margin: @padding 0;
+        }
+        .pwd_reset {
+            font-weight: normal;
+        }
+        .new_account {
+            font-weight: bold;
         }
     }
     .register_message,
@@ -197,7 +200,27 @@
 .user-menu.submenu {
     right: 0; 
     left: auto;
+    min-width: 290px;
 }
+
+
+.user-menu {
+    .bookmark-items {
+        padding: 4px 2px;
+        color: @grey3;
+        border-bottom: @grey3;
+
+        a {
+            padding: 0 !important;
+            color: @rcblue !important;
+        }
+    }
+    a.bookmark-item {
+        color: @rcblue !important;
+    }
+}
+
+
 #quick_login {
     left: auto;
     right: 0;

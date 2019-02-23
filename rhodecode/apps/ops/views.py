@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,9 +49,13 @@ class OpsView(BaseAppView):
             'instance': self.request.registry.settings.get('instance_id'),
         }
         if getattr(self.request, 'user'):
+            caller_name = 'anonymous'
+            if self.request.user.user_id:
+                caller_name = self.request.user.username
+
             data.update({
                 'caller_ip': self.request.user.ip_addr,
-                'caller_name': self.request.user.username,
+                'caller_name': caller_name,
             })
         return {'ok': data}
 
@@ -65,11 +69,13 @@ class OpsView(BaseAppView):
         """
         Test exception handling and emails on errors
         """
+
         class TestException(Exception):
             pass
-
+        # add timeout so we add some sort of rate limiter
+        time.sleep(2)
         msg = ('RhodeCode Enterprise test exception. '
-               'Generation time: {}'.format(time.time()))
+               'Client:{}. Generation time: {}.'.format(self.request.user, time.time()))
         raise TestException(msg)
 
     @view_config(

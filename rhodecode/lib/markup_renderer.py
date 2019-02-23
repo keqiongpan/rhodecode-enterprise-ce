@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -357,7 +357,9 @@ class MarkupRenderer(object):
         if leading_newline:
             source += '<br />'
         source += rendered_source.replace("\n", '<br />')
-        return source
+
+        rendered = cls.bleach_clean(source)
+        return rendered
 
     @classmethod
     def markdown(cls, source, safe=True, flavored=True, mentions=False,

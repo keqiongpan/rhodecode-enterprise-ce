@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2018 RhodeCode GmbH
+# Copyright (C) 2014-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -200,8 +200,12 @@ class Node(object):
         """
         Comparator using name of the node, needed for quick list sorting.
         """
+
         kind_cmp = cmp(self.kind, other.kind)
         if kind_cmp:
+            if isinstance(self, SubModuleNode):
+                # we make submodules equal to dirnode for "sorting" purposes
+                return NodeKind.DIR
             return kind_cmp
         return cmp(self.name, other.name)
 
@@ -371,6 +375,31 @@ class FileNode(Node):
         Returns md5 of the file node.
         """
         return md5(self.raw_bytes)
+
+    def metadata_uncached(self):
+        """
+        Returns md5, binary flag of the file node, without any cache usage.
+        """
+
+        content = self.content_uncached()
+
+        is_binary = content and '\0' in content
+        size = 0
+        if content:
+            size = len(content)
+
+        return is_binary, md5(content), size, content
+
+    def content_uncached(self):
+        """
+        Returns lazily content of the FileNode. If possible, would try to
+        decode content from UTF-8.
+        """
+        if self.commit:
+            content = self.commit.get_file_content(self.path)
+        else:
+            content = self._content
+        return content
 
     @LazyProperty
     def content(self):

@@ -12,8 +12,6 @@ permission notice:
        file:licenses/msgpack_license.txt
    Copyright (c) 2009 - tornado
        file:licenses/tornado_license.txt
-   Copyright (c) 2015 - pygments-markdown-lexer
-       file:licenses/pygments_markdown_lexer_license.txt
    Copyright 2006 - diff_match_patch
        file:licenses/diff_match_patch_license.txt
 

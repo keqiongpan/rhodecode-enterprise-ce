@@ -133,7 +133,7 @@
             %endfor
 
             ## USER GROUPS
-            %for _user_group in c.repo_group.permission_user_groups():
+            %for _user_group in c.repo_group.permission_user_groups(with_members=True):
                 <tr id="id${id(_user_group.users_group_name)}">
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.none', checked=_user_group.permission=='group.none')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.read', checked=_user_group.permission=='group.read')}</td>
@@ -148,6 +148,7 @@
                         %else:
                          ${h.link_to_group(_user_group.users_group_name)}
                         %endif
+                        (${_('members')}: ${len(_user_group.members)})
                     </td>
                     <td class="td-action">
                         <span  class="btn btn-link btn-danger revoke_perm"

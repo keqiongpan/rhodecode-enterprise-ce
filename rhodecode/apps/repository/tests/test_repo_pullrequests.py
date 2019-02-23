@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,7 +32,6 @@ from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
 from rhodecode.tests import (
     assert_session_flash, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
-from rhodecode.tests.utils import AssertResponse
 
 
 def route_path(name, params=None, **kwargs):
@@ -45,7 +44,7 @@ def route_path(name, params=None, **kwargs):
         'pullrequest_show_all': '/{repo_name}/pull-request',
         'pullrequest_show_all_data': '/{repo_name}/pull-request-data',
         'pullrequest_repo_refs': '/{repo_name}/pull-request/refs/{target_repo_name:.*?[^/]}',
-        'pullrequest_repo_destinations': '/{repo_name}/pull-request/repo-destinations',
+        'pullrequest_repo_targets': '/{repo_name}/pull-request/repo-destinations',
         'pullrequest_new': '/{repo_name}/pull-request/new',
         'pullrequest_create': '/{repo_name}/pull-request/create',
         'pullrequest_update': '/{repo_name}/pull-request/{pull_request_id}/update',
@@ -233,8 +232,7 @@ class TestPullrequestsView(object):
             route_path('pullrequest_update',
                 repo_name=pull_request.target_repo.repo_name,
                 pull_request_id=pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token})
+            params={'update_commits': 'true', 'csrf_token': csrf_token})
 
         expected_msg = str(PullRequestModel.UPDATE_STATUS_MESSAGES[
             UpdateFailureReason.MISSING_SOURCE_REF])
@@ -244,7 +242,8 @@ class TestPullrequestsView(object):
         from rhodecode.lib.vcs.backends.base import MergeFailureReason
         pull_request = pr_util.create_pull_request(
             approved=True, mergeable=True)
-        pull_request.target_ref = 'branch:invalid-branch:invalid-commit-id'
+        unicode_reference = u'branch:invalid-branch:invalid-commit-id'
+        pull_request.target_ref = unicode_reference
         Session().add(pull_request)
         Session().commit()
 
@@ -255,12 +254,12 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request_id)
 
         response = self.app.get(pull_request_url)
-
-        assertr = AssertResponse(response)
-        expected_msg = PullRequestModel.MERGE_STATUS_MESSAGES[
-            MergeFailureReason.MISSING_TARGET_REF]
-        assertr.element_contains(
-            'span[data-role="merge-message"]', str(expected_msg))
+        target_ref_id = 'invalid-branch'
+        merge_resp = MergeResponse(
+            True, True, '', MergeFailureReason.MISSING_TARGET_REF,
+            metadata={'target_ref': PullRequest.unicode_to_reference(unicode_reference)})
+        response.assert_response().element_contains(
+            'span[data-role="merge-message"]', merge_resp.merge_status_message)
 
     def test_comment_and_close_pull_request_custom_message_approved(
             self, pr_util, csrf_token, xhr_header):
@@ -272,8 +271,8 @@ class TestPullrequestsView(object):
 
         self.app.post(
             route_path('pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=pull_request_id),
+                       repo_name=pull_request.target_repo.scm_instance().name,
+                       pull_request_id=pull_request_id),
             params={
                 'close_pull_request': '1',
                 'text': 'Closing a PR',
@@ -608,8 +607,7 @@ class TestPullrequestsView(object):
 
         response = self.app.post(
             route_path('pullrequest_merge',
-                repo_name=repo_name,
-                pull_request_id=pull_request_id),
+                       repo_name=repo_name, pull_request_id=pull_request_id),
             params={'csrf_token': csrf_token}).follow()
 
         assert response.status_int == 200
@@ -624,10 +622,13 @@ class TestPullrequestsView(object):
         pull_request_id = pull_request.pull_request_id
         repo_name = pull_request.target_repo.scm_instance().name
 
+        merge_resp = MergeResponse(True, False, 'STUB_COMMIT_ID',
+                                   MergeFailureReason.PUSH_FAILED,
+                                   metadata={'target': 'shadow repo',
+                                             'merge_commit': 'xxx'})
         model_patcher = mock.patch.multiple(
             PullRequestModel,
-            merge_repo=mock.Mock(return_value=MergeResponse(
-                True, False, 'STUB_COMMIT_ID', MergeFailureReason.PUSH_FAILED)),
+            merge_repo=mock.Mock(return_value=merge_resp),
             merge_status=mock.Mock(return_value=(True, 'WRONG_MESSAGE')))
 
         with model_patcher:
@@ -637,8 +638,10 @@ class TestPullrequestsView(object):
                            pull_request_id=pull_request_id),
                 params={'csrf_token': csrf_token}, status=302)
 
-        assert_session_flash(response, PullRequestModel.MERGE_STATUS_MESSAGES[
-            MergeFailureReason.PUSH_FAILED])
+            merge_resp = MergeResponse(True, True, '', MergeFailureReason.PUSH_FAILED,
+                                       metadata={'target': 'shadow repo',
+                                                 'merge_commit': 'xxx'})
+        assert_session_flash(response, merge_resp.merge_status_message)
 
     def test_update_source_revision(self, backend, csrf_token):
         commits = [
@@ -652,20 +655,20 @@ class TestPullrequestsView(object):
 
         # create pr from a in source to A in target
         pull_request = PullRequest()
+
         pull_request.source_repo = source
-        # TODO: johbo: Make sure that we write the source ref this way!
         pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
             branch=backend.default_branch_name, commit_id=commit_ids['change'])
-        pull_request.target_repo = target
 
+        pull_request.target_repo = target
         pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['ancestor'])
+            branch=backend.default_branch_name, commit_id=commit_ids['ancestor'])
+
         pull_request.revisions = [commit_ids['change']]
         pull_request.title = u"Test"
         pull_request.description = u"Description"
-        pull_request.author = UserModel().get_by_username(
-            TEST_USER_ADMIN_LOGIN)
+        pull_request.author = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        pull_request.pull_request_state = PullRequest.STATE_CREATED
         Session().add(pull_request)
         Session().commit()
         pull_request_id = pull_request.pull_request_id
@@ -676,23 +679,21 @@ class TestPullrequestsView(object):
         # update PR
         self.app.post(
             route_path('pullrequest_update',
-                repo_name=target.repo_name,
-                pull_request_id=pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token})
+                       repo_name=target.repo_name, pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token})
 
-        # check that we have now both revisions
-        pull_request = PullRequest.get(pull_request_id)
-        assert pull_request.revisions == [
-            commit_ids['change-2'], commit_ids['change']]
+        response = self.app.get(
+            route_path('pullrequest_show',
+                       repo_name=target.repo_name,
+                       pull_request_id=pull_request.pull_request_id))
 
-        # TODO: johbo: this should be a test on its own
-        response = self.app.get(route_path(
-            'pullrequest_new',
-            repo_name=target.repo_name))
         assert response.status_int == 200
         assert 'Pull request updated to' in response.body
         assert 'with 1 added, 0 removed commits.' in response.body
+
+        # check that we have now both revisions
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.revisions == [commit_ids['change-2'], commit_ids['change']]
 
     def test_update_target_revision(self, backend, csrf_token):
         commits = [
@@ -707,21 +708,21 @@ class TestPullrequestsView(object):
 
         # create pr from a in source to A in target
         pull_request = PullRequest()
+
         pull_request.source_repo = source
-        # TODO: johbo: Make sure that we write the source ref this way!
         pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
             branch=backend.default_branch_name, commit_id=commit_ids['change'])
+
         pull_request.target_repo = target
-        # TODO: johbo: Target ref should be branch based, since tip can jump
-        # from branch to branch
         pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['ancestor'])
+            branch=backend.default_branch_name, commit_id=commit_ids['ancestor'])
+
         pull_request.revisions = [commit_ids['change']]
         pull_request.title = u"Test"
         pull_request.description = u"Description"
-        pull_request.author = UserModel().get_by_username(
-            TEST_USER_ADMIN_LOGIN)
+        pull_request.author = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        pull_request.pull_request_state = PullRequest.STATE_CREATED
+
         Session().add(pull_request)
         Session().commit()
         pull_request_id = pull_request.pull_request_id
@@ -734,23 +735,21 @@ class TestPullrequestsView(object):
         # update PR
         self.app.post(
             route_path('pullrequest_update',
-                repo_name=target.repo_name,
-                pull_request_id=pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token},
+                       repo_name=target.repo_name,
+                       pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token},
             status=200)
 
         # check that we have now both revisions
         pull_request = PullRequest.get(pull_request_id)
         assert pull_request.revisions == [commit_ids['change-rebased']]
         assert pull_request.target_ref == 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['ancestor-new'])
+            branch=backend.default_branch_name, commit_id=commit_ids['ancestor-new'])
 
-        # TODO: johbo: This should be a test on its own
-        response = self.app.get(route_path(
-            'pullrequest_new',
-            repo_name=target.repo_name))
+        response = self.app.get(
+            route_path('pullrequest_show',
+                       repo_name=target.repo_name,
+                       pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
         assert 'Pull request updated to' in response.body
         assert 'with 1 added, 1 removed commits.' in response.body
@@ -772,17 +771,14 @@ class TestPullrequestsView(object):
         # create pr from a in source to A in target
         pull_request = PullRequest()
         pull_request.source_repo = source
-        # TODO: johbo: Make sure that we write the source ref this way!
+
         pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
             branch=backend.default_branch_name,
             commit_id=commit_ids['master-commit-3-change-2'])
 
         pull_request.target_repo = target
-        # TODO: johbo: Target ref should be branch based, since tip can jump
-        # from branch to branch
         pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['feat-commit-2'])
+            branch=backend.default_branch_name, commit_id=commit_ids['feat-commit-2'])
 
         pull_request.revisions = [
             commit_ids['feat-commit-1'],
@@ -790,8 +786,8 @@ class TestPullrequestsView(object):
         ]
         pull_request.title = u"Test"
         pull_request.description = u"Description"
-        pull_request.author = UserModel().get_by_username(
-            TEST_USER_ADMIN_LOGIN)
+        pull_request.author = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        pull_request.pull_request_state = PullRequest.STATE_CREATED
         Session().add(pull_request)
         Session().commit()
         pull_request_id = pull_request.pull_request_id
@@ -807,13 +803,10 @@ class TestPullrequestsView(object):
             route_path('pullrequest_update',
                 repo_name=target.repo_name,
                 pull_request_id=pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token},
+            params={'update_commits': 'true', 'csrf_token': csrf_token},
             status=200)
 
-        response = self.app.get(route_path(
-            'pullrequest_new',
-            repo_name=target.repo_name))
+        response = self.app.get(route_path('pullrequest_new', repo_name=target.repo_name))
         assert response.status_int == 200
         response.mustcontain('Pull request updated to')
         response.mustcontain('with 0 added, 0 removed commits.')
@@ -833,21 +826,17 @@ class TestPullrequestsView(object):
         # create pr from a in source to A in target
         pull_request = PullRequest()
         pull_request.source_repo = source
-        # TODO: johbo: Make sure that we write the source ref this way!
+
         pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['change'])
+            branch=backend.default_branch_name, commit_id=commit_ids['change'])
         pull_request.target_repo = target
-        # TODO: johbo: Target ref should be branch based, since tip can jump
-        # from branch to branch
         pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend.default_branch_name,
-            commit_id=commit_ids['ancestor'])
+            branch=backend.default_branch_name, commit_id=commit_ids['ancestor'])
         pull_request.revisions = [commit_ids['change']]
         pull_request.title = u"Test"
         pull_request.description = u"Description"
-        pull_request.author = UserModel().get_by_username(
-            TEST_USER_ADMIN_LOGIN)
+        pull_request.author = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        pull_request.pull_request_state = PullRequest.STATE_CREATED
         Session().add(pull_request)
         Session().commit()
         pull_request_id = pull_request.pull_request_id
@@ -860,10 +849,8 @@ class TestPullrequestsView(object):
         # update PR
         self.app.post(
             route_path('pullrequest_update',
-                repo_name=target.repo_name,
-                pull_request_id=pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token},
+                       repo_name=target.repo_name, pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token},
             status=200)
 
         # Expect the target reference to be updated correctly
@@ -890,13 +877,12 @@ class TestPullrequestsView(object):
         pull_request.source_ref = 'branch:{branch}:{commit_id}'.format(
             branch=branch_name, commit_id=commit_ids['new-feature'])
         pull_request.target_ref = 'branch:{branch}:{commit_id}'.format(
-            branch=backend_git.default_branch_name,
-            commit_id=commit_ids['old-feature'])
+            branch=backend_git.default_branch_name, commit_id=commit_ids['old-feature'])
         pull_request.revisions = [commit_ids['new-feature']]
         pull_request.title = u"Test"
         pull_request.description = u"Description"
-        pull_request.author = UserModel().get_by_username(
-            TEST_USER_ADMIN_LOGIN)
+        pull_request.author = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        pull_request.pull_request_state = PullRequest.STATE_CREATED
         Session().add(pull_request)
         Session().commit()
 
@@ -909,11 +895,11 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
-        assert_response.element_contains(
+
+        response.assert_response().element_contains(
             '#changeset_compare_view_content .alert strong',
             'Missing commits')
-        assert_response.element_contains(
+        response.assert_response().element_contains(
             '#changeset_compare_view_content .alert',
             'This pull request cannot be displayed, because one or more'
             ' commits no longer exist in the source repository.')
@@ -941,15 +927,15 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
-        assert_response.element_contains(
+
+        response.assert_response().element_contains(
             '#changeset_compare_view_content .alert strong',
             'Missing commits')
-        assert_response.element_contains(
+        response.assert_response().element_contains(
             '#changeset_compare_view_content .alert',
             'This pull request cannot be displayed, because one or more'
             ' commits no longer exist in the source repository.')
-        assert_response.element_contains(
+        response.assert_response().element_contains(
             '#update_commits',
             'Update commits')
 
@@ -987,8 +973,7 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
-        assert_response.element_contains(
+        response.assert_response().element_contains(
             '#changeset_compare_view_content .alert strong',
             'Missing commits')
 
@@ -1004,12 +989,11 @@ class TestPullrequestsView(object):
             repo_name=pull_request.target_repo.scm_instance().name,
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
 
-        origin = assert_response.get_element('.pr-origininfo .tag')
+        origin = response.assert_response().get_element('.pr-origininfo .tag')
         origin_children = origin.getchildren()
         assert len(origin_children) == 1
-        target = assert_response.get_element('.pr-targetinfo .tag')
+        target = response.assert_response().get_element('.pr-targetinfo .tag')
         target_children = target.getchildren()
         assert len(target_children) == 1
 
@@ -1038,13 +1022,12 @@ class TestPullrequestsView(object):
             repo_name=pull_request.target_repo.scm_instance().name,
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
 
-        origin = assert_response.get_element('.pr-origininfo .tag')
+        origin = response.assert_response().get_element('.pr-origininfo .tag')
         assert origin.text.strip() == 'bookmark: origin'
         assert origin.getchildren() == []
 
-        target = assert_response.get_element('.pr-targetinfo .tag')
+        target = response.assert_response().get_element('.pr-targetinfo .tag')
         assert target.text.strip() == 'bookmark: target'
         assert target.getchildren() == []
 
@@ -1060,13 +1043,12 @@ class TestPullrequestsView(object):
             repo_name=pull_request.target_repo.scm_instance().name,
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
-        assert_response = AssertResponse(response)
 
-        origin = assert_response.get_element('.pr-origininfo .tag')
+        origin = response.assert_response().get_element('.pr-origininfo .tag')
         assert origin.text.strip() == 'tag: origin'
         assert origin.getchildren() == []
 
-        target = assert_response.get_element('.pr-targetinfo .tag')
+        target = response.assert_response().get_element('.pr-targetinfo .tag')
         assert target.text.strip() == 'tag: target'
         assert target.getchildren() == []
 
@@ -1090,12 +1072,13 @@ class TestPullrequestsView(object):
             repo_name=target_repo.name,
             pull_request_id=pr_id))
 
-        assertr = AssertResponse(response)
         if mergeable:
-            assertr.element_value_contains('input.pr-mergeinfo', shadow_url)
-            assertr.element_value_contains('input.pr-mergeinfo ', 'pr-merge')
+            response.assert_response().element_value_contains(
+                'input.pr-mergeinfo', shadow_url)
+            response.assert_response().element_value_contains(
+                'input.pr-mergeinfo ', 'pr-merge')
         else:
-            assertr.no_element_exists('.pr-mergeinfo')
+            response.assert_response().no_element_exists('.pr-mergeinfo')
 
 
 @pytest.mark.usefixtures('app')

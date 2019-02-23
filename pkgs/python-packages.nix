@@ -219,11 +219,11 @@ self: super: {
     };
   };
   "click" = super.buildPythonPackage {
-    name = "click-6.6";
+    name = "click-7.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7a/00/c14926d8232b36b08218067bcd5853caefb4737cda3f0a47437151344792/click-6.6.tar.gz";
-      sha256 = "1sggipyz52crrybwbr9xvwxd4aqigvplf53k9w3ygxmzivd1jsnc";
+      url = "https://files.pythonhosted.org/packages/f8/5c/f60e9d8a1e77005f664b76ff8aeaee5bc05d0a91798afd7f53fc998dbc47/Click-7.0.tar.gz";
+      sha256 = "1mzjixd4vjbjvzb6vylki9w1556a9qmdh35kzmq6cign46av952v";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -260,11 +260,11 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.5.0";
+    name = "configparser-3.7.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7c/69/c2ce7e91c89dc073eb1aa74c0621c3eefbffe8216b3f9af9d3885265c01c/configparser-3.5.0.tar.gz";
-      sha256 = "0fi7vf09vi1588jd8f16a021m5y6ih2hy7rpbjb408xw45qb822k";
+      url = "https://files.pythonhosted.org/packages/b6/a6/eceea7c5a5dbcf56815bed411c38cabd8a879386be10717b160e7362b5a2/configparser-3.7.1.tar.gz";
+      sha256 = "0cnz213il9lhgda6x70fw7mfqr8da43s3wm343lwzhqx94mgmmav";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -374,11 +374,14 @@ self: super: {
     };
   };
   "dogpile.cache" = super.buildPythonPackage {
-    name = "dogpile.cache-0.6.7";
+    name = "dogpile.cache-0.7.1";
     doCheck = false;
+    propagatedBuildInputs = [
+      self."decorator"
+    ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ee/bd/440da735a11c6087eed7cc8747fc4b995cbac2464168682f8ee1c8e43844/dogpile.cache-0.6.7.tar.gz";
-      sha256 = "1aw8rx8vhb75y7zc6gi67g21sw057jdx7i8m3jq7kf3nqavxx9zw";
+      url = "https://files.pythonhosted.org/packages/84/3e/dbf1cfc5228f1d3dca80ef714db2c5aaec5cd9efaf54d7e3daef6bc48b19/dogpile.cache-0.7.1.tar.gz";
+      sha256 = "0caazmrzhnfqb5yrp8myhw61ny637jj69wcngrpbvi31jlcpy6v9";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -407,30 +410,75 @@ self: super: {
     };
   };
   "elasticsearch" = super.buildPythonPackage {
-    name = "elasticsearch-2.3.0";
+    name = "elasticsearch-6.3.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."urllib3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/35/5fd52c5f0b0ee405ed4b5195e8bce44c5e041787680dc7b94b8071cac600/elasticsearch-2.3.0.tar.gz";
-      sha256 = "10ad2dk73xsys9vajwsncibs69asa63w1hgwz6lz1prjpyi80c5y";
+      url = "https://files.pythonhosted.org/packages/9d/ce/c4664e8380e379a9402ecfbaf158e56396da90d520daba21cfa840e0eb71/elasticsearch-6.3.1.tar.gz";
+      sha256 = "12y93v0yn7a4xmf969239g8gb3l4cdkclfpbk1qc8hx5qkymrnma";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
     };
   };
   "elasticsearch-dsl" = super.buildPythonPackage {
-    name = "elasticsearch-dsl-2.2.0";
+    name = "elasticsearch-dsl-6.3.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."python-dateutil"
       self."elasticsearch"
+      self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/66/2f/52a086968788e58461641570f45c3207a52d46ebbe9b77dc22b6a8ffda66/elasticsearch-dsl-2.2.0.tar.gz";
-      sha256 = "1g4kxzxsdwlsl2a9kscmx11pafgimhj7y8wrfksv8pgvpkfb9fwr";
+      url = "https://files.pythonhosted.org/packages/4c/0d/1549f50c591db6bb4e66cbcc8d34a6e537c3d89aa426b167c244fd46420a/elasticsearch-dsl-6.3.1.tar.gz";
+      sha256 = "1gh8a0shqi105k325hgwb9avrpdjh0mc6mxwfg9ba7g6lssb702z";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch1" = super.buildPythonPackage {
+    name = "elasticsearch1-1.10.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."urllib3"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/a6/eb/73e75f9681fa71e3157b8ee878534235d57f24ee64f0e77f8d995fb57076/elasticsearch1-1.10.0.tar.gz";
+      sha256 = "0g89444kd5zwql4vbvyrmi2m6l6dcj6ga98j4hqxyyyz6z20aki2";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch1-dsl" = super.buildPythonPackage {
+    name = "elasticsearch1-dsl-0.0.12";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."six"
+      self."python-dateutil"
+      self."elasticsearch1"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/eb/9d/785342775cb10eddc9b8d7457d618a423b4f0b89d8b2b2d1bc27190d71db/elasticsearch1-dsl-0.0.12.tar.gz";
+      sha256 = "0ig1ly39v93hba0z975wnhbmzwj28w6w1sqlr2g7cn5spp732bhk";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "elasticsearch2" = super.buildPythonPackage {
+    name = "elasticsearch2-2.5.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."urllib3"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/84/77/63cf63d4ba11d913b5278406f2a37b0712bec6fc85edfb6151a33eaeba25/elasticsearch2-2.5.0.tar.gz";
+      sha256 = "0ky0q16lbvz022yv6q3pix7aamf026p1y994537ccjf0p0dxnbxr";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -517,14 +565,14 @@ self: super: {
     };
   };
   "gevent" = super.buildPythonPackage {
-    name = "gevent-1.3.7";
+    name = "gevent-1.4.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."greenlet"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/c1/9499b146bfa43aa4f1e0ed1bab1bd3209a4861d25650c11725036c731cf5/gevent-1.3.7.tar.gz";
-      sha256 = "0b0fr04qdk1p4sniv87fh8z5psac60x01pv054kpgi94520g81iz";
+      url = "https://files.pythonhosted.org/packages/ed/27/6c49b70808f569b66ec7fac2e78f076e9b204db9cf5768740cff3d5a07ae/gevent-1.4.0.tar.gz";
+      sha256 = "1lchr4akw2jkm5v4kz7bdm4wv3knkfhbfn9vkkz4s5yrkcxzmdqy";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -673,11 +721,11 @@ self: super: {
     };
   };
   "iso8601" = super.buildPythonPackage {
-    name = "iso8601-0.1.11";
+    name = "iso8601-0.1.12";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c0/75/c9209ee4d1b5975eb8c2cba4428bde6b61bd55664a98290dd015cdb18e98/iso8601-0.1.11.tar.gz";
-      sha256 = "0c7gh3lsdjds262h0v1sqc66l7hqgfwbakn96qrhdbl0i3vm5yz8";
+      url = "https://files.pythonhosted.org/packages/45/13/3db24895497345fb44c4248c08b16da34a9eb02643cea2754b21b5ed08b0/iso8601-0.1.12.tar.gz";
+      sha256 = "10nyvvnrhw2w3p09v1ica4lgj6f4g9j3kkfx17qmraiq3w7b5i29";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -768,14 +816,14 @@ self: super: {
     };
   };
   "kombu" = super.buildPythonPackage {
-    name = "kombu-4.2.0";
+    name = "kombu-4.2.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."amqp"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ab/b1/46a7a8babf5e60f3b2ca081a100af8edfcf132078a726375f52a054e70cf/kombu-4.2.0.tar.gz";
-      sha256 = "1yz19qlqf0inl1mnwlpq9j6kj9r67clpy0xg99phyg4329rw80fn";
+      url = "https://files.pythonhosted.org/packages/39/9f/556b988833abede4a80dbd18b2bdf4e8ff4486dd482ed45da961347e8ed2/kombu-4.2.1.tar.gz";
+      sha256 = "10lh3hncvw67fz0k5vgbx3yh9gjfpqdlia1f13i28cgnc1nfrbc6";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -818,11 +866,11 @@ self: super: {
     };
   };
   "markupsafe" = super.buildPythonPackage {
-    name = "markupsafe-1.0";
+    name = "markupsafe-1.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/4d/de/32d741db316d8fdb7680822dd37001ef7a448255de9699ab4bfcbdf4172b/MarkupSafe-1.0.tar.gz";
-      sha256 = "0rdn1s8x9ni7ss8rfiacj7x1085lx8mh2zdwqslnw8xc3l4nkgm6";
+      url = "https://files.pythonhosted.org/packages/ac/7e/1b4c2e05809a4414ebce0892fe1e32c14ace86ca7d50c70f00979ca9b3a3/MarkupSafe-1.1.0.tar.gz";
+      sha256 = "1lxirjypbdd3l9jl4vliilhfnhy7c7f2vlldqg1b0i74khn375sf";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -862,14 +910,14 @@ self: super: {
     };
   };
   "more-itertools" = super.buildPythonPackage {
-    name = "more-itertools-4.3.0";
+    name = "more-itertools-5.0.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/88/ff/6d485d7362f39880810278bdc906c13300db05485d9c65971dec1142da6a/more-itertools-4.3.0.tar.gz";
-      sha256 = "17h3na0rdh8xq30w4b9pizgkdxmm51896bxw600x84jflg9vaxn4";
+      url = "https://files.pythonhosted.org/packages/dd/26/30fc0d541d9fdf55faf5ba4b0fd68f81d5bd2447579224820ad525934178/more-itertools-5.0.0.tar.gz";
+      sha256 = "1r12cm6mcdwdzz7d47a6g4l437xsvapdlgyhqay3i2nrlv03da9q";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -960,32 +1008,32 @@ self: super: {
     };
   };
   "paste" = super.buildPythonPackage {
-    name = "paste-2.0.3";
+    name = "paste-3.0.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/30/c3/5c2f7c7a02e4f58d4454353fa1c32c94f79fa4e36d07a67c0ac295ea369e/Paste-2.0.3.tar.gz";
-      sha256 = "062jk0nlxf6lb2wwj6zc20rlvrwsnikpkh90y0dn8cjch93s6ii3";
+      url = "https://files.pythonhosted.org/packages/d4/41/91bde422400786b1b06357c1e6e3a5379f54dc3002aeb337cb767233304e/Paste-3.0.5.tar.gz";
+      sha256 = "1a6i8fh1fg8r4x800fvy9r82m15clwjim6yf2g9r4dff0y40dchv";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "pastedeploy" = super.buildPythonPackage {
-    name = "pastedeploy-1.5.2";
+    name = "pastedeploy-2.0.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0f/90/8e20cdae206c543ea10793cbf4136eb9a8b3f417e04e40a29d72d9922cbd/PasteDeploy-1.5.2.tar.gz";
-      sha256 = "1jz3m4hq8v6hyhfjz9425nd3nvn52cvbfipdcd72krjmla4qz1fm";
+      url = "https://files.pythonhosted.org/packages/19/a0/5623701df7e2478a68a1b685d1a84518024eef994cde7e4da8449a31616f/PasteDeploy-2.0.1.tar.gz";
+      sha256 = "02imfbbx1mi2h546f3sr37m47dk9qizaqhzzlhx8bkzxa6fzn8yl";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "pastescript" = super.buildPythonPackage {
-    name = "pastescript-2.0.2";
+    name = "pastescript-3.0.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."paste"
@@ -993,23 +1041,23 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e5/f0/78e766c3dcc61a4f3a6f71dd8c95168ae9c7a31722b5663d19c1fdf62cb6/PasteScript-2.0.2.tar.gz";
-      sha256 = "1h3nnhn45kf4pbcv669ik4faw04j58k8vbj1hwrc532k0nc28gy0";
+      url = "https://files.pythonhosted.org/packages/08/2a/3797377a884ab9a064ad4d564ed612e54d26d7997caa8229c9c9df4eac31/PasteScript-3.0.0.tar.gz";
+      sha256 = "1hvmyz1sbn7ws1syw567ph7km9fi0wi75r3vlyzx6sk0z26xkm6r";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "pathlib2" = super.buildPythonPackage {
-    name = "pathlib2-2.3.2";
+    name = "pathlib2-2.3.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."scandir"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/db/a8/7d6439c1aec525ed70810abee5b7d7f3aa35347f59bc28343e8f62019aa2/pathlib2-2.3.2.tar.gz";
-      sha256 = "10yb0iv5x2hs631rcppkhbddx799d3h8pcwmkbh2a66ns3w71ccf";
+      url = "https://files.pythonhosted.org/packages/bf/d7/a2568f4596b75d2c6e2b4094a7e64f620decc7887f69a1f2811931ea15b9/pathlib2-2.3.3.tar.gz";
+      sha256 = "0hpp92vqqgcd8h92msm9slv161b1q160igjwnkf2ag6cx0c96695";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1084,11 +1132,11 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.8.0";
+    name = "pluggy-0.8.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/65/25/81d0de17cd00f8ca994a4e74e3c4baf7cd25072c0b831dad5c7d9d6138f8/pluggy-0.8.0.tar.gz";
-      sha256 = "1580p47l2zqzsza8jcnw1h2wh3vvmygk6ly8bvi4w0g8j14sjys4";
+      url = "https://files.pythonhosted.org/packages/38/e1/83b10c17688af7b2998fa5342fec58ecbd2a5a7499f31e606ae6640b71ac/pluggy-0.8.1.tar.gz";
+      sha256 = "05l6g42p9ilmabw0hlbiyxy6gyzjri41m5l11a8dzgvi77q35p4d";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1110,11 +1158,11 @@ self: super: {
     };
   };
   "psutil" = super.buildPythonPackage {
-    name = "psutil-5.4.7";
+    name = "psutil-5.4.8";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7d/9a/1e93d41708f8ed2b564395edfa3389f0fd6d567597401c2e5e2775118d8b/psutil-5.4.7.tar.gz";
-      sha256 = "0fsgmvzwbdbszkwfnqhib8jcxm4w6zyhvlxlcda0rfm5cyqj4qsv";
+      url = "https://files.pythonhosted.org/packages/e3/58/0eae6e4466e5abf779d7e2b71fac7fba5f59e00ea36ddb3ed690419ccb0f/psutil-5.4.8.tar.gz";
+      sha256 = "1hyna338sml2cl1mfb2gs89np18z27mvyhmq4ifh22x07n7mq9kf";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1180,25 +1228,25 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.4";
+    name = "pyasn1-0.4.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/46/059775dc8e50f722d205452bced4b3cc965d27e8c3389156acd3b1123ae3/pyasn1-0.4.4.tar.gz";
-      sha256 = "0drilmx5j25aplfr5wrml0030cs5fgxp9yp94fhllxgx28yjm3zm";
+      url = "https://files.pythonhosted.org/packages/46/60/b7e32f6ff481b8a1f6c8f02b0fd9b693d1c92ddd2efb038ec050d99a7245/pyasn1-0.4.5.tar.gz";
+      sha256 = "1xqh3jh2nfi2bflk5a0vn59y3pp1vn54f3ksx652sid92gz2096s";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.2";
+    name = "pyasn1-modules-0.2.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/37/33/74ebdc52be534e683dc91faf263931bc00ae05c6073909fde53999088541/pyasn1-modules-0.2.2.tar.gz";
-      sha256 = "0ivm850yi7ajjbi8j115qpsj95bgxdsx48nbjzg0zip788c3xkx0";
+      url = "https://files.pythonhosted.org/packages/bd/a5/ef7bf693e8a8f015386c9167483199f54f8a8ec01d1c737e05524f16e792/pyasn1-modules-0.2.4.tar.gz";
+      sha256 = "0z3w5dqrrvdplg9ma45j8n23xvyrj9ki8mg4ibqbn7l4qpl90855";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1238,28 +1286,14 @@ self: super: {
     };
   };
   "pygments" = super.buildPythonPackage {
-    name = "pygments-2.3.0";
+    name = "pygments-2.3.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/63/a2/91c31c4831853dedca2a08a0f94d788fc26a48f7281c99a303769ad2721b/Pygments-2.3.0.tar.gz";
-      sha256 = "1z34ms51dh4jq4h3cizp7vd1dmsxcbvffkjsd2xxfav22nn6lrl2";
+      url = "https://files.pythonhosted.org/packages/64/69/413708eaf3a64a6abb8972644e0f20891a55e621c6759e2c3f3891e05d63/Pygments-2.3.1.tar.gz";
+      sha256 = "0ji87g09jph8jqcvclgb02qvxasdnr9pzvk90rl66d90yqcxmyjz";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
-    };
-  };
-  "pygments-markdown-lexer" = super.buildPythonPackage {
-    name = "pygments-markdown-lexer-0.1.0.dev39";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."pygments"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c3/12/674cdee66635d638cedb2c5d9c85ce507b7b2f91bdba29e482f1b1160ff6/pygments-markdown-lexer-0.1.0.dev39.zip";
-      sha256 = "1pzb5wy23q3fhs0rqzasjnw6hdzwjngpakb73i98cn0b8lk8q4jc";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.asl20 ];
     };
   };
   "pymysql" = super.buildPythonPackage {
@@ -1285,35 +1319,34 @@ self: super: {
     };
   };
   "pyparsing" = super.buildPythonPackage {
-    name = "pyparsing-1.5.7";
+    name = "pyparsing-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/6f/2c/47457771c02a8ff0f302b695e094ec309e30452232bd79198ee94fda689f/pyparsing-1.5.7.tar.gz";
-      sha256 = "17z7ws076z977sclj628fvwrp8y9j2rvdjcsq42v129n1gwi8vk4";
+      url = "https://files.pythonhosted.org/packages/d0/09/3e6a5eeb6e04467b737d55f8bba15247ac0876f98fae659e58cd744430c6/pyparsing-2.3.0.tar.gz";
+      sha256 = "14k5v7n3xqw8kzf42x06bzp184spnlkya2dpjyflax6l3yrallzk";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "pyramid" = super.buildPythonPackage {
-    name = "pyramid-1.9.2";
+    name = "pyramid-1.10.1";
     doCheck = false;
     propagatedBuildInputs = [
-      self."setuptools"
-      self."webob"
-      self."repoze.lru"
-      self."zope.interface"
-      self."zope.deprecation"
-      self."venusian"
-      self."translationstring"
-      self."pastedeploy"
+      self."hupper"
       self."plaster"
       self."plaster-pastedeploy"
-      self."hupper"
+      self."setuptools"
+      self."translationstring"
+      self."venusian"
+      self."webob"
+      self."zope.deprecation"
+      self."zope.interface"
+      self."repoze.lru"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a0/c1/b321d07cfc4870541989ad131c86a1d593bfe802af0eca9718a0dadfb97a/pyramid-1.9.2.tar.gz";
-      sha256 = "09drsl0346nchgxp2j7sa5hlk7mkhfld9wvbd0wicacrp26a92fg";
+      url = "https://files.pythonhosted.org/packages/0a/3e/22e3ac9be1b70a01139adba8906ee4b8f628bb469fea3c52f6c97b73063c/pyramid-1.10.1.tar.gz";
+      sha256 = "1h5105nfh6rsrfjiyw20aavyibj36la3hajy6vh1fa77xb4y3hrp";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1335,7 +1368,7 @@ self: super: {
     };
   };
   "pyramid-debugtoolbar" = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-4.4";
+    name = "pyramid-debugtoolbar-4.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyramid"
@@ -1345,8 +1378,8 @@ self: super: {
       self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/00/6f/c04eb4e715a7a5a4b24079ab7ffd1dceb1f70b2e24fc17686a2922dbac0a/pyramid_debugtoolbar-4.4.tar.gz";
-      sha256 = "17p7nxvapvy2hab1rah3ndq2kbs4v83pixj8x2n4m7008ai9lxsz";
+      url = "https://files.pythonhosted.org/packages/14/28/1f240239af340d19ee271ac62958158c79edb01a44ad8c9885508dd003d2/pyramid_debugtoolbar-4.5.tar.gz";
+      sha256 = "0x2p3409pnx66n6dx5vc0mk2r1cp1ydr8mp120w44r9pwcngbibl";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
@@ -1519,11 +1552,11 @@ self: super: {
     };
   };
   "python-editor" = super.buildPythonPackage {
-    name = "python-editor-1.0.3";
+    name = "python-editor-1.0.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/65/1e/adf6e000ea5dc909aa420352d6ba37f16434c8a3c2fa030445411a1ed545/python-editor-1.0.3.tar.gz";
-      sha256 = "0rf5xz8vw93v7mhdcvind7fkykipzga430wkcd7wk892xsn6dh53";
+      url = "https://files.pythonhosted.org/packages/0a/85/78f4a216d28343a67b7397c99825cff336330893f00601443f7c7b2f2234/python-editor-1.0.4.tar.gz";
+      sha256 = "0yrjh8w72ivqxi4i7xsg5b1vz15x8fg51xra7c3bgfyxqnyadzai";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 { fullName = "Apache"; } ];
@@ -1657,7 +1690,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.15.2";
+    name = "rhodecode-enterprise-ce-4.16.0";
     buildInputs = [
       self."pytest"
       self."py"
@@ -1668,9 +1701,10 @@ self: super: {
       self."pytest-timeout"
       self."gprof2dot"
       self."mock"
-      self."webtest"
       self."cov-core"
       self."coverage"
+      self."webtest"
+      self."beautifulsoup4"
       self."configobj"
     ];
     doCheck = true;
@@ -1723,7 +1757,6 @@ self: super: {
       self."pycrypto"
       self."pycurl"
       self."pyflakes"
-      self."pygments-markdown-lexer"
       self."pygments"
       self."pyparsing"
       self."pyramid-beaker"
@@ -1794,9 +1827,10 @@ self: super: {
       self."pytest-timeout"
       self."gprof2dot"
       self."mock"
-      self."webtest"
       self."cov-core"
       self."coverage"
+      self."webtest"
+      self."beautifulsoup4"
     ];
     src = ./.;
     meta = {
@@ -1804,7 +1838,7 @@ self: super: {
     };
   };
   "rhodecode-tools" = super.buildPythonPackage {
-    name = "rhodecode-tools-1.0.1";
+    name = "rhodecode-tools-1.2.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."click"
@@ -1813,14 +1847,16 @@ self: super: {
       self."mako"
       self."markupsafe"
       self."requests"
-      self."elasticsearch"
-      self."elasticsearch-dsl"
       self."urllib3"
       self."whoosh"
+      self."elasticsearch"
+      self."elasticsearch-dsl"
+      self."elasticsearch2"
+      self."elasticsearch1-dsl"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.0.1.tar.gz?md5=ffb5d6bcb855305b93cfe23ad42e500b";
-      sha256 = "0nr300s4sg685qs4wgbwlplwriawrwi6jq79z37frcnpyc89gpvm";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.2.1.tar.gz?md5=25bc2f7de1da318e547236d3fb463d28";
+      sha256 = "1k8l3s4mvshza1zay6dfxprq54fyb5dc85dqdva9wa3f466y0adk";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];
@@ -1864,11 +1900,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.6.2";
+    name = "setuptools-40.8.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b0/d1/8acb42f391cba52e35b131e442e80deffbb8d0676b93261d761b1f0ef8fb/setuptools-40.6.2.zip";
-      sha256 = "0r2c5hapirlzm34h7pl1lgkm6gk7bcrlrdj28qgsvaqg3f74vfw6";
+      url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
+      sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1897,11 +1933,11 @@ self: super: {
     };
   };
   "simplejson" = super.buildPythonPackage {
-    name = "simplejson-3.11.1";
+    name = "simplejson-3.16.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/08/48/c97b668d6da7d7bebe7ea1817a6f76394b0ec959cb04214ca833c34359df/simplejson-3.11.1.tar.gz";
-      sha256 = "1rr58dppsq73p0qcd9bsw066cdd3v63sqv7j6sqni8frvm4jv8h1";
+      url = "https://files.pythonhosted.org/packages/e3/24/c35fb1c1c315fc0fffe61ea00d3f88e85469004713dab488dee4f35b0aff/simplejson-3.16.0.tar.gz";
+      sha256 = "19cws1syk8jzq2pw43878dv6fjkb0ifvjpx0i9aajix6kc9jkwxi";
     };
     meta = {
       license = [ { fullName = "Academic Free License (AFL)"; } pkgs.lib.licenses.mit ];
@@ -1945,25 +1981,25 @@ self: super: {
     };
   };
   "subprocess32" = super.buildPythonPackage {
-    name = "subprocess32-3.5.2";
+    name = "subprocess32-3.5.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c3/5f/7117737fc7114061837a4f51670d863dd7f7f9c762a6546fa8a0dcfe61c8/subprocess32-3.5.2.tar.gz";
-      sha256 = "11v62shwmdys48g7ncs3a8jwwnkcl8d4zcwy6dk73z1zy2f9hazb";
+      url = "https://files.pythonhosted.org/packages/be/2b/beeba583e9877e64db10b52a96915afc0feabf7144dcbf2a0d0ea68bf73d/subprocess32-3.5.3.tar.gz";
+      sha256 = "1hr5fan8i719hmlmz73hf8rhq74014w07d8ryg7krvvf6692kj3b";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
     };
   };
   "supervisor" = super.buildPythonPackage {
-    name = "supervisor-3.3.4";
+    name = "supervisor-3.3.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."meld3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/44/60/698e54b4a4a9b956b2d709b4b7b676119c833d811d53ee2500f1b5e96dc3/supervisor-3.3.4.tar.gz";
-      sha256 = "0wp62z9xprvz2krg02xnbwcnq6pxfq3byd8cxx8c2d8xznih28i1";
+      url = "https://files.pythonhosted.org/packages/ba/65/92575a8757ed576beaee59251f64a3287bde82bdc03964b89df9e1d29e1b/supervisor-3.3.5.tar.gz";
+      sha256 = "1w3ahridzbc6rxfpbyx8lij6pjlcgf2ymzyg53llkjqxalp6sk8v";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -2059,11 +2095,11 @@ self: super: {
     };
   };
   "urllib3" = super.buildPythonPackage {
-    name = "urllib3-1.21";
+    name = "urllib3-1.24.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/34/95/7b28259d0006ed681c424cd71a668363265eac92b67dddd018eb9a22bff8/urllib3-1.21.tar.gz";
-      sha256 = "0irnj4wvh2y36s4q3l2vas9qr9m766w6w418nb490j3mf8a8zw6h";
+      url = "https://files.pythonhosted.org/packages/b1/53/37d82ab391393565f2f831b8eedbffd57db5a718216f82f1a8b4d381a1c1/urllib3-1.24.1.tar.gz";
+      sha256 = "08lwd9f3hqznyf32vnzwvp87pchx062nkbgyrf67rwlkgj0jk5fy";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2081,22 +2117,22 @@ self: super: {
     };
   };
   "venusian" = super.buildPythonPackage {
-    name = "venusian-1.1.0";
+    name = "venusian-1.2.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/38/24/b4b470ab9e0a2e2e9b9030c7735828c8934b4c6b45befd1bb713ec2aeb2d/venusian-1.1.0.tar.gz";
-      sha256 = "0zapz131686qm0gazwy8bh11vr57pr89jbwbl50s528sqy9f80lr";
+      url = "https://files.pythonhosted.org/packages/7e/6f/40a9d43ac77cb51cb62be5b5662d170f43f8037bdc4eab56336c4ca92bb7/venusian-1.2.0.tar.gz";
+      sha256 = "0ghyx66g8ikx9nx1mnwqvdcqm11i1vlq0hnvwl50s48bp22q5v34";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
   "vine" = super.buildPythonPackage {
-    name = "vine-1.1.4";
+    name = "vine-1.2.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/32/23/36284986e011f3c130d802c3c66abd8f1aef371eae110ddf80c5ae22e1ff/vine-1.1.4.tar.gz";
-      sha256 = "0wkskb2hb494v9gixqnf4bl972p4ibcmxdykzpwjlfa5picns4aj";
+      url = "https://files.pythonhosted.org/packages/46/1a/c94317efa98040c5d50fe3cf9080cafb0372ff5afb0283dc018c751c6746/vine-1.2.0.tar.gz";
+      sha256 = "0xjz2sjbr5jrpjk411b7alkghdskhphgsqqrbi7abqfh2pli6j7f";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -2182,18 +2218,18 @@ self: super: {
     };
   };
   "webob" = super.buildPythonPackage {
-    name = "webob-1.7.4";
+    name = "webob-1.8.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/75/34/731e23f52371852dfe7490a61644826ba7fe70fd52a377aaca0f4956ba7f/WebOb-1.7.4.tar.gz";
-      sha256 = "1na01ljg04z40il7vcrn8g29vaw7nvg1xvhk64cr4jys5wcay44d";
+      url = "https://files.pythonhosted.org/packages/e4/6c/99e322c3d4cc11d9060a67a9bf2f7c9c581f40988c11fffe89bb8c36bc5e/WebOb-1.8.4.tar.gz";
+      sha256 = "16cfg5y4n6sihz59vsmns2yqbfm0gfsn3l5xgz2g0pdhilaib0x4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "webtest" = super.buildPythonPackage {
-    name = "webtest-2.0.29";
+    name = "webtest-2.0.32";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
@@ -2202,8 +2238,8 @@ self: super: {
       self."beautifulsoup4"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/94/de/8f94738be649997da99c47b104aa3c3984ecec51a1d8153ed09638253d56/WebTest-2.0.29.tar.gz";
-      sha256 = "0bcj1ica5lnmj5zbvk46x28kgphcsgh7sfnwjmn0cr94mhawrg6v";
+      url = "https://files.pythonhosted.org/packages/27/9f/9e74449d272ffbef4fb3012e6dbc53c0b24822d545e7a33a342f80131e59/WebTest-2.0.32.tar.gz";
+      sha256 = "0qp0nnbazzm4ibjiyqfcn6f230svk09i4g58zg2i9x1ga06h48a2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -604,12 +604,9 @@ class UsersView(UserAppView):
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
     @view_config(
-        route_name='user_force_password_reset', request_method='POST',
+        route_name='user_enable_force_password_reset', request_method='POST',
         renderer='rhodecode:templates/admin/users/user_edit.mako')
-    def user_force_password_reset(self):
-        """
-        toggle reset password flag for this user
-        """
+    def user_enable_force_password_reset(self):
         _ = self.request.translate
         c = self.load_default_context()
 
@@ -617,19 +614,41 @@ class UsersView(UserAppView):
         c.user = self.db_user
 
         try:
-            old_value = c.user.user_data.get('force_password_change')
-            c.user.update_userdata(force_password_change=not old_value)
+            c.user.update_userdata(force_password_change=True)
 
-            if old_value:
-                msg = _('Force password change disabled for user')
-                audit_logger.store_web(
-                    'user.edit.password_reset.disabled',
-                    user=c.rhodecode_user)
-            else:
-                msg = _('Force password change enabled for user')
-                audit_logger.store_web(
-                    'user.edit.password_reset.enabled',
-                    user=c.rhodecode_user)
+            msg = _('Force password change enabled for user')
+            audit_logger.store_web('user.edit.password_reset.enabled',
+                                   user=c.rhodecode_user)
+
+            Session().commit()
+            h.flash(msg, category='success')
+        except Exception:
+            log.exception("Exception during password reset for user")
+            h.flash(_('An error occurred during password reset for user'),
+                    category='error')
+
+        raise HTTPFound(h.route_path('user_edit_advanced', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='user_disable_force_password_reset', request_method='POST',
+        renderer='rhodecode:templates/admin/users/user_edit.mako')
+    def user_disable_force_password_reset(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.db_user_id
+        c.user = self.db_user
+
+        try:
+            c.user.update_userdata(force_password_change=False)
+
+            msg = _('Force password change disabled for user')
+            audit_logger.store_web(
+                'user.edit.password_reset.disabled',
+                user=c.rhodecode_user)
 
             Session().commit()
             h.flash(msg, category='success')

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -65,6 +65,7 @@ class TestGetPullRequest(object):
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
+            'state': pull_request.pull_request_state,
             'created_on': pull_request.created_on,
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,

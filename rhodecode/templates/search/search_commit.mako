@@ -1,4 +1,7 @@
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="search" file="/search/search.mako"/>
+
+% if c.formatted_results:
 
 <table class="rctable search-results">
     <tr>
@@ -17,16 +20,11 @@
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate
-        % if h.HasRepoPermissionAny('repository.write','repository.read','repository.admin')(entry['repository'], 'search results commit check'):
+        % if c.rhodecode_user.is_admin or h.HasRepoPermissionAny('repository.write','repository.read','repository.admin')(entry['repository'], 'search results commit check'):
             <tr class="body">
                 <td class="td-componentname">
-                    %if h.get_repo_type_by_name(entry.get('repository')) == 'hg':
-                        <i class="icon-hg"></i>
-                    %elif h.get_repo_type_by_name(entry.get('repository')) == 'git':
-                        <i class="icon-git"></i>
-                    %elif h.get_repo_type_by_name(entry.get('repository')) == 'svn':
-                        <i class="icon-svn"></i>
-                    %endif
+                    <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
+                    ${search.repo_icon(repo_type)}
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
                 <td class="td-commit">
@@ -50,14 +48,20 @@
                 </td>
 
                 <td class="td-user author">
-                    ${base.gravatar_with_user(entry['author'])}
+                    <%
+                    ## es6 stores this as object
+                    author = entry['author']
+                    if isinstance(author, dict):
+                        author = author['email']
+                    %>
+                    ${base.gravatar_with_user(author)}
                 </td>
             </tr>
         % endif
     %endfor
 </table>
 
-%if c.cur_query and c.formatted_results:
+%if c.cur_query:
 <div class="pagination-wh pagination-left">
     ${c.formatted_results.pager('$link_previous ~2~ $link_next')}
 </div>
@@ -69,14 +73,26 @@
       var cid = target_expand.data('commit-id');
 
       if (target_expand.hasClass('open')){
-        $('#c-'+cid).css({'height': '1.5em', 'white-space': 'nowrap', 'text-overflow': 'ellipsis', 'overflow':'hidden'})
-        $('#t-'+cid).css({'height': 'auto', 'line-height': '.9em', 'text-overflow': 'ellipsis', 'overflow':'hidden'})
+        $('#c-'+cid).css({'height': '1.5em', 'white-space': 'nowrap', 'text-overflow': 'ellipsis', 'overflow':'hidden'});
+        $('#t-'+cid).css({'height': 'auto', 'line-height': '.9em', 'text-overflow': 'ellipsis', 'overflow':'hidden'});
         target_expand.removeClass('open');
       }
       else {
-        $('#c-'+cid).css({'height': 'auto', 'white-space': 'normal', 'text-overflow': 'initial', 'overflow':'visible'})
-        $('#t-'+cid).css({'height': 'auto', 'max-height': 'none', 'text-overflow': 'initial', 'overflow':'visible'})
+        $('#c-'+cid).css({'height': 'auto', 'white-space': 'normal', 'text-overflow': 'initial', 'overflow':'visible'});
+        $('#t-'+cid).css({'height': 'auto', 'max-height': 'none', 'text-overflow': 'initial', 'overflow':'visible'});
         target_expand.addClass('open');
       }
     });
+
+    $(".message.td-description").mark(
+        "${c.searcher.query_to_mark(c.cur_query, 'message')}",
+        {
+            "className": 'match',
+            "accuracy": "complementary",
+            "ignorePunctuation": ":._(){}[]!'+=".split("")
+        }
+    );
+
 </script>
+
+% endif

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -513,6 +513,8 @@ class ScmModel(BaseModel):
         :param commit_id: commit id for which to list nodes
         :param root_path: root path to list
         :param flat: return as a list, if False returns a dict with description
+        :param extended_info: show additional info such as md5, binary, size etc
+        :param content: add nodes content to the return data
         :param max_file_bytes: will not return file contents over this limit
 
         """
@@ -523,15 +525,14 @@ class ScmModel(BaseModel):
             commit = _repo.scm_instance().get_commit(commit_id=commit_id)
             root_path = root_path.lstrip('/')
             for __, dirs, files in commit.walk(root_path):
+
                 for f in files:
                     _content = None
-                    _data = f.unicode_path
-                    over_size_limit = (max_file_bytes is not None
-                                       and f.size > max_file_bytes)
+                    _data = f_name = f.unicode_path
 
                     if not flat:
                         _data = {
-                            "name": h.escape(f.unicode_path),
+                            "name": h.escape(f_name),
                             "type": "file",
                             }
                         if extended_info:
@@ -545,6 +546,8 @@ class ScmModel(BaseModel):
                             })
 
                         if content:
+                            over_size_limit = (max_file_bytes is not None
+                                               and f.size > max_file_bytes)
                             full_content = None
                             if not f.is_binary and not over_size_limit:
                                 full_content = safe_str(f.content)
@@ -553,11 +556,12 @@ class ScmModel(BaseModel):
                                 "content": full_content,
                             })
                     _files.append(_data)
+
                 for d in dirs:
-                    _data = d.unicode_path
+                    _data = d_name = d.unicode_path
                     if not flat:
                         _data = {
-                            "name": h.escape(d.unicode_path),
+                            "name": h.escape(d_name),
                             "type": "dir",
                             }
                     if extended_info:
@@ -573,10 +577,113 @@ class ScmModel(BaseModel):
                         })
                     _dirs.append(_data)
         except RepositoryError:
-            log.debug("Exception in get_nodes", exc_info=True)
+            log.exception("Exception in get_nodes")
             raise
 
         return _dirs, _files
+
+    def get_node(self, repo_name, commit_id, file_path,
+                 extended_info=False, content=False, max_file_bytes=None, cache=True):
+        """
+        retrieve single node from commit
+        """
+        try:
+
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+
+            file_node = commit.get_node(file_path)
+            if file_node.is_dir():
+                raise RepositoryError('The given path is a directory')
+
+            _content = None
+            f_name = file_node.unicode_path
+
+            file_data = {
+                "name": h.escape(f_name),
+                "type": "file",
+            }
+
+            if extended_info:
+                file_data.update({
+                    "extension": file_node.extension,
+                    "mimetype": file_node.mimetype,
+                })
+
+                if cache:
+                    md5 = file_node.md5
+                    is_binary = file_node.is_binary
+                    size = file_node.size
+                else:
+                    is_binary, md5, size, _content = file_node.metadata_uncached()
+
+                file_data.update({
+                    "md5": md5,
+                    "binary": is_binary,
+                    "size": size,
+                })
+
+            if content and cache:
+                # get content + cache
+                size = file_node.size
+                over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
+                full_content = None
+                if not file_node.is_binary and not over_size_limit:
+                    full_content = safe_unicode(file_node.content)
+
+                file_data.update({
+                    "content": full_content,
+                })
+            elif content:
+                # get content *without* cache
+                if _content is None:
+                    is_binary, md5, size, _content = file_node.metadata_uncached()
+
+                over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
+                full_content = None
+                if not is_binary and not over_size_limit:
+                    full_content = safe_unicode(_content)
+
+                file_data.update({
+                    "content": full_content,
+                })
+
+        except RepositoryError:
+            log.exception("Exception in get_node")
+            raise
+
+        return file_data
+
+    def get_fts_data(self, repo_name, commit_id, root_path='/'):
+        """
+        Fetch node tree for usage in full text search
+        """
+
+        tree_info = list()
+
+        try:
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+            root_path = root_path.lstrip('/')
+            for __, dirs, files in commit.walk(root_path):
+
+                for f in files:
+                    is_binary, md5, size, _content = f.metadata_uncached()
+                    _data = {
+                        "name": f.unicode_path,
+                        "md5": md5,
+                        "extension": f.extension,
+                        "binary": is_binary,
+                        "size": size
+                    }
+
+                    tree_info.append(_data)
+
+        except RepositoryError:
+            log.exception("Exception in get_nodes")
+            raise
+
+        return tree_info
 
     def create_nodes(self, user, repo, message, nodes, parent_commit=None,
                      author=None, trigger_push_hook=True):

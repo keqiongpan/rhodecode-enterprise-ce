@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import unicodedata
+from pyramid import compat
 
 
 def strip_preparer(value):
@@ -83,6 +84,6 @@ def unique_list_from_str_preparer(value):
     """
     from rhodecode.lib.utils2 import aslist
 
-    if isinstance(value, basestring):
+    if isinstance(value, compat.string_types):
         value = aslist(value, ',')
     return unique_list_preparer(value)

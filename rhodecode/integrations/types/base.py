@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2018 RhodeCode GmbH
+# Copyright (C) 2012-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,15 +23,25 @@ import string
 import collections
 import logging
 import requests
+import urllib
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 from mako import exceptions
 
+from rhodecode.lib.utils2 import safe_str
 from rhodecode.translation import _
 
 
 log = logging.getLogger(__name__)
+
+
+class UrlTmpl(string.Template):
+
+    def safe_substitute(self, **kws):
+        # url encode the kw for usage in url
+        kws = {k: urllib.quote(safe_str(v)) for k, v in kws.items()}
+        return super(UrlTmpl, self).safe_substitute(**kws)
 
 
 class IntegrationTypeBase(object):
@@ -217,7 +227,9 @@ class WebhookDataHandler(CommitParsingDataHandler):
         common_vars.update(extra_vars)
 
         template_url = self.template_url.replace('${extra:', '${extra__')
-        return string.Template(template_url).safe_substitute(**common_vars)
+        for k, v in common_vars.items():
+            template_url = UrlTmpl(template_url).safe_substitute(**{k: v})
+        return template_url
 
     def repo_push_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
@@ -228,20 +240,18 @@ class WebhookDataHandler(CommitParsingDataHandler):
         if '${branch}' in url or '${branch_head}' in url or '${commit_id}' in url:
             # call it multiple times, for each branch if used in variables
             for branch, commit_ids in branches_commits.items():
-                branch_url = string.Template(url).safe_substitute(branch=branch)
+                branch_url = UrlTmpl(url).safe_substitute(branch=branch)
 
                 if '${branch_head}' in branch_url:
                     # last commit in the aggregate is the head of the branch
                     branch_head = commit_ids['branch_head']
-                    branch_url = string.Template(branch_url).safe_substitute(
-                        branch_head=branch_head)
+                    branch_url = UrlTmpl(branch_url).safe_substitute(branch_head=branch_head)
 
                 # call further down for each commit if used
                 if '${commit_id}' in branch_url:
                     for commit_data in commit_ids['commits']:
                         commit_id = commit_data['raw_id']
-                        commit_url = string.Template(branch_url).safe_substitute(
-                            commit_id=commit_id)
+                        commit_url = UrlTmpl(branch_url).safe_substitute(commit_id=commit_id)
                         # register per-commit call
                         log.debug(
                             'register %s call(%s) to url %s',
@@ -251,36 +261,34 @@ class WebhookDataHandler(CommitParsingDataHandler):
 
                 else:
                     # register per-branch call
-                    log.debug(
-                        'register %s call(%s) to url %s',
-                        self.name, event, branch_url)
-                    url_calls.append(
-                        (branch_url, self.headers, data))
+                    log.debug('register %s call(%s) to url %s',
+                              self.name, event, branch_url)
+                    url_calls.append((branch_url, self.headers, data))
 
         else:
-            log.debug(
-                'register %s call(%s) to url %s', self.name, event, url)
+            log.debug('register %s call(%s) to url %s', self.name, event, url)
             url_calls.append((url, self.headers, data))
 
         return url_calls
 
     def repo_create_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
-        log.debug(
-            'register %s call(%s) to url %s', self.name, event, url)
+        log.debug('register %s call(%s) to url %s', self.name, event, url)
         return [(url, self.headers, data)]
 
     def pull_request_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
-        log.debug(
-            'register %s call(%s) to url %s', self.name, event, url)
-        url = string.Template(url).safe_substitute(
-            pull_request_id=data['pullrequest']['pull_request_id'],
-            pull_request_title=data['pullrequest']['title'],
-            pull_request_url=data['pullrequest']['url'],
-            pull_request_shadow_url=data['pullrequest']['shadow_url'],
-            pull_request_commits_uid=data['pullrequest']['commits_uid'],
-        )
+        log.debug('register %s call(%s) to url %s', self.name, event, url)
+        pr_vars = [
+            ('pull_request_id', data['pullrequest']['pull_request_id']),
+            ('pull_request_title', data['pullrequest']['title']),
+            ('pull_request_url', data['pullrequest']['url']),
+            ('pull_request_shadow_url', data['pullrequest']['shadow_url']),
+            ('pull_request_commits_uid', data['pullrequest']['commits_uid']),
+        ]
+        for k, v in pr_vars:
+            url = UrlTmpl(url).safe_substitute(**{k: v})
+
         return [(url, self.headers, data)]
 
     def __call__(self, event, data):

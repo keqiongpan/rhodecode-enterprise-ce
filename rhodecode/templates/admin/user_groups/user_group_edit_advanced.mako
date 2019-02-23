@@ -2,6 +2,7 @@
 
 <%
  elems = [
+    (_('User Group ID'), c.user_group.users_group_id, '', ''),
     (_('Owner'), lambda:base.gravatar_with_user(c.user_group.user.email), '', ''),
     (_('Created on'), h.format_date(c.user_group.created_on), '', '',),
 

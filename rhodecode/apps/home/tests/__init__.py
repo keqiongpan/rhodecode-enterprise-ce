@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -31,7 +31,14 @@ def assert_and_get_main_filter_content(result):
         assert data_item['url']
 
         if data_item['type'] == 'search':
-            assert data_item['value_display'].startswith('Full text search for:')
+            display_val = data_item['value_display']
+            if data_item['id'] == -1:
+                assert 'File search for:' in display_val, display_val
+            elif data_item['id'] == -2:
+                assert 'Commit search for:' in display_val, display_val
+            else:
+                assert False, 'No Proper ID returned {}'.format(data_item['id'])
+
         elif data_item['type'] == 'repo':
             repos.append(data_item)
         elif data_item['type'] == 'repo_group':

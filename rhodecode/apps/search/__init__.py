@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -28,7 +28,16 @@ def includeme(config):
 
     config.add_route(
         name='search_repo',
+        pattern='/{repo_name:.*?[^/]}/_search', repo_route=True)
+
+    config.add_route(
+        name='search_repo_alt',
         pattern='/{repo_name:.*?[^/]}/search', repo_route=True)
+
+    config.add_route(
+        name='search_repo_group',
+        pattern='/{repo_group_name:.*?[^/]}/_search',
+        repo_group_route=True)
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')

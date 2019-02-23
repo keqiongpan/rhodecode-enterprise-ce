@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -40,7 +40,7 @@ from pyramid.threadlocal import get_current_request
 import rhodecode
 
 from rhodecode.lib.auth import AuthUser
-from rhodecode.lib.celerylib.utils import get_ini_config, parse_ini_vars
+from rhodecode.lib.celerylib.utils import get_ini_config, parse_ini_vars, ping_db
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.pyramid_utils import bootstrap, setup_logging, prepare_request
 from rhodecode.lib.utils2 import str2bool
@@ -144,6 +144,11 @@ def on_preload_parsed(options, **kwargs):
     rhodecode.CELERY_ENABLED = True
 
 
+@signals.task_prerun.connect
+def task_prerun_signal(task_id, task, args, **kwargs):
+    ping_db()
+
+
 @signals.task_success.connect
 def task_success_signal(result, **kwargs):
     meta.Session.commit()
@@ -170,7 +175,7 @@ def task_failure_signal(
 
     # simulate sys.exc_info()
     exc_info = (einfo.type, einfo.exception, einfo.tb)
-    store_exception(id(exc_info), exc_info, prefix='celery_rhodecode')
+    store_exception(id(exc_info), exc_info, prefix='rhodecode-celery')
 
     closer = celery_app.conf['PYRAMID_CLOSER']
     if closer:
@@ -227,8 +232,7 @@ def maybe_prepare_env(req):
         environ.update({
             'PATH_INFO': req.environ['PATH_INFO'],
             'SCRIPT_NAME': req.environ['SCRIPT_NAME'],
-            'HTTP_HOST':
-                req.environ.get('HTTP_HOST', req.environ['SERVER_NAME']),
+            'HTTP_HOST':req.environ.get('HTTP_HOST', req.environ['SERVER_NAME']),
             'SERVER_NAME': req.environ['SERVER_NAME'],
             'SERVER_PORT': req.environ['SERVER_PORT'],
             'wsgi.url_scheme': req.environ['wsgi.url_scheme'],

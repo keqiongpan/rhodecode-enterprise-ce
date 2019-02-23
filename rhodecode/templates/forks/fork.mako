@@ -8,9 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('New Fork')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -24,7 +22,6 @@
 <div class="box">
       <div class="title">
           ${self.repo_page_title(c.rhodecode_db_repo)}
-          ${self.breadcrumbs()}
       </div>
 
     ${h.secure_form(h.route_path('repo_fork_create',repo_name=c.rhodecode_db_repo.repo_name), request=request)}
@@ -44,21 +41,6 @@
             </div>
 
             <div class="field">
-                <div class="label label-textarea">
-                    <label for="description">${_('Description')}:</label>
-                </div>
-                <div class="textarea-repo textarea text-area editor">
-                    ${h.textarea('description')}
-                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
-                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
-                    <span id="meta-tags-desc" style="display: none">
-                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
-                        ${dt.metatags_help()}
-                    </span>
-                </div>
-            </div>
-
-            <div class="field">
                  <div class="label">
                      <label for="repo_group">${_('Repository group')}:</label>
                  </div>
@@ -73,13 +55,28 @@
                  </div>
             </div>
 
-             <div class="field">
+            <div class="field">
+                <div class="label label-textarea">
+                    <label for="description">${_('Description')}:</label>
+                </div>
+                <div class="textarea editor">
+                    ${h.textarea('description',cols=23,rows=5,class_="medium")}
+                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span id="meta-tags-desc" style="display: none">
+                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                        ${dt.metatags_help()}
+                    </span>
+                </div>
+            </div>
+
+            <div class="field">
                 <div class="label">
                     <label for="landing_rev">${_('Landing commit')}:</label>
                 </div>
                 <div class="select">
                     ${h.select('landing_rev','',c.landing_revs,class_="medium")}
-                    <span class="help-block">${_('Default commit for files page, downloads, whoosh and readme')}</span>
+                    <span class="help-block">${_('The default commit for file pages, downloads, full text search index, and README generation.')}</span>
                 </div>
             </div>
 
@@ -89,7 +86,7 @@
                 </div>
                 <div class="checkboxes">
                     ${h.checkbox('copy_permissions',value="True", checked="checked")}
-                    <span class="help-block">${_('Copy permissions from forked repository')}</span>
+                    <span class="help-block">${_('Copy permissions from parent repository.')}</span>
                 </div>
             </div>
 

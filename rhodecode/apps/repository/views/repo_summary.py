@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -24,7 +24,7 @@ import rhodecode
 
 from pyramid.view import view_config
 
-from rhodecode.controllers import utils
+from rhodecode.lib.view_utils import get_format_ref_id
 from rhodecode.apps._base import RepoAppView
 from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.lib import helpers as h, rc_cache
@@ -141,7 +141,8 @@ class RepoSummaryView(RepoAppView):
 
         pre_load = ['author', 'branch', 'date', 'message']
         try:
-            collection = self.rhodecode_vcs_repo.get_commits(pre_load=pre_load)
+            collection = self.rhodecode_vcs_repo.get_commits(
+                pre_load=pre_load, translate_tags=False)
         except EmptyRepositoryError:
             collection = self.rhodecode_vcs_repo
 
@@ -351,7 +352,7 @@ class RepoSummaryView(RepoAppView):
         return data
 
     def _create_reference_data(self, repo, full_repo_name, refs_to_create):
-        format_ref_id = utils.get_format_ref_id(repo)
+        format_ref_id = get_format_ref_id(repo)
 
         result = []
         for title, refs, ref_type in refs_to_create:

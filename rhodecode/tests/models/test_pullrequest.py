@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -50,9 +50,11 @@ class TestPullRequestModel(object):
         A pull request combined with multiples patches.
         """
         BackendClass = get_backend(backend.alias)
+        merge_resp = MergeResponse(
+            False, False, None, MergeFailureReason.UNKNOWN,
+            metadata={'exception': 'MockError'})
         self.merge_patcher = mock.patch.object(
-            BackendClass, 'merge', return_value=MergeResponse(
-            False, False, None, MergeFailureReason.UNKNOWN))
+            BackendClass, 'merge', return_value=merge_resp)
         self.workspace_remove_patcher = mock.patch.object(
             BackendClass, 'cleanup_merge_workspace')
 
@@ -162,7 +164,7 @@ class TestPullRequestModel(object):
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
-        assert msg.eval() == 'This pull request can be automatically merged.'
+        assert msg == 'This pull request can be automatically merged.'
         self.merge_mock.assert_called_with(
             self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
@@ -177,7 +179,7 @@ class TestPullRequestModel(object):
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
-        assert msg.eval() == 'This pull request can be automatically merged.'
+        assert msg == 'This pull request can be automatically merged.'
         assert self.merge_mock.called is False
 
     def test_merge_status_known_failure(self, pull_request):
@@ -190,9 +192,7 @@ class TestPullRequestModel(object):
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert (
-            msg.eval() ==
-            'This pull request cannot be merged because of merge conflicts.')
+        assert msg == 'This pull request cannot be merged because of merge conflicts.'
         self.merge_mock.assert_called_with(
             self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
@@ -208,14 +208,13 @@ class TestPullRequestModel(object):
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert (
-            msg.eval() ==
-            'This pull request cannot be merged because of merge conflicts.')
+        assert msg == 'This pull request cannot be merged because of merge conflicts.'
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
         self.merge_mock.return_value = MergeResponse(
-            False, False, None, MergeFailureReason.UNKNOWN)
+            False, False, None, MergeFailureReason.UNKNOWN,
+            metadata={'exception': 'MockError'})
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
@@ -223,9 +222,9 @@ class TestPullRequestModel(object):
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg.eval() == (
-            'This pull request cannot be merged because of an unhandled'
-            ' exception.')
+        assert msg == (
+            'This pull request cannot be merged because of an unhandled exception. '
+            'MockError')
         self.merge_mock.assert_called_with(
             self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
@@ -240,26 +239,25 @@ class TestPullRequestModel(object):
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg.eval() == (
-            'This pull request cannot be merged because of an unhandled'
-            ' exception.')
+        assert msg == (
+            'This pull request cannot be merged because of an unhandled exception. '
+            'MockError')
         assert self.merge_mock.called is True
 
     def test_merge_status_when_target_is_locked(self, pull_request):
         pull_request.target_repo.locked = [1, u'12345.50', 'lock_web']
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg.eval() == (
-            'This pull request cannot be merged because the target repository'
-            ' is locked.')
+        assert msg == (
+            'This pull request cannot be merged because the target repository '
+            'is locked by user:1.')
 
     def test_merge_status_requirements_check_target(self, pull_request):
 
         def has_largefiles(self, repo):
             return repo == pull_request.source_repo
 
-        patcher = mock.patch.object(
-            PullRequestModel, '_has_largefiles', has_largefiles)
+        patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
             status, msg = PullRequestModel().merge_status(pull_request)
 
@@ -271,8 +269,7 @@ class TestPullRequestModel(object):
         def has_largefiles(self, repo):
             return repo == pull_request.target_repo
 
-        patcher = mock.patch.object(
-            PullRequestModel, '_has_largefiles', has_largefiles)
+        patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
             status, msg = PullRequestModel().merge_status(pull_request)
 
@@ -315,9 +312,50 @@ class TestPullRequestModel(object):
             self.pull_request, self.pull_request.author, 'merge')
 
         pull_request = PullRequest.get(pull_request.pull_request_id)
-        assert (
-            pull_request.merge_rev ==
-            '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
+        assert pull_request.merge_rev == '6126b7bfcc82ad2d3deaee22af926b082ce54cc6'
+
+    def test_merge_with_status_lock(self, pull_request, merge_extras):
+        user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
+        merge_ref = Reference(
+            'type', 'name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
+        self.merge_mock.return_value = MergeResponse(
+            True, True, merge_ref, MergeFailureReason.NONE)
+
+        merge_extras['repository'] = pull_request.target_repo.repo_name
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            assert pull_request.pull_request_state == PullRequest.STATE_UPDATING
+            PullRequestModel().merge_repo(
+                pull_request, pull_request.author, extras=merge_extras)
+
+        assert pull_request.pull_request_state == PullRequest.STATE_CREATED
+
+        message = (
+            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'\n\n {pr_title}'.format(
+                pr_id=pull_request.pull_request_id,
+                source_repo=safe_unicode(
+                    pull_request.source_repo.scm_instance().name),
+                source_ref_name=pull_request.source_ref_parts.name,
+                pr_title=safe_unicode(pull_request.title)
+            )
+        )
+        self.merge_mock.assert_called_with(
+            self.repo_id, self.workspace_id,
+            pull_request.target_ref_parts,
+            pull_request.source_repo.scm_instance(),
+            pull_request.source_ref_parts,
+            user_name=user.short_contact, user_email=user.email, message=message,
+            use_rebase=False, close_branch=False
+        )
+        self.invalidation_mock.assert_called_once_with(
+            pull_request.target_repo.repo_name)
+
+        self.hook_mock.assert_called_with(
+            self.pull_request, self.pull_request.author, 'merge')
+
+        pull_request = PullRequest.get(pull_request.pull_request_id)
+        assert pull_request.merge_rev == '6126b7bfcc82ad2d3deaee22af926b082ce54cc6'
 
     def test_merge_failed(self, pull_request, merge_extras):
         user = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
@@ -458,6 +496,46 @@ def test_outdated_comments(
         assert_inline_comments(
             pull_request, visible=inlines_count, outdated=outdated_count)
     outdated_comment_mock.assert_called_with(pull_request)
+
+
+@pytest.mark.parametrize('mr_type, expected_msg', [
+    (MergeFailureReason.NONE,
+     'This pull request can be automatically merged.'),
+    (MergeFailureReason.UNKNOWN,
+     'This pull request cannot be merged because of an unhandled exception. CRASH'),
+    (MergeFailureReason.MERGE_FAILED,
+     'This pull request cannot be merged because of merge conflicts.'),
+    (MergeFailureReason.PUSH_FAILED,
+     'This pull request could not be merged because push to target:`some-repo@merge_commit` failed.'),
+    (MergeFailureReason.TARGET_IS_NOT_HEAD,
+     'This pull request cannot be merged because the target `ref_name` is not a head.'),
+    (MergeFailureReason.HG_SOURCE_HAS_MORE_BRANCHES,
+     'This pull request cannot be merged because the source contains more branches than the target.'),
+    (MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS,
+     'This pull request cannot be merged because the target has multiple heads: `a,b,c`.'),
+    (MergeFailureReason.TARGET_IS_LOCKED,
+     'This pull request cannot be merged because the target repository is locked by user:123.'),
+    (MergeFailureReason.MISSING_TARGET_REF,
+     'This pull request cannot be merged because the target reference `ref_name` is missing.'),
+    (MergeFailureReason.MISSING_SOURCE_REF,
+     'This pull request cannot be merged because the source reference `ref_name` is missing.'),
+    (MergeFailureReason.SUBREPO_MERGE_FAILED,
+     'This pull request cannot be merged because of conflicts related to sub repositories.'),
+
+])
+def test_merge_response_message(mr_type, expected_msg):
+    merge_ref = Reference('type', 'ref_name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
+    metadata = {
+        'exception': "CRASH",
+        'target': 'some-repo',
+        'merge_commit': 'merge_commit',
+        'target_ref': merge_ref,
+        'source_ref': merge_ref,
+        'heads': ','.join(['a', 'b', 'c']),
+        'locked_by': 'user:123'}
+
+    merge_response = MergeResponse(True, True, merge_ref, mr_type, metadata=metadata)
+    assert merge_response.merge_status_message == expected_msg
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -45,8 +45,8 @@ class RequestWrapperTween(object):
             end = time.time()
             total = end - start
             log.info(
-                'IP: %s Request to %s time: %.3fs [%s]',
-                get_ip_addr(request.environ),
+                'IP: %s %s Request to %s time: %.3fs [%s]',
+                get_ip_addr(request.environ), request.environ.get('REQUEST_METHOD'),
                 safe_str(get_access_path(request.environ)), total,
                 get_user_agent(request. environ)
             )

@@ -516,7 +516,7 @@ Example usage:
     $ ~/.rccontrol/enterprise-4/profile/bin/rhodecode-index \
         --instance-name=enterprise-4
 
-    # Run indexer based on mapping.ini file
+    # Run indexer based on search_mapping.ini file
     # This is using pre-350 virtualenv
     (venv)$ rhodecode-index --instance-name=enterprise-1
 
@@ -527,7 +527,7 @@ Example usage:
 
     # Create the indexing mapping file
     $ ~/.rccontrol/enterprise-4/profile/bin/rhodecode-index \
-        --create-mapping mapping.ini --instance-name=enterprise-4
+        --create-mapping search_mapping.ini --instance-name=enterprise-4
 
 .. _tools-rhodecode-list-instance:
 

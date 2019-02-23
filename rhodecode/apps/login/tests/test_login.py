@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -106,6 +106,26 @@ class TestLoginController(object):
         assert username == 'test_regular'
 
         response.mustcontain('/%s' % HG_REPO)
+
+    def test_login_regular_forbidden_when_super_admin_restriction(self):
+        from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
+        with fixture.auth_restriction(RhodeCodeAuthPlugin.AUTH_RESTRICTION_SUPER_ADMIN):
+            response = self.app.post(route_path('login'),
+                                     {'username': 'test_regular',
+                                      'password': 'test12'})
+
+            response.mustcontain('invalid user name')
+            response.mustcontain('invalid password')
+
+    def test_login_regular_forbidden_when_scope_restriction(self):
+        from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
+        with fixture.scope_restriction(RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_VCS):
+            response = self.app.post(route_path('login'),
+                                     {'username': 'test_regular',
+                                      'password': 'test12'})
+
+            response.mustcontain('invalid user name')
+            response.mustcontain('invalid password')
 
     def test_login_ok_came_from(self):
         test_came_from = '/_admin/users?branch=stable'

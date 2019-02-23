@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -29,13 +29,15 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
-from rhodecode.lib import audit_logger
+from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
 from rhodecode.lib.celerylib.utils import get_task_id
-from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str
+from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
+from rhodecode.lib.vcs import RepositoryError
+from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
@@ -380,7 +382,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
 
     try:
         commits = vcs_repo.get_commits(
-            start_id=start_rev, pre_load=pre_load)
+            start_id=start_rev, pre_load=pre_load, translate_tags=False)
     except TypeError as e:
         raise JSONRPCError(safe_str(e))
     except Exception:
@@ -428,8 +430,8 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         ``all`` (default), ``files`` and ``dirs``.
     :type ret_type: Optional(str)
     :param details: Returns extended information about nodes, such as
-        md5, binary, and or content.  The valid options are ``basic`` and
-        ``full``.
+        md5, binary, and or content.
+        The valid options are ``basic`` and ``full``.
     :type details: Optional(str)
     :param max_file_bytes: Only return file content under this file size bytes
     :type details: Optional(int)
@@ -440,12 +442,17 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
         id : <id_given_in_input>
         result: [
-                  {
-                    "name" : "<name>"
-                    "type" : "<type>",
-                    "binary": "<true|false>" (only in extended mode)
-                    "md5"  : "<md5 of file content>" (only in extended mode)
-                  },
+                    {
+                      "binary": false,
+                      "content": "File line\nLine2\n",
+                      "extension": "md",
+                      "lines": 2,
+                      "md5": "059fa5d29b19c0657e384749480f6422",
+                      "mimetype": "text/x-minidsrc",
+                      "name": "file.md",
+                      "size": 580,
+                      "type": "file"
+                    },
                   ...
                 ]
         error:  null
@@ -453,16 +460,14 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
 
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        _perms = (
-            'repository.admin', 'repository.write', 'repository.read',)
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     ret_type = Optional.extract(ret_type)
     details = Optional.extract(details)
     _extended_types = ['basic', 'full']
     if details not in _extended_types:
-        raise JSONRPCError(
-            'ret_type must be one of %s' % (','.join(_extended_types)))
+        raise JSONRPCError('ret_type must be one of %s' % (','.join(_extended_types)))
     extended_info = False
     content = False
     if details == 'basic':
@@ -496,6 +501,149 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         raise JSONRPCError(
             'failed to get repo: `%s` nodes' % repo.repo_name
         )
+
+
+@jsonrpc_method()
+def get_repo_file(request, apiuser, repoid, commit_id, file_path,
+                  max_file_bytes=Optional(None), details=Optional('basic'),
+                  cache=Optional(True)):
+    """
+    Returns a single file from repository at given revision.
+
+    This command can only be run using an |authtoken| with admin rights,
+    or users with at least read rights to |repos|.
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: The repository name or repository ID.
+    :type repoid: str or int
+    :param commit_id: The revision for which listing should be done.
+    :type commit_id: str
+    :param file_path: The path from which to start displaying.
+    :type file_path: str
+    :param details: Returns different set of information about nodes.
+        The valid options are ``minimal`` ``basic`` and ``full``.
+    :type details: Optional(str)
+    :param max_file_bytes: Only return file content under this file size bytes
+    :type max_file_bytes: Optional(int)
+    :param cache: Use internal caches for fetching files. If disabled fetching
+        files is slower but more memory efficient
+    :type cache: Optional(bool)
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result: {
+            "binary": false,
+            "extension": "py",
+            "lines": 35,
+            "content": "....",
+            "md5": "76318336366b0f17ee249e11b0c99c41",
+            "mimetype": "text/x-python",
+            "name": "python.py",
+            "size": 817,
+            "type": "file",
+        }
+        error:  null
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    cache = Optional.extract(cache, binary=True)
+    details = Optional.extract(details)
+    _extended_types = ['minimal', 'minimal+search', 'basic', 'full']
+    if details not in _extended_types:
+        raise JSONRPCError(
+            'ret_type must be one of %s, got %s' % (','.join(_extended_types)), details)
+    extended_info = False
+    content = False
+
+    if details == 'minimal':
+        extended_info = False
+
+    elif details == 'basic':
+        extended_info = True
+
+    elif details == 'full':
+        extended_info = content = True
+
+    try:
+        # check if repo is not empty by any chance, skip quicker if it is.
+        _scm = repo.scm_instance()
+        if _scm.is_empty():
+            return None
+
+        node = ScmModel().get_node(
+            repo, commit_id, file_path, extended_info=extended_info,
+            content=content, max_file_bytes=max_file_bytes, cache=cache)
+    except NodeDoesNotExistError:
+        raise JSONRPCError('There is no file in repo: `{}` at path `{}` for commit: `{}`'.format(
+            repo.repo_name, file_path, commit_id))
+    except Exception:
+        log.exception("Exception occurred while trying to get repo %s file",
+                      repo.repo_name)
+        raise JSONRPCError('failed to get repo: `{}` file at path {}'.format(
+            repo.repo_name, file_path))
+
+    return node
+
+
+@jsonrpc_method()
+def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
+    """
+    Returns a list of tree nodes for path at given revision. This api is built
+    strictly for usage in full text search building, and shouldn't be consumed
+
+    This command can only be run using an |authtoken| with admin rights,
+    or users with at least read rights to |repos|.
+
+    """
+
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    repo_id = repo.repo_id
+    cache_seconds = safe_int(rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+    cache_on = cache_seconds > 0
+
+    cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+    region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+
+    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
+                                           condition=cache_on)
+    def compute_fts_tree(repo_id, commit_id, root_path, cache_ver):
+        return ScmModel().get_fts_data(repo_id, commit_id, root_path)
+
+    try:
+        # check if repo is not empty by any chance, skip quicker if it is.
+        _scm = repo.scm_instance()
+        if _scm.is_empty():
+            return []
+    except RepositoryError:
+        log.exception("Exception occurred while trying to get repo nodes")
+        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
+
+    try:
+        # we need to resolve commit_id to a FULL sha for cache to work correctly.
+        # sending 'master' is a pointer that needs to be translated to current commit.
+        commit_id = _scm.get_commit(commit_id=commit_id).raw_id
+        log.debug(
+            'Computing FTS REPO TREE for repo_id %s commit_id `%s` '
+            'with caching: %s[TTL: %ss]' % (
+                repo_id, commit_id, cache_on, cache_seconds or 0))
+
+        tree_files = compute_fts_tree(repo_id, commit_id, root_path, 'v1')
+        return tree_files
+
+    except Exception:
+        log.exception("Exception occurred while trying to get repo nodes")
+        raise JSONRPCError('failed to get repo: `%s` nodes' % repo.repo_name)
 
 
 @jsonrpc_method()
@@ -1506,6 +1654,73 @@ def comment_commit(
 
 
 @jsonrpc_method()
+def get_repo_comments(request, apiuser, repoid,
+                      commit_id=Optional(None), comment_type=Optional(None),
+                      userid=Optional(None)):
+    """
+    Get all comments for a repository
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param repoid: Set the repository name or repository ID.
+    :type repoid: str or int
+    :param commit_id: Optionally filter the comments by the commit_id
+    :type commit_id: Optional(str), default: None
+    :param comment_type: Optionally filter the comments by the comment_type
+        one of: 'note', 'todo'
+    :type comment_type: Optional(str), default: None
+    :param userid: Optionally filter the comments by the author of comment
+    :type userid: Optional(str or int), Default: None
+
+    Example error output:
+
+    .. code-block:: bash
+
+        {
+            "id" : <id_given_in_input>,
+            "result" : [
+                {
+                  "comment_author": <USER_DETAILS>,
+                  "comment_created_on": "2017-02-01T14:38:16.309",
+                  "comment_f_path": "file.txt",
+                  "comment_id": 282,
+                  "comment_lineno": "n1",
+                  "comment_resolved_by": null,
+                  "comment_status": [],
+                  "comment_text": "This file needs a header",
+                  "comment_type": "todo"
+                }
+            ],
+            "error" :  null
+        }
+
+    """
+    repo = get_repo_or_error(repoid)
+    if not has_superadmin_permission(apiuser):
+        _perms = ('repository.read', 'repository.write', 'repository.admin')
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
+
+    commit_id = Optional.extract(commit_id)
+
+    userid = Optional.extract(userid)
+    if userid:
+        user = get_user_or_error(userid)
+    else:
+        user = None
+
+    comment_type = Optional.extract(comment_type)
+    if comment_type and comment_type not in ChangesetComment.COMMENT_TYPES:
+        raise JSONRPCError(
+                'comment_type must be one of `{}` got {}'.format(
+                    ChangesetComment.COMMENT_TYPES, comment_type)
+            )
+
+    comments = CommentsModel().get_repository_comments(
+        repo=repo, comment_type=comment_type, user=user, commit_id=commit_id)
+    return comments
+
+
+@jsonrpc_method()
 def grant_user_permission(request, apiuser, repoid, userid, perm):
     """
     Grant permissions for the specified user on the given repository,
@@ -1543,9 +1758,18 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    perm_additions = [[user.user_id, perm.permission_name, "user"]]
     try:
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_additions=perm_additions, cur_user=apiuser)
 
-        RepoModel().grant_user_permission(repo=repo, user=user, perm=perm)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {
@@ -1555,8 +1779,7 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
             'success': True
         }
     except Exception:
-        log.exception(
-            "Exception occurred while trying edit permissions for repo")
+        log.exception("Exception occurred while trying edit permissions for repo")
         raise JSONRPCError(
             'failed to edit permission for user: `%s` in repo: `%s`' % (
                 userid, repoid
@@ -1597,8 +1820,19 @@ def revoke_user_permission(request, apiuser, repoid, userid):
         _perms = ('repository.admin',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
+    perm_deletions = [[user.user_id, None, "user"]]
     try:
-        RepoModel().revoke_user_permission(repo=repo, user=user)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_deletions=perm_deletions, cur_user=user)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
+
         Session().commit()
         return {
             'msg': 'Revoked perm for user: `%s` in repo: `%s`' % (
@@ -1607,8 +1841,7 @@ def revoke_user_permission(request, apiuser, repoid, userid):
             'success': True
         }
     except Exception:
-        log.exception(
-            "Exception occurred while trying revoke permissions to repo")
+        log.exception("Exception occurred while trying revoke permissions to repo")
         raise JSONRPCError(
             'failed to edit permission for user: `%s` in repo: `%s`' % (
                 userid, repoid
@@ -1674,9 +1907,17 @@ def grant_user_group_permission(request, apiuser, repoid, usergroupid, perm):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    perm_additions = [[user_group.users_group_id, perm.permission_name, "user_group"]]
     try:
-        RepoModel().grant_user_group_permission(
-            repo=repo, group_name=user_group, perm=perm)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_additions=perm_additions, cur_user=apiuser)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {
@@ -1739,9 +1980,17 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
             raise JSONRPCError(
                 'user group `%s` does not exist' % (usergroupid,))
 
+    perm_deletions = [[user_group.users_group_id, None, "user_group"]]
     try:
-        RepoModel().revoke_user_group_permission(
-            repo=repo, group_name=user_group)
+        changes = RepoModel().update_permissions(
+            repo=repo, perm_deletions=perm_deletions, cur_user=apiuser)
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
 
         Session().commit()
         return {

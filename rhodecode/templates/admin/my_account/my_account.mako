@@ -28,6 +28,7 @@
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='profile' or c.active=='profile_edit' else ''}"><a href="${h.route_path('my_account_profile')}">${_('Profile')}</a></li>
           <li class="${'active' if c.active=='password' else ''}"><a href="${h.route_path('my_account_password')}">${_('Password')}</a></li>
+          <li class="${'active' if c.active=='bookmarks' else ''}"><a href="${h.route_path('my_account_bookmarks')}">${_('Bookmarks')}</a></li>
           <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
           <li class="${'active' if c.active in ['ssh_keys', 'ssh_keys_generate'] else ''}"><a href="${h.route_path('my_account_ssh_keys')}">${_('SSH Keys')}</a></li>
           <li class="${'active' if c.active=='user_group_membership' else ''}"><a href="${h.route_path('my_account_user_group_membership')}">${_('User Group Membership')}</a></li>

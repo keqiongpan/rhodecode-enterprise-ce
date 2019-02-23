@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2018 RhodeCode GmbH
+# Copyright (C) 2012-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -118,12 +118,11 @@ class WebhookSettingsSchema(colander.Schema):
     method_type = colander.SchemaNode(
         colander.String(),
         title=_('Call Method'),
-        description=_('Select if the Webhook call should be made '
-                      'with POST or GET.'),
+        description=_('Select a HTTP method to use when calling the Webhook.'),
         default='post',
         missing='',
         widget=deform.widget.RadioChoiceWidget(
-            values=[('get', 'GET'), ('post', 'POST')],
+            values=[('get', 'GET'), ('post', 'POST'), ('put', 'PUT')],
             inline=True
         ),
     )
@@ -171,8 +170,10 @@ class WebhookIntegrationType(IntegrationTypeBase):
             log.debug('event not valid: %r', event)
             return
 
-        if event.name not in self.settings['events']:
-            log.debug('event ignored: %r', event)
+        allowed_events = self.settings['events']
+        if event.name not in allowed_events:
+            log.debug('event ignored: %r event %s not in allowed events %s',
+                      event, event.name, allowed_events)
             return
 
         data = event.as_dict()
@@ -187,8 +188,7 @@ class WebhookIntegrationType(IntegrationTypeBase):
         handler = WebhookDataHandler(template_url, headers)
 
         url_calls = handler(event, data)
-        log.debug('webhook: calling following urls: %s',
-                  [x[0] for x in url_calls])
+        log.debug('Webhook: calling following urls: %s', [x[0] for x in url_calls])
 
         run_task(post_to_webhook, url_calls, self.settings)
 
@@ -202,37 +202,39 @@ def post_to_webhook(url_calls, settings):
          'actor_ip': u'192.168.157.1',
          'name': 'repo-push',
          'push': {'branches': [{'name': u'default',
-            'url': 'http://rc.local:8080/hg-repo/changelog?branch=default'}],
-          'commits': [{'author': u'Marcin Kuzminski <marcin@rhodecode.com>',
-            'branch': u'default',
-            'date': datetime.datetime(2017, 11, 30, 12, 59, 48),
-            'issues': [],
-            'mentions': [],
-            'message': u'commit Thu 30 Nov 2017 13:59:48 CET',
-            'message_html': u'commit Thu 30 Nov 2017 13:59:48 CET',
-            'message_html_title': u'commit Thu 30 Nov 2017 13:59:48 CET',
-            'parents': [{'raw_id': '431b772a5353dad9974b810dd3707d79e3a7f6e0'}],
-            'permalink_url': u'http://rc.local:8080/_7/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
-            'raw_id': 'a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
-            'refs': {'bookmarks': [], 'branches': [u'default'], 'tags': [u'tip']},
-            'reviewers': [],
-            'revision': 9L,
-            'short_id': 'a815cc738b96',
-            'url': u'http://rc.local:8080/hg-repo/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf'}],
-          'issues': {}},
+                                'url': 'http://rc.local:8080/hg-repo/changelog?branch=default'}],
+                  'commits': [{'author': u'Marcin Kuzminski <marcin@rhodecode.com>',
+                               'branch': u'default',
+                               'date': datetime.datetime(2017, 11, 30, 12, 59, 48),
+                               'issues': [],
+                               'mentions': [],
+                               'message': u'commit Thu 30 Nov 2017 13:59:48 CET',
+                               'message_html': u'commit Thu 30 Nov 2017 13:59:48 CET',
+                               'message_html_title': u'commit Thu 30 Nov 2017 13:59:48 CET',
+                               'parents': [{'raw_id': '431b772a5353dad9974b810dd3707d79e3a7f6e0'}],
+                               'permalink_url': u'http://rc.local:8080/_7/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
+                               'raw_id': 'a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf',
+                               'refs': {'bookmarks': [],
+                                        'branches': [u'default'],
+                                        'tags': [u'tip']},
+                               'reviewers': [],
+                               'revision': 9L,
+                               'short_id': 'a815cc738b96',
+                               'url': u'http://rc.local:8080/hg-repo/changeset/a815cc738b9651eb5ffbcfb1ce6ccd7c701a5ddf'}],
+                  'issues': {}},
          'repo': {'extra_fields': '',
-          'permalink_url': u'http://rc.local:8080/_7',
-          'repo_id': 7,
-          'repo_name': u'hg-repo',
-          'repo_type': u'hg',
-          'url': u'http://rc.local:8080/hg-repo'},
+                  'permalink_url': u'http://rc.local:8080/_7',
+                  'repo_id': 7,
+                  'repo_name': u'hg-repo',
+                  'repo_type': u'hg',
+                  'url': u'http://rc.local:8080/hg-repo'},
          'server_url': u'http://rc.local:8080',
          'utc_timestamp': datetime.datetime(2017, 11, 30, 13, 0, 1, 569276)
-
+         }
     """
+
     call_headers = {
-        'User-Agent': 'RhodeCode-webhook-caller/{}'.format(
-            rhodecode.__version__)
+        'User-Agent': 'RhodeCode-webhook-caller/{}'.format(rhodecode.__version__)
     }  # updated below with custom ones, allows override
 
     auth = get_auth(settings)
@@ -247,8 +249,7 @@ def post_to_webhook(url_calls, settings):
         headers = headers or {}
         call_headers.update(headers)
 
-        log.debug('calling Webhook with method: %s, and auth:%s',
-                  call_method, auth)
+        log.debug('calling Webhook with method: %s, and auth:%s', call_method, auth)
         if settings.get('log_data'):
             log.debug('calling webhook with data: %s', data)
         resp = call_method(url, json={

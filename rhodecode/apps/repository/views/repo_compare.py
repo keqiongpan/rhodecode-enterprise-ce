@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2018 RhodeCode GmbH
+# Copyright (C) 2012-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -27,12 +27,13 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.controllers.utils import parse_path_ref, get_commit_from_ref_name
+
 from rhodecode.lib import helpers as h
 from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.utils import safe_str
 from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.lib.view_utils import parse_path_ref, get_commit_from_ref_name
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, RepositoryRequirementError,
     NodeDoesNotExistError)

@@ -128,7 +128,7 @@
             %endfor
 
             ## USER GROUPS
-            %for _user_group in c.rhodecode_db_repo.permission_user_groups():
+            %for _user_group in c.rhodecode_db_repo.permission_user_groups(with_members=True):
                 <tr>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.none', checked=_user_group.permission=='repository.none')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.read', checked=_user_group.permission=='repository.read')}</td>
@@ -143,6 +143,7 @@
                         %else:
                          ${h.link_to_group(_user_group.users_group_name)}
                         %endif
+                        (${_('members')}: ${len(_user_group.members)})
                     </td>
                     <td class="td-action">
                         <span class="btn btn-link btn-danger revoke_perm"

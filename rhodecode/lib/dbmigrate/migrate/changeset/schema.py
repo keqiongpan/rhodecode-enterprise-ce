@@ -9,6 +9,7 @@ import sqlalchemy
 
 from sqlalchemy.schema import ForeignKeyConstraint
 from sqlalchemy.schema import UniqueConstraint
+from pyramid import compat
 
 from rhodecode.lib.dbmigrate.migrate.exceptions import *
 from rhodecode.lib.dbmigrate.migrate.changeset import SQLA_07, SQLA_08
@@ -229,7 +230,7 @@ class ColumnDelta(DictMixin, sqlalchemy.schema.SchemaItem):
                 diffs = self.compare_1_column(*p, **kw)
         else:
             # Zero columns specified
-            if not len(p) or not isinstance(p[0], basestring):
+            if not len(p) or not isinstance(p[0], compat.string_types):
                 raise ValueError("First argument must be column name")
             diffs = self.compare_parameters(*p, **kw)
 
@@ -338,7 +339,7 @@ class ColumnDelta(DictMixin, sqlalchemy.schema.SchemaItem):
         """Extracts data from p and modifies diffs"""
         p = list(p)
         while len(p):
-            if isinstance(p[0], basestring):
+            if isinstance(p[0], compat.string_types):
                 k.setdefault('name', p.pop(0))
             elif isinstance(p[0], sqlalchemy.types.TypeEngine):
                 k.setdefault('type', p.pop(0))
@@ -376,7 +377,7 @@ class ColumnDelta(DictMixin, sqlalchemy.schema.SchemaItem):
         return getattr(self, '_table', None)
 
     def _set_table(self, table):
-        if isinstance(table, basestring):
+        if isinstance(table, compat.string_types):
             if self.alter_metadata:
                 if not self.meta:
                     raise ValueError("metadata must be specified for table"
@@ -593,7 +594,7 @@ populated with defaults
             if isinstance(cons,(ForeignKeyConstraint,
                                 UniqueConstraint)):
                 for col_name in cons.columns:
-                    if not isinstance(col_name,basestring):
+                    if not isinstance(col_name, compat.string_types):
                         col_name = col_name.name
                     if self.name==col_name:
                         to_drop.add(cons)
@@ -628,7 +629,7 @@ populated with defaults
         if (getattr(self, name[:-5]) and not obj):
             raise InvalidConstraintError("Column.create() accepts index_name,"
             " primary_key_name and unique_name to generate constraints")
-        if not isinstance(obj, basestring) and obj is not None:
+        if not isinstance(obj, compat.string_types) and obj is not None:
             raise InvalidConstraintError(
             "%s argument for column must be constraint name" % name)
 

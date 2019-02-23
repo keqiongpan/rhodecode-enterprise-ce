@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -271,8 +271,8 @@ def includeme(config):
         repo_route=True)
 
     config.add_route(
-        name='pullrequest_repo_destinations',
-        pattern='/{repo_name:.*?[^/]}/pull-request/repo-destinations',
+        name='pullrequest_repo_targets',
+        pattern='/{repo_name:.*?[^/]}/pull-request/repo-targets',
         repo_route=True)
 
     config.add_route(

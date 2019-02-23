@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2018 RhodeCode GmbH
+# Copyright (C) 2014-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,7 +30,7 @@ from rhodecode.lib.auth import (
     HasPermissionAnyApi, HasRepoPermissionAnyApi, HasRepoGroupPermissionAnyApi)
 from rhodecode.lib.utils import safe_unicode
 from rhodecode.lib.vcs.exceptions import RepositoryError
-from rhodecode.controllers.utils import get_commit_from_ref_name
+from rhodecode.lib.view_utils import get_commit_from_ref_name
 from rhodecode.lib.utils2 import str2bool
 
 log = logging.getLogger(__name__)

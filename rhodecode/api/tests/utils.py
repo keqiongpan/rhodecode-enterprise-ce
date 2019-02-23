@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,6 +26,19 @@ from rhodecode.lib.ext_json import json
 
 
 API_URL = '/_admin/api'
+
+
+def assert_call_ok(id_, given):
+    expected = jsonify({
+        'id': id_,
+        'error': None,
+        'result': None
+    })
+    given = json.loads(given)
+
+    assert expected['id'] == given['id']
+    assert expected['error'] == given['error']
+    return given['result']
 
 
 def assert_ok(id_, expected, given):
@@ -55,8 +68,6 @@ def jsonify(obj):
 def build_data(apikey, method, **kw):
     """
     Builds API data with given random ID
-
-    :param random_id:
     """
     random_id = random.randrange(1, 9999)
     return random_id, json.dumps({

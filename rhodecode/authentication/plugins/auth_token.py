@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,7 +23,9 @@ RhodeCode authentication token plugin for built in internal auth
 """
 
 import logging
+import colander
 
+from rhodecode.authentication.schema import AuthnPluginSettingsSchemaBase
 from rhodecode.translation import _
 from rhodecode.authentication.base import (
     RhodeCodeAuthPluginBase, VCS_TYPE, hybrid_property)
@@ -48,6 +50,7 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
     Enables usage of authentication tokens for vcs operations.
     """
     uid = 'token'
+    AUTH_RESTRICTION_SCOPE_VCS = 'scope_vcs'
 
     def includeme(self, config):
         config.add_authn_plugin(self)
@@ -66,6 +69,9 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
             request_method='POST',
             route_name='auth_home',
             context=RhodecodeAuthnResource)
+
+    def get_settings_schema(self):
+        return RhodeCodeSettingsSchema()
 
     def get_display_name(self):
         return _('Rhodecode Token')
@@ -142,16 +148,30 @@ class RhodeCodeAuthPlugin(RhodeCodeAuthPluginBase):
                     'user `%s` successfully authenticated via %s',
                     user_attrs['username'], self.name)
                 return user_attrs
-            log.warn(
-                'user `%s` failed to authenticate via %s, reason: bad or '
-                'inactive token.', username, self.name)
+            log.warning('user `%s` failed to authenticate via %s, reason: bad or '
+                        'inactive token.', username, self.name)
         else:
-            log.warning(
-                'user `%s` failed to authenticate via %s, reason: account not '
-                'active.', username, self.name)
+            log.warning('user `%s` failed to authenticate via %s, reason: account not '
+                        'active.', username, self.name)
         return None
 
 
 def includeme(config):
     plugin_id = 'egg:rhodecode-enterprise-ce#{}'.format(RhodeCodeAuthPlugin.uid)
     plugin_factory(plugin_id).includeme(config)
+
+
+class RhodeCodeSettingsSchema(AuthnPluginSettingsSchemaBase):
+    auth_scope_choices = [
+        (RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_VCS, 'VCS only'),
+    ]
+
+    scope_restriction = colander.SchemaNode(
+        colander.String(),
+        default=auth_scope_choices[0],
+        description=_('Choose operation scope restriction when authenticating.'),
+        title=_('Scope restriction'),
+        validator=colander.OneOf([x[0] for x in auth_scope_choices]),
+        widget='select_with_labels',
+        choices=auth_scope_choices
+    )

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -72,6 +72,8 @@ class RepoSettingsView(RepoAppView):
             c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
                 'repository.write', 'repository.read', 'repository.admin')(
                 self.db_repo.fork.repo_name, 'repo set as fork page')
+
+        c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
 
         return self._get_template_context(c)
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,7 +35,9 @@ import msgpack
 import requests
 from requests.packages.urllib3.util.retry import Retry
 
-from . import exceptions, CurlSession
+import rhodecode
+from rhodecode.lib.system_info import get_cert_path
+from rhodecode.lib.vcs import exceptions, CurlSession
 
 
 log = logging.getLogger(__name__)
@@ -121,6 +123,8 @@ class RemoteRepo(object):
         if log.isEnabledFor(logging.DEBUG):
             self._call = self._call_with_logging
 
+        self.cert_dir = get_cert_path(rhodecode.CONFIG.get('__file__'))
+
     def __getattr__(self, name):
         def f(*args, **kwargs):
             return self._call(name, *args, **kwargs)
@@ -132,6 +136,8 @@ class RemoteRepo(object):
         # config object is being changed for hooking scenarios
         wire = copy.deepcopy(self._wire)
         wire["config"] = wire["config"].serialize()
+
+        wire["config"].append(('vcs', 'ssl_dir', self.cert_dir))
         payload = {
             'id': str(uuid.uuid4()),
             'method': name,
@@ -231,6 +237,8 @@ def _remote_call(url, payload, exceptions_map, session):
 
         try:
             exc._vcs_server_traceback = error['traceback']
+            exc._vcs_server_org_exc_name = error['org_exc']
+            exc._vcs_server_org_exc_tb = error['org_exc_tb']
         except KeyError:
             pass
 
@@ -243,8 +251,6 @@ class VcsHttpProxy(object):
     CHUNK_SIZE = 16384
 
     def __init__(self, server_and_port, backend_endpoint):
-
-
         retries = Retry(total=5, connect=None, read=None, redirect=None)
 
         adapter = requests.adapters.HTTPAdapter(max_retries=retries)

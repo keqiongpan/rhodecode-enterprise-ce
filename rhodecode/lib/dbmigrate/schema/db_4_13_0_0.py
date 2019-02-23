@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,7 +49,7 @@ from sqlalchemy.exc import IntegrityError  # pragma: no cover
 from sqlalchemy.dialects.mysql import LONGTEXT
 from beaker.cache import cache_region
 from zope.cachedescriptors.property import Lazy as LazyProperty
-
+from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
 from rhodecode.translation import _
@@ -2176,7 +2176,7 @@ class Repository(Base, BaseModel):
         warnings.warn("Use get_commit", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(rev, basestring):
+        if isinstance(rev, compat.string_types):
             commit_id = rev
         else:
             commit_idx = rev
@@ -2361,7 +2361,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )
@@ -3809,7 +3808,7 @@ class PullRequestReviewers(Base, BaseModel):
     @reasons.setter
     def reasons(self, val):
         val = val or []
-        if any(not isinstance(x, basestring) for x in val):
+        if any(not isinstance(x, compat.string_types) for x in val):
             raise Exception('invalid reasons type, must be list of strings')
         self._reasons = val
 

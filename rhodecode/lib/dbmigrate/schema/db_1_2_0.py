@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -28,6 +28,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, joinedload, class_mapper, validates
 from beaker.cache import cache_region, region_invalidate
+from pyramid import compat
 
 from rhodecode.lib.vcs import get_backend
 from rhodecode.lib.vcs.utils.helpers import get_scm
@@ -413,7 +414,7 @@ class UserGroup(Base, BaseModel):
                     Session.flush()
                     members_list = []
                     if v:
-                        v = [v] if isinstance(v, basestring) else v
+                        v = [v] if isinstance(v, compat.string_types) else v
                         for u_id in set(v):
                             member = UserGroupMember(users_group_id, u_id)
                             members_list.append(member)
@@ -679,7 +680,7 @@ class Repository(Base, BaseModel):
 class Group(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (UniqueConstraint('group_name', 'group_parent_id'),
-                      CheckConstraint('group_id != group_parent_id'), {'extend_existing':True},)
+                      {'extend_existing':True},)
     __mapper_args__ = {'order_by':'group_name'}
 
     group_id = Column("group_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)

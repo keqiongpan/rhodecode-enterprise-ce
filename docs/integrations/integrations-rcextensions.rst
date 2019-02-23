@@ -18,11 +18,11 @@ Activating rcextensions
 To activate rcextensions simply copy or rename the created template rcextensions
 into the path where the rhodecode.ini file is located::
 
-    pushd ~/rccontrol/enterprise-1/
+    pushd ~/.rccontrol/enterprise-1/
     or
-    pushd ~/rccontrol/community-1/
+    pushd ~/.rccontrol/community-1/
 
-    mv etc/rcextensions.tmpl rcextensions
+    mv profile/etc/rcextensions.tmpl rcextensions
 
 
 rcextensions are loaded when |RCE| starts. So a restart is required after activation or

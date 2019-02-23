@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -20,7 +20,7 @@
 
 import pytest
 
-from rhodecode.controllers import utils
+from rhodecode.lib import view_utils
 from rhodecode.lib.vcs.exceptions import RepositoryError
 import mock
 
@@ -34,11 +34,11 @@ def test_parse_path_ref_understands_format_ref_id_result(alias, expected):
     repo = mock.Mock(alias=alias)
 
     # Formatting of reference ids as it is used by controllers
-    format_ref_id = utils.get_format_ref_id(repo)
+    format_ref_id = view_utils.get_format_ref_id(repo)
     formatted_ref_id = format_ref_id(name='name', raw_id='raw_id')
 
     # Parsing such a reference back as it is used by controllers
-    result = utils.parse_path_ref(formatted_ref_id)
+    result = view_utils.parse_path_ref(formatted_ref_id)
 
     assert list(result) == expected
 
@@ -50,7 +50,7 @@ def test_parse_path_ref_understands_format_ref_id_result(alias, expected):
     ('p@a', None, ('p', 'a')),
 ])
 def test_parse_path_ref(ref, default_path, expected):
-    result = utils.parse_path_ref(ref, default_path)
+    result = view_utils.parse_path_ref(ref, default_path)
     assert list(result) == list(expected)
 
 
@@ -61,7 +61,7 @@ def test_parse_path_ref(ref, default_path, expected):
 ])
 def test_format_ref_id(alias, expected):
     repo = mock.Mock(alias=alias)
-    format_ref_id = utils.get_format_ref_id(repo)
+    format_ref_id = view_utils.get_format_ref_id(repo)
     result = format_ref_id(name='name', raw_id='raw_id')
     assert result == expected
 
@@ -77,7 +77,7 @@ class TestGetCommit(object):
         scm_instance.bookmarks = {ref_name: 'a_book_id'}
 
         scm_instance.get_commit.return_value = 'test'
-        commit = utils.get_commit_from_ref_name(repo, ref_name, ref_type)
+        commit = view_utils.get_commit_from_ref_name(repo, ref_name, ref_type)
         scm_instance.get_commit.assert_called_once_with('a_%s_id' % ref_type)
         assert commit == 'test'
 
@@ -90,4 +90,4 @@ class TestGetCommit(object):
         repo.scm_instance().tags = {}
         repo.scm_instance().bookmarks = {}
         with pytest.raises(RepositoryError):
-            utils.get_commit_from_ref_name(repo, ref_name, ref_type)
+            view_utils.get_commit_from_ref_name(repo, ref_name, ref_type)

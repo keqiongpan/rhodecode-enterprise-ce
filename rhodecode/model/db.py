@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -48,7 +48,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # pragma: no cover
 from sqlalchemy.dialects.mysql import LONGTEXT
 from zope.cachedescriptors.property import Lazy as LazyProperty
-
+from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
 from rhodecode.translation import _
@@ -732,8 +732,6 @@ class User(Base, BaseModel):
         if not auth_token:
             return False
 
-        crypto_backend = auth.crypto_backend()
-
         roles = (roles or []) + [UserApiKeys.ROLE_ALL]
         tokens_q = UserApiKeys.query()\
             .filter(UserApiKeys.user_id == self.user_id)\
@@ -742,39 +740,42 @@ class User(Base, BaseModel):
 
         tokens_q = tokens_q.filter(UserApiKeys.role.in_(roles))
 
-        plain_tokens = []
-        hash_tokens = []
+        crypto_backend = auth.crypto_backend()
+        enc_token_map = {}
+        plain_token_map = {}
+        for token in tokens_q:
+            if token.api_key.startswith(crypto_backend.ENC_PREF):
+                enc_token_map[token.api_key] = token
+            else:
+                plain_token_map[token.api_key] = token
+        log.debug(
+            'Found %s plain and %s encrypted user tokens to check for authentication',
+            len(plain_token_map), len(enc_token_map))
 
-        user_tokens = tokens_q.all()
-        log.debug('Found %s user tokens to check for authentication', len(user_tokens))
-        for token in user_tokens:
-            log.debug('AUTH_TOKEN: checking if user token with id `%s` matches',
-                      token.user_api_key_id)
-            # verify scope first, since it's way faster than hash calculation of
-            # encrypted tokens
-            if token.repo_id:
-                # token has a scope, we need to verify it
-                if scope_repo_id != token.repo_id:
+        # plain token match comes first
+        match = plain_token_map.get(auth_token)
+
+        # check encrypted tokens now
+        if not match:
+            for token_hash, token in enc_token_map.items():
+                # NOTE(marcink): this is expensive to calculate, but most secure
+                if crypto_backend.hash_check(auth_token, token_hash):
+                    match = token
+                    break
+
+        if match:
+            log.debug('Found matching token %s', match)
+            if match.repo_id:
+                log.debug('Found scope, checking for scope match of token %s', match)
+                if match.repo_id == scope_repo_id:
+                    return True
+                else:
                     log.debug(
                         'AUTH_TOKEN: scope mismatch, token has a set repo scope: %s, '
                         'and calling scope is:%s, skipping further checks',
-                         token.repo, scope_repo_id)
-                    # token has a scope, and it doesn't match, skip token
-                    continue
-
-            if token.api_key.startswith(crypto_backend.ENC_PREF):
-                hash_tokens.append(token.api_key)
+                         match.repo, scope_repo_id)
+                    return False
             else:
-                plain_tokens.append(token.api_key)
-
-        is_plain_match = auth_token in plain_tokens
-        if is_plain_match:
-            return True
-
-        for hashed in hash_tokens:
-            # NOTE(marcink): this is expensive to calculate, but most secure
-            match = crypto_backend.hash_check(auth_token, hashed)
-            if match:
                 return True
 
         return False
@@ -1130,10 +1131,10 @@ class UserApiKeys(Base, BaseModel):
 
     def _get_scope(self):
         if self.repo:
-            return repr(self.repo)
+            return 'Repository: {}'.format(self.repo.repo_name)
         if self.repo_group:
-            return repr(self.repo_group) + ' (recursive)'
-        return 'global'
+            return 'RepositoryGroup: {} (recursive)'.format(self.repo_group.group_name)
+        return 'Global'
 
     @property
     def scope_humanized(self):
@@ -2240,7 +2241,7 @@ class Repository(Base, BaseModel):
         warnings.warn("Use get_commit", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(rev, basestring):
+        if isinstance(rev, compat.string_types):
             commit_id = rev
         else:
             commit_idx = rev
@@ -2276,7 +2277,7 @@ class Repository(Base, BaseModel):
             # use no-cache version here
             scm_repo = self.scm_instance(cache=False, config=config)
 
-            empty = scm_repo.is_empty()
+            empty = not scm_repo or scm_repo.is_empty()
             if not empty:
                 cs_cache = scm_repo.get_commit(
                     pre_load=["author", "date", "message", "parents"])
@@ -2459,7 +2460,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         base_table_args,
     )
     __mapper_args__ = {'order_by': 'group_name'}
@@ -2480,8 +2480,7 @@ class RepoGroup(Base, BaseModel):
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
-    integrations = relationship('Integration',
-                                cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -2490,6 +2489,16 @@ class RepoGroup(Base, BaseModel):
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (
             self.__class__.__name__, self.group_id, self.group_name)
+
+    @validates('group_parent_id')
+    def validate_group_parent_id(self, key, val):
+        """
+        Check cycle references for a parent group to self
+        """
+        if self.group_id and val:
+            assert val != self.group_id
+
+        return val
 
     @hybrid_property
     def description_safe(self):
@@ -3411,7 +3420,10 @@ class ChangesetComment(Base, BaseModel):
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
-    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, backref='resolved_by')
+
+    resolved_comment = relationship('ChangesetComment', remote_side=comment_id, back_populates='resolved_by')
+    resolved_by = relationship('ChangesetComment', back_populates='resolved_comment')
+
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
     status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
@@ -3494,7 +3506,8 @@ class ChangesetComment(Base, BaseModel):
             'comment_f_path': comment.f_path,
             'comment_lineno': comment.line_no,
             'comment_author': comment.author,
-            'comment_created_on': comment.created_on
+            'comment_created_on': comment.created_on,
+            'comment_resolved_by': self.resolved
         }
         return data
 
@@ -3568,6 +3581,32 @@ class ChangesetStatus(Base, BaseModel):
         return data
 
 
+class _SetState(object):
+    """
+    Context processor allowing changing state for sensitive operation such as
+    pull request update or merge
+    """
+
+    def __init__(self, pull_request, pr_state, back_state=None):
+        self._pr = pull_request
+        self._org_state = back_state or pull_request.pull_request_state
+        self._pr_state = pr_state
+
+    def __enter__(self):
+        log.debug('StateLock: entering set state context, setting state to: `%s`',
+                  self._pr_state)
+        self._pr.pull_request_state = self._pr_state
+        Session().add(self._pr)
+        Session().commit()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        log.debug('StateLock: exiting set state context, setting state to: `%s`',
+                  self._org_state)
+        self._pr.pull_request_state = self._org_state
+        Session().add(self._pr)
+        Session().commit()
+
+
 class _PullRequestBase(BaseModel):
     """
     Common attributes of pull request and version entries.
@@ -3577,6 +3616,12 @@ class _PullRequestBase(BaseModel):
     STATUS_NEW = u'new'
     STATUS_OPEN = u'open'
     STATUS_CLOSED = u'closed'
+
+    # available states
+    STATE_CREATING = u'creating'
+    STATE_UPDATING = u'updating'
+    STATE_MERGING = u'merging'
+    STATE_CREATED = u'created'
 
     title = Column('title', Unicode(255), nullable=True)
     description = Column(
@@ -3592,6 +3637,8 @@ class _PullRequestBase(BaseModel):
     updated_on = Column(
         'updated_on', DateTime(timezone=False), nullable=False,
         default=datetime.datetime.now)
+
+    pull_request_state = Column("pull_request_state", String(255), nullable=True)
 
     @declared_attr
     def user_id(cls):
@@ -3610,7 +3657,33 @@ class _PullRequestBase(BaseModel):
             'org_repo_id', Integer(), ForeignKey('repositories.repo_id'),
             nullable=False)
 
-    source_ref = Column('org_ref', Unicode(255), nullable=False)
+    _source_ref = Column('org_ref', Unicode(255), nullable=False)
+
+    @hybrid_property
+    def source_ref(self):
+        return self._source_ref
+
+    @source_ref.setter
+    def source_ref(self, val):
+        parts = (val or '').split(':')
+        if len(parts) != 3:
+            raise ValueError(
+                'Invalid reference format given: {}, expected X:Y:Z'.format(val))
+        self._source_ref = safe_unicode(val)
+
+    _target_ref = Column('other_ref', Unicode(255), nullable=False)
+
+    @hybrid_property
+    def target_ref(self):
+        return self._target_ref
+
+    @target_ref.setter
+    def target_ref(self, val):
+        parts = (val or '').split(':')
+        if len(parts) != 3:
+            raise ValueError(
+                'Invalid reference format given: {}, expected X:Y:Z'.format(val))
+        self._target_ref = safe_unicode(val)
 
     @declared_attr
     def target_repo_id(cls):
@@ -3619,7 +3692,6 @@ class _PullRequestBase(BaseModel):
             'other_repo_id', Integer(), ForeignKey('repositories.repo_id'),
             nullable=False)
 
-    target_ref = Column('other_ref', Unicode(255), nullable=False)
     _shadow_merge_ref = Column('shadow_merge_ref', Unicode(255), nullable=True)
 
     # TODO: dan: rename column to last_merge_source_rev
@@ -3692,7 +3764,8 @@ class _PullRequestBase(BaseModel):
     def shadow_merge_ref(self, ref):
         self._shadow_merge_ref = self.reference_to_unicode(ref)
 
-    def unicode_to_reference(self, raw):
+    @staticmethod
+    def unicode_to_reference(raw):
         """
         Convert a unicode (or string) to a reference object.
         If unicode evaluates to False it returns None.
@@ -3703,7 +3776,8 @@ class _PullRequestBase(BaseModel):
         else:
             return None
 
-    def reference_to_unicode(self, ref):
+    @staticmethod
+    def reference_to_unicode(ref):
         """
         Convert a reference object to unicode.
         If reference is None it returns None.
@@ -3740,6 +3814,7 @@ class _PullRequestBase(BaseModel):
             'title': pull_request.title,
             'description': pull_request.description,
             'status': pull_request.status,
+            'state': pull_request.pull_request_state,
             'created_on': pull_request.created_on,
             'updated_on': pull_request.updated_on,
             'commit_ids': pull_request.revisions,
@@ -3779,6 +3854,20 @@ class _PullRequestBase(BaseModel):
         }
 
         return data
+
+    def set_state(self, pull_request_state, final_state=None):
+        """
+        # goes from initial state to updating to initial state.
+        # initial state can be changed by specifying back_state=
+        with pull_request_obj.set_state(PullRequest.STATE_UPDATING):
+           pull_request.merge()
+
+        :param pull_request_state:
+        :param final_state:
+
+        """
+
+        return _SetState(self, pull_request_state, back_state=final_state)
 
 
 class PullRequest(Base, _PullRequestBase):
@@ -3952,7 +4041,7 @@ class PullRequestReviewers(Base, BaseModel):
     @reasons.setter
     def reasons(self, val):
         val = val or []
-        if any(not isinstance(x, basestring) for x in val):
+        if any(not isinstance(x, compat.string_types) for x in val):
             raise Exception('invalid reasons type, must be list of strings')
         self._reasons = val
 
@@ -4716,6 +4805,135 @@ class UserGroupToRepoBranchPermission(Base, _BaseBranchPerms):
     def __unicode__(self):
         return u'<UserBranchPermission(%s => %r)>' % (
             self.user_group_repo_to_perm, self.branch_pattern)
+
+
+class UserBookmark(Base, BaseModel):
+    __tablename__ = 'user_bookmarks'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'bookmark_repo_id'),
+        UniqueConstraint('user_id', 'bookmark_repo_group_id'),
+        UniqueConstraint('user_id', 'bookmark_position'),
+        base_table_args
+    )
+
+    user_bookmark_id = Column("user_bookmark_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
+    user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False, unique=None, default=None)
+    position = Column("bookmark_position", Integer(), nullable=False)
+    title = Column("bookmark_title", String(255), nullable=True, unique=None, default=None)
+    redirect_url = Column("bookmark_redirect_url", String(10240), nullable=True, unique=None, default=None)
+    created_on = Column("created_on", DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+
+    bookmark_repo_id = Column("bookmark_repo_id", Integer(), ForeignKey("repositories.repo_id"), nullable=True, unique=None, default=None)
+    bookmark_repo_group_id = Column("bookmark_repo_group_id", Integer(), ForeignKey("groups.group_id"), nullable=True, unique=None, default=None)
+
+    user = relationship("User")
+
+    repository = relationship("Repository")
+    repository_group = relationship("RepoGroup")
+
+    @classmethod
+    def get_by_position_for_user(cls, position, user_id):
+        return cls.query() \
+            .filter(UserBookmark.user_id == user_id) \
+            .filter(UserBookmark.position == position).scalar()
+
+    @classmethod
+    def get_bookmarks_for_user(cls, user_id):
+        return cls.query() \
+            .filter(UserBookmark.user_id == user_id) \
+            .options(joinedload(UserBookmark.repository)) \
+            .options(joinedload(UserBookmark.repository_group)) \
+            .order_by(UserBookmark.position.asc()) \
+            .all()
+
+    def __unicode__(self):
+        return u'<UserBookmark(%d @ %r)>' % (self.position, self.redirect_url)
+
+
+class FileStore(Base, BaseModel):
+    __tablename__ = 'file_store'
+    __table_args__ = (
+        base_table_args
+    )
+
+    file_store_id = Column('file_store_id', Integer(), primary_key=True)
+    file_uid = Column('file_uid', String(1024), nullable=False)
+    file_display_name = Column('file_display_name', UnicodeText().with_variant(UnicodeText(2048), 'mysql'), nullable=True)
+    file_description = Column('file_description', UnicodeText().with_variant(UnicodeText(10240), 'mysql'), nullable=True)
+    file_org_name = Column('file_org_name', UnicodeText().with_variant(UnicodeText(10240), 'mysql'), nullable=False)
+
+    # sha256 hash
+    file_hash = Column('file_hash', String(512), nullable=False)
+    file_size = Column('file_size', Integer(), nullable=False)
+
+    created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+    accessed_on = Column('accessed_on', DateTime(timezone=False), nullable=True)
+    accessed_count = Column('accessed_count', Integer(), default=0)
+
+    enabled = Column('enabled', Boolean(), nullable=False, default=True)
+
+    # if repo/repo_group reference is set, check for permissions
+    check_acl = Column('check_acl', Boolean(), nullable=False, default=True)
+
+    user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), nullable=False)
+    upload_user = relationship('User', lazy='joined', primaryjoin='User.user_id==FileStore.user_id')
+
+    # scope limited to user, which requester have access to
+    scope_user_id = Column(
+        'scope_user_id', Integer(), ForeignKey('users.user_id'),
+        nullable=True, unique=None, default=None)
+    user = relationship('User', lazy='joined', primaryjoin='User.user_id==FileStore.scope_user_id')
+
+    # scope limited to user group, which requester have access to
+    scope_user_group_id = Column(
+        'scope_user_group_id', Integer(), ForeignKey('users_groups.users_group_id'),
+        nullable=True, unique=None, default=None)
+    user_group = relationship('UserGroup', lazy='joined')
+
+    # scope limited to repo, which requester have access to
+    scope_repo_id = Column(
+        'scope_repo_id', Integer(), ForeignKey('repositories.repo_id'),
+        nullable=True, unique=None, default=None)
+    repo = relationship('Repository', lazy='joined')
+
+    # scope limited to repo group, which requester have access to
+    scope_repo_group_id = Column(
+        'scope_repo_group_id', Integer(), ForeignKey('groups.group_id'),
+        nullable=True, unique=None, default=None)
+    repo_group = relationship('RepoGroup', lazy='joined')
+
+    @classmethod
+    def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
+               file_description='', enabled=True, check_acl=True,
+               user_id=None, scope_repo_id=None, scope_repo_group_id=None):
+
+        store_entry = FileStore()
+        store_entry.file_uid = file_uid
+        store_entry.file_display_name = file_display_name
+        store_entry.file_org_name = filename
+        store_entry.file_size = file_size
+        store_entry.file_hash = file_hash
+        store_entry.file_description = file_description
+
+        store_entry.check_acl = check_acl
+        store_entry.enabled = enabled
+
+        store_entry.user_id = user_id
+        store_entry.scope_repo_id = scope_repo_id
+        store_entry.scope_repo_group_id = scope_repo_group_id
+        return store_entry
+
+    @classmethod
+    def bump_access_counter(cls, file_uid, commit=True):
+        FileStore().query()\
+            .filter(FileStore.file_uid == file_uid)\
+            .update({FileStore.accessed_count: (FileStore.accessed_count + 1),
+                     FileStore.accessed_on: datetime.datetime.now()})
+        if commit:
+            Session().commit()
+
+    def __repr__(self):
+        return '<FileStore({})>'.format(self.file_store_id)
 
 
 class DbMigrateVersion(Base, BaseModel):

@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2018 RhodeCode GmbH
+// # Copyright (C) 2010-2019 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -137,11 +137,12 @@ var fileBrowserListeners = function(node_list_url, url_base){
             var new_url = url_base.replace('__FPATH__',n);
 
             var typeObj = {
-              dir: 'icon-folder browser-dir',
-              file: 'icon-file browser-file'
+              dir: 'icon-directory browser-dir',
+              file: 'icon-file-text browser-file'
             };
+
             var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
-            match.push('<tr class="browser-result"><td><a class="browser-{0} pjax-link" href="{1}">{2}{3}</a></td><td colspan="5"></td></tr>'.format(t,new_url,typeIcon, n_hl));
+            match.push('<tr class="browser-result"><td><a class="pjax-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url,typeIcon, n_hl));
           }
         }
         if(results.length > limit){

@@ -52,7 +52,7 @@
         "<%= dirs.js.src %>/plugins/jquery.auto-grow-input.js",
         "<%= dirs.js.src %>/plugins/jquery.autocomplete.js",
         "<%= dirs.js.src %>/plugins/jquery.debounce.js",
-        "<%= dirs.js.src %>/plugins/jquery.mark.js",
+        "<%= dirs.js.node_modules %>/mark.js/dist/jquery.mark.min.js",
         "<%= dirs.js.src %>/plugins/jquery.timeago.js",
         "<%= dirs.js.src %>/plugins/jquery.timeago-extension.js",
         "<%= dirs.js.src %>/select2/select2.js",

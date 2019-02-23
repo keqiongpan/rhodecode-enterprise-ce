@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,6 +22,7 @@ import os
 import json
 import logging
 import datetime
+import time
 
 from functools import partial
 
@@ -29,7 +30,6 @@ from pyramid.compat import configparser
 from celery.result import AsyncResult
 import celery.loaders.base
 import celery.schedules
-
 
 log = logging.getLogger(__name__)
 
@@ -167,3 +167,21 @@ def parse_ini_vars(ini_vars):
         key, value = pairs.split('=')
         options[key] = value
     return options
+
+
+def ping_db():
+    from rhodecode.model import meta
+    from rhodecode.model.db import DbMigrateVersion
+    log.info('Testing DB connection...')
+
+    for test in range(10):
+        try:
+            scalar = DbMigrateVersion.query().scalar()
+            log.debug('DB PING %s@%s', scalar, scalar.version)
+            break
+        except Exception:
+            retry = 1
+            log.debug('DB not ready, next try in %ss', retry)
+            time.sleep(retry)
+        finally:
+            meta.Session.remove()

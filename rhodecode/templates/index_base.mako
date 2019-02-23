@@ -1,13 +1,27 @@
 <%inherit file="/base/base.mako"/>
 
+
+<%def name="menu_bar_subnav()">
+  % if c.repo_group:
+    ${self.repo_group_menu(active='home')}
+  % endif
+</%def>
+
+
 <%def name="main()">
    <div class="box">
         <!-- box / title -->
         <div class="title">
-            <div class="block-left breadcrumbs">
-              ${self.breadcrumbs()}
-              <span id="match_container" style="display:none"><span id="match_count">0</span> ${_('matches')}</span>
+            % if c.repo_group:
+            ${self.repo_group_page_title(c.repo_group)}
+            ## context actions
+            <div>
+            <ul class="links icon-only-links block-right">
+                <li></li>
+            </ul>
             </div>
+            % endif
+
             %if c.rhodecode_user.username != h.DEFAULT_USER:
               <div class="block-right">
                 <%
@@ -15,12 +29,6 @@
                     create_repo = h.HasPermissionAny('hg.create.repository')('can create repository index page')
                     create_repo_group = h.HasPermissionAny('hg.repogroup.create.true')('can create repository groups index page')
                     create_user_group = h.HasPermissionAny('hg.usergroup.create.true')('can create user groups index page')
-
-                    gr_name = c.repo_group.group_name if c.repo_group else None
-                    # create repositories with write permission on group is set to true
-                    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
-                    group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
-                    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
                 %>
 
                 %if not c.repo_group:
@@ -31,17 +39,6 @@
 
                     %if is_admin or create_repo_group:
                         <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
-                    %endif
-                %else:
-                    ##we're inside other repository group other terms apply
-                    %if is_admin or group_admin or (group_write and create_on_write):
-                        <a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
-                    %endif
-                    %if is_admin or group_admin:
-                        <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
-                    %endif
-                    %if is_admin or group_admin:
-                        <a href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}" class="btn btn-small btn-primary">${_('Edit Repository Group')}</a>
                     %endif
                 %endif
               </div>

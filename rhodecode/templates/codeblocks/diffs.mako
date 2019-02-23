@@ -520,7 +520,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
     if hasattr(filename, 'unicode_path'):
         filename = filename.unicode_path
 
-    if not isinstance(filename, basestring):
+    if not isinstance(filename, (unicode, str)):
         return None
 
     line_key = '{}{}'.format(line_version, line_number) ## e.g o37, n12

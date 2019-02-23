@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,3 +17,11 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
+
+
+# Definition of setting keys used to configure this module. Defined here to
+# avoid repetition of keys throughout the module.
+
+enabled = 'file_store.enabled'
+backend = 'file_store.backend'
+store_path = 'file_store.storage_path'

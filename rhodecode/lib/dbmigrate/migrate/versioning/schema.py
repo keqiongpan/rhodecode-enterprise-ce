@@ -9,6 +9,7 @@ from sqlalchemy import (Table, Column, MetaData, String, Text, Integer,
 from sqlalchemy.sql import and_
 from sqlalchemy import exc as sa_exceptions
 from sqlalchemy.sql import bindparam
+from pyramid import compat
 
 from rhodecode.lib.dbmigrate.migrate import exceptions
 from rhodecode.lib.dbmigrate.migrate.changeset import SQLA_07
@@ -25,7 +26,7 @@ class ControlledSchema(object):
     """A database under version control"""
 
     def __init__(self, engine, repository):
-        if isinstance(repository, basestring):
+        if isinstance(repository, compat.string_types):
             repository = Repository(repository)
         self.engine = engine
         self.repository = repository
@@ -134,7 +135,7 @@ class ControlledSchema(object):
         """
         # Confirm that the version # is valid: positive, integer,
         # exists in repos
-        if isinstance(repository, basestring):
+        if isinstance(repository, compat.string_types):
             repository = Repository(repository)
         version = cls._validate_version(repository, version)
         table = cls._create_table_version(engine, repository, version)
@@ -199,7 +200,7 @@ class ControlledSchema(object):
         """
         Compare the current model against the current database.
         """
-        if isinstance(repository, basestring):
+        if isinstance(repository, compat.string_types):
             repository = Repository(repository)
         model = load_model(model)
 
@@ -212,7 +213,7 @@ class ControlledSchema(object):
         """
         Dump the current database as a Python model.
         """
-        if isinstance(repository, basestring):
+        if isinstance(repository, compat.string_types):
             repository = Repository(repository)
 
         diff = schemadiff.getDiffOfModelAgainstDatabase(

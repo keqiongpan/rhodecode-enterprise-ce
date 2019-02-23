@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -453,10 +453,19 @@ def grant_user_permission_to_repo_group(
 
     perm_additions = [[user.user_id, perm.permission_name, "user"]]
     try:
-        RepoGroupModel().update_permissions(repo_group=repo_group,
-                                            perm_additions=perm_additions,
-                                            recursive=apply_to_children,
-                                            cur_user=apiuser)
+        changes = RepoGroupModel().update_permissions(
+            repo_group=repo_group, perm_additions=perm_additions,
+            recursive=apply_to_children, cur_user=apiuser)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Granted perm: `%s` (recursive:%s) for user: '
@@ -527,10 +536,19 @@ def revoke_user_permission_from_repo_group(
 
     perm_deletions = [[user.user_id, None, "user"]]
     try:
-        RepoGroupModel().update_permissions(repo_group=repo_group,
-                                            perm_deletions=perm_deletions,
-                                            recursive=apply_to_children,
-                                            cur_user=apiuser)
+        changes = RepoGroupModel().update_permissions(
+            repo_group=repo_group, perm_deletions=perm_deletions,
+            recursive=apply_to_children, cur_user=apiuser)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Revoked perm (recursive:%s) for user: '
@@ -611,10 +629,19 @@ def grant_user_group_permission_to_repo_group(
 
     perm_additions = [[user_group.users_group_id, perm.permission_name, "user_group"]]
     try:
-        RepoGroupModel().update_permissions(repo_group=repo_group,
-                                            perm_additions=perm_additions,
-                                            recursive=apply_to_children,
-                                            cur_user=apiuser)
+        changes = RepoGroupModel().update_permissions(
+            repo_group=repo_group, perm_additions=perm_additions,
+            recursive=apply_to_children, cur_user=apiuser)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Granted perm: `%s` (recursive:%s) '
@@ -694,10 +721,19 @@ def revoke_user_group_permission_from_repo_group(
 
     perm_deletions = [[user_group.users_group_id, None, "user_group"]]
     try:
-        RepoGroupModel().update_permissions(repo_group=repo_group,
-                                            perm_deletions=perm_deletions,
-                                            recursive=apply_to_children,
-                                            cur_user=apiuser)
+        changes = RepoGroupModel().update_permissions(
+            repo_group=repo_group, perm_deletions=perm_deletions,
+            recursive=apply_to_children, cur_user=apiuser)
+
+        action_data = {
+            'added': changes['added'],
+            'updated': changes['updated'],
+            'deleted': changes['deleted'],
+        }
+        audit_logger.store_api(
+            'repo_group.edit.permissions', action_data=action_data,
+            user=apiuser)
+
         Session().commit()
         return {
             'msg': 'Revoked perm (recursive:%s) for user group: '
@@ -716,4 +752,3 @@ def revoke_user_group_permission_from_repo_group(
                 user_group.users_group_name, repo_group.name
             )
         )
-

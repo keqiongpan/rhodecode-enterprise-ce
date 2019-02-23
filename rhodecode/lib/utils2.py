@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -43,6 +43,7 @@ import sqlalchemy.exc
 import sqlalchemy.sql
 import webob
 import pyramid.threadlocal
+from pyramid import compat
 from pyramid.settings import asbool
 
 import rhodecode
@@ -261,7 +262,7 @@ def safe_str(unicode_, to_encoding=None):
     """
 
     # if it's not basestr cast to str
-    if not isinstance(unicode_, basestring):
+    if not isinstance(unicode_, compat.string_types):
         return str(unicode_)
 
     if isinstance(unicode_, str):
@@ -564,6 +565,12 @@ def age(prevdate, now=None, show_short_version=False, show_suffix=True,
     return _(u'just now')
 
 
+def age_from_seconds(seconds):
+    seconds = safe_int(seconds) or 0
+    prevdate = time_to_datetime(time.time() + seconds)
+    return age(prevdate, show_suffix=False, show_short_version=True)
+
+
 def cleaned_uri(uri):
     """
     Quotes '[' and ']' from uri if there is only one of them.
@@ -681,7 +688,7 @@ def datetime_to_time(dt):
 
 def time_to_datetime(tm):
     if tm:
-        if isinstance(tm, basestring):
+        if isinstance(tm, compat.string_types):
             try:
                 tm = float(tm)
             except ValueError:
@@ -691,7 +698,7 @@ def time_to_datetime(tm):
 
 def time_to_utcdatetime(tm):
     if tm:
-        if isinstance(tm, basestring):
+        if isinstance(tm, compat.string_types):
             try:
                 tm = float(tm)
             except ValueError:
@@ -1009,3 +1016,14 @@ def glob2re(pat):
         else:
             res = res + re.escape(c)
     return res + '\Z(?ms)'
+
+
+def parse_byte_string(size_str):
+    match = re.match(r'(\d+)(MB|KB)', size_str, re.IGNORECASE)
+    if not match:
+        raise ValueError('Given size:%s is invalid, please make sure '
+                         'to use format of <num>(MB|KB)' % size_str)
+
+    _parts = match.groups()
+    num, type_ = _parts
+    return long(num) * {'mb': 1024*1024, 'kb': 1024}[type_.lower()]

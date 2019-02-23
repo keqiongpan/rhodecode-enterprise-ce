@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,12 +17,6 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
-"""
-
-RhodeCode, a web based repository management software
-versioning implementation: http://www.python.org/dev/peps/pep-0386/
-"""
 
 import os
 import sys
@@ -51,7 +45,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 91  # defines current db version for migrations
+__dbversion__ = 95  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

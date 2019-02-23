@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -81,8 +81,9 @@ class TestTokenizeString(object):
 class TestSplitTokenStream(object):
 
     def test_split_token_stream(self):
-        lines = list(split_token_stream(
-            [('type1', 'some\ntext'), ('type2', 'more\n')]))
+        tokens = [('type1', 'some\ntext'), ('type2', 'more\n')]
+        content = [x + y for x, y in tokens]
+        lines = list(split_token_stream(tokens, content))
 
         assert lines == [
             [('type1', u'some')],
@@ -91,18 +92,18 @@ class TestSplitTokenStream(object):
         ]
 
     def test_split_token_stream_single(self):
-        lines = list(split_token_stream(
-            [('type1', '\n')]))
-
+        tokens = [('type1', '\n')]
+        content = [x + y for x, y in tokens]
+        lines = list(split_token_stream(tokens, content))
         assert lines == [
             [('type1', '')],
             [('type1', '')],
         ]
 
     def test_split_token_stream_single_repeat(self):
-        lines = list(split_token_stream(
-            [('type1', '\n\n\n')]))
-
+        tokens = [('type1', '\n\n\n')]
+        content = [x + y for x, y in tokens]
+        lines = list(split_token_stream(tokens, content))
         assert lines == [
             [('type1', '')],
             [('type1', '')],
@@ -111,15 +112,37 @@ class TestSplitTokenStream(object):
         ]
 
     def test_split_token_stream_multiple_repeat(self):
-        lines = list(split_token_stream(
-            [('type1', '\n\n'), ('type2', '\n\n')]))
+        tokens = [('type1', '\n\n'), ('type2', '\n\n')]
+        content = [x + y for x, y in tokens]
 
+        lines = list(split_token_stream(tokens, content))
         assert lines == [
             [('type1', '')],
             [('type1', '')],
             [('type1', ''), ('type2', '')],
             [('type2', '')],
             [('type2', '')],
+        ]
+
+    def test_no_tokens_by_content(self):
+        tokens = []
+        content = u'\ufeff'
+        lines = list(split_token_stream(tokens, content))
+        assert lines == [
+            [('', content)],
+        ]
+
+    def test_no_tokens_by_valid_content(self):
+        from pygments.lexers.css import CssLexer
+        content = u'\ufeff table.dataTable'
+        tokens = tokenize_string(content, CssLexer())
+
+        lines = list(split_token_stream(tokens, content))
+        assert lines == [
+            [('', u' '),
+             ('nt', u'table'),
+             ('p', u'.'),
+             ('nc', u'dataTable')],
         ]
 
 

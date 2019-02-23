@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2013-2018 RhodeCode GmbH
+# Copyright (C) 2013-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -284,17 +284,16 @@ def post_push(extras):
             output += _http_ret.title
 
     if extras.new_refs:
-        tmpl = \
-            extras.server_url + '/' + \
-            extras.repository + \
-            "/pull-request/new?{ref_type}={ref_name}"
+        tmpl = extras.server_url + '/' + extras.repository + \
+               "/pull-request/new?{ref_type}={ref_name}"
+
         for branch_name in extras.new_refs['branches']:
             output += 'RhodeCode: open pull request link: {}\n'.format(
-                tmpl.format(ref_type='branch', ref_name=branch_name))
+                tmpl.format(ref_type='branch', ref_name=safe_str(branch_name)))
 
         for book_name in extras.new_refs['bookmarks']:
             output += 'RhodeCode: open pull request link: {}\n'.format(
-                tmpl.format(ref_type='bookmark', ref_name=book_name))
+                tmpl.format(ref_type='bookmark', ref_name=safe_str(book_name)))
 
     hook_response = ''
     if not is_shadow_repo(extras):

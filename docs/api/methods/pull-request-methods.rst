@@ -83,7 +83,7 @@ comment_pull_request
 create_pull_request 
 -------------------
 
-.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>)
+.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, owner=<Optional:<OptionalAttr:apiuser>>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>)
 
    Creates a new pull request.
 
@@ -104,6 +104,8 @@ create_pull_request
    :type source_ref: str
    :param target_ref: Set the target ref name.
    :type target_ref: str
+   :param owner: user_id or username
+   :type owner: Optional(str)
    :param title: Optionally Set the pull request title, it's generated otherwise
    :type title: str
    :param description: Set the pull request description.
@@ -248,7 +250,7 @@ get_pull_request_comments
 get_pull_requests 
 -----------------
 
-.. py:function:: get_pull_requests(apiuser, repoid, status=<Optional:'new'>)
+.. py:function:: get_pull_requests(apiuser, repoid, status=<Optional:'new'>, merge_state=<Optional:True>)
 
    Get all pull requests from the repository specified in `repoid`.
 
@@ -262,6 +264,9 @@ get_pull_requests
        * ``open``
        * ``closed``
    :type status: str
+   :param merge_state: Optional calculate merge state for each repository.
+       This could result in longer time to fetch the data
+   :type merge_state: bool
 
    Example output:
 
@@ -356,10 +361,11 @@ merge_pull_request
 
        "id": <id_given_in_input>,
        "result": {
-           "executed":         "<bool>",
-           "failure_reason":   "<int>",
-           "merge_commit_id":  "<merge_commit_id>",
-           "possible":         "<bool>",
+           "executed":               "<bool>",
+           "failure_reason":         "<int>",
+           "merge_status_message":   "<str>",
+           "merge_commit_id":        "<merge_commit_id>",
+           "possible":               "<bool>",
            "merge_ref":        {
                                    "commit_id": "<commit_id>",
                                    "type":      "<type>",

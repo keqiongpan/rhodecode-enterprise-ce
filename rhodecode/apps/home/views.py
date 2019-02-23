@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -172,7 +172,9 @@ class HomeView(BaseAppView):
                 'id': obj.group_name,
                 'value': org_query,
                 'value_display': obj.group_name,
+                'text': obj.group_name,
                 'type': 'repo_group',
+                'repo_group_id': obj.group_id,
                 'url': h.route_path(
                     'repo_group_home', repo_group_name=obj.group_name)
             }
@@ -246,9 +248,9 @@ class HomeView(BaseAppView):
             }
             for obj in acl_iter]
 
-    def _get_hash_commit_list(self, auth_user, query):
+    def _get_hash_commit_list(self, auth_user, searcher, query):
         org_query = query
-        if not query or len(query) < 3:
+        if not query or len(query) < 3 or not searcher:
             return []
 
         commit_hashes = re.compile('(?:commit:)([0-9a-f]{2,40})').findall(query)
@@ -257,24 +259,34 @@ class HomeView(BaseAppView):
             return []
         commit_hash = commit_hashes[0]
 
-        searcher = searcher_from_config(self.request.registry.settings)
         result = searcher.search(
-            'commit_id:%s*' % commit_hash, 'commit', auth_user,
+            'commit_id:{}*'.format(commit_hash), 'commit', auth_user,
             raise_on_exc=False)
 
-        return [
-            {
+        commits = []
+        for entry in result['results']:
+            repo_data = {
+                'repository_id': entry.get('repository_id'),
+                'repository_type': entry.get('repo_type'),
+                'repository_name': entry.get('repository'),
+            }
+
+            commit_entry = {
                 'id': entry['commit_id'],
                 'value': org_query,
-                'value_display': 'repo `{}` commit: {}'.format(
+                'value_display': '`{}` commit: {}'.format(
                     entry['repository'], entry['commit_id']),
                 'type': 'commit',
                 'repo': entry['repository'],
+                'repo_data': repo_data,
+
                 'url': h.route_path(
                     'repo_commit',
                     repo_name=entry['repository'], commit_id=entry['commit_id'])
             }
-            for entry in result['results']]
+
+            commits.append(commit_entry)
+        return commits
 
     @LoginRequired()
     @view_config(
@@ -305,6 +317,144 @@ class HomeView(BaseAppView):
 
     @LoginRequired()
     @view_config(
+        route_name='repo_group_list_data', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def repo_group_list_data(self):
+        _ = self.request.translate
+        self.load_default_context()
+
+        query = self.request.GET.get('query')
+
+        log.debug('generating repo group list, query:%s',
+                  query)
+
+        res = []
+        repo_groups = self._get_repo_group_list(query)
+        if repo_groups:
+            res.append({
+                'text': _('Repository Groups'),
+                'children': repo_groups
+            })
+
+        data = {
+            'more': False,
+            'results': res
+        }
+        return data
+
+    def _get_default_search_queries(self, search_context, searcher, query):
+        if not searcher:
+            return []
+
+        is_es_6 = searcher.is_es_6
+
+        queries = []
+        repo_group_name, repo_name, repo_context = None, None, None
+
+        # repo group context
+        if search_context.get('search_context[repo_group_name]'):
+            repo_group_name = search_context.get('search_context[repo_group_name]')
+        if search_context.get('search_context[repo_name]'):
+            repo_name = search_context.get('search_context[repo_name]')
+            repo_context = search_context.get('search_context[repo_view_type]')
+
+        if is_es_6 and repo_name:
+            # files
+            def query_modifier():
+                qry = query
+                return {'q': qry, 'type': 'content'}
+            label = u'File search for `{}` in this repository.'.format(query)
+            queries.append(
+                {
+                    'id': -10,
+                    'value': query,
+                    'value_display': label,
+                    'type': 'search',
+                    'url': h.route_path('search_repo',
+                                        repo_name=repo_name,
+                                        _query=query_modifier())
+                }
+            )
+
+            # commits
+            def query_modifier():
+                qry = query
+                return {'q': qry, 'type': 'commit'}
+
+            label = u'Commit search for `{}` in this repository.'.format(query)
+            queries.append(
+                {
+                    'id': -20,
+                    'value': query,
+                    'value_display': label,
+                    'type': 'search',
+                    'url': h.route_path('search_repo',
+                                        repo_name=repo_name,
+                                        _query=query_modifier())
+                }
+            )
+
+        elif is_es_6 and repo_group_name:
+            # files
+            def query_modifier():
+                qry = query
+                return {'q': qry, 'type': 'content'}
+
+            label = u'File search for `{}` in this repository group'.format(query)
+            queries.append(
+                {
+                    'id': -30,
+                    'value': query,
+                    'value_display': label,
+                    'type': 'search',
+                    'url': h.route_path('search_repo_group',
+                                        repo_group_name=repo_group_name,
+                                        _query=query_modifier())
+                }
+            )
+
+            # commits
+            def query_modifier():
+                qry = query
+                return {'q': qry, 'type': 'commit'}
+
+            label = u'Commit search for `{}` in this repository group'.format(query)
+            queries.append(
+                {
+                    'id': -40,
+                    'value': query,
+                    'value_display': label,
+                    'type': 'search',
+                    'url': h.route_path('search_repo_group',
+                                        repo_group_name=repo_group_name,
+                                        _query=query_modifier())
+                }
+            )
+
+        if not queries:
+            queries.append(
+                {
+                    'id': -1,
+                    'value': query,
+                    'value_display': u'File search for: `{}`'.format(query),
+                    'type': 'search',
+                    'url': h.route_path('search',
+                                        _query={'q': query, 'type': 'content'})
+                })
+            queries.append(
+                {
+                    'id': -2,
+                    'value': query,
+                    'value_display': u'Commit search for: `{}`'.format(query),
+                    'type': 'search',
+                    'url': h.route_path('search',
+                                        _query={'q': query, 'type': 'commit'})
+                })
+
+        return queries
+
+    @LoginRequired()
+    @view_config(
         route_name='goto_switcher_data', request_method='GET',
         renderer='json_ext', xhr=True)
     def goto_switcher_data(self):
@@ -315,26 +465,21 @@ class HomeView(BaseAppView):
         query = self.request.GET.get('query')
         log.debug('generating main filter data, query %s', query)
 
-        default_search_val = u'Full text search for: `{}`'.format(query)
         res = []
         if not query:
             return {'suggestions': res}
 
-        res.append({
-            'id': -1,
-            'value': query,
-            'value_display': default_search_val,
-            'type': 'search',
-            'url': h.route_path(
-                'search', _query={'q': query})
-        })
-        repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
+        searcher = searcher_from_config(self.request.registry.settings)
+        for _q in self._get_default_search_queries(self.request.GET, searcher, query):
+            res.append(_q)
+
+        repo_group_id = safe_int(self.request.GET.get('search_context[repo_group_id]'))
         if repo_group_id:
             repo_group = RepoGroup.get(repo_group_id)
             composed_hint = '{}/{}'.format(repo_group.group_name, query)
             show_hint = not query.startswith(repo_group.group_name)
             if repo_group and show_hint:
-                hint = u'Group search: `{}`'.format(composed_hint)
+                hint = u'Repository search inside: `{}`'.format(composed_hint)
                 res.append({
                     'id': -1,
                     'value': composed_hint,
@@ -351,7 +496,7 @@ class HomeView(BaseAppView):
         for serialized_repo in repos:
             res.append(serialized_repo)
 
-        # TODO(marcink): permissions for that ?
+        # TODO(marcink): should all logged in users be allowed to search others?
         allowed_user_search = self._rhodecode_user.username != User.DEFAULT_USER
         if allowed_user_search:
             users = self._get_user_list(query)
@@ -362,7 +507,7 @@ class HomeView(BaseAppView):
             for serialized_user_group in user_groups:
                 res.append(serialized_user_group)
 
-        commits = self._get_hash_commit_list(c.auth_user, query)
+        commits = self._get_hash_commit_list(c.auth_user, searcher, query)
         if commits:
             unique_repos = collections.OrderedDict()
             for commit in commits:

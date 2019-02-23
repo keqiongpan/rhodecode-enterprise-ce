@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,13 +26,13 @@ from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
-    validate_repo_permissions, resolve_ref_or_error)
+    validate_repo_permissions, resolve_ref_or_error, validate_set_owner_permissions)
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment
+from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment, PullRequest
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.validation_schema import Invalid
@@ -128,16 +128,21 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
     else:
         repo = pull_request.target_repo
 
-    if not PullRequestModel().check_user_read(
-            pull_request, apiuser, api=True):
+    if not PullRequestModel().check_user_read(pull_request, apiuser, api=True):
         raise JSONRPCError('repository `%s` or pull request `%s` '
                            'does not exist' % (repoid, pullrequestid))
-    data = pull_request.get_api_data()
+
+    # NOTE(marcink): only calculate and return merge state if the pr state is 'created'
+    # otherwise we can lock the repo on calculation of merge state while update/merge
+    # is happening.
+    merge_state = pull_request.pull_request_state == pull_request.STATE_CREATED
+    data = pull_request.get_api_data(with_merge_state=merge_state)
     return data
 
 
 @jsonrpc_method()
-def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
+def get_pull_requests(request, apiuser, repoid, status=Optional('new'),
+                      merge_state=Optional(True)):
     """
     Get all pull requests from the repository specified in `repoid`.
 
@@ -151,6 +156,9 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
         * ``open``
         * ``closed``
     :type status: str
+    :param merge_state: Optional calculate merge state for each repository.
+        This could result in longer time to fetch the data
+    :type merge_state: bool
 
     Example output:
 
@@ -228,8 +236,10 @@ def get_pull_requests(request, apiuser, repoid, status=Optional('new')):
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     status = Optional.extract(status)
-    pull_requests = PullRequestModel().get_all(repo, statuses=[status])
-    data = [pr.get_api_data() for pr in pull_requests]
+    merge_state = Optional.extract(merge_state, binary=True)
+    pull_requests = PullRequestModel().get_all(repo, statuses=[status],
+                                               order_by='id', order_dir='desc')
+    data = [pr.get_api_data(with_merge_state=merge_state) for pr in pull_requests]
     return data
 
 
@@ -257,10 +267,11 @@ def merge_pull_request(
 
         "id": <id_given_in_input>,
         "result": {
-            "executed":         "<bool>",
-            "failure_reason":   "<int>",
-            "merge_commit_id":  "<merge_commit_id>",
-            "possible":         "<bool>",
+            "executed":               "<bool>",
+            "failure_reason":         "<int>",
+            "merge_status_message":   "<str>",
+            "merge_commit_id":        "<merge_commit_id>",
+            "possible":               "<bool>",
             "merge_ref":        {
                                     "commit_id": "<commit_id>",
                                     "type":      "<type>",
@@ -274,17 +285,25 @@ def merge_pull_request(
         repo = get_repo_or_error(repoid)
     else:
         repo = pull_request.target_repo
-
+    auth_user = apiuser
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
                     user=apiuser, repo_name=repo.repo_name)):
             apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
         else:
             raise JSONRPCError('userid is not the same as your user')
 
-    check = MergeCheck.validate(
-        pull_request, auth_user=apiuser, translator=request.translate)
+    if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+        raise JSONRPCError(
+            'Operation forbidden because pull request is in state {}, '
+            'only state {} is allowed.'.format(
+                pull_request.pull_request_state, PullRequest.STATE_CREATED))
+
+    with pull_request.set_state(PullRequest.STATE_UPDATING):
+        check = MergeCheck.validate(pull_request, auth_user=auth_user,
+                                    translator=request.translate)
     merge_possible = not check.failed
 
     if not merge_possible:
@@ -300,20 +319,20 @@ def merge_pull_request(
     target_repo = pull_request.target_repo
     extras = vcs_operation_context(
         request.environ, repo_name=target_repo.repo_name,
-        username=apiuser.username, action='push',
+        username=auth_user.username, action='push',
         scm=target_repo.repo_type)
-    merge_response = PullRequestModel().merge_repo(
-        pull_request, apiuser, extras=extras)
+    with pull_request.set_state(PullRequest.STATE_UPDATING):
+        merge_response = PullRequestModel().merge_repo(
+            pull_request, apiuser, extras=extras)
     if merge_response.executed:
-        PullRequestModel().close_pull_request(
-            pull_request.pull_request_id, apiuser)
+        PullRequestModel().close_pull_request(pull_request.pull_request_id, auth_user)
 
         Session().commit()
 
     # In previous versions the merge response directly contained the merge
     # commit id. It is now contained in the merge reference object. To be
     # backwards compatible we have to extract it again.
-    merge_response = merge_response._asdict()
+    merge_response = merge_response.asdict()
     merge_response['merge_commit_id'] = merge_response['merge_ref'].commit_id
 
     return merge_response
@@ -474,13 +493,20 @@ def comment_pull_request(
     else:
         repo = pull_request.target_repo
 
+    auth_user = apiuser
     if not isinstance(userid, Optional):
         if (has_superadmin_permission(apiuser) or
                 HasRepoPermissionAnyApi('repository.admin')(
                     user=apiuser, repo_name=repo.repo_name)):
             apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
         else:
             raise JSONRPCError('userid is not the same as your user')
+
+    if pull_request.is_closed():
+        raise JSONRPCError(
+            'pull request `%s` comment failed, pull request is closed' % (
+                pullrequestid,))
 
     if not PullRequestModel().check_user_read(
             pull_request, apiuser, api=True):
@@ -549,7 +575,7 @@ def comment_pull_request(
         renderer=renderer,
         comment_type=comment_type,
         resolves_comment_id=resolves_comment_id,
-        auth_user=apiuser
+        auth_user=auth_user
     )
 
     if allowed_to_change_status and status:
@@ -589,8 +615,8 @@ def comment_pull_request(
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
-        title=Optional(''), description=Optional(''), description_renderer=Optional(''),
-        reviewers=Optional(None)):
+        owner=Optional(OAttr('apiuser')), title=Optional(''), description=Optional(''),
+        description_renderer=Optional(''), reviewers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -611,6 +637,8 @@ def create_pull_request(
     :type source_ref: str
     :param target_ref: Set the target ref name.
     :type target_ref: str
+    :param owner: user_id or username
+    :type owner: Optional(str)
     :param title: Optionally Set the pull request title, it's generated otherwise
     :type title: str
     :param description: Set the pull request description.
@@ -633,6 +661,8 @@ def create_pull_request(
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, source_repo, source_db_repo, _perms)
+
+    owner = validate_set_owner_permissions(apiuser, owner)
 
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
@@ -679,7 +709,7 @@ def create_pull_request(
 
     # recalculate reviewers logic, to make sure we can validate this
     reviewer_rules = get_default_reviewers_data(
-        apiuser.get_instance(), source_db_repo,
+        owner, source_db_repo,
         source_commit, target_db_repo, target_commit)
 
     # now MERGE our given with the calculated
@@ -706,7 +736,7 @@ def create_pull_request(
     description_renderer = Optional.extract(description_renderer) or default_system_renderer
 
     pull_request = PullRequestModel().create(
-        created_by=apiuser.user_id,
+        created_by=owner.user_id,
         source_repo=source_repo,
         source_ref=full_source_ref,
         target_repo=target_repo,
@@ -844,11 +874,18 @@ def update_pull_request(
 
     commit_changes = {"added": [], "common": [], "removed": []}
     if str2bool(Optional.extract(update_commits)):
-        if PullRequestModel().has_valid_update_type(pull_request):
-            update_response = PullRequestModel().update_commits(
-                pull_request)
-            commit_changes = update_response.changes or commit_changes
-        Session().commit()
+
+        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+            raise JSONRPCError(
+                'Operation forbidden because pull request is in state {}, '
+                'only state {} is allowed.'.format(
+                    pull_request.pull_request_state, PullRequest.STATE_CREATED))
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            if PullRequestModel().has_valid_update_type(pull_request):
+                update_response = PullRequestModel().update_commits(pull_request)
+                commit_changes = update_response.changes or commit_changes
+            Session().commit()
 
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:

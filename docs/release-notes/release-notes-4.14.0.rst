@@ -104,7 +104,7 @@ Upgrade notes
 - In this release, we're shipping a new `rcextensions`. The changes made are
   backward incompatible. An update of `rcextensions` is required
   prior to using them again. Please check the new `rcextensions.tmpl` directory
-  located in `etc/rcextensions.tmpl` in your instance installation path.
+  located in `profile/etc/rcextensions.tmpl` in your instance installation path.
   Old code should be 100% portable by just copy&paste to the right function.
 
 - Mailing: We introduced a new mailing library. The older options should be compatible and

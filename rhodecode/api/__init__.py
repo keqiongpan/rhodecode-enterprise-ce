@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,6 +21,7 @@
 import inspect
 import itertools
 import logging
+import sys
 import types
 import fnmatch
 
@@ -38,6 +39,7 @@ from rhodecode.api.exc import (
 from rhodecode.apps._base import TemplateArgs
 from rhodecode.lib.auth import AuthUser
 from rhodecode.lib.base import get_ip_addr, attach_context_attributes
+from rhodecode.lib.exc_tracking import store_exception
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils2 import safe_str
 from rhodecode.lib.plugins.utils import get_plugin_settings
@@ -140,15 +142,14 @@ def jsonrpc_error(request, message, retid=None, code=None):
 def exception_view(exc, request):
     rpc_id = getattr(request, 'rpc_id', None)
 
-    fault_message = 'undefined error'
     if isinstance(exc, JSONRPCError):
-        fault_message = exc.message
+        fault_message = safe_str(exc.message)
         log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCValidationError):
         colander_exc = exc.colander_exception
         # TODO(marcink): think maybe of nicer way to serialize errors ?
         fault_message = colander_exc.asdict()
-        log.debug('json-rpc error rpc_id:%s "%s"', rpc_id, fault_message)
+        log.debug('json-rpc colander error rpc_id:%s "%s"', rpc_id, fault_message)
     elif isinstance(exc, JSONRPCForbidden):
         fault_message = 'Access was denied to this resource.'
         log.warning('json-rpc forbidden call rpc_id:%s "%s"', rpc_id, fault_message)
@@ -170,6 +171,10 @@ def exception_view(exc, request):
 
         fault_message = "No such method: {}. Similar methods: {}".format(
             method, similar)
+    else:
+        fault_message = 'undefined error'
+        exc_info = exc.exc_info()
+        store_exception(id(exc_info), exc_info, prefix='rhodecode-api')
 
     return jsonrpc_error(request, fault_message, rpc_id)
 
@@ -292,8 +297,10 @@ def request_view(request):
         raise
     except Exception:
         log.exception('Unhandled exception occurred on api call: %s', func)
-        return jsonrpc_error(request, retid=request.rpc_id,
-                             message='Internal server error')
+        exc_info = sys.exc_info()
+        store_exception(id(exc_info), exc_info, prefix='rhodecode-api')
+        return jsonrpc_error(
+            request, retid=request.rpc_id, message='Internal server error')
 
 
 def setup_request(request):
@@ -414,8 +421,7 @@ def add_jsonrpc_method(config, view, **kwargs):
 
     if method is None:
         raise ConfigurationError(
-            'Cannot register a JSON-RPC method without specifying the '
-            '"method"')
+            'Cannot register a JSON-RPC method without specifying the "method"')
 
     # we define custom predicate, to enable to detect conflicting methods,
     # those predicates are kind of "translation" from the decorator variables
@@ -524,6 +530,7 @@ def includeme(config):
 
     # match filter by given method only
     config.add_view_predicate('jsonrpc_method', MethodPredicate)
+    config.add_view_predicate('jsonrpc_method_not_found', NotFoundPredicate)
 
     config.add_renderer(DEFAULT_RENDERER, ExtJsonRenderer(
         serializer=json.dumps, indent=4))
@@ -538,5 +545,4 @@ def includeme(config):
     config.scan(plugin_module, ignore='rhodecode.api.tests')
     # register some exception handling view
     config.add_view(exception_view, context=JSONRPCBaseError)
-    config.add_view_predicate('jsonrpc_method_not_found', NotFoundPredicate)
     config.add_notfound_view(exception_view, jsonrpc_method_not_found=True)

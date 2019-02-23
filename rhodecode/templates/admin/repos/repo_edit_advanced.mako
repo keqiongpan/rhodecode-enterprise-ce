@@ -2,6 +2,7 @@
 
 <%
  elems = [
+    (_('Repository ID'), c.rhodecode_db_repo.repo_id, '', ''),
     (_('Owner'), lambda:base.gravatar_with_user(c.rhodecode_db_repo.user.email), '', ''),
     (_('Created on'), h.format_date(c.rhodecode_db_repo.created_on), '', ''),
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
@@ -111,6 +112,40 @@
     </div>
 </div>
 
+
+<div class="panel panel-default">
+    <div class="panel-heading" id="advanced-hooks">
+        <h3 class="panel-title">${_('Hooks')} <a class="permalink" href="#advanced-hooks"> ¶</a></h3>
+    </div>
+    <div class="panel-body">
+        <table class="rctable">
+            <th>${_('Hook type')}</th>
+            <th>${_('Hook version')}</th>
+            <th>${_('Current version')}</th>
+            % if c.ver_info_dict:
+            <tr>
+                <td>${_('PRE HOOK')}</td>
+                <td>${c.ver_info_dict['pre_version']}</td>
+                <td>${c.rhodecode_version}</td>
+            </tr>
+            <tr>
+                <td>${_('POST HOOK')}</td>
+                <td>${c.ver_info_dict['post_version']}</td>
+                <td>${c.rhodecode_version}</td>
+            </tr>
+            % else:
+                <tr>
+                    <td>${_('Unable to read hook information from VCS Server')}</td>
+                </tr>
+            % endif
+        </table>
+
+        <a href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
+           onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
+            ${_('Update Hooks')}
+        </a>
+    </div>
+</div>
 
 <div class="panel panel-warning">
     <div class="panel-heading" id="advanced-archive">

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2018 RhodeCode GmbH
+# Copyright (C) 2012-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,6 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import pytest
+from pyramid import compat
 
 from rhodecode.config.utils import set_instance_id
 
@@ -31,6 +32,6 @@ def test_set_instance_id(instance_id):
     if instance_id == 'custom-id':
         assert config['instance_id'] == instance_id
     else:
-        assert isinstance(config['instance_id'], basestring)
+        assert isinstance(config['instance_id'], compat.string_types)
         assert len(config['instance_id'])
         assert instance_id != config['instance_id']

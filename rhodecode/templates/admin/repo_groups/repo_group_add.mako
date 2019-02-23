@@ -33,12 +33,21 @@
         <div class="fields">
              <div class="field">
                 <div class="label">
-                    <label for="group_name">${_('Group Name')}:</label>
+                    <label for="group_name">${_('Group name')}:</label>
                 </div>
                 <div class="input">
                     ${h.text('group_name', class_="medium")}
                 </div>
              </div>
+
+            <div class="field">
+                 <div class="label">
+                     <label for="group_parent_id">${_('Repository group')}:</label>
+                 </div>
+                 <div class="select">
+                     ${h.select('group_parent_id',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
+                 </div>
+            </div>
 
             <div class="field">
                 <div class="label">
@@ -55,22 +64,13 @@
                 </div>
             </div>
 
-            <div class="field">
-                 <div class="label">
-                     <label for="group_parent_id">${_('Group Parent')}:</label>
-                 </div>
-                 <div class="select">
-                     ${h.select('group_parent_id',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
-                 </div>
-            </div>
-
             <div id="copy_perms" class="field">
                 <div class="label label-checkbox">
                     <label for="group_copy_permissions">${_('Copy Parent Group Permissions')}:</label>
                 </div>
                 <div class="checkboxes">
                     ${h.checkbox('group_copy_permissions', value="True", checked="checked")}
-                    <span class="help-block">${_('Copy permission settings from parent repository group.')}</span>
+                    <span class="help-block">${_('Copy permissions from parent repository group.')}</span>
                 </div>
             </div>
 
@@ -84,22 +84,22 @@
 <script>
     $(document).ready(function(){
         var setCopyPermsOption = function(group_val){
-            if(group_val != "-1"){
+            if(group_val !== "-1"){
                 $('#copy_perms').show()
             }
             else{
                 $('#copy_perms').hide();
             }
-        }
+        };
         $("#group_parent_id").select2({
             'containerCssClass': "drop-menu",
             'dropdownCssClass': "drop-menu-dropdown",
             'dropdownAutoWidth': true
         });
-        setCopyPermsOption($('#group_parent_id').val())
+        setCopyPermsOption($('#group_parent_id').val());
         $("#group_parent_id").on("change", function(e) {
             setCopyPermsOption(e.val)
-        })
+        });
         $('#group_name').focus();
     })
 </script>

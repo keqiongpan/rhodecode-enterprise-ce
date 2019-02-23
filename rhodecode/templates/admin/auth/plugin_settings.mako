@@ -66,6 +66,8 @@
                           <div class="checkbox">${h.checkbox(node.name, True, checked=defaults.get(node.name))}</div>
                         %elif node.widget == "select":
                           ${h.select(node.name, defaults.get(node.name), node.validator.choices, class_="select2AuthSetting")}
+                        %elif node.widget == "select_with_labels":
+                          ${h.select(node.name, defaults.get(node.name), node.choices, class_="select2AuthSetting")}
                         %elif node.widget == "textarea":
                           <div class="textarea" style="margin-left: 0px">${h.textarea(node.name, defaults.get(node.name), rows=10)}</div>
                         %elif node.widget == "readonly":

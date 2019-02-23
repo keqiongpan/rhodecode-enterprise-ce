@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -93,6 +93,18 @@ def includeme(config):
     config.add_route(
         name='my_account_watched',
         pattern=ADMIN_PREFIX + '/my_account/watched')
+
+    config.add_route(
+        name='my_account_bookmarks',
+        pattern=ADMIN_PREFIX + '/my_account/bookmarks')
+
+    config.add_route(
+        name='my_account_bookmarks_update',
+        pattern=ADMIN_PREFIX + '/my_account/bookmarks/update')
+
+    config.add_route(
+        name='my_account_goto_bookmark',
+        pattern=ADMIN_PREFIX + '/my_account/bookmark/{bookmark_id}')
 
     config.add_route(
         name='my_account_perms',

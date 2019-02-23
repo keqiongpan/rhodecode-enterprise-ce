@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -284,11 +284,9 @@ class TestRepositoryMerge(object):
         self.source_commit = self.source_repo.get_commit()
         # This only works for Git and Mercurial
         default_branch = self.target_repo.DEFAULT_BRANCH_NAME
-        self.target_ref = Reference(
-            'branch', default_branch, self.target_commit.raw_id)
-        self.source_ref = Reference(
-            'branch', default_branch, self.source_commit.raw_id)
-        self.workspace_id = 'test-merge'
+        self.target_ref = Reference('branch', default_branch, self.target_commit.raw_id)
+        self.source_ref = Reference('branch', default_branch, self.source_commit.raw_id)
+        self.workspace_id = 'test-merge-{}'.format(vcsbackend.alias)
         self.repo_id = repo_id_generator(self.target_repo.path)
 
     def prepare_for_conflict(self, vcsbackend):
@@ -300,11 +298,9 @@ class TestRepositoryMerge(object):
         self.source_commit = self.source_repo.get_commit()
         # This only works for Git and Mercurial
         default_branch = self.target_repo.DEFAULT_BRANCH_NAME
-        self.target_ref = Reference(
-            'branch', default_branch, self.target_commit.raw_id)
-        self.source_ref = Reference(
-            'branch', default_branch, self.source_commit.raw_id)
-        self.workspace_id = 'test-merge'
+        self.target_ref = Reference('branch', default_branch, self.target_commit.raw_id)
+        self.source_ref = Reference('branch', default_branch, self.source_commit.raw_id)
+        self.workspace_id = 'test-merge-{}'.format(vcsbackend.alias)
         self.repo_id = repo_id_generator(self.target_repo.path)
 
     def test_merge_success(self, vcsbackend):
@@ -367,10 +363,11 @@ class TestRepositoryMerge(object):
 
         # Multiple merges may differ in their commit id. Therefore we set the
         # commit id to `None` before comparing the merge responses.
-        merge_response = merge_response._replace(
-            merge_ref=merge_response.merge_ref._replace(commit_id=None))
-        merge_response_update = merge_response_update._replace(
-            merge_ref=merge_response_update.merge_ref._replace(commit_id=None))
+        new_merge_ref = merge_response.merge_ref._replace(commit_id=None)
+        merge_response.merge_ref = new_merge_ref
+
+        new_update_merge_ref = merge_response_update.merge_ref._replace(commit_id=None)
+        merge_response_update.merge_ref = new_update_merge_ref
 
         assert merge_response == merge_response_update
         assert merge_response.possible is True
@@ -381,6 +378,7 @@ class TestRepositoryMerge(object):
     @pytest.mark.parametrize('dry_run', [True, False])
     def test_merge_conflict(self, vcsbackend, dry_run):
         self.prepare_for_conflict(vcsbackend)
+
         expected_merge_response = MergeResponse(
             False, False, None, MergeFailureReason.MERGE_FAILED)
 
@@ -399,12 +397,11 @@ class TestRepositoryMerge(object):
 
     def test_merge_target_is_not_head(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
-        expected_merge_response = MergeResponse(
-            False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD)
-
         target_ref = Reference(
             self.target_ref.type, self.target_ref.name, '0' * 40)
-
+        expected_merge_response = MergeResponse(
+            False, False, None, MergeFailureReason.TARGET_IS_NOT_HEAD,
+            metadata={'target_ref': target_ref})
         merge_response = self.target_repo.merge(
             self.repo_id, self.workspace_id, target_ref, self.source_repo,
             self.source_ref, dry_run=True)
@@ -413,11 +410,12 @@ class TestRepositoryMerge(object):
 
     def test_merge_missing_source_reference(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
-        expected_merge_response = MergeResponse(
-            False, False, None, MergeFailureReason.MISSING_SOURCE_REF)
 
         source_ref = Reference(
             self.source_ref.type, 'not_existing', self.source_ref.commit_id)
+        expected_merge_response = MergeResponse(
+            False, False, None, MergeFailureReason.MISSING_SOURCE_REF,
+            metadata={'source_ref': source_ref})
 
         merge_response = self.target_repo.merge(
             self.repo_id, self.workspace_id, self.target_ref,
@@ -429,7 +427,8 @@ class TestRepositoryMerge(object):
     def test_merge_raises_exception(self, vcsbackend):
         self.prepare_for_success(vcsbackend)
         expected_merge_response = MergeResponse(
-            False, False, None, MergeFailureReason.UNKNOWN)
+            False, False, None, MergeFailureReason.UNKNOWN,
+            metadata={'exception': 'ErrorForTest'})
 
         with mock.patch.object(self.target_repo, '_merge_repo',
                                side_effect=RepositoryError()):

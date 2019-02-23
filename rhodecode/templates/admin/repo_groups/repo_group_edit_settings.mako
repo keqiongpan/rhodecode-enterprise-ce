@@ -12,7 +12,7 @@
             <div class="fields">
                 <div class="field">
                     <div class="label">
-                        <label for="group_name">${_('Group Name')}:</label>
+                        <label for="group_name">${_('Group name')}:</label>
                     </div>
                     <div class="input">
                         ${c.form['repo_group_name'].render(css_class='medium', oid='group_name')|n}
@@ -22,7 +22,7 @@
 
                 <div class="field">
                     <div class="label">
-                        <label for="repo_group">${_('Group parent')}:</label>
+                        <label for="repo_group">${_('Repository group')}:</label>
                     </div>
                     <div class="select">
                         ${c.form['repo_group'].render(css_class='medium', oid='repo_group')|n}

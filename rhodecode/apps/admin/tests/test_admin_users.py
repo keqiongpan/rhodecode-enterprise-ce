@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -59,8 +59,6 @@ def route_path(name, params=None, **kwargs):
             ADMIN_PREFIX + '/users/{user_id}/update',
         'user_delete':
             ADMIN_PREFIX + '/users/{user_id}/delete',
-        'user_force_password_reset':
-            ADMIN_PREFIX + '/users/{user_id}/password_reset',
         'user_create_personal_repo_group':
             ADMIN_PREFIX + '/users/{user_id}/create_repo_group',
 

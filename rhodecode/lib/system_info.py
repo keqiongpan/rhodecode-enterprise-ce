@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2018 RhodeCode GmbH
+# Copyright (C) 2017-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -67,8 +67,7 @@ def get_storage_size(storage_path):
             try:
                 sizes.append(os.path.getsize(storage_file))
             except OSError:
-                log.exception('Failed to get size of storage file %s',
-                              storage_file)
+                log.exception('Failed to get size of storage file %s', storage_file)
                 pass
 
     return sum(sizes)
@@ -80,6 +79,16 @@ def get_resource(resource_type):
     except Exception:
         return 'NOT_SUPPORTED'
 
+
+def get_cert_path(ini_path):
+    default = '/etc/ssl/certs/ca-certificates.crt'
+    control_ca_bundle = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(ini_path)))),
+        '.rccontrol-profile/etc/ca-bundle.crt')
+    if os.path.isfile(control_ca_bundle):
+        default = control_ca_bundle
+
+    return default
 
 class SysInfoRes(object):
     def __init__(self, value, state=None, human_value=None):
@@ -604,6 +613,7 @@ def rhodecode_config():
     import rhodecode
     path = rhodecode.CONFIG.get('__file__')
     rhodecode_ini_safe = rhodecode.CONFIG.copy()
+    cert_path = get_cert_path(path)
 
     try:
         config = configparser.ConfigParser()
@@ -614,10 +624,6 @@ def rhodecode_config():
     except Exception:
         log.exception('Failed to read .ini file for display')
         parsed_ini = {}
-
-    cert_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(path)))),
-        '.rccontrol-profile/etc/ca-bundle.crt')
 
     rhodecode_ini_safe['server:main'] = parsed_ini
 

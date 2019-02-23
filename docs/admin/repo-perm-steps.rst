@@ -35,7 +35,7 @@ To set the permissions on a Repository Group, use the following steps:
 
 * :guilabel:`Owner`: Lets you change the group owner. Useful when users are
   moving roles within an organisation.
-* :guilabel:`Group parent`: Lets you add the |repo| group as a sub-group
+* :guilabel:`Repository group`: Lets you add the |repo| group as a sub-group
   of a larger group, i.e. :guilabel:`QA-Repos >> QA-Repos-Berlin`
 * :guilabel:`Enable automatic locking`: For more information,
   see :ref:`repo-locking`

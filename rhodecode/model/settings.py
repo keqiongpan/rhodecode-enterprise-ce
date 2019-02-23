@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -350,18 +350,26 @@ class IssueTrackerSettingsModel(object):
                 uid = k[len(prefix_match):]
                 issuetracker_entries[uid] = None
 
+        def url_cleaner(input_str):
+            input_str = input_str.replace('"', '').replace("'", '')
+            input_str = bleach.clean(input_str, strip=True)
+            return input_str
+
         # populate
         for uid in issuetracker_entries:
+            url_data = qs.get(self._get_keyname('url', uid, 'rhodecode_'))
+
             issuetracker_entries[uid] = AttributeDict({
                 'pat': qs.get(
                     self._get_keyname('pat', uid, 'rhodecode_')),
-                'url': bleach.clean(
+                'url': url_cleaner(
                     qs.get(self._get_keyname('url', uid, 'rhodecode_')) or ''),
                 'pref': bleach.clean(
                     qs.get(self._get_keyname('pref', uid, 'rhodecode_')) or ''),
                 'desc': qs.get(
                     self._get_keyname('desc', uid, 'rhodecode_')),
             })
+
         return issuetracker_entries
 
     def get_global_settings(self, cache=False):

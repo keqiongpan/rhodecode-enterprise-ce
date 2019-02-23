@@ -143,7 +143,7 @@
                 <div class="select">
                     ${c.form['repo_landing_commit_ref'].render(css_class='medium', oid='repo_landing_commit_ref')|n}
                     ${c.form.render_error(request, c.form['repo_landing_commit_ref'])|n}
-                    <p class="help-block">${_('Default commit for files page, downloads, full text search index and readme')}</p>
+                    <p class="help-block">${_('The default commit for file pages, downloads, full text search index, and README generation.')}</p>
                 </div>
             </div>
 

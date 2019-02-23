@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -58,7 +58,7 @@ def author_name(author):
     to get the username
     """
 
-    if not author or not '@' in author:
+    if not author or '@' not in author:
         return author
     else:
         return author.replace(author_email(author), '').replace('<', '')\

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,6 +26,7 @@ from pygments import lex
 from pygments.formatters.html import _get_ttype_class as pygment_token_class
 from pygments.lexers.special import TextLexer, Token
 from pygments.lexers import get_lexer_by_name
+from pyramid import compat
 
 from rhodecode.lib.helpers import (
     get_lexer_for_filenode, html_escape, get_custom_lexer)
@@ -48,8 +49,9 @@ def filenode_as_lines_tokens(filenode, lexer=None):
     lexer = lexer or get_lexer_for_filenode(filenode)
     log.debug('Generating file node pygment tokens for %s, %s, org_lexer:%s',
               lexer, filenode, org_lexer)
-    tokens = tokenize_string(filenode.content, lexer)
-    lines = split_token_stream(tokens)
+    content = filenode.content
+    tokens = tokenize_string(content, lexer)
+    lines = split_token_stream(tokens, content)
     rv = list(lines)
     return rv
 
@@ -73,7 +75,7 @@ def tokenize_string(content, lexer):
         yield pygment_token_class(token_type), token_text
 
 
-def split_token_stream(tokens):
+def split_token_stream(tokens, content):
     """
     Take a list of (TokenType, text) tuples and split them by a string
 
@@ -82,18 +84,23 @@ def split_token_stream(tokens):
      (TEXT, 'more'), (TEXT, 'text')]
     """
 
-    buffer = []
+    token_buffer = []
     for token_class, token_text in tokens:
         parts = token_text.split('\n')
         for part in parts[:-1]:
-            buffer.append((token_class, part))
-            yield buffer
-            buffer = []
+            token_buffer.append((token_class, part))
+            yield token_buffer
+            token_buffer = []
 
-        buffer.append((token_class, parts[-1]))
+        token_buffer.append((token_class, parts[-1]))
 
-    if buffer:
-        yield buffer
+    if token_buffer:
+        yield token_buffer
+    elif content:
+        # this is a special case, we have the content, but tokenization didn't produce
+        # any results. THis can happen if know file extensions like .css have some bogus
+        # unicode content without any newline characters
+        yield [(pygment_token_class(Token.Text), content)]
 
 
 def filenode_as_annotated_lines_tokens(filenode):
@@ -695,7 +702,7 @@ class DiffSet(object):
         filenode = None
         filename = None
 
-        if isinstance(input_file, basestring):
+        if isinstance(input_file, compat.string_types):
             filename = input_file
         elif isinstance(input_file, FileNode):
             filenode = input_file
@@ -720,7 +727,11 @@ class DiffSet(object):
         if filenode not in self.highlighted_filenodes:
             tokenized_lines = filenode_as_lines_tokens(filenode, lexer)
             self.highlighted_filenodes[filenode] = tokenized_lines
-        return self.highlighted_filenodes[filenode][line_number - 1]
+
+        try:
+            return self.highlighted_filenodes[filenode][line_number - 1]
+        except Exception:
+            return [('', u'rhodecode diff rendering error')]
 
     def action_to_op(self, action):
         return {

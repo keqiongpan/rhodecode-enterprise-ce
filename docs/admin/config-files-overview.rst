@@ -23,9 +23,9 @@ sections.
         * :ref:`increase-gunicorn`
         * :ref:`x-frame`
 
-    \- **mapping.ini**
+    \- **search_mapping.ini**
         Default location:
-        :file:`/home/{user}/.rccontrol/{instance-id}/mapping.ini`
+        :file:`/home/{user}/.rccontrol/{instance-id}/search_mapping.ini`
 
         This file is used to control the |RCE| indexer. It comes configured
         to index your instance. To change the default configuration, see

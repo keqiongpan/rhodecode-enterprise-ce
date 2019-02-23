@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2018 RhodeCode GmbH
+# Copyright (C) 2014-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -21,20 +21,21 @@
 """
 Base module for all VCS systems
 """
-
-import collections
+import os
+import re
+import time
+import shutil
 import datetime
 import fnmatch
 import itertools
 import logging
-import os
-import re
-import time
+import collections
 import warnings
-import shutil
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from pyramid import compat
 
+from rhodecode.translation import lazy_ugettext
 from rhodecode.lib.utils2 import safe_str, safe_unicode
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.utils import author_name, author_email
@@ -54,9 +55,6 @@ FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
 
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
-MergeResponse = collections.namedtuple(
-    'MergeResponse',
-    ('possible', 'executed', 'merge_ref', 'failure_reason'))
 
 
 class MergeFailureReason(object):
@@ -140,6 +138,93 @@ class UpdateFailureReason(object):
 
     # Update failed because the source reference is missing.
     MISSING_SOURCE_REF = 5
+
+
+class MergeResponse(object):
+
+    # uses .format(**metadata) for variables
+    MERGE_STATUS_MESSAGES = {
+        MergeFailureReason.NONE: lazy_ugettext(
+            u'This pull request can be automatically merged.'),
+        MergeFailureReason.UNKNOWN: lazy_ugettext(
+            u'This pull request cannot be merged because of an unhandled exception. '
+            u'{exception}'),
+        MergeFailureReason.MERGE_FAILED: lazy_ugettext(
+            u'This pull request cannot be merged because of merge conflicts.'),
+        MergeFailureReason.PUSH_FAILED: lazy_ugettext(
+            u'This pull request could not be merged because push to '
+            u'target:`{target}@{merge_commit}` failed.'),
+        MergeFailureReason.TARGET_IS_NOT_HEAD: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'`{target_ref.name}` is not a head.'),
+        MergeFailureReason.HG_SOURCE_HAS_MORE_BRANCHES: lazy_ugettext(
+            u'This pull request cannot be merged because the source contains '
+            u'more branches than the target.'),
+        MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'has multiple heads: `{heads}`.'),
+        MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
+            u'This pull request cannot be merged because the target repository is '
+            u'locked by {locked_by}.'),
+
+        MergeFailureReason.MISSING_TARGET_REF: lazy_ugettext(
+            u'This pull request cannot be merged because the target '
+            u'reference `{target_ref.name}` is missing.'),
+        MergeFailureReason.MISSING_SOURCE_REF: lazy_ugettext(
+            u'This pull request cannot be merged because the source '
+            u'reference `{source_ref.name}` is missing.'),
+        MergeFailureReason.SUBREPO_MERGE_FAILED: lazy_ugettext(
+            u'This pull request cannot be merged because of conflicts related '
+            u'to sub repositories.'),
+
+        # Deprecations
+        MergeFailureReason._DEPRECATED_MISSING_COMMIT: lazy_ugettext(
+            u'This pull request cannot be merged because the target or the '
+            u'source reference is missing.'),
+
+    }
+
+    def __init__(self, possible, executed, merge_ref, failure_reason, metadata=None):
+        self.possible = possible
+        self.executed = executed
+        self.merge_ref = merge_ref
+        self.failure_reason = failure_reason
+        self.metadata = metadata or {}
+
+    def __repr__(self):
+        return '<MergeResponse:{} {}>'.format(self.label, self.failure_reason)
+
+    def __eq__(self, other):
+        same_instance = isinstance(other, self.__class__)
+        return same_instance \
+               and self.possible == other.possible \
+               and self.executed == other.executed \
+               and self.failure_reason == other.failure_reason
+
+    @property
+    def label(self):
+        label_dict = dict((v, k) for k, v in MergeFailureReason.__dict__.items() if
+                          not k.startswith('_'))
+        return label_dict.get(self.failure_reason)
+
+    @property
+    def merge_status_message(self):
+        """
+        Return a human friendly error message for the given merge status code.
+        """
+        msg = safe_unicode(self.MERGE_STATUS_MESSAGES[self.failure_reason])
+        try:
+            return msg.format(**self.metadata)
+        except Exception:
+            log.exception('Failed to format %s message', self)
+            return msg
+
+    def asdict(self):
+        data = {}
+        for k in ['possible', 'executed', 'merge_ref', 'failure_reason',
+                  'merge_status_message']:
+            data[k] = getattr(self, k)
+        return data
 
 
 class BaseRepository(object):
@@ -316,7 +401,7 @@ class BaseRepository(object):
     # COMMITS
     # ==========================================================================
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
         Returns instance of `BaseCommit` class. If `commit_id` and `commit_idx`
         are both None, most recent commit is returned.
@@ -333,7 +418,7 @@ class BaseRepository(object):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, show_hidden=False, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None, translate_tags=None):
         """
         Returns iterator of `BaseCommit` objects from start to end
         not inclusive. This should behave just like a list, ie. end is not
@@ -346,6 +431,7 @@ class BaseRepository(object):
         :param branch_name:
         :param show_hidden:
         :param pre_load:
+        :param translate_tags:
         """
         raise NotImplementedError
 
@@ -501,12 +587,11 @@ class BaseRepository(object):
                 repo_id, workspace_id, target_ref, source_repo,
                 source_ref, message, user_name, user_email, dry_run=dry_run,
                 use_rebase=use_rebase, close_branch=close_branch)
-        except RepositoryError:
-            log.exception(
-                'Unexpected failure when running merge, dry-run=%s',
-                dry_run)
+        except RepositoryError as exc:
+            log.exception('Unexpected failure when running merge, dry-run=%s', dry_run)
             return MergeResponse(
-                False, False, None, MergeFailureReason.UNKNOWN)
+                False, False, None, MergeFailureReason.UNKNOWN,
+                metadata={'exception': str(exc)})
 
     def _merge_repo(self, repo_id, workspace_id, target_ref,
                     source_repo, source_ref, merge_message,
@@ -610,7 +695,7 @@ class BaseRepository(object):
                 (commit, self, commit.repository))
 
     def _validate_commit_id(self, commit_id):
-        if not isinstance(commit_id, basestring):
+        if not isinstance(commit_id, compat.string_types):
             raise TypeError("commit_id must be a string value")
 
     def _validate_commit_idx(self, commit_idx):
@@ -647,7 +732,7 @@ class BaseRepository(object):
         warnings.warn("Use get_commit instead", DeprecationWarning)
         commit_id = None
         commit_idx = None
-        if isinstance(revision, basestring):
+        if isinstance(revision, compat.string_types):
             commit_id = revision
         else:
             commit_idx = revision
@@ -674,7 +759,7 @@ class BaseRepository(object):
         if revision is None:
             return revision
 
-        if isinstance(revision, basestring):
+        if isinstance(revision, compat.string_types):
             commit_id = revision
         else:
             commit_id = self.commit_ids[revision]
@@ -696,6 +781,9 @@ class BaseRepository(object):
 
     def install_hooks(self, force=False):
         return self._remote.install_hooks(force)
+
+    def get_hooks_info(self):
+        return self._remote.get_hooks_info()
 
 
 class BaseCommit(object):
@@ -1559,12 +1647,13 @@ class EmptyRepository(BaseRepository):
 
 class CollectionGenerator(object):
 
-    def __init__(self, repo, commit_ids, collection_size=None, pre_load=None):
+    def __init__(self, repo, commit_ids, collection_size=None, pre_load=None, translate_tag=None):
         self.repo = repo
         self.commit_ids = commit_ids
         # TODO: (oliver) this isn't currently hooked up
         self.collection_size = None
         self.pre_load = pre_load
+        self.translate_tag = translate_tag
 
     def __len__(self):
         if self.collection_size is not None:
@@ -1580,8 +1669,9 @@ class CollectionGenerator(object):
         """
         Allows backends to override the way commits are generated.
         """
-        return self.repo.get_commit(commit_id=commit_id,
-                                    pre_load=self.pre_load)
+        return self.repo.get_commit(
+            commit_id=commit_id, pre_load=self.pre_load,
+            translate_tag=self.translate_tag)
 
     def __getslice__(self, i, j):
         """
@@ -1589,7 +1679,8 @@ class CollectionGenerator(object):
         """
         commit_ids = self.commit_ids[i:j]
         return self.__class__(
-            self.repo, commit_ids, pre_load=self.pre_load)
+            self.repo, commit_ids, pre_load=self.pre_load,
+            translate_tag=self.translate_tag)
 
     def __repr__(self):
         return '<CollectionGenerator[len:%s]>' % (self.__len__())

@@ -88,9 +88,9 @@
     %endif
 
     ##PRIVATE/PUBLIC
-    %if private and c.visual.show_private_icon:
+    %if private is True and c.visual.show_private_icon:
       <i class="icon-lock" title="${_('Private repository')}"></i>
-    %elif not private and c.visual.show_public_icon:
+    %elif private is False and c.visual.show_public_icon:
       <i class="icon-unlock-alt" title="${_('Public repository')}"></i>
     %else:
       <span></span>

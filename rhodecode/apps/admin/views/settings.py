@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -666,8 +666,8 @@ class AdminSettingsView(BaseAppView):
         c = self.load_default_context()
         c.active = 'search'
 
-        searcher = searcher_from_config(self.request.registry.settings)
-        c.statistics = searcher.statistics(self.request.translate)
+        c.searcher = searcher_from_config(self.request.registry.settings)
+        c.statistics = c.searcher.statistics(self.request.translate)
 
         return self._get_template_context(c)
 

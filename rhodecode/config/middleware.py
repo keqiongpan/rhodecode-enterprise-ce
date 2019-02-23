@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -98,7 +98,7 @@ def make_pyramid_app(global_config, **settings):
     global_config = _substitute_values(global_config, environ)
     settings = _substitute_values(settings, environ)
 
-    sanitize_settings_and_apply_defaults(settings)
+    sanitize_settings_and_apply_defaults(global_config, settings)
 
     config = Configurator(settings=settings)
 
@@ -165,7 +165,7 @@ def error_handler(exception, request):
 
     error_explanation = base_response.explanation or str(base_response)
     if base_response.status_code == 404:
-        error_explanation += " Or you don't have permission to access it."
+        error_explanation += " Optionally you don't have permission to access this page."
     c = AttributeDict()
     c.error_message = base_response.status
     c.error_explanation = error_explanation
@@ -281,6 +281,7 @@ def includeme(config):
         config.include('rhodecode.apps.ops')
         config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')
+        config.include('rhodecode.apps.file_store')
         config.include('rhodecode.apps.login')
         config.include('rhodecode.apps.home')
         config.include('rhodecode.apps.journal')
@@ -381,7 +382,7 @@ def wrap_app_in_wsgi_middlewares(pyramid_app, config):
     return pyramid_app_with_cleanup
 
 
-def sanitize_settings_and_apply_defaults(settings):
+def sanitize_settings_and_apply_defaults(global_config, settings):
     """
     Applies settings defaults and does all type conversion.
 
@@ -420,6 +421,7 @@ def sanitize_settings_and_apply_defaults(settings):
     # TODO: johbo: Re-think this, usually the call to config.include
     # should allow to pass in a prefix.
     settings.setdefault('rhodecode.api.url', '/_admin/api')
+    settings.setdefault('__file__', global_config.get('__file__'))
 
     # Sanitize generic settings.
     _list_setting(settings, 'default_encoding', 'UTF-8')
@@ -708,18 +710,29 @@ def _string_setting(settings, name, default, lower=True, default_when_empty=Fals
 
 
 def _substitute_values(mapping, substitutions):
+    result = {}
 
     try:
-        result = {
+        for key, value in mapping.items():
+            # initialize without substitution first
+            result[key] = value
+
             # Note: Cannot use regular replacements, since they would clash
             # with the implementation of ConfigParser. Using "format" instead.
-            key: value.format(**substitutions)
-            for key, value in mapping.items()
-        }
-    except KeyError as e:
-        raise ValueError(
-            'Failed to substitute env variable: {}. '
-            'Make sure you have specified this env variable without ENV_ prefix'.format(e))
+            try:
+                result[key] = value.format(**substitutions)
+            except KeyError as e:
+                env_var = '{}'.format(e.args[0])
+
+                msg = 'Failed to substitute: `{key}={{{var}}}` with environment entry. ' \
+                      'Make sure your environment has {var} set, or remove this ' \
+                      'variable from config file'.format(key=key, var=env_var)
+
+                if env_var.startswith('ENV_'):
+                    raise ValueError(msg)
+                else:
+                    log.warning(msg)
+
     except ValueError as e:
         log.warning('Failed to substitute ENV variable: %s', e)
         result = mapping

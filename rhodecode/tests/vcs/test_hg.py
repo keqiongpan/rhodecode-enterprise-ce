@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -681,9 +681,11 @@ TODO: To be written...
         workspace_id = 'test-merge'
 
         assert len(target_repo._heads(branch='default')) == 2
+        heads = target_repo._heads(branch='default')
         expected_merge_response = MergeResponse(
             False, False, None,
-            MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS)
+            MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS,
+            metadata={'heads': heads})
         repo_id = repo_id_generator(target_repo.path)
         merge_response = target_repo.merge(
             repo_id, workspace_id, target_ref, source_repo, source_ref,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -760,7 +760,6 @@ class RepoGroup(Base, BaseModel):
     __tablename__ = 'groups'
     __table_args__ = (
         UniqueConstraint('group_name', 'group_parent_id'),
-        CheckConstraint('group_id != group_parent_id'),
         {'extend_existing': True, 'mysql_engine': 'InnoDB',
          'mysql_charset': 'utf8', 'sqlite_autoincrement': True},
     )

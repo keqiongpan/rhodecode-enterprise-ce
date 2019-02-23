@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -17,10 +17,10 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
-import logging
 import os
+import logging
 import shlex
+from pyramid import compat
 
 # Do not use `from rhodecode import events` here, it will be overridden by the
 # events module in this package due to pythons import mechanism.
@@ -85,6 +85,6 @@ def _append_path_sep(path):
     """
     Append the path separator if missing.
     """
-    if isinstance(path, basestring) and not path.endswith(os.path.sep):
+    if isinstance(path, compat.string_types) and not path.endswith(os.path.sep):
         path += os.path.sep
     return path

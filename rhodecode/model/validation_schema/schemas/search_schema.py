@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,6 +34,9 @@ class SearchParamsSchema(colander.MappingSchema):
         colander.String(),
         missing='newfirst',
         validator=colander.OneOf(['oldfirst', 'newfirst']))
+    search_max_lines = colander.SchemaNode(
+        colander.Integer(),
+        missing=10)
     page_limit = colander.SchemaNode(
         colander.Integer(),
         missing=10,

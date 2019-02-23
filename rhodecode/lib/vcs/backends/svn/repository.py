@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2018 RhodeCode GmbH
+# Copyright (C) 2014-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -250,7 +250,7 @@ class SubversionRepository(base.BaseRepository):
         """
         return os.path.join(self.path, 'hooks')
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         if self.is_empty():
             raise EmptyRepositoryError("There are no commits yet")
         if commit_id is not None:
@@ -268,7 +268,7 @@ class SubversionRepository(base.BaseRepository):
 
     def get_commits(
             self, start_id=None, end_id=None, start_date=None, end_date=None,
-            branch_name=None, show_hidden=False, pre_load=None):
+            branch_name=None, show_hidden=False, pre_load=None, translate_tags=None):
         if self.is_empty():
             raise EmptyRepositoryError("There are no commit_ids yet")
         self._validate_branch_name(branch_name)

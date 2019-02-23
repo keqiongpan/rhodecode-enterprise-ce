@@ -6,7 +6,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
     <div class="fields">
         <div class="field">
             <div class="label">
-                <label for="repo_name">${_('Name')}:</label>
+                <label for="repo_name">${_('Repository name')}:</label>
             </div>
             <div class="input">
                 ${h.text('repo_name', class_="medium")}
@@ -48,22 +48,8 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             </div>
         </div>
         <div class="field">
-            <div class="label">
-                <label for="repo_description">${_('Description')}:</label>
-            </div>
-            <div class="textarea editor">
-                ${h.textarea('repo_description')}
-                <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
-                <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
-                <span id="meta-tags-desc" style="display: none">
-                    <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
-                    ${dt.metatags_help()}
-                </span>
-            </div>
-        </div>
-        <div class="field">
              <div class="label">
-                 <label for="repo_group">${_('Repository Group')}:</label>
+                 <label for="repo_group">${_('Repository group')}:</label>
              </div>
              <div class="select">
                  ${h.select('repo_group',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
@@ -74,6 +60,20 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
                  % endif
                  <span class="help-block">${_('Optionally select a group to put this repository into.')}</span>
              </div>
+        </div>
+        <div class="field">
+            <div class="label">
+                <label for="repo_description">${_('Description')}:</label>
+            </div>
+            <div class="textarea editor">
+                ${h.textarea('repo_description',cols=23,rows=5,class_="medium")}
+                <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                <span id="meta-tags-desc" style="display: none">
+                    <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                    ${dt.metatags_help()}
+                </span>
+            </div>
         </div>
         <div class="field">
             <div class="label">
@@ -90,7 +90,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             </div>
             <div class="checkboxes">
                 ${h.checkbox('repo_copy_permissions', value="True", checked="checked")}
-                <span class="help-block">${_('Copy permission set from the parent repository group.')}</span>
+                <span class="help-block">${_('Copy permissions from parent repository group.')}</span>
             </div>
         </div>
         <div class="field">

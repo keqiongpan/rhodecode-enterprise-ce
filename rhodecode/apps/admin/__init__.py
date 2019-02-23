@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -280,8 +280,12 @@ def admin_routes(config):
         pattern='/users/{user_id:\d+}/delete',
         user_route=True)
     config.add_route(
-        name='user_force_password_reset',
-        pattern='/users/{user_id:\d+}/password_reset',
+        name='user_enable_force_password_reset',
+        pattern='/users/{user_id:\d+}/password_reset_enable',
+        user_route=True)
+    config.add_route(
+        name='user_disable_force_password_reset',
+        pattern='/users/{user_id:\d+}/password_reset_disable',
         user_route=True)
     config.add_route(
         name='user_create_personal_repo_group',

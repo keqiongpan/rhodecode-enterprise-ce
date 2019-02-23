@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2018 RhodeCode GmbH
+# Copyright (C) 2010-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -101,8 +101,7 @@ class CustomTestResponse(TestResponse):
         """
 
         from pyramid_beaker import session_factory_from_settings
-        session = session_factory_from_settings(
-            self.test_app.app.config.get_settings())
+        session = session_factory_from_settings(self.test_app._pyramid_settings)
         return session(self.request)
 
 
@@ -118,7 +117,7 @@ class TestRequest(webob.BaseRequest):
 
 class CustomTestApp(TestApp):
     """
-    Custom app to make mustcontain more usefull, and extract special methods
+    Custom app to make mustcontain more Useful, and extract special methods
     """
     RequestClass = TestRequest
     rc_login_data = {}
@@ -139,6 +138,14 @@ class CustomTestApp(TestApp):
     @property
     def csrf_token(self):
         return self.rc_login_data['csrf_token']
+
+    @property
+    def _pyramid_registry(self):
+        return self.app.config.registry
+
+    @property
+    def _pyramid_settings(self):
+        return self._pyramid_registry.settings
 
 
 def set_anonymous_access(enabled):

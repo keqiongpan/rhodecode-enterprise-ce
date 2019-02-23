@@ -1,12 +1,15 @@
 # This file defines how to "build" for packaging.
 
-{ doCheck ? false
+{ pkgs ? import <nixpkgs> {}
+, system ? builtins.currentSystem
+, doCheck ? false
 }:
 
 let
   enterprise_ce = import ./default.nix {
     inherit
-      doCheck;
+      doCheck
+      system;
 
     # disable checkPhase for build
     checkPhase = ''

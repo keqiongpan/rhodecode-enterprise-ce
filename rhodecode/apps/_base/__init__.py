@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2018 RhodeCode GmbH
+# Copyright (C) 2016-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,11 +22,12 @@ import time
 import logging
 import operator
 
+from pyramid import compat
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
 from rhodecode.lib import helpers as h, diffs
 from rhodecode.lib.utils2 import (
-    StrictAttributeDict, safe_int, datetime_to_time, safe_unicode)
+    StrictAttributeDict, str2bool, safe_int, datetime_to_time, safe_unicode)
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
@@ -249,6 +250,12 @@ class RepoAppView(BaseAppView):
             else:  # redirect if we don't show missing requirements
                 raise HTTPFound(h.route_path('home'))
 
+        c.has_origin_repo_read_perm = False
+        if self.db_repo.fork:
+            c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
+                'repository.write', 'repository.read', 'repository.admin')(
+                self.db_repo.fork.repo_name, 'summary fork link')
+
         return c
 
     def _get_f_path_unchecked(self, matchdict, default=None):
@@ -270,6 +277,13 @@ class RepoAppView(BaseAppView):
         settings_model = VcsSettingsModel(repo=target_repo)
         settings = settings_model.get_general_settings()
         return settings.get(settings_key, default)
+
+    def get_recache_flag(self):
+        for flag_name in ['force_recache', 'force-recache', 'no-cache']:
+            flag_val = self.request.GET.get(flag_name)
+            if str2bool(flag_val):
+                return True
+        return False
 
 
 class PathFilter(object):
@@ -326,6 +340,13 @@ class RepoGroupAppView(BaseAppView):
         super(RepoGroupAppView, self).__init__(context, request)
         self.db_repo_group = request.db_repo_group
         self.db_repo_group_name = self.db_repo_group.group_name
+
+    def _get_local_tmpl_context(self, include_app_defaults=True):
+        _ = self.request.translate
+        c = super(RepoGroupAppView, self)._get_local_tmpl_context(
+            include_app_defaults=include_app_defaults)
+        c.repo_group = self.db_repo_group
+        return c
 
     def _revoke_perms_on_yourself(self, form_result):
         _updates = filter(lambda u: self._rhodecode_user.user_id == int(u[0]),
@@ -389,7 +410,7 @@ class DataGridAppView(object):
         return draw, start, length
 
     def _get_order_col(self, order_by, model):
-        if isinstance(order_by, basestring):
+        if isinstance(order_by, compat.string_types):
             try:
                 return operator.attrgetter(order_by)(model)
             except AttributeError:
