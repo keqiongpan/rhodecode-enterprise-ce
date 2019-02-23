@@ -102,6 +102,7 @@ class RhodeCodeCacheRegion(CacheRegion):
             decorate.get = get
             decorate.original = fn
             decorate.key_generator = key_generator
+            decorate.__wrapped__ = fn
 
             return decorate
 
