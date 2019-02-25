@@ -83,9 +83,9 @@ webob==1.8.4
 whoosh==2.7.4
 wsgiref==0.1.2
 zope.cachedescriptors==4.3.1
-zope.event==4.3.0
 zope.interface==4.5.0
 zope.deprecation==4.4.0
+zope.event==4.4.0
 
 # DB drivers
 mysql-python==1.2.5

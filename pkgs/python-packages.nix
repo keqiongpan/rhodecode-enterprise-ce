@@ -2288,14 +2288,14 @@ self: super: {
     };
   };
   "zope.event" = super.buildPythonPackage {
-    name = "zope.event-4.3.0";
+    name = "zope.event-4.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."setuptools"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/9e/d0/54ba59f19a0635f6591b74be259cf6fbf67e73f4edda27b5cd0cf4d26efa/zope.event-4.3.0.tar.gz";
-      sha256 = "1rrkyx42bcq8dkpj23c2v99kczlrg8d39c06q5qpr0vs4hjfmv70";
+      url = "https://files.pythonhosted.org/packages/4c/b2/51c0369adcf5be2334280eed230192ab3b03f81f8efda9ddea6f65cc7b32/zope.event-4.4.tar.gz";
+      sha256 = "1ksbc726av9xacml6jhcfyn828hlhb9xlddpx6fcvnlvmpmpvhk9";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 ];
