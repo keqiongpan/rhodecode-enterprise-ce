@@ -1274,17 +1274,6 @@ self: super: {
       license = [ pkgs.lib.licenses.mit { fullName = "LGPL/MIT"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
     };
   };
-  "pyflakes" = super.buildPythonPackage {
-    name = "pyflakes-0.8.1";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/75/22/a90ec0252f4f87f3ffb6336504de71fe16a49d69c4538dae2f12b9360a38/pyflakes-0.8.1.tar.gz";
-      sha256 = "0sbpq6pqm1i9wqi41mlfrsc5rk92jv4mskvlyxmnhlbdnc80ma1z";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   "pygments" = super.buildPythonPackage {
     name = "pygments-2.3.1";
     doCheck = false;
@@ -1756,7 +1745,6 @@ self: super: {
       self."py-bcrypt"
       self."pycrypto"
       self."pycurl"
-      self."pyflakes"
       self."pygments"
       self."pyparsing"
       self."pyramid-beaker"

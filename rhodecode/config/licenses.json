@@ -1482,17 +1482,6 @@
         "name": "python2.7-pygments-markdown-lexer-0.1.0.dev39"
     },
     {
-        "license": [
-            {
-                "fullName": "MIT License",
-                "shortName": "mit",
-                "spdxId": "MIT",
-                "url": "http://spdx.org/licenses/MIT.html"
-            }
-        ],
-        "name": "python2.7-pyflakes-0.8.1"
-    },
-    {
         "license": {
             "fullName": "MIT License",
             "shortName": "mit",
