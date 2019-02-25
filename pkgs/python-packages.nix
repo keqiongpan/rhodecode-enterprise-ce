@@ -260,11 +260,11 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.7.1";
+    name = "configparser-3.7.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b6/a6/eceea7c5a5dbcf56815bed411c38cabd8a879386be10717b160e7362b5a2/configparser-3.7.1.tar.gz";
-      sha256 = "0cnz213il9lhgda6x70fw7mfqr8da43s3wm343lwzhqx94mgmmav";
+      url = "https://files.pythonhosted.org/packages/4a/4d/5d4c07cd28476ecad84ea5ad43961e50b6fd74cd24b9b81113650b4de6ee/configparser-3.7.3.tar.gz";
+      sha256 = "0bfg1fn061djhs3aqqprk9sd5sxacj8wc6h6fhck57r7zks4qn97";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -623,11 +623,11 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.4.2";
+    name = "hupper-1.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f1/75/1915dc7650b4867fa3049256e24ca8eddb5989998fcec788cf52b9812dfc/hupper-1.4.2.tar.gz";
-      sha256 = "16vb9fkiaakdpcp6pn56h3w0dwvm67bxq2k2dv4i382qhqwphdzb";
+      url = "https://files.pythonhosted.org/packages/89/f1/aace4ea69c1d79e243e48a81dcf1608c87e8c5a190e6ef80fae245d494ac/hupper-1.5.tar.gz";
+      sha256 = "02n6y2rvpacm2w3x089whj64j1x0qlkimkzw35r1g0mymmxicfk9";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1132,11 +1132,11 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.8.1";
+    name = "pluggy-0.9.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/38/e1/83b10c17688af7b2998fa5342fec58ecbd2a5a7499f31e606ae6640b71ac/pluggy-0.8.1.tar.gz";
-      sha256 = "05l6g42p9ilmabw0hlbiyxy6gyzjri41m5l11a8dzgvi77q35p4d";
+      url = "https://files.pythonhosted.org/packages/a7/8c/55c629849c64e665258d8976322dfdad171fa2f57117590662d8a67618a4/pluggy-0.9.0.tar.gz";
+      sha256 = "13yg2q0wgcb4l8lgdvcnzqa8db5lrw3nwn50lxjy1z5jkp7gkv0r";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1527,14 +1527,14 @@ self: super: {
     };
   };
   "python-dateutil" = super.buildPythonPackage {
-    name = "python-dateutil-2.7.5";
+    name = "python-dateutil-2.8.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0e/01/68747933e8d12263d41ce08119620d9a7e5eb72c876a3442257f74490da0/python-dateutil-2.7.5.tar.gz";
-      sha256 = "00ngwcdw36w5b37b51mdwn3qxid9zdf3kpffv2q6n9kl05y2iyc8";
+      url = "https://files.pythonhosted.org/packages/ad/99/5b2e99737edeb28c71bcbec5b5dda19d0d9ef3ca3e92e3e925e7c0bb364c/python-dateutil-2.8.0.tar.gz";
+      sha256 = "17nsfhy4xdz1khrfxa61vd7pmvd5z0wa3zb6v4gb4kfnykv0b668";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.asl20 { fullName = "Dual License"; } ];
@@ -1679,7 +1679,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.16.0";
+    name = "rhodecode-enterprise-ce-4.17.0";
     buildInputs = [
       self."pytest"
       self."py"
