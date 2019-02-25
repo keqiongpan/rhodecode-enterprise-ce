@@ -38,8 +38,6 @@ from sqlalchemy.orm import relationship, joinedload, class_mapper, validates
 from sqlalchemy.exc import OperationalError
 from beaker.cache import cache_region, region_invalidate
 from webob.exc import HTTPNotFound
-from Crypto.Cipher import AES
-from Crypto import Random
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode.translation import _
