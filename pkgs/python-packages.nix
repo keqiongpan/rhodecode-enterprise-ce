@@ -2274,14 +2274,14 @@ self: super: {
     };
   };
   "zope.deprecation" = super.buildPythonPackage {
-    name = "zope.deprecation-4.3.0";
+    name = "zope.deprecation-4.4.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."setuptools"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a1/18/2dc5e6bfe64fdc3b79411b67464c55bb0b43b127051a20f7f492ab767758/zope.deprecation-4.3.0.tar.gz";
-      sha256 = "095jas41wbxgmw95kwdxqhbc3bgihw2hzj9b3qpdg85apcsf2lkx";
+      url = "https://files.pythonhosted.org/packages/34/da/46e92d32d545dd067b9436279d84c339e8b16de2ca393d7b892bc1e1e9fd/zope.deprecation-4.4.0.tar.gz";
+      sha256 = "1pz2cv7gv9y1r3m0bdv7ks1alagmrn5msm5spwdzkb2by0w36i8d";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 ];
