@@ -2302,14 +2302,14 @@ self: super: {
     };
   };
   "zope.interface" = super.buildPythonPackage {
-    name = "zope.interface-4.5.0";
+    name = "zope.interface-4.6.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."setuptools"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ac/8a/657532df378c2cd2a1fe6b12be3b4097521570769d4852ec02c24bd3594e/zope.interface-4.5.0.tar.gz";
-      sha256 = "0k67m60ij06wkg82n15qgyn96waf4pmrkhv0njpkfzpmv5q89hsp";
+      url = "https://files.pythonhosted.org/packages/4e/d0/c9d16bd5b38de44a20c6dc5d5ed80a49626fafcb3db9f9efdc2a19026db6/zope.interface-4.6.0.tar.gz";
+      sha256 = "1rgh2x3rcl9r0v0499kf78xy86rnmanajf4ywmqb943wpk50sg8v";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 ];
