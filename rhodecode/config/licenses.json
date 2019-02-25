@@ -1141,15 +1141,6 @@
     {
         "license": [
             {
-                "fullName": "Public Domain",
-                "shortName": "publicDomain"
-            }
-        ],
-        "name": "python2.7-pycrypto-2.6.1"
-    },
-    {
-        "license": [
-            {
                 "fullName": "Academic Free License (AFL)"
             },
             {

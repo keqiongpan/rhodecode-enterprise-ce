@@ -42,7 +42,6 @@ pastescript==3.0.0
 peppercorn==0.6
 psutil==5.5.1
 py-bcrypt==0.4
-pycrypto==2.6.1
 pycurl==7.43.0.2
 pygments==2.3.1
 pyparsing==2.3.0
@@ -68,7 +67,7 @@ routes==2.4.1
 simplejson==3.16.0
 six==1.11.0
 sqlalchemy==1.1.18
-sshpubkeys==2.2.0
+sshpubkeys==3.1.0
 subprocess32==3.5.3
 supervisor==3.3.5
 tempita==0.5.2

@@ -51,6 +51,17 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "asn1crypto" = super.buildPythonPackage {
+    name = "asn1crypto-0.24.0";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/fc/f1/8db7daa71f414ddabfa056c4ef792e1461ff655c2ae2928a2b675bfed6b4/asn1crypto-0.24.0.tar.gz";
+      sha256 = "0jaf8rf9dx1lf23xfv2cdd5h52f1qr3w8k63985bc35g3d220p4x";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "atomicwrites" = super.buildPythonPackage {
     name = "atomicwrites-1.2.1";
     doCheck = false;
@@ -187,6 +198,20 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "cffi" = super.buildPythonPackage {
+    name = "cffi-1.12.1";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."pycparser"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/bc/81/47bd0404f2cb5363edb371e3b15da6387b5e9b80122e5b81be8b8f411e9b/cffi-1.12.1.tar.gz";
+      sha256 = "0cw0dzynw34zi75h674y3bgas6axfjyw1h6hj6ic2llcwyj7nvwv";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "chameleon" = super.buildPythonPackage {
     name = "chameleon-2.24";
     doCheck = false;
@@ -293,6 +318,24 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
+  "cryptography" = super.buildPythonPackage {
+    name = "cryptography-2.5";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."asn1crypto"
+      self."six"
+      self."cffi"
+      self."enum34"
+      self."ipaddress"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/69/ed/5e97b7f54237a9e4e6291b6e52173372b7fa45ca730d36ea90b790c0059a/cryptography-2.5.tar.gz";
+      sha256 = "00c4d7gvsymlaw0r13zrm32dcnarmpayjyrh65yymlmr6mrbcij9";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "BSD or Apache License, Version 2.0"; } pkgs.lib.licenses.asl20 ];
     };
   };
   "cssselect" = super.buildPythonPackage {
@@ -1252,15 +1295,15 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
-  "pycrypto" = super.buildPythonPackage {
-    name = "pycrypto-2.6.1";
+  "pycparser" = super.buildPythonPackage {
+    name = "pycparser-2.19";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/60/db/645aa9af249f059cc3a368b118de33889219e0362141e75d4eaf6f80f163/pycrypto-2.6.1.tar.gz";
-      sha256 = "0g0ayql5b9mkjam8hym6zyg6bv77lbh66rv1fyvgqb17kfc1xkpj";
+      url = "https://files.pythonhosted.org/packages/68/9e/49196946aee219aead1290e00d1e7fdeab8567783e83e1b9ab5585e6206a/pycparser-2.19.tar.gz";
+      sha256 = "1cr5dcj9628lkz1qlwq3fv97c25363qppkmcayqvd05dpy573259";
     };
     meta = {
-      license = [ pkgs.lib.licenses.publicDomain ];
+      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "pycurl" = super.buildPythonPackage {
@@ -1737,7 +1780,6 @@ self: super: {
       self."peppercorn"
       self."psutil"
       self."py-bcrypt"
-      self."pycrypto"
       self."pycurl"
       self."pygments"
       self."pyparsing"
@@ -1947,15 +1989,15 @@ self: super: {
     };
   };
   "sshpubkeys" = super.buildPythonPackage {
-    name = "sshpubkeys-2.2.0";
+    name = "sshpubkeys-3.1.0";
     doCheck = false;
     propagatedBuildInputs = [
-      self."pycrypto"
+      self."cryptography"
       self."ecdsa"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/27/da/337fabeb3dca6b62039a93ceaa636f25065e0ae92b575b1235342076cf0a/sshpubkeys-2.2.0.tar.gz";
-      sha256 = "0r4kpwzmg96a2x56pllik7dmc3fnqk189v3sfgsi07q2ryrhr6xm";
+      url = "https://files.pythonhosted.org/packages/00/23/f7508a12007c96861c3da811992f14283d79c819d71a217b3e12d5196649/sshpubkeys-3.1.0.tar.gz";
+      sha256 = "105g2li04nm1hb15a2y6hm9m9k7fbrkd5l3gy12w3kgcmsf3k25k";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

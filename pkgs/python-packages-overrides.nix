@@ -35,6 +35,18 @@ self: super: {
     ];
   });
 
+  "cffi" = super."cffi".override (attrs: {
+    buildInputs = [
+      pkgs.libffi
+    ];
+  });
+
+  "cryptography" = super."cryptography".override (attrs: {
+    buildInputs = [
+      pkgs.openssl
+    ];
+  });
+
   "gevent" = super."gevent".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       # NOTE: (marcink) odd requirements from gevent aren't set properly,
