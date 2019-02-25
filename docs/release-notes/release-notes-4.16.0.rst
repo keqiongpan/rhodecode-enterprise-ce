@@ -24,6 +24,8 @@ New Features
 - Artifacts (beta): EE edition exposes new feature called storage_api this allows storing
   binary files outside of Version Control System, but in the scope of a repository or group.
   This will soon become an Artifacts functionality available in EE edition.
+- User bookmarks: added customizable Bookmark links for logged in users. RhodeCode users can now optionally
+  set upto 10 favorites links to repositories, repository groups, CI linkes, or any other generic links.
 - Authentication: introduced `User restriction` and `Scope restriction` for RhodeCode authentication plugins.
   Admins can limit usage of RhodeCode plugins to super-admins user types, and usage in Web, or VCS protocol only.
   This is mostly to help to migrate users to SAML, keeping the super-admins to manage instances via local-logins,
