@@ -1,0 +1,11 @@
+# contains not directly required libraries we want to pin the version.
+
+atomicwrites==1.2.1
+attrs==18.2.0
+billiard==3.5.0.3
+gnureadline==6.3.8
+jinja2==2.9.6
+jsonschema==2.6.0
+pathlib2==2.3.3
+setproctitle==1.1.10
+
