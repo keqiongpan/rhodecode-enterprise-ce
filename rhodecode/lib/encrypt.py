@@ -112,3 +112,27 @@ class AESCipher(object):
     @staticmethod
     def _unpad(s):
         return s[:-ord(s[len(s)-1:])]
+
+
+def validate_and_get_enc_data(enc_data, enc_key, enc_strict_mode):
+    parts = enc_data.split('$', 3)
+    if not len(parts) == 3:
+        # probably not encrypted values
+        return enc_data
+    else:
+        if parts[0] != 'enc':
+            # parts ok but without our header ?
+            return enc_data
+
+        # at that stage we know it's our encryption
+        if parts[1] == 'aes':
+            decrypted_data = AESCipher(enc_key).decrypt(parts[2])
+        elif parts[1] == 'aes_hmac':
+            decrypted_data = AESCipher(
+                enc_key, hmac=True,
+                strict_verification=enc_strict_mode).decrypt(parts[2])
+        else:
+            raise ValueError(
+                'Encryption type part is wrong, must be `aes` '
+                'or `aes_hmac`, got `%s` instead' % (parts[1]))
+        return decrypted_data

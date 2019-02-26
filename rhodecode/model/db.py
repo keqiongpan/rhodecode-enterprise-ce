@@ -62,8 +62,8 @@ from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
     JsonRaw
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.encrypt import AESCipher
-
+from rhodecode.lib.encrypt import AESCipher, validate_and_get_enc_data
+from rhodecode.lib.encrypt2 import Encryptor
 from rhodecode.model.meta import Base, Session
 
 URL_SEP = '/'
@@ -159,44 +159,46 @@ class EncryptedTextValue(TypeDecorator):
     impl = Text
 
     def process_bind_param(self, value, dialect):
+        """
+        Setter for storing value
+        """
+        import rhodecode
         if not value:
             return value
-        if value.startswith('enc$aes$') or value.startswith('enc$aes_hmac$'):
-            # protect against double encrypting if someone manually starts
-            # doing
-            raise ValueError('value needs to be in unencrypted format, ie. '
-                             'not starting with enc$aes')
-        return 'enc$aes_hmac$%s' % AESCipher(
-            ENCRYPTION_KEY, hmac=True).encrypt(value)
+
+        # protect against double encrypting if values is already encrypted
+        if value.startswith('enc$aes$') \
+                or value.startswith('enc$aes_hmac$') \
+                or value.startswith('enc2$'):
+            raise ValueError('value needs to be in unencrypted format, '
+                             'ie. not starting with enc$ or enc2$')
+
+        algo = rhodecode.CONFIG.get('rhodecode.encrypted_values.algorithm') or 'aes'
+        if algo == 'aes':
+            return 'enc$aes_hmac$%s' % AESCipher(ENCRYPTION_KEY, hmac=True).encrypt(value)
+        elif algo == 'fernet':
+            return Encryptor(ENCRYPTION_KEY).encrypt(value)
+        else:
+            ValueError('Bad encryption algorithm, should be fernet or aes, got: {}'.format(algo))
 
     def process_result_value(self, value, dialect):
-        import rhodecode
+        """
+        Getter for retrieving value
+        """
 
+        import rhodecode
         if not value:
             return value
 
-        parts = value.split('$', 3)
-        if not len(parts) == 3:
-            # probably not encrypted values
-            return value
+        algo = rhodecode.CONFIG.get('rhodecode.encrypted_values.algorithm') or 'aes'
+        enc_strict_mode = str2bool(rhodecode.CONFIG.get('rhodecode.encrypted_values.strict') or True)
+        if algo == 'aes':
+            decrypted_data = validate_and_get_enc_data(value, ENCRYPTION_KEY, enc_strict_mode)
+        elif algo == 'fernet':
+            return Encryptor(ENCRYPTION_KEY).decrypt(value)
         else:
-            if parts[0] != 'enc':
-                # parts ok but without our header ?
-                return value
-            enc_strict_mode = str2bool(rhodecode.CONFIG.get(
-                'rhodecode.encrypted_values.strict') or True)
-            # at that stage we know it's our encryption
-            if parts[1] == 'aes':
-                decrypted_data = AESCipher(ENCRYPTION_KEY).decrypt(parts[2])
-            elif parts[1] == 'aes_hmac':
-                decrypted_data = AESCipher(
-                    ENCRYPTION_KEY, hmac=True,
-                    strict_verification=enc_strict_mode).decrypt(parts[2])
-            else:
-                raise ValueError(
-                    'Encryption type part is wrong, must be `aes` '
-                    'or `aes_hmac`, got `%s` instead' % (parts[1]))
-            return decrypted_data
+            ValueError('Bad encryption algorithm, should be fernet or aes, got: {}'.format(algo))
+        return decrypted_data
 
 
 class BaseModel(object):
