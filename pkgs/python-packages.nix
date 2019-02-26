@@ -1306,6 +1306,17 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "pycrypto" = super.buildPythonPackage {
+    name = "pycrypto-2.6.1";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/60/db/645aa9af249f059cc3a368b118de33889219e0362141e75d4eaf6f80f163/pycrypto-2.6.1.tar.gz";
+      sha256 = "0g0ayql5b9mkjam8hym6zyg6bv77lbh66rv1fyvgqb17kfc1xkpj";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.publicDomain ];
+    };
+  };
   "pycurl" = super.buildPythonPackage {
     name = "pycurl-7.43.0.2";
     doCheck = false;
@@ -1781,6 +1792,7 @@ self: super: {
       self."psutil"
       self."py-bcrypt"
       self."pycurl"
+      self."pycrypto"
       self."pygments"
       self."pyparsing"
       self."pyramid-beaker"
