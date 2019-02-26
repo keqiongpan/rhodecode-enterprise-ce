@@ -32,9 +32,9 @@ The most important this id needs to be unique for each user.
 
     In [1]: saml2user = {
        ...: # OneLogin, uses externalID available to read from in the UI
-       ...: 123: {'id: '48253211'},
+       ...: 123: {'id': '48253211'},
        ...: # for Google/DuoSecurity email is also an option for unique ID
-       ...: 124: {'id: 'email@domain.com'},
+       ...: 124: {'id': 'email@domain.com'},
        ...: }
 
 
@@ -70,7 +70,7 @@ Enter in the ishell prompt
        ...:         new_external_identity.external_id = external_id
        ...:         new_external_identity.external_username = '{}-saml-{}'.format(user.username, user.user_id)
        ...:         new_external_identity.provider_name = provider
-       ...:         new_external_identity.local_user_id = user_id
+       ...:         new_external_identity.local_user_id = user.user_id
        ...:         new_external_identity.access_token = ''
        ...:         new_external_identity.token_secret = ''
        ...:         new_external_identity.alt_token = ''
