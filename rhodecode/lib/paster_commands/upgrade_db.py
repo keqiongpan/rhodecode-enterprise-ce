@@ -26,7 +26,8 @@ log = logging.getLogger(__name__)
 
 
 class UpgradeDb(BasePasterCommand):
-    """Command used for paster to upgrade our database to newer version
+    """
+    Command used for paster to upgrade our database to newer version
     """
 
     max_args = 1
@@ -41,7 +42,7 @@ class UpgradeDb(BasePasterCommand):
     def command(self):
         from rhodecode.lib.rc_commands import upgrade_db
         upgrade_db.command(
-            self.path_to_ini_file, self.options.__dict__.get('force_ask'))
+            self.path_to_ini_file, self.options.__dict__.get('force_ask'), None)
 
     def update_parser(self):
         self.parser.add_option('--sql',
