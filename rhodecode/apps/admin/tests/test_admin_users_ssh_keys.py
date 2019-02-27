@@ -173,4 +173,4 @@ class TestAdminUsersSshKeysView(TestController):
 
         response.mustcontain('Private key')
         response.mustcontain('Public key')
-        response.mustcontain('-----BEGIN RSA PRIVATE KEY-----')
+        response.mustcontain('-----BEGIN PRIVATE KEY-----')
