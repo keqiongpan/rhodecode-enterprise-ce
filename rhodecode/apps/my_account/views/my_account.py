@@ -496,6 +496,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         if not user_bookmark:
             raise HTTPFound(redirect_url)
 
+        # repository set
         if user_bookmark.repository:
             repo_name = user_bookmark.repository.repo_name
             base_redirect_url = h.route_path(
@@ -506,7 +507,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                     .safe_substitute({'repo_url': base_redirect_url})
             else:
                 redirect_url = base_redirect_url
-
+        # repository group set
         elif user_bookmark.repository_group:
             repo_group_name = user_bookmark.repository_group.group_name
             base_redirect_url = h.route_path(
@@ -517,9 +518,11 @@ class MyAccountView(BaseAppView, DataGridAppView):
                     .safe_substitute({'repo_group_url': base_redirect_url})
             else:
                 redirect_url = base_redirect_url
-
+        # custom URL set
         elif user_bookmark.redirect_url:
-            redirect_url = user_bookmark.redirect_url
+            server_url = h.route_url('home').rstrip('/')
+            redirect_url = string.Template(user_bookmark.redirect_url) \
+                .safe_substitute({'server_url': server_url})
 
         log.debug('Redirecting bookmark %s to %s', user_bookmark, redirect_url)
         raise HTTPFound(redirect_url)
