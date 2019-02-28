@@ -30,10 +30,12 @@ loglevel = 'debug'
 # SECURITY
 
 # The maximum size of HTTP request line in bytes.
-limit_request_line = 4094
+# 0 for unlimited
+limit_request_line = 0
 
 # Limit the number of HTTP headers fields in a request.
-limit_request_fields = 1024
+# By default this value is 100 and can’t be larger than 32768.
+limit_request_fields = 10240
 
 # Limit the allowed size of an HTTP request header field.
 # Value is a positive number or 0.
