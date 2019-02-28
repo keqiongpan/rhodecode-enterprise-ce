@@ -53,3 +53,12 @@ web-build:
 
 generate-pkgs:
 	nix-shell pkgs/shell-generate.nix --command "pip2nix generate --licenses"
+
+generate-js-pkgs:
+	rm -rf node_modules && \
+	nix-shell pkgs/shell-generate.nix --command "node2nix --input package.json -o pkgs/node-packages.nix -e pkgs/node-env.nix -c pkgs/node-default.nix -d --flatten --nodejs-8" && \
+	sed -i -e 's/http:\/\//https:\/\//g' pkgs/node-packages.nix
+
+generate-license-meta:
+	nix-build pkgs/license-generate.nix -o result-license && \
+	cat result-license/licenses.json | python -m json.tool > rhodecode/config/licenses.json
