@@ -70,7 +70,7 @@ markdown_attrs = {
     "abbr": ["title"],
     "acronym": ["title"],
     "pre": ["lang"],
-    "input": ["type", "disabled"]
+    "input": ["type", "disabled", "checked"]
 }
 
 standard_styles = [

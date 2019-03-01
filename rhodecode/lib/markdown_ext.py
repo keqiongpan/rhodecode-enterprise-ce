@@ -18,24 +18,9 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import re
-
 import markdown
 
 from mdx_gfm import GithubFlavoredMarkdownExtension  # pragma: no cover
-
-
-class FlavoredCheckboxPostprocessor(markdown.postprocessors.Postprocessor):
-    """
-    Adds `flavored_checkbox_list` class to list of checkboxes
-    """
-
-    pattern = re.compile(r'^([*-]) \[([ x])\]')
-
-    def run(self, html):
-        before = '<ul>\n<li><input type="checkbox"'
-        after = '<ul class="flavored_checkbox_list">\n<li><input type="checkbox"'
-        return html.replace(before, after)
 
 
 # Global Vars
