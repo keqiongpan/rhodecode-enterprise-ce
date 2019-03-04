@@ -66,13 +66,17 @@ Below config if for an Apache Reverse Proxy configuration.
         # Directive to properly generate url (clone url) for RhodeCode
         ProxyPreserveHost On
 
+        # It allows request bodies to be sent to the backend using chunked transfer encoding.
+        SetEnv proxy-sendchunked 1
+
+        # Increase headers size for large Mercurial headers sent with many branches
+        LimitRequestLine 16380
+
         # Url to running RhodeCode instance. This is shown as `- URL:` when
         # running rccontrol status.
+
         ProxyPass / http://127.0.0.1:10002/ timeout=7200 Keepalive=On
         ProxyPassReverse / http://127.0.0.1:10002/
-
-        # Increase headers for large Mercurial headers
-        LimitRequestLine 16380
 
         # strict http prevents from https -> http downgrade
         Header always set Strict-Transport-Security "max-age=63072000; includeSubdomains; preload"
