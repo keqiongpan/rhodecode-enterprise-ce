@@ -193,13 +193,6 @@ class MercurialCommit(base.BaseCommit):
         children = self._remote.ctx_children(self.idx)
         return self._make_commits(children)
 
-    def diff(self, ignore_whitespace=True, context=3):
-        result = self._remote.ctx_diff(
-            self.idx,
-            git=True, ignore_whitespace=ignore_whitespace, context=context)
-        diff = ''.join(result)
-        return MercurialDiff(diff)
-
     def _fix_path(self, path):
         """
         Mercurial keeps filenodes as str so we need to encode from unicode
