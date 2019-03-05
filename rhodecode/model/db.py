@@ -4260,9 +4260,16 @@ class Gist(Base, BaseModel):
     # SCM functions
 
     def scm_instance(self, **kwargs):
+        """
+        Get explicit Mercurial repository used
+        :param kwargs:
+        :return:
+        """
+        from rhodecode.model.gist import GistModel
         full_repo_path = os.path.join(self.base_path(), self.gist_access_id)
         return get_vcs_instance(
-            repo_path=safe_str(full_repo_path), create=False)
+            repo_path=safe_str(full_repo_path), create=False,
+            _vcs_alias=GistModel.vcs_backend)
 
 
 class ExternalIdentity(Base, BaseModel):

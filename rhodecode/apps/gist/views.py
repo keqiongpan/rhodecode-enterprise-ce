@@ -67,7 +67,6 @@ class GistView(BaseAppView):
             (Gist.ACL_LEVEL_PUBLIC, _("Can be accessed by anonymous users"))
         ]
 
-
         return c
 
     @LoginRequired()
