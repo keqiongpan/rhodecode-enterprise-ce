@@ -64,8 +64,8 @@ class TestVCSOperations(object):
         clone_url = rc_web_server.repo_clone_url(HG_REPO)
         stdout, stderr = Command('/tmp').execute(
             'hg clone --pull --stream', clone_url, tmpdir.strpath)
-        assert '225 files to transfer, 1.04 MB of data' in stdout
-        assert 'transferred 1.04 MB' in stdout
+        assert 'files to transfer,' in stdout
+        assert 'transferred 1.' in stdout
         assert '114 files updated,' in stdout
 
     def test_clone_git_repo_by_admin(self, rc_web_server, tmpdir):
