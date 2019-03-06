@@ -507,6 +507,12 @@
        </li>
 
       ## ROOT MENU
+        <li class="${is_active('home')}">
+          <a class="menulink" title="${_('Home')}" href="${h.route_path('home')}">
+            <div class="menulabel">${_('Home')}</div>
+          </a>
+        </li>
+
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <li class="${is_active('journal')}">
           <a class="menulink" title="${_('Show activity journal')}" href="${h.route_path('journal')}">
@@ -520,16 +526,13 @@
           </a>
         </li>
       %endif
+
         <li class="${is_active('gists')}">
           <a class="menulink childs" title="${_('Show Gists')}" href="${h.route_path('gists_show')}">
             <div class="menulabel">${_('Gists')}</div>
           </a>
         </li>
-      <li class="${is_active('search')}">
-          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.route_path('search')}">
-            <div class="menulabel">${_('Search')}</div>
-          </a>
-      </li>
+
       % if h.HasPermissionAll('hg.admin')('access admin main page'):
         <li class="${is_active('admin')}">
           <a class="menulink childs" title="${_('Admin settings')}" href="#" onclick="return false;">
