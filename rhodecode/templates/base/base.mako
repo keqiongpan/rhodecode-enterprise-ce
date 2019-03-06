@@ -503,6 +503,8 @@
    user_group:devops, to search for user groups
 
    commit:efced4, to search for commits
+
+   file:models.py, to search for file paths
         </div>
        </li>
 
@@ -685,6 +687,16 @@
             }
             // commit
             else if (searchType === 'commit') {
+                var repo_data = data['repo_data'];
+                var repoIcon = getRepoIcon(repo_data['repository_type']);
+                if (repoIcon) {
+                    icon += repoIcon;
+                } else {
+                    icon += '<i class="icon-tag"></i>';
+                }
+            }
+            // file
+            else if (searchType === 'file') {
                 var repo_data = data['repo_data'];
                 var repoIcon = getRepoIcon(repo_data['repository_type']);
                 if (repoIcon) {

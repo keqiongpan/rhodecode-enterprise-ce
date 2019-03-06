@@ -288,6 +288,47 @@ class HomeView(BaseAppView):
             commits.append(commit_entry)
         return commits
 
+    def _get_path_list(self, auth_user, searcher, query):
+        org_query = query
+        if not query or len(query) < 3 or not searcher:
+            return []
+
+        paths_re = re.compile('(?:file:)(.{1,})').findall(query)
+        if len(paths_re) != 1:
+            return []
+        file_path = paths_re[0]
+
+        search_path = searcher.escape_specials(file_path)
+        result = searcher.search(
+            'file.raw:*{}*'.format(search_path), 'path', auth_user,
+            raise_on_exc=False)
+
+        files = []
+        for entry in result['results']:
+            repo_data = {
+                'repository_id': entry.get('repository_id'),
+                'repository_type': entry.get('repo_type'),
+                'repository_name': entry.get('repository'),
+            }
+
+            file_entry = {
+                'id': entry['commit_id'],
+                'value': org_query,
+                'value_display': '`{}` file: {}'.format(
+                    entry['repository'], entry['file']),
+                'type': 'file',
+                'repo': entry['repository'],
+                'repo_data': repo_data,
+
+                'url': h.route_path(
+                    'repo_files',
+                    repo_name=entry['repository'], commit_id=entry['commit_id'],
+                    f_path=entry['file'])
+            }
+
+            files.append(file_entry)
+        return files
+
     @LoginRequired()
     @view_config(
         route_name='repo_list_data', request_method='GET',
@@ -517,6 +558,17 @@ class HomeView(BaseAppView):
             for repo, commits in unique_repos.items():
                 for commit in commits:
                     res.append(commit)
+
+        paths = self._get_path_list(c.auth_user, searcher, query)
+        if paths:
+            unique_repos = collections.OrderedDict()
+            for path in paths:
+                repo_name = path['repo']
+                unique_repos.setdefault(repo_name, []).append(path)
+
+            for repo, paths in unique_repos.items():
+                for path in paths:
+                    res.append(path)
 
         return {'suggestions': res}
 
