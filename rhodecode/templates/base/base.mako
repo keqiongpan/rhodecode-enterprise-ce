@@ -11,9 +11,11 @@
               <div class="logo-wrapper">
                   <a href="${h.route_path('home')}"><img src="${h.asset('images/rhodecode-logo-white-60x60.png')}" alt="RhodeCode"/></a>
               </div>
-              %if c.rhodecode_name:
-               <div class="branding">- ${h.branding(c.rhodecode_name)}</div>
-              %endif
+              % if c.rhodecode_name:
+               <div class="branding">
+                   <a href="${h.route_path('home')}">${h.branding(c.rhodecode_name)}</a>
+               </div>
+              % endif
           </div>
           <!-- MENU BAR NAV -->
           ${self.menu_bar_nav()}
