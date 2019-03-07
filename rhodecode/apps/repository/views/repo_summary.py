@@ -152,6 +152,26 @@ class RepoSummaryView(RepoAppView):
         c.comments = self.db_repo.get_comments(page_ids)
         c.statuses = self.db_repo.statuses(page_ids)
 
+    def _prepare_and_set_clone_url(self, c):
+        username = ''
+        if self._rhodecode_user.username != User.DEFAULT_USER:
+            username = safe_str(self._rhodecode_user.username)
+
+        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
+        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
+
+        if '{repo}' in _def_clone_uri:
+            _def_clone_uri_id = _def_clone_uri.replace('{repo}', '_{repoid}')
+        elif '{repoid}' in _def_clone_uri:
+            _def_clone_uri_id = _def_clone_uri.replace('_{repoid}', '{repo}')
+
+        c.clone_repo_url = self.db_repo.clone_url(
+            user=username, uri_tmpl=_def_clone_uri)
+        c.clone_repo_url_id = self.db_repo.clone_url(
+            user=username, uri_tmpl=_def_clone_uri_id)
+        c.clone_repo_url_ssh = self.db_repo.clone_url(
+            uri_tmpl=_def_clone_uri_ssh, ssh=True)
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -160,6 +180,7 @@ class RepoSummaryView(RepoAppView):
         renderer='rhodecode:templates/summary/summary_commits.mako')
     def summary_commits(self):
         c = self.load_default_context()
+        self._prepare_and_set_clone_url(c)
         self._load_commits_context(c)
         return self._get_template_context(c)
 
@@ -179,26 +200,7 @@ class RepoSummaryView(RepoAppView):
         c = self.load_default_context()
 
         # Prepare the clone URL
-        username = ''
-        if self._rhodecode_user.username != User.DEFAULT_USER:
-            username = safe_str(self._rhodecode_user.username)
-
-        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
-        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
-
-        if '{repo}' in _def_clone_uri:
-            _def_clone_uri_id = _def_clone_uri.replace(
-                '{repo}', '_{repoid}')
-        elif '{repoid}' in _def_clone_uri:
-            _def_clone_uri_id = _def_clone_uri.replace(
-                '_{repoid}', '{repo}')
-
-        c.clone_repo_url = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri)
-        c.clone_repo_url_id = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri_id)
-        c.clone_repo_url_ssh = self.db_repo.clone_url(
-            uri_tmpl=_def_clone_uri_ssh, ssh=True)
+        self._prepare_and_set_clone_url(c)
 
         # If enabled, get statistics data
 
