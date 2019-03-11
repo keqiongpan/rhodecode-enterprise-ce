@@ -15,6 +15,7 @@ colander==1.7.0
 # our custom configobj
 https://code.rhodecode.com/upstream/configobj/archive/a11ff0a0bd4fbda9e3a91267e720f88329efb4a6.tar.gz?md5=9916c524ea11a6c418217af6b28d4b3c#egg=configobj==5.0.6
 cssselect==1.0.3
+cryptography==2.6.1
 decorator==4.1.2
 deform==2.0.7
 docutils==0.14.0

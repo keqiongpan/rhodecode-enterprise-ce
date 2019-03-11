@@ -199,14 +199,14 @@ self: super: {
     };
   };
   "cffi" = super.buildPythonPackage {
-    name = "cffi-1.12.1";
+    name = "cffi-1.12.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."pycparser"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/bc/81/47bd0404f2cb5363edb371e3b15da6387b5e9b80122e5b81be8b8f411e9b/cffi-1.12.1.tar.gz";
-      sha256 = "0cw0dzynw34zi75h674y3bgas6axfjyw1h6hj6ic2llcwyj7nvwv";
+      url = "https://files.pythonhosted.org/packages/64/7c/27367b38e6cc3e1f49f193deb761fe75cda9f95da37b67b422e62281fcac/cffi-1.12.2.tar.gz";
+      sha256 = "19qfks2djya8vix95bmg3xzipjb8w9b8mbj4j5k2hqkc8j58f4z1";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -321,7 +321,7 @@ self: super: {
     };
   };
   "cryptography" = super.buildPythonPackage {
-    name = "cryptography-2.5";
+    name = "cryptography-2.6.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."asn1crypto"
@@ -331,8 +331,8 @@ self: super: {
       self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/69/ed/5e97b7f54237a9e4e6291b6e52173372b7fa45ca730d36ea90b790c0059a/cryptography-2.5.tar.gz";
-      sha256 = "00c4d7gvsymlaw0r13zrm32dcnarmpayjyrh65yymlmr6mrbcij9";
+      url = "https://files.pythonhosted.org/packages/07/ca/bc827c5e55918ad223d59d299fff92f3563476c3b00d0a9157d9c0217449/cryptography-2.6.1.tar.gz";
+      sha256 = "19iwz5avym5zl6jrrrkym1rdaa9h61j20ph4cswsqgv8xg5j3j16";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "BSD or Apache License, Version 2.0"; } pkgs.lib.licenses.asl20 ];
@@ -666,11 +666,11 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.5";
+    name = "hupper-1.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/89/f1/aace4ea69c1d79e243e48a81dcf1608c87e8c5a190e6ef80fae245d494ac/hupper-1.5.tar.gz";
-      sha256 = "02n6y2rvpacm2w3x089whj64j1x0qlkimkzw35r1g0mymmxicfk9";
+      url = "https://files.pythonhosted.org/packages/a4/f7/595756fdfdf896d2c46ae6dc25b1bc97645d0fbf2d6ca547b5b55728eaf3/hupper-1.6.tar.gz";
+      sha256 = "0p30l0pk63js0c0hl57c0dvffmawkwhh4yjmfaqyzgwdpdb0g3fc";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1760,6 +1760,7 @@ self: super: {
       self."bleach"
       self."celery"
       self."channelstream"
+      self."cryptography"
       self."click"
       self."colander"
       self."configobj"
@@ -1909,11 +1910,11 @@ self: super: {
     };
   };
   "scandir" = super.buildPythonPackage {
-    name = "scandir-1.9.0";
+    name = "scandir-1.10.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/16/2a/557af1181e6b4e30254d5a6163b18f5053791ca66e251e77ab08887e8fe3/scandir-1.9.0.tar.gz";
-      sha256 = "0r3hvf1a9jm1rkqgx40gxkmccknkaiqjavs8lccgq9s8khh5x5s4";
+      url = "https://files.pythonhosted.org/packages/df/f5/9c052db7bd54d0cbf1bc0bb6554362bba1012d03e5888950a4f5c5dadc4e/scandir-1.10.0.tar.gz";
+      sha256 = "1bkqwmf056pkchf05ywbnf659wqlp6lljcdb0y88wr9f0vv32ijd";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "New BSD License"; } ];
