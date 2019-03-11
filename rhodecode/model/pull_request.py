@@ -1420,8 +1420,8 @@ class PullRequestModel(BaseModel):
         _ = translator or get_current_request().translate
 
         commit_id = safe_str(commit_id) if commit_id else None
-        branch = safe_str(branch) if branch else None
-        bookmark = safe_str(bookmark) if bookmark else None
+        branch = safe_unicode(branch) if branch else None
+        bookmark = safe_unicode(bookmark) if bookmark else None
 
         selected = None
 
@@ -1439,10 +1439,11 @@ class PullRequestModel(BaseModel):
         )
 
         groups = []
+
         for group_key, ref_list, group_name, match in sources:
             group_refs = []
             for ref_name, ref_id in ref_list:
-                ref_key = '%s:%s:%s' % (group_key, ref_name, ref_id)
+                ref_key = u'{}:{}:{}'.format(group_key, ref_name, ref_id)
                 group_refs.append((ref_key, ref_name))
 
                 if not selected:
@@ -1456,11 +1457,11 @@ class PullRequestModel(BaseModel):
             ref = commit_id or branch or bookmark
             if ref:
                 raise CommitDoesNotExistError(
-                    'No commit refs could be found matching: %s' % ref)
+                    u'No commit refs could be found matching: {}'.format(ref))
             elif repo.DEFAULT_BRANCH_NAME in repo.branches:
-                selected = 'branch:%s:%s' % (
-                    repo.DEFAULT_BRANCH_NAME,
-                    repo.branches[repo.DEFAULT_BRANCH_NAME]
+                selected = u'branch:{}:{}'.format(
+                    safe_unicode(repo.DEFAULT_BRANCH_NAME),
+                    safe_unicode(repo.branches[repo.DEFAULT_BRANCH_NAME])
                 )
             elif repo.commit_ids:
                 # make the user select in this case
