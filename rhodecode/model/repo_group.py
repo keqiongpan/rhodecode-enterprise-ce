@@ -728,6 +728,10 @@ class RepoGroupModel(BaseModel):
                 "name_raw": group.group_name,
                 "last_change": last_change(group.last_db_change),
                 "last_change_raw": datetime_to_time(group.last_db_change),
+
+                "last_changeset": "",
+                "last_changeset_raw": "",
+
                 "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)

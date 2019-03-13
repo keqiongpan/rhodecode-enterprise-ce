@@ -79,13 +79,16 @@
           order: [[ 0, "asc" ]],
           columns: [
              { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname" },
+                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
              { data: {"_": "last_change",
                       "sort": "last_change_raw",
                       "type": Number}, title: "${_('Last Change')}", className: "td-time" },
+             { data: {"_": "last_changeset",
+                      "sort": "last_changeset_raw",
+                      "type": Number}, title: "", className: "td-hash" },
              { data: {"_": "owner",
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],
@@ -109,7 +112,7 @@
           pageLength: ${c.visual.dashboard_items},
           columns: [
              { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-componentname" },
+                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
