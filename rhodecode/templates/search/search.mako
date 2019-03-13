@@ -37,9 +37,9 @@
 
 <%def name="menu_bar_subnav()">
     %if c.repo_name:
-        ${self.repo_menu(active='search')}
+        ${self.repo_menu(active='summary')}
     %elif c.repo_group_name:
-        ${self.repo_group_menu(active='search')}
+        ${self.repo_group_menu(active='home')}
     %endif
 </%def>
 

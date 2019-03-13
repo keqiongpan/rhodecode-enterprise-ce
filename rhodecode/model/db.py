@@ -39,7 +39,7 @@ from sqlalchemy import (
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType)
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import true, false, case
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)

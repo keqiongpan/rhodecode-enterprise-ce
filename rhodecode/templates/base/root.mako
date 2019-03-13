@@ -7,7 +7,7 @@ go_import_header = ''
 if hasattr(c, 'rhodecode_db_repo'):
     c.template_context['repo_type'] = c.rhodecode_db_repo.repo_type
     c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_rev[1]
-    ## check repo context
+    c.template_context['repo_id'] = c.rhodecode_db_repo.repo_id
     c.template_context['repo_view_type'] = h.get_repo_view_type(request)
 
 if getattr(c, 'repo_group', None):
@@ -29,6 +29,7 @@ c.template_context['default_user'] = {
 c.template_context['search_context'] = {
     'repo_group_id': c.template_context.get('repo_group_id'),
     'repo_group_name': c.template_context.get('repo_group_name'),
+    'repo_id': c.template_context.get('repo_id'),
     'repo_name': c.template_context.get('repo_name'),
     'repo_view_type': c.template_context.get('repo_view_type'),
 }
