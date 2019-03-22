@@ -265,14 +265,16 @@
           </li>
         %endif
 
+        %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
+            <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
+        %endif
+
         <li class="${is_active('options')}">
           <a class="menulink dropdown">
               <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
           </a>
           <ul class="submenu">
-             %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
-                   <li><a href="${h.route_path('edit_repo',repo_name=c.repo_name)}">${_('Repository Settings')}</a></li>
-             %endif
+
               %if c.rhodecode_db_repo.fork:
                <li>
                    <a title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
@@ -356,15 +358,15 @@
     <div class="wrapper">
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
+        % if is_admin or group_admin:
+            <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a></li>
+        % endif
 
         <li class="${is_active('options')}">
           <a class="menulink dropdown">
               <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
           </a>
           <ul class="submenu">
-                %if is_admin or group_admin:
-                   <li><a href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}">${_('Group Settings')}</a></li>
-                %endif
                 %if is_admin or group_admin or (group_write and create_on_write):
                     <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
                 %endif

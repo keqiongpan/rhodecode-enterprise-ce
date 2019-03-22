@@ -20,7 +20,7 @@
 </%def>
 
 <%def name="menu_bar_subnav()">
-    ${self.repo_menu(active='options')}
+    ${self.repo_menu(active='settings')}
 </%def>
 
 <%def name="main_content()">
