@@ -257,10 +257,13 @@
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
           <li class="${is_active('showpullrequest')}">
             <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
-              %if c.repository_pull_requests:
-                <span class="pr_notifications">${c.repository_pull_requests}</span>
+              <div class="menulabel">
+              %if c.repository_pull_requests == 1:
+                  ${c.repository_pull_requests} ${_('Pull Request')}
+              %else:
+                  ${c.repository_pull_requests} ${_('Pull Requests')}
               %endif
-              <div class="menulabel">${_('Pull Requests')}</div>
+              </div>
             </a>
           </li>
         %endif
