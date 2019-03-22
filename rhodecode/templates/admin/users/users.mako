@@ -17,12 +17,15 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='users')}
+</%def>
+
 <%def name="main()">
 
 <div class="box">
 
     <div class="title">
-        ${self.admin_menu()}
         <ul class="links">
           <li>
             <a href="${h.route_path('users_new')}" class="btn btn-small btn-success">${_(u'Add User')}</a>

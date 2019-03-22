@@ -31,12 +31,6 @@
   %endif
 </%def>
 
-<%def name="menu_bar_subnav()">
-  %if c.repo:
-    ${self.repo_menu(active='options')}
-  %endif
-</%def>
-
 <%def name="main_content()">
   ${next.body()}
 </%def>

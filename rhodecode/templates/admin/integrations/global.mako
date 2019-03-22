@@ -2,7 +2,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('Settings administration')}
+    ${_('Integrations administration')}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -18,6 +18,10 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='integrations')}
+</%def>
+
 <%def name="side_bar_nav()">
     <li class="active">
       <a href="${h.route_path('global_integrations_home')}">Global</a>
@@ -30,9 +34,6 @@
 
 <%def name="main()">
 <div class="box">
-    <div class="title">
-        ${self.admin_menu()}
-    </div>
 
     ##main
     <div class='sidebar-col-wrapper'>

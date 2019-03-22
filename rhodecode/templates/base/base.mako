@@ -74,41 +74,48 @@
     </div>
 </%def>
 
-<%def name="admin_menu()">
-
-    <ul id="context-pages" class="navigation horizontal-list">
+<%def name="admin_menu(active=None)">
+  <div id="context-bar">
+    <div class="wrapper">
+      <ul id="context-pages" class="navigation horizontal-list">
         <%
         repositories=c.rhodecode_user.repositories_admin
         repository_groups=c.rhodecode_user.repository_groups_admin
         user_groups=c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')()
+        def is_active(selected):
+            if selected == active:
+                return "active"
         %>
         ## super admin case
         % if c.rhodecode_user.is_admin:
-          <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
-          <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
-          <li><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
-          <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
-          <li><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
-          <li><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
-          <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
-          <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
-          <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
-          <li><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
+          <li class="${is_active('audit_logs')}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
+          <li class="${is_active('repositories')}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+          <li class="${is_active('repository_groups')}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+          <li class="${is_active('users')}"><a href="${h.route_path('users')}">${_('Users')}</a></li>
+          <li class="${is_active('user_groups')}"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+          <li class="${is_active('permissions')}"><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
+          <li class="${is_active('authentication')}"><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
+          <li class="${is_active('integrations')}"><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
+          <li class="${is_active('defaults')}"><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
+          <li class="${is_active('settings')}"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
 
         ## delegated admin
         % elif repositories or repository_groups or user_groups:
 
            %if repositories:
-              <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+              <li class="${is_active('repositories')} local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
            %endif
            %if repository_groups:
-              <li class="local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+              <li class="${is_active('repository_groups')} local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
            %endif
            %if user_groups:
-              <li class="local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+              <li class="${is_active('user_groups')} local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
            %endif
         % endif
     </ul>
+    </div>
+    <div class="clear"></div>
+  </div>
 </%def>
 
 
@@ -232,7 +239,7 @@
             return "active"
     %>
 
-  <!--- CONTEXT BAR -->
+  <!--- REPO CONTEXT BAR -->
   <div id="context-bar">
     <div class="wrapper">
 
@@ -306,7 +313,7 @@
         <strong>${_('This repository has been archived. It is now read-only.')}</strong>
     </div>
     % endif
-  <!--- END CONTEXT BAR -->
+  <!--- REPO END CONTEXT BAR -->
 
 </%def>
 
@@ -344,7 +351,7 @@
 
     %>
 
-  <!--- CONTEXT BAR -->
+  <!--- REPO GROUP CONTEXT BAR -->
   <div id="context-bar">
     <div class="wrapper">
       <ul id="context-pages" class="navigation horizontal-list">
@@ -371,7 +378,7 @@
     <div class="clear"></div>
   </div>
 
-  <!--- END CONTEXT BAR -->
+  <!--- REPO GROUP CONTEXT BAR -->
 
 </%def>
 

@@ -13,9 +13,13 @@
     &raquo;
     ${_('Settings')}
 </%def>
-
+##
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
+</%def>
+
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='settings')}
 </%def>
 
 <%def name="side_bar_nav()">
@@ -32,9 +36,6 @@
 
 <%def name="main()">
 <div class="box">
-    <div class="title">
-        ${self.admin_menu()}
-    </div>
 
     ##main
     <div class='sidebar-col-wrapper'>

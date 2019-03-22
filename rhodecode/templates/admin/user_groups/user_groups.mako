@@ -17,11 +17,14 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='user_groups')}
+</%def>
+
 <%def name="main()">
 <div class="box">
 
     <div class="title">
-        ${self.admin_menu()}
         <ul class="links">
         %if h.HasPermissionAny('hg.admin', 'hg.usergroup.create.true')():
           <li>
