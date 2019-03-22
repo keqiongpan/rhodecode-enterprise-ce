@@ -67,12 +67,6 @@
             .user {
                 padding-bottom: 10px;
             }
-
-            &.open {
-                .user {
-                    border-bottom: 5px solid @rcblue;
-                }
-            }
         }
 
         &:before { content: none; }
@@ -90,10 +84,6 @@
             &> a {
                 border-bottom: none;
             }
-        }
-
-        &.active {
-            border-bottom: 5px solid @rcblue;
         }
 
         &.open {
@@ -137,7 +127,6 @@
             padding: 0 0 0.4em 0;
             line-height: 1em;
             // for this specifically we do not use a variable
-            border-right: 1px solid @grey4;
         }
 
         .pr_notifications {
@@ -659,8 +648,10 @@ ul#context-pages {
 
     .searchItems {
         display:flex;
-        background: #666666;
+        background: @black;
         padding: 0px;
+        border-radius: 3px;
+        border: 1px solid @black;
 
         a {
             border: none !important;
@@ -669,26 +660,30 @@ ul#context-pages {
 
     .searchTag {
         line-height: 28px;
-        padding: 0px 4px;
+        padding: 0 5px;
 
         .tag {
-            color: @nav-grey;
-            border-color: @nav-grey;
+            color: @grey5;
+            border-color: @grey2;
+            background: @grey1;
         }
     }
 
     .searchTagFilter {
-        background-color: @grey3 !important;
+        background-color: @black !important;
+        margin-right: 0;
     }
 
     .searchTagHelp {
-        background-color: @grey2 !important;
+        background-color: @grey1 !important;
+        margin: 0;
     }
     .searchTagHelp:hover {
-        background-color: @grey2 !important;
+        background-color: @grey1 !important;
     }
     .searchTagInput {
-        background-color: @grey3 !important;
+        background-color: @grey1 !important;
+        margin-right: 0;
     }
 }
 
