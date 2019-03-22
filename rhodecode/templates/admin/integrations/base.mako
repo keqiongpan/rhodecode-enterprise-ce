@@ -6,7 +6,7 @@
       elif context['c'].repo_group:
         return "/admin/repo_groups/repo_group_edit.mako"
       else:
-        return "/admin/settings/settings.mako"
+        return "/admin/integrations/global.mako"
 %>
 <%inherit file="${inherit(context)}" />
 

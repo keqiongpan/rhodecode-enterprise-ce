@@ -85,8 +85,6 @@ class NavigationRegistry(object):
                  'admin_settings_hooks'),
         NavEntry('search', _('Full Text Search'),
                  'admin_settings_search'),
-        NavEntry('integrations', _('Integrations'),
-                 'global_integrations_home'),
         NavEntry('system', _('System Info'),
                  'admin_settings_system'),
         NavEntry('exceptions', _('Exceptions Tracker'),
