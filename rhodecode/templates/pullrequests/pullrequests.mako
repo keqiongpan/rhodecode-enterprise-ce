@@ -24,8 +24,6 @@
 <%def name="main()">
 <div class="box">
   <div class="title">
-      ${self.repo_page_title(c.rhodecode_db_repo)}
-
       <ul class="links">
         <li>
            %if c.rhodecode_user.username != h.DEFAULT_USER:

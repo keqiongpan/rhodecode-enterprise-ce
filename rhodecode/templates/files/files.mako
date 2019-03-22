@@ -27,10 +27,6 @@
 </%def>
 
 <%def name="main()">
-    <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
-    </div>
-
     <div id="pjax-container" class="summary">
         <div id="files_data">
             <%include file='files_pjax.mako'/>

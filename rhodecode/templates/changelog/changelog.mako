@@ -30,7 +30,6 @@
 
 <div class="box">
     <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
         <ul class="links">
             <li>
                 <a href="#" class="btn btn-small" id="rev_range_container" style="display:none;"></a>

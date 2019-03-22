@@ -19,10 +19,6 @@
 
 <%def name="main()">
 <div class="box">
-    <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
-    </div>
-
     ${h.secure_form(h.route_path('pullrequest_create', repo_name=c.repo_name, _query=request.GET.mixed()), id='pull_request_form', request=request)}
 
         ${self.breadcrumbs()}

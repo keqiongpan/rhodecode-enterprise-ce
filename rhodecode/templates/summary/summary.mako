@@ -10,7 +10,6 @@
 <%def name="main()">
 
 <div class="title">
-    ${self.repo_page_title(c.rhodecode_db_repo)}
     ## Context Action
     <div>
         <ul class="links icon-only-links block-right">
