@@ -1303,10 +1303,13 @@ class PullRequestModel(BaseModel):
             merge_state = self._refresh_merge_state(
                 pull_request, target_vcs, target_ref)
         else:
-            possible = pull_request.\
-                last_merge_status == MergeFailureReason.NONE
+            possible = pull_request.last_merge_status == MergeFailureReason.NONE
+            metadata = {
+                'target_ref': pull_request.target_ref_parts,
+                'source_ref': pull_request.source_ref_parts
+            }
             merge_state = MergeResponse(
-                possible, False, None, pull_request.last_merge_status)
+                possible, False, None, pull_request.last_merge_status, metadata=metadata)
 
         return merge_state
 
