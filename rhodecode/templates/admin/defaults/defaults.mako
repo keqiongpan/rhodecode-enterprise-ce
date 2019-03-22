@@ -21,7 +21,7 @@
 <%def name="main()">
 <div class="box">
     <div class="title">
-        ${self.breadcrumbs()}
+        ${self.admin_menu()}
     </div>
 
     ##main

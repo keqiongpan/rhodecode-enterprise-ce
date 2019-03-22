@@ -75,18 +75,40 @@
 </%def>
 
 <%def name="admin_menu()">
-  <ul class="admin_menu submenu">
-      <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
-      <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
-      <li><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
-      <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
-      <li><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
-      <li><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
-      <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
-      <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
-      <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
-      <li class="last"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
-  </ul>
+
+    <ul id="context-pages" class="navigation horizontal-list">
+        <%
+        repositories=c.rhodecode_user.repositories_admin
+        repository_groups=c.rhodecode_user.repository_groups_admin
+        user_groups=c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')()
+        %>
+        ## super admin case
+        % if c.rhodecode_user.is_admin:
+          <li><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
+          <li><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+          <li><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+          <li><a href="${h.route_path('users')}">${_('Users')}</a></li>
+          <li><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+          <li><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
+          <li><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
+          <li><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
+          <li><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
+          <li><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
+
+        ## delegated admin
+        % elif repositories or repository_groups or user_groups:
+
+           %if repositories:
+              <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+           %endif
+           %if repository_groups:
+              <li class="local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+           %endif
+           %if user_groups:
+              <li class="local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+           %endif
+        % endif
+    </ul>
 </%def>
 
 
@@ -144,21 +166,6 @@
   </div>
 </%def>
 
-
-## admin menu used for people that have some admin resources
-<%def name="admin_menu_simple(repositories=None, repository_groups=None, user_groups=None)">
-  <ul class="submenu">
-   %if repositories:
-      <li class="local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
-   %endif
-   %if repository_groups:
-      <li class="local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
-   %endif
-   %if user_groups:
-      <li class="local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
-   %endif
-  </ul>
-</%def>
 
 <%def name="repo_page_title(repo_instance)">
 <div class="title-content">
@@ -573,23 +580,12 @@
           </a>
         </li>
 
-      % if h.HasPermissionAll('hg.admin')('access admin main page'):
         <li class="${is_active('admin')}">
-          <a class="menulink childs" title="${_('Admin settings')}" href="#" onclick="return false;">
-            <div class="menulabel">${_('Admin')} <div class="show_more"></div></div>
+          <a class="menulink childs" title="${_('Admin settings')}" href="${h.route_path('admin_home')}">
+            <div class="menulabel">${_('Admin')} </div>
           </a>
-          ${admin_menu()}
         </li>
-      % elif c.rhodecode_user.repositories_admin or c.rhodecode_user.repository_groups_admin or c.rhodecode_user.user_groups_admin:
-      <li class="${is_active('admin')}">
-          <a class="menulink childs" title="${_('Delegated Admin settings')}">
-            <div class="menulabel">${_('Admin')} <div class="show_more"></div></div>
-          </a>
-          ${admin_menu_simple(c.rhodecode_user.repositories_admin,
-                              c.rhodecode_user.repository_groups_admin,
-                              c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')())}
-      </li>
-      % endif
+
       ## render extra user menu
       ${usermenu(active=(active=='my_account'))}
 

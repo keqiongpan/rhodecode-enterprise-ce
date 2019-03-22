@@ -22,7 +22,7 @@
 <div class="box">
 
     <div class="title">
-        ${self.breadcrumbs()}
+        ${self.admin_menu()}
         <ul class="links">
           <li>
             <a href="${h.route_path('users_new')}" class="btn btn-small btn-success">${_(u'Add User')}</a>

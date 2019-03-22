@@ -22,7 +22,7 @@
 
 <div class="box">
   <div class="title">
-    ${self.breadcrumbs()}
+    ${self.admin_menu()}
   </div>
 
   <div class='sidebar-col-wrapper'>

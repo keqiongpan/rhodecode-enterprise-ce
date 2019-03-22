@@ -21,7 +21,7 @@
 <div class="box">
 
     <div class="title">
-        ${self.breadcrumbs()}
+        ${self.admin_menu()}
         <ul class="links">
         %if h.HasPermissionAny('hg.admin', 'hg.usergroup.create.true')():
           <li>

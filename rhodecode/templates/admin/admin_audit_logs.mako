@@ -26,7 +26,7 @@
 <div class="box">
     <!-- box / title -->
     <div class="title">
-        ${self.breadcrumbs()}
+        ${self.admin_menu()}
     </div>
     <!-- end box / title -->
     <div class="table">
