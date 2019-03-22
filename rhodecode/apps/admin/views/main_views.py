@@ -33,14 +33,19 @@ log = logging.getLogger(__name__)
 
 
 class AdminMainView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        return c
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
-        route_name='admin_home', request_method='GET')
+        route_name='admin_home', request_method='GET',
+        renderer='rhodecode:templates/admin/main.mako')
     def admin_main(self):
-        # redirect _admin to audit logs...
-        raise HTTPFound(h.route_path('admin_audit_logs'))
+        c = self.load_default_context()
+        c.active = 'admin'
+        return self._get_template_context(c)
 
     @LoginRequired()
     @view_config(route_name='pull_requests_global_0', request_method='GET')
