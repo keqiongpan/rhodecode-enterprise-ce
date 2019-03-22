@@ -38,10 +38,6 @@
 </script>
 <div class="box">
 
-  <div class="title">
-    ${self.repo_page_title(c.rhodecode_db_repo)}
-  </div>
-
   ${self.breadcrumbs()}
 
   <div class="box pr-summary">

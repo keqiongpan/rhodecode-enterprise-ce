@@ -25,9 +25,6 @@
     templateContext.commit_data.commit_id = "${c.commit.raw_id}";
 </script>
 <div class="box">
-    <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
-    </div>
 
   <div id="changeset_compare_view_content"  class="summary changeset">
     <div class="summary-detail">

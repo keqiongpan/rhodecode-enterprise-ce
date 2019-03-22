@@ -29,12 +29,6 @@
 </%def>
 
 <%def name="main()">
-    <div class="summary-header">
-      <div class="title">
-          ${self.repo_page_title(c.rhodecode_db_repo)}
-      </div>
-    </div>
-
 
     <div class="summary changeset">
         <div class="summary-detail">

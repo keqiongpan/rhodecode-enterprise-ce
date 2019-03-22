@@ -23,7 +23,7 @@
 <%def name="main()">
 <div class="box">
     <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
+
         <ul class="links">
             <li>
                 <a class="btn btn-small btn-success" href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">

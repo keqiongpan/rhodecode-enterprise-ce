@@ -22,9 +22,6 @@
 <%def name="main()">
 <% renderer = h.renderer_from_filename(c.f_path)%>
 <div class="box">
-    <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
-    </div>
     <div class="edit-file-title">
         ${self.breadcrumbs()}
     </div>

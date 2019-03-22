@@ -3,9 +3,6 @@
 <%namespace name="components" file="/summary/components.mako"/>
 
 <%def name="main()">
-    <div class="title">
-      ${self.repo_page_title(c.rhodecode_db_repo)}
-    </div>
 
   <div id="repo-summary" class="summary">
     ${components.summary_detail(breadcrumbs_links=self.breadcrumbs_links(), show_downloads=False)}
