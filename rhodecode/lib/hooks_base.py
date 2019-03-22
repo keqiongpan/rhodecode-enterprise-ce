@@ -270,7 +270,7 @@ def post_push(extras):
     # make lock is a tri state False, True, None. We only release lock on False
     if extras.make_lock is False and not is_shadow_repo(extras):
         Repository.unlock(Repository.get_by_repo_name(extras.repository))
-        msg = 'Released lock on repo `%s`\n' % extras.repository
+        msg = 'Released lock on repo `{}`\n'.format(safe_str(extras.repository))
         output += msg
 
     if extras.locked_by[0]:
@@ -284,8 +284,8 @@ def post_push(extras):
             output += _http_ret.title
 
     if extras.new_refs:
-        tmpl = extras.server_url + '/' + extras.repository + \
-               "/pull-request/new?{ref_type}={ref_name}"
+        tmpl = '{}/{}/pull-request/new?{{ref_type}}={{ref_name}}'.format(
+            safe_str(extras.server_url), safe_str(extras.repository))
 
         for branch_name in extras.new_refs['branches']:
             output += 'RhodeCode: open pull request link: {}\n'.format(

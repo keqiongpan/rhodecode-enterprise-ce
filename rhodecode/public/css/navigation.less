@@ -92,6 +92,10 @@
             }
         }
 
+        &.active {
+            border-bottom: 5px solid @rcblue;
+        }
+
         &.open {
 
             a {
@@ -133,6 +137,7 @@
             padding: 0 0 0.4em 0;
             line-height: 1em;
             // for this specifically we do not use a variable
+            border-right: 1px solid @grey4;
         }
 
         .pr_notifications {
@@ -651,6 +656,40 @@ ul#context-pages {
 
 .main_filter_input_box {
     display: inline-block;
+
+    .searchItems {
+        display:flex;
+        background: #666666;
+        padding: 0px;
+
+        a {
+            border: none !important;
+        }
+    }
+
+    .searchTag {
+        line-height: 28px;
+        padding: 0px 4px;
+
+        .tag {
+            color: @nav-grey;
+            border-color: @nav-grey;
+        }
+    }
+
+    .searchTagFilter {
+        background-color: @grey3 !important;
+    }
+
+    .searchTagHelp {
+        background-color: @grey2 !important;
+    }
+    .searchTagHelp:hover {
+        background-color: @grey2 !important;
+    }
+    .searchTagInput {
+        background-color: @grey3 !important;
+    }
 }
 
 .main_filter_box {

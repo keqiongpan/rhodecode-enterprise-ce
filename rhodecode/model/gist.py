@@ -47,6 +47,7 @@ GIST_METADATA_FILE = '.rc_gist_metadata'
 
 class GistModel(BaseModel):
     cls = Gist
+    vcs_backend = 'hg'
 
     def _get_gist(self, gist):
         """
@@ -145,7 +146,7 @@ class GistModel(BaseModel):
         gist_repo_path = os.path.join(GIST_STORE_LOC, gist_id)
         log.debug('Creating new %s GIST repo in %s', gist_type, gist_repo_path)
         repo = RepoModel()._create_filesystem_repo(
-            repo_name=gist_id, repo_type='hg', repo_group=GIST_STORE_LOC,
+            repo_name=gist_id, repo_type=self.vcs_backend, repo_group=GIST_STORE_LOC,
             use_global_config=True)
 
         # now create single multifile commit

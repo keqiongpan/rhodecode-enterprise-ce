@@ -80,6 +80,13 @@ class BaseSearcher(object):
     def extract_search_tags(query):
         return []
 
+    @staticmethod
+    def escape_specials(val):
+        """
+        Handle and escape reserved chars for search
+        """
+        return val
+
 
 def search_config(config, prefix='search.'):
     _config = {}

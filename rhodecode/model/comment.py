@@ -259,8 +259,18 @@ class CommentsModel(BaseModel):
         # check if the comment actually belongs to this PR
         if resolved_comment and resolved_comment.pull_request and \
                 resolved_comment.pull_request != pull_request:
+            log.warning('Comment tried to resolved unrelated todo comment: %s',
+                        resolved_comment)
             # comment not bound to this pull request, forbid
             resolved_comment = None
+
+        elif resolved_comment and resolved_comment.repo and \
+                resolved_comment.repo != repo:
+            log.warning('Comment tried to resolved unrelated todo comment: %s',
+                        resolved_comment)
+            # comment not bound to this repo, forbid
+            resolved_comment = None
+
         comment.resolved_comment = resolved_comment
 
         pull_request_id = pull_request

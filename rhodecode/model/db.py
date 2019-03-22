@@ -39,7 +39,7 @@ from sqlalchemy import (
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType)
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import true, false, case
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
     relationship, joinedload, class_mapper, validates, aliased)
@@ -4260,9 +4260,16 @@ class Gist(Base, BaseModel):
     # SCM functions
 
     def scm_instance(self, **kwargs):
+        """
+        Get explicit Mercurial repository used
+        :param kwargs:
+        :return:
+        """
+        from rhodecode.model.gist import GistModel
         full_repo_path = os.path.join(self.base_path(), self.gist_access_id)
         return get_vcs_instance(
-            repo_path=safe_str(full_repo_path), create=False)
+            repo_path=safe_str(full_repo_path), create=False,
+            _vcs_alias=GistModel.vcs_backend)
 
 
 class ExternalIdentity(Base, BaseModel):

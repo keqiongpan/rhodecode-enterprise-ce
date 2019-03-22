@@ -9,11 +9,13 @@
       <div id="header-inner" class="wrapper">
           <div id="logo">
               <div class="logo-wrapper">
-                  <a href="${h.route_path('home')}"><img src="${h.asset('images/rhodecode-logo-white-216x60.png')}" alt="RhodeCode"/></a>
+                  <a href="${h.route_path('home')}"><img src="${h.asset('images/rhodecode-logo-white-60x60.png')}" alt="RhodeCode"/></a>
               </div>
-              %if c.rhodecode_name:
-               <div class="branding">- ${h.branding(c.rhodecode_name)}</div>
-              %endif
+              % if c.rhodecode_name:
+               <div class="branding">
+                   <a href="${h.route_path('home')}">${h.branding(c.rhodecode_name)}</a>
+               </div>
+              % endif
           </div>
           <!-- MENU BAR NAV -->
           ${self.menu_bar_nav()}
@@ -236,7 +238,6 @@
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
-        <li class="${is_active('search')}"><a class="menulink" href="${h.route_path('search_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Search')}</div></a></li>
 
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
@@ -341,7 +342,6 @@
     <div class="wrapper">
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
-        <li class="${is_active('search')}"><a class="menulink" href="${h.route_path('search_repo_group', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Search')}</div></a></li>
 
         <li class="${is_active('options')}">
           <a class="menulink dropdown">
@@ -489,10 +489,35 @@
        <li>
         <div class="menulabel main_filter_box">
             <div class="main_filter_input_box">
-                <input class="main_filter_input" id="main_filter" size="15" type="text" name="main_filter" placeholder="${_('search / go to...')}" value=""/>
-            </div>
-            <div class="main_filter_help_box">
-                <a href="#showFilterHelp" onclick="showMainFilterBox(); return false">?</a>
+                <ul class="searchItems">
+
+                    % if c.template_context['search_context']['repo_id']:
+                        <li class="searchTag searchTagFilter searchTagHidable" >
+                        ##<a href="${h.route_path('search_repo',repo_name=c.template_context['search_context']['repo_name'])}">
+                            <span class="tag">
+                                This repo
+                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-delete"></i></a>
+                            </span>
+                        ##</a>
+                        </li>
+                    % elif c.template_context['search_context']['repo_group_id']:
+                        <li class="searchTag searchTagFilter searchTagHidable">
+                        ##<a href="${h.route_path('search_repo_group',repo_group_name=c.template_context['search_context']['repo_group_name'])}">
+                            <span class="tag">
+                                This group
+                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-delete"></i></a>
+                            </span>
+                        ##</a>
+                        </li>
+                    % endif
+
+                    <li class="searchTagInput">
+                        <input class="main_filter_input" id="main_filter" size="15" type="text" name="main_filter" placeholder="${_('search / go to...')}" value="" />
+                    </li>
+                    <li class="searchTag searchTagHelp">
+                        <a href="#showFilterHelp" onclick="showMainFilterBox(); return false">?</a>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -503,15 +528,31 @@
 
 - Prefix query to allow special search:
 
-   user:admin, to search for usernames
+   user:admin, to search for usernames, always global
 
-   user_group:devops, to search for user groups
+   user_group:devops, to search for user groups, always global
 
-   commit:efced4, to search for commits
+   commit:efced4, to search for commits, scoped to repositories or groups
+
+   file:models.py, to search for file paths, scoped to repositories or groups
+
+% if c.template_context['search_context']['repo_id']:
+   For advanced full text search visit: <a href="${h.route_path('search_repo',repo_name=c.template_context['search_context']['repo_name'])}">repository search</a>
+% elif c.template_context['search_context']['repo_group_id']:
+   For advanced full text search visit: <a href="${h.route_path('search_repo_group',repo_group_name=c.template_context['search_context']['repo_group_name'])}">repository group search</a>
+% else:
+   For advanced full text search visit: <a href="${h.route_path('search')}">global search</a>
+% endif
         </div>
        </li>
 
       ## ROOT MENU
+        <li class="${is_active('home')}">
+          <a class="menulink" title="${_('Home')}" href="${h.route_path('home')}">
+            <div class="menulabel">${_('Home')}</div>
+          </a>
+        </li>
+
       %if c.rhodecode_user.username != h.DEFAULT_USER:
         <li class="${is_active('journal')}">
           <a class="menulink" title="${_('Show activity journal')}" href="${h.route_path('journal')}">
@@ -525,16 +566,13 @@
           </a>
         </li>
       %endif
+
         <li class="${is_active('gists')}">
           <a class="menulink childs" title="${_('Show Gists')}" href="${h.route_path('gists_show')}">
             <div class="menulabel">${_('Gists')}</div>
           </a>
         </li>
-      <li class="${is_active('search')}">
-          <a class="menulink" title="${_('Search in repositories you have access to')}" href="${h.route_path('search')}">
-            <div class="menulabel">${_('Search')}</div>
-          </a>
-      </li>
+
       % if h.HasPermissionAll('hg.admin')('access admin main page'):
         <li class="${is_active('admin')}">
           <a class="menulink childs" title="${_('Admin settings')}" href="#" onclick="return false;">
@@ -620,6 +658,22 @@
             }(result, escapeMarkup);
         };
 
+        var escapeRegExChars = function (value) {
+            return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        };
+
+        var getRepoIcon = function(repo_type) {
+            if (repo_type === 'hg') {
+                return '<i class="icon-hg"></i> ';
+            }
+            else if (repo_type === 'git') {
+                return '<i class="icon-git"></i> ';
+            }
+            else if (repo_type === 'svn') {
+                return '<i class="icon-svn"></i> ';
+            }
+            return ''
+        };
 
         var autocompleteMainFilterFormatResult = function (data, value, org_formatter) {
 
@@ -630,27 +684,14 @@
             var searchType = data['type'];
             var valueDisplay = data['value_display'];
 
-            var escapeRegExChars = function (value) {
-                return value.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-            };
             var pattern = '(' + escapeRegExChars(value) + ')';
 
-            var getRepoIcon = function(repo_type) {
-                if (repo_type === 'hg') {
-                    return '<i class="icon-hg"></i> ';
-                }
-                else if (repo_type === 'git') {
-                    return '<i class="icon-git"></i> ';
-                }
-                else if (repo_type === 'svn') {
-                    return '<i class="icon-svn"></i> ';
-                }
-                return ''
-            };
+            valueDisplay = Select2.util.escapeMarkup(valueDisplay);
 
             // highlight match
-            valueDisplay = Select2.util.escapeMarkup(valueDisplay);
-            valueDisplay = valueDisplay.replace(new RegExp(pattern, 'gi'), '<strong>$1<\/strong>');
+            if (searchType != 'text') {
+                valueDisplay = valueDisplay.replace(new RegExp(pattern, 'gi'), '<strong>$1<\/strong>');
+            }
 
             var icon = '';
 
@@ -682,6 +723,7 @@
             else if (searchType === 'user_group') {
                 icon += '<i class="icon-group"></i> ';
             }
+            // user
             else if (searchType === 'user') {
                 icon += '<img class="gravatar" src="{0}"/>'.format(data['icon_link']);
             }
@@ -695,6 +737,20 @@
                     icon += '<i class="icon-tag"></i>';
                 }
             }
+            // file
+            else if (searchType === 'file') {
+                var repo_data = data['repo_data'];
+                var repoIcon = getRepoIcon(repo_data['repository_type']);
+                if (repoIcon) {
+                    icon += repoIcon;
+                } else {
+                    icon += '<i class="icon-tag"></i>';
+                }
+            }
+            // generic text
+            else if (searchType === 'text') {
+                icon = '';
+            }
 
             var tmpl = '<div class="ac-container-wrap">{0}{1}</div>';
             return tmpl.format(icon, valueDisplay);
@@ -704,25 +760,52 @@
             if (suggestion.type === "hint") {
                 // we skip action
                 $('#main_filter').focus();
+            }
+            else if (suggestion.type === "text") {
+                // we skip action
+                $('#main_filter').focus();
+
             } else {
               window.location = suggestion['url'];
             }
         };
+
         var autocompleteMainFilterResult = function (suggestion, originalQuery, queryLowerCase) {
             if (queryLowerCase.split(':').length === 2) {
                 queryLowerCase = queryLowerCase.split(':')[1]
             }
+            if (suggestion.type === "text") {
+                // special case we don't want to "skip" display for
+                return true
+            }
             return suggestion.value_display.toLowerCase().indexOf(queryLowerCase) !== -1;
+        };
+
+        var cleanContext = {
+            repo_view_type: null,
+
+            repo_id: null,
+            repo_name: "",
+
+            repo_group_id: null,
+            repo_group_name: null
+        };
+        var removeGoToFilter = function () {
+            $('.searchTagHidable').hide();
+            $('#main_filter').autocomplete(
+                'setOptions', {params:{search_context: cleanContext}});
         };
 
         $('#main_filter').autocomplete({
             serviceUrl: pyroutes.url('goto_switcher_data'),
-            params: {"search_context": templateContext.search_context},
+            params: {
+                "search_context": templateContext.search_context
+            },
             minChars:2,
             maxHeight:400,
             deferRequestBy: 300, //miliseconds
             tabDisabled: true,
-            autoSelectFirst: true,
+            autoSelectFirst: false,
             formatResult: autocompleteMainFilterFormatResult,
             lookupFilter: autocompleteMainFilterResult,
             onSelect: function (element, suggestion) {
@@ -740,6 +823,18 @@
         showMainFilterBox = function () {
             $('#main_filter_help').toggle();
         };
+
+        $('#main_filter').on('keydown.autocomplete', function (e) {
+
+            var BACKSPACE = 8;
+            var el = $(e.currentTarget);
+            if(e.which === BACKSPACE){
+                var inputVal = el.val();
+                if (inputVal === ""){
+                    removeGoToFilter()
+                }
+            }
+        });
 
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>

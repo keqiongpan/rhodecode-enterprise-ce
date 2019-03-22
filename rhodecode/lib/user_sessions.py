@@ -23,6 +23,7 @@ import re
 import time
 import datetime
 import dateutil
+import pickle
 
 from rhodecode.model.db import DbSession, Session
 
@@ -142,7 +143,6 @@ class FileAuthSessions(BaseAuthSessions):
         return stats['callbacks']
 
 
-
 class MemcachedAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'ext:memcached'
     _key_regex = re.compile(r'ITEM (.*_session) \[(.*); (.*)\]')
@@ -195,6 +195,43 @@ class MemcachedAuthSessions(BaseAuthSessions):
         raise CleanupCommand('Cleanup for this session type not yet available')
 
 
+class RedisAuthSessions(BaseAuthSessions):
+    SESSION_TYPE = 'ext:redis'
+
+    def _get_client(self):
+        import redis
+        args = {
+            'socket_timeout': 60,
+            'url': self.config.get('beaker.session.url')
+        }
+
+        client = redis.StrictRedis.from_url(**args)
+        return client
+
+    def get_count(self):
+        client = self._get_client()
+        return len(client.keys('beaker_cache:*'))
+
+    def get_expired_count(self, older_than_seconds=None):
+        expiry_date = self._seconds_to_date(older_than_seconds)
+        return self.NOT_AVAILABLE
+
+    def clean_sessions(self, older_than_seconds=None):
+        client = self._get_client()
+        expiry_time = time.time() - older_than_seconds
+        deleted_keys = 0
+        for key in client.keys('beaker_cache:*'):
+            data = client.get(key)
+            if data:
+                json_data = pickle.loads(data)
+                accessed_time = json_data['_accessed_time']
+                if accessed_time < expiry_time:
+                    client.delete(key)
+                    deleted_keys += 1
+
+        return deleted_keys
+
+
 class MemoryAuthSessions(BaseAuthSessions):
     SESSION_TYPE = 'memory'
 
@@ -212,6 +249,7 @@ def get_session_handler(session_type):
     types = {
         'file': FileAuthSessions,
         'ext:memcached': MemcachedAuthSessions,
+        'ext:redis': RedisAuthSessions,
         'ext:database': DbAuthSessions,
         'memory': MemoryAuthSessions
     }

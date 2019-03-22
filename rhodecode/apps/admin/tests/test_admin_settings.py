@@ -214,8 +214,7 @@ class TestAdminSettingsGlobal(object):
             })
 
             response = response.follow()
-            response.mustcontain(
-                """<div class="branding">- %s</div>""" % new_title)
+            response.mustcontain(new_title)
 
     def post_and_verify_settings(self, settings):
         old_title = 'RhodeCode'

@@ -28,6 +28,9 @@
                 </span>
             </li>
         % endfor
+        <li>
+            Try <a href="${h.current_route_path(request, force_refresh=1)}">forced recheck</a> of the merge workspace in case current status seems wrong.
+        </li>
     </ul>
     % endif
 

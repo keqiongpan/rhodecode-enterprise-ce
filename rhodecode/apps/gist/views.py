@@ -25,7 +25,7 @@ import formencode
 import formencode.htmlfill
 import peppercorn
 
-from pyramid.httpexceptions import HTTPNotFound, HTTPFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPFound, HTTPBadRequest
 from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -66,7 +66,6 @@ class GistView(BaseAppView):
             (Gist.ACL_LEVEL_PRIVATE, _("Requires registered account")),
             (Gist.ACL_LEVEL_PUBLIC, _("Can be accessed by anonymous users"))
         ]
-
 
         return c
 
@@ -296,6 +295,8 @@ class GistView(BaseAppView):
             response = Response(content)
             response.content_type = 'text/plain'
             return response
+        elif return_format:
+            raise HTTPBadRequest()
 
         return self._get_template_context(c)
 

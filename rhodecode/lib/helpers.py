@@ -2037,6 +2037,6 @@ def get_repo_view_type(request):
         'repo_files': 'files',
         'repo_summary': 'summary',
         'repo_commit': 'commit'
-
     }
+
     return route_to_view_type.get(route_name)
