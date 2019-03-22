@@ -226,6 +226,11 @@
   <!--- CONTEXT BAR -->
   <div id="context-bar">
     <div class="wrapper">
+
+      <div class="title">
+          ${self.repo_page_title(c.rhodecode_db_repo)}
+      </div>
+
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
