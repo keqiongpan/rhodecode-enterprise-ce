@@ -80,7 +80,7 @@
       <div class="title">
         <div class="title-content">
           <div class="title-main">
-            Admin Panel
+            ${_('Admin Panel')}
           </div>
         </div>
       </div>
