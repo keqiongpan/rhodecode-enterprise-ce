@@ -98,6 +98,23 @@ class SubversionRepository(base.BaseRepository):
         head = self._remote.lookup(None)
         return [str(r) for r in xrange(1, head + 1)]
 
+    def run_svn_command(self, cmd, **opts):
+        """
+        Runs given ``cmd`` as svn command and returns tuple
+        (stdout, stderr).
+
+        :param cmd: full svn command to be executed
+        :param opts: env options to pass into Subprocess command
+        """
+        if not isinstance(cmd, list):
+            raise ValueError('cmd must be a list, got %s instead' % type(cmd))
+
+        skip_stderr_log = opts.pop('skip_stderr_log', False)
+        out, err = self._remote.run_svn_command(cmd, **opts)
+        if err and not skip_stderr_log:
+            log.debug('Stderr output of svn command "%s":\n%s', cmd, err)
+        return out, err
+
     @LazyProperty
     def branches(self):
         return self._tags_or_branches('vcs_svn_branch')
