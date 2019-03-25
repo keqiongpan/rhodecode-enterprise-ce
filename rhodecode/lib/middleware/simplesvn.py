@@ -87,20 +87,22 @@ class SimpleSvnApp(object):
             stream = True
 
         stream = stream
-        log.debug(
-            'Calling SVN PROXY: method:%s via `%s`, Stream: %s',
-            req_method, path_info, stream)
-        response = requests.request(
-            req_method, path_info,
-            data=data, headers=request_headers, stream=stream)
+        log.debug('Calling SVN PROXY at `%s`, using method:%s. Stream: %s',
+                  path_info, req_method, stream)
+        try:
+            response = requests.request(
+                req_method, path_info,
+                data=data, headers=request_headers, stream=stream)
+        except requests.ConnectionError:
+            log.exception('ConnectionError occurred for endpoint %s', path_info)
+            raise
 
         if response.status_code not in [200, 401]:
+            text = '\n{}'.format(response.text) if response.text else ''
             if response.status_code >= 500:
-                log.error('Got SVN response:%s with text:\n`%s`',
-                          response, response.text)
+                log.error('Got SVN response:%s with text:`%s`', response, text)
             else:
-                log.debug('Got SVN response:%s with text:\n`%s`',
-                          response, response.text)
+                log.debug('Got SVN response:%s with text:`%s`', response, text)
         else:
             log.debug('got response code: %s', response.status_code)
 
