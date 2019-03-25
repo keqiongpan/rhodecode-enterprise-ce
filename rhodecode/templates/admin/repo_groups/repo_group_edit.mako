@@ -23,10 +23,6 @@
 <%def name="main()">
 
 <div class="box">
-  <div class="title">
-    ${self.repo_group_page_title(c.repo_group)}
-  </div>
-
   <div class="sidebar-col-wrapper">
     ##main
     <div class="sidebar">

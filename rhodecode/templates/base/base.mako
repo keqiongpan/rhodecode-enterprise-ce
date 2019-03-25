@@ -77,6 +77,14 @@
 <%def name="admin_menu(active=None)">
   <div id="context-bar">
     <div class="wrapper">
+      <div class="title">
+        <div class="title-content">
+          <div class="title-main">
+            Admin Panel
+          </div>
+        </div>
+      </div>
+
       <ul id="context-pages" class="navigation horizontal-list">
         <%
         repositories=c.rhodecode_user.repositories_admin
@@ -118,7 +126,6 @@
   </div>
 </%def>
 
-
 <%def name="dt_info_panel(elements)">
     <dl class="dl-horizontal">
     %for dt, dd, title, show_items in elements:
@@ -147,7 +154,6 @@
     %endfor
     </dl>
 </%def>
-
 
 <%def name="gravatar(email, size=16)">
   <%
@@ -202,7 +208,7 @@
 
     ## FORKED
     %if repo_instance.fork:
-    <p>
+    <p class="discreet">
         <i class="icon-code-fork"></i> ${_('Fork of')}
         ${h.link_to_if(c.has_origin_repo_read_perm,repo_instance.fork.repo_name, h.route_path('repo_summary', repo_name=repo_instance.fork.repo_name))}
     </p>
@@ -210,7 +216,7 @@
 
     ## IMPORTED FROM REMOTE
     %if repo_instance.clone_uri:
-    <p>
+    <p class="discreet">
        <i class="icon-code-fork"></i> ${_('Clone from')}
        <a href="${h.safe_str(h.hide_credentials(repo_instance.clone_uri))}">${h.hide_credentials(repo_instance.clone_uri)}</a>
     </p>
@@ -218,12 +224,12 @@
 
     ## LOCKING STATUS
      %if repo_instance.locked[0]:
-       <p class="locking_locked">
+       <p class="locking_locked discreet">
            <i class="icon-repo-lock"></i>
            ${_('Repository locked by %(user)s') % {'user': h.person_by_id(repo_instance.locked[0])}}
        </p>
      %elif repo_instance.enable_locking:
-         <p class="locking_unlocked">
+         <p class="locking_unlocked discreet">
              <i class="icon-repo-unlock"></i>
              ${_('Repository not locked. Pull repository to lock it.')}
          </p>
@@ -359,6 +365,10 @@
   <!--- REPO GROUP CONTEXT BAR -->
   <div id="context-bar">
     <div class="wrapper">
+      <div class="title">
+          ${self.repo_group_page_title(c.repo_group)}
+      </div>
+
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
         % if is_admin or group_admin:

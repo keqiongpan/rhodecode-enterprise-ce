@@ -156,6 +156,19 @@ pre {
 
 // Emphasis & misc
 // -------------------------
+.discreet {
+  color: @grey4;
+  font-size: 85%;
+  font-weight: normal;
+
+  a {
+    color: @grey4;
+
+    &:hover {
+      color: @rcdarkblue;
+    }
+  }
+}
 
 small,
 .small {
@@ -231,7 +244,8 @@ mark,
     clear: both;
     float: left;
     width: 100%;
-    margin: @pagepadding/2 0 @pagepadding/4;
+    margin: @pagepadding/2 0 0;
+    min-height: 25px;
 
     .breadcrumbs {
         float: left;

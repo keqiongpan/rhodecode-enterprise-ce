@@ -17,7 +17,7 @@
 .select2-search,
 .select2-search input {.box-sizing(border-box);}
 .select2-container .select2-choice{display:block; line-height:1em; -webkit-touch-callout:none;-moz-user-select:none;-ms-user-select:none;user-select:none; }
-.main .select2-container .select2-choice { background-color: white; }
+.main .select2-container .select2-choice { background-color: white; box-shadow: @button-shadow;}
 .select2-container .select2-choice abbr { display: none; width: 12px; height: 12px; position: absolute; right: 24px; top: 8px; font-size: 1px; text-decoration: none; border: 0; background: url('../images/select2.png') right top no-repeat; cursor: pointer; outline: 0; }
 .select2-container.select2-allowclear .select2-choice abbr {display: inline-block;}
 .select2-container .select2-choice abbr:hover { background-position: right -11px; cursor: pointer; }
@@ -120,7 +120,7 @@ select.select2{height:28px;visibility:hidden}
 
     a {
         display:block;
-        padding: .9em;
+        padding: .7em;
         padding-right: 2em;
         position: relative;
 
@@ -129,7 +129,7 @@ select.select2{height:28px;visibility:hidden}
             content: "\00A0\25BE";
             right: .1em;
             line-height: 1em;
-            top: 0.4em;
+            top: 0.2em;
             width: 1em;
             font-size: 20px;
         }
@@ -176,7 +176,13 @@ select.select2{height:28px;visibility:hidden}
 
         &:hover,
         &.select2-highlighted {
-            background-color: @rclightblue;
+            background-color: @grey7;
+
+            .select2-result-label {
+                &:hover {
+                    color: @grey1!important;
+                }
+            }
         }
 
         &.select2-result-with-children {
@@ -189,8 +195,7 @@ select.select2{height:28px;visibility:hidden}
             display:block;
             padding: 8px;
             font-family: @text-regular;
-            border-bottom: @border-thickness solid @rclightblue;
-            color: @rcblue;
+            color: @grey2;
             cursor: pointer;
         }
         &.select2-result-with-children {
@@ -205,7 +210,7 @@ select.select2{height:28px;visibility:hidden}
             ul.select2-result-sub li .select2-result-label {
                 padding-left: 16px;
                 font-family: @text-regular;
-                color: @rcblue;
+                color: @grey2;
                 cursor: pointer;
             }
         }

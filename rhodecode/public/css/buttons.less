@@ -26,6 +26,10 @@ input[type="button"] {
        -moz-transition: background .3s,color .3s;
          -o-transition: background .3s,color .3s;
             transition: background .3s,color .3s;
+            box-shadow: @button-shadow;
+    -webkit-box-shadow: @button-shadow;
+
+
 
     a {
         display: block;
@@ -80,12 +84,12 @@ input[type="button"] {
 
     &:hover,
     &.active {
-        color: white;
-        background-color: @rcdarkblue;
+        color: @rcblue;
+        background-color: @grey7;
         .border ( @border-thickness, @rcdarkblue );
 
         a {
-            color: white;
+            color: @rcblue;
         }
     }
     &:disabled {
