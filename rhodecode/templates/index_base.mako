@@ -12,16 +12,6 @@
    <div class="box">
         <!-- box / title -->
         <div class="title">
-            % if c.repo_group:
-            ${self.repo_group_page_title(c.repo_group)}
-            ## context actions
-            <div>
-            <ul class="links icon-only-links block-right">
-                <li></li>
-            </ul>
-            </div>
-            % endif
-
             %if c.rhodecode_user.username != h.DEFAULT_USER:
               <div class="block-right">
                 <%
