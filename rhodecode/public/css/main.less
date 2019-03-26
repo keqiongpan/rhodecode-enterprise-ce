@@ -2107,8 +2107,9 @@ h3.files_location{
 		}
 
 		.info_box_elem {
-			border-top: @border-thickness solid @rcblue;
-			border-bottom: @border-thickness solid @rcblue;
+			border-top: @border-thickness solid @grey5;
+			border-bottom: @border-thickness solid @grey5;
+            box-shadow: @button-shadow;
 
             #at_rev, a {
                 padding: 0.6em 0.9em;
@@ -2116,6 +2117,7 @@ h3.files_location{
                 .box-shadow(none);
                 border: 0;
                 height: 12px;
+                color: @grey2;
             }
 
             input#at_rev {
@@ -2124,17 +2126,31 @@ h3.files_location{
             }
 
 			&.previous {
-				border: @border-thickness solid @rcblue;
+				border: @border-thickness solid @grey5;
+                border-top-left-radius: @border-radius;
+                border-bottom-left-radius: @border-radius;
+
+                &:hover {
+                    border-color: @grey4;
+                }
+
                 .disabled {
-                  color: @grey4;
+                  color: @grey5;
                   cursor: not-allowed;
                 }
 			}
 
 			&.next {
-				border: @border-thickness solid @rcblue;
+				border: @border-thickness solid @grey5;
+                border-top-right-radius: @border-radius;
+                border-bottom-right-radius: @border-radius;
+
+                &:hover {
+                    border-color: @grey4;
+                }
+
                 .disabled {
-                  color: @grey4;
+                  color: @grey5;
                   cursor: not-allowed;
                 }
 			}

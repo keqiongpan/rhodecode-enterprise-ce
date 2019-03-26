@@ -74,22 +74,22 @@ input[type="button"] {
 
 
 .btn-default {
-    .border ( @border-thickness-buttons, @rcblue );
+    border: @border-thickness solid @grey5;
     background-image: none;
-    color: @rcblue;
+    color: @grey2;
 
     a {
-        color: @rcblue;
+        color: @grey2;
     }
 
     &:hover,
     &.active {
-        color: @rcblue;
-        background-color: @grey7;
-        .border ( @border-thickness, @rcdarkblue );
+        color: @rcdarkblue;
+        background-color: @white;
+        .border ( @border-thickness, @grey4 );
 
         a {
-            color: @rcblue;
+            color: @grey2;
         }
     }
     &:disabled {

@@ -92,10 +92,22 @@ select.select2{height:28px;visibility:hidden}
     min-width: 160px;
     margin: 0 @padding 0 0;
     padding: 0;
-    border: @border-thickness solid @rcblue;
+    border: @border-thickness solid @grey5;
     border-radius: @border-radius;
-    color: @rcblue;
+    color: @grey2;
     background-color: white;
+
+    a {
+        color: @grey2;
+
+        &:hover {
+            color: @rcdarkblue;
+        }
+    }
+
+    &:hover {
+        border-color: @grey4;
+    }
 }
 
 .drop-menu-dropdown {
