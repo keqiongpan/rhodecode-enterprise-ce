@@ -666,11 +666,11 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.6";
+    name = "hupper-1.6.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a4/f7/595756fdfdf896d2c46ae6dc25b1bc97645d0fbf2d6ca547b5b55728eaf3/hupper-1.6.tar.gz";
-      sha256 = "0p30l0pk63js0c0hl57c0dvffmawkwhh4yjmfaqyzgwdpdb0g3fc";
+      url = "https://files.pythonhosted.org/packages/85/d9/e005d357b11249c5d70ddf5b7adab2e4c0da4e8b0531ff146917a04fe6c0/hupper-1.6.1.tar.gz";
+      sha256 = "0d3cvkc8ssgwk54wvhbifj56ry97qi10pfzwfk8vwzzcikbfp3zy";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
