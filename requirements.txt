@@ -109,7 +109,7 @@ gunicorn==19.9.0
 waitress==1.1.0
 
 ## debug
-ipdb==0.11.0
+ipdb==0.12.0
 ipython==5.1.0
 
 ## rhodecode-tools, special case
