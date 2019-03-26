@@ -88,8 +88,8 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
 
         try:
             search_result = searcher.search(
-                search_query, search_type, apiuser, repo_name,
-                requested_page, page_limit, search_sort)
+                search_query, search_type, apiuser, repo_name, repo_group_name,
+                requested_page=requested_page, page_limit=page_limit, sort=search_sort)
 
             data.update(dict(
                 results=list(search_result['results']), page=requested_page,
