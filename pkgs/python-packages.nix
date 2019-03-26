@@ -285,11 +285,11 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.7.3";
+    name = "configparser-3.7.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/4a/4d/5d4c07cd28476ecad84ea5ad43961e50b6fd74cd24b9b81113650b4de6ee/configparser-3.7.3.tar.gz";
-      sha256 = "0bfg1fn061djhs3aqqprk9sd5sxacj8wc6h6fhck57r7zks4qn97";
+      url = "https://files.pythonhosted.org/packages/e2/1c/83fd53748d8245cb9a3399f705c251d3fc0ce7df04450aac1cfc49dd6a0f/configparser-3.7.4.tar.gz";
+      sha256 = "0xac32886ihs2xg7w1gppcq2sgin5qsm8lqwijs5xifq9w0x0q6s";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1760,11 +1760,11 @@ self: super: {
       self."bleach"
       self."celery"
       self."channelstream"
-      self."cryptography"
       self."click"
       self."colander"
       self."configobj"
       self."cssselect"
+      self."cryptography"
       self."decorator"
       self."deform"
       self."docutils"
@@ -2160,11 +2160,11 @@ self: super: {
     };
   };
   "vine" = super.buildPythonPackage {
-    name = "vine-1.2.0";
+    name = "vine-1.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/46/1a/c94317efa98040c5d50fe3cf9080cafb0372ff5afb0283dc018c751c6746/vine-1.2.0.tar.gz";
-      sha256 = "0xjz2sjbr5jrpjk411b7alkghdskhphgsqqrbi7abqfh2pli6j7f";
+      url = "https://files.pythonhosted.org/packages/1c/e1/79fb8046e607dd6c2ad05c9b8ebac9d0bd31d086a08f02699e96fc5b3046/vine-1.3.0.tar.gz";
+      sha256 = "11ydsbhl1vabndc2r979dv61s6j2b0giq6dgvryifvq1m7bycghk";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
