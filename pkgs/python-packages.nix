@@ -2250,7 +2250,7 @@ self: super: {
     };
   };
   "webob" = super.buildPythonPackage {
-    name = "webob-1.8.4";
+    name = "webob-1.8.5";
     doCheck = false;
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/9d/1a/0c89c070ee2829c934cb6c7082287c822e28236a4fcf90063e6be7c35532/WebOb-1.8.5.tar.gz";
@@ -2270,8 +2270,8 @@ self: super: {
       self."beautifulsoup4"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/27/9f/9e74449d272ffbef4fb3012e6dbc53c0b24822d545e7a33a342f80131e59/WebTest-2.0.32.tar.gz";
-      sha256 = "0qp0nnbazzm4ibjiyqfcn6f230svk09i4g58zg2i9x1ga06h48a2";
+      url = "https://files.pythonhosted.org/packages/a8/b0/ffc9413b637dbe26e291429bb0f6ed731e518d0cd03da28524a8fe2e8a8f/WebTest-2.0.33.tar.gz";
+      sha256 = "1l3z0cwqslsf4rcrhi2gr8kdfh74wn2dw76376i4g9i38gz8wd21";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
