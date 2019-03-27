@@ -75,27 +75,36 @@
 </%def>
 
 <%def name="admin_menu(active=None)">
+  <%
+    is_super_admin = c.rhodecode_user.is_admin
+    repositories=c.rhodecode_user.repositories_admin
+    repository_groups=c.rhodecode_user.repository_groups_admin
+    user_groups=c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')()
+    is_delegated_admin = repositories or repository_groups or user_groups
+
+    def is_active(selected):
+        if selected == active:
+            return "active"
+  %>
+
   <div id="context-bar">
     <div class="wrapper">
       <div class="title">
         <div class="title-content">
           <div class="title-main">
-            ${_('Admin Panel')}
+            % if is_super_admin:
+                ${_('Super Admin Panel')}
+            % else:
+                ${_('Delegated Admin Panel')}
+            % endif
           </div>
         </div>
       </div>
 
-      <ul id="context-pages" class="navigation horizontal-list">
-        <%
-        repositories=c.rhodecode_user.repositories_admin
-        repository_groups=c.rhodecode_user.repository_groups_admin
-        user_groups=c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')()
-        def is_active(selected):
-            if selected == active:
-                return "active"
-        %>
+    <ul id="context-pages" class="navigation horizontal-list">
+
         ## super admin case
-        % if c.rhodecode_user.is_admin:
+        % if is_super_admin:
           <li class="${is_active('audit_logs')}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
           <li class="${is_active('repositories')}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
           <li class="${is_active('repository_groups')}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
@@ -108,8 +117,7 @@
           <li class="${is_active('settings')}"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
 
         ## delegated admin
-        % elif repositories or repository_groups or user_groups:
-
+        % elif is_delegated_admin:
            %if repositories:
               <li class="${is_active('repositories')} local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
            %endif
@@ -121,6 +129,7 @@
            %endif
         % endif
     </ul>
+
     </div>
     <div class="clear"></div>
   </div>
