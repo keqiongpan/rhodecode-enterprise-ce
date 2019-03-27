@@ -1236,24 +1236,27 @@ table.integrations {
 
 .autocomplete-suggestions {
     width: auto !important; // overrides autocomplete.js
+    min-width: 278px;
     margin: 0;
-    border: @border-thickness solid @rcblue;
+    border: @border-thickness solid @grey5;
     border-radius: @border-radius;
-    color: @rcblue;
+    color: @grey2;
     background-color: white;
 }
+
 .autocomplete-selected {
     background: #F0F0F0;
 }
+
 .ac-container-wrap {
 	margin: 0;
 	padding: 8px;
-	border-bottom: @border-thickness solid @rclightblue;
+	border-bottom: @border-thickness solid @grey5;
 	list-style-type: none;
 	cursor: pointer;
 
 		&:hover {
-			background-color: @rclightblue;
+			background-color: @grey7;
 	}
 
 	img {
@@ -2151,6 +2154,7 @@ h3.files_location{
                 .disabled {
                   color: @grey5;
                   cursor: not-allowed;
+                  opacity: 0.5;
                 }
 			}
 
@@ -2166,6 +2170,7 @@ h3.files_location{
                 .disabled {
                   color: @grey5;
                   cursor: not-allowed;
+                  opacity: 0.5;
                 }
 			}
 		}
