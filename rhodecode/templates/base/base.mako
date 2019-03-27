@@ -86,7 +86,7 @@
       <div class="title">
         <div class="title-content">
           <div class="title-main">
-            % if is_super_admin:
+            % if c.is_super_admin:
                 ${_('Super Admin Panel')}
             % else:
                 ${_('Delegated Admin Panel')}
