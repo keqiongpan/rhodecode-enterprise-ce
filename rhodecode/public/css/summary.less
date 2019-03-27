@@ -62,18 +62,19 @@
             height: 30px;
             margin: 0;
             padding: 0;
+            width: 150px;
             font-weight: @text-semibold-weight;
             font-family: @text-semibold;
         }
 
         .right-clone {
             float: right;
-            width: 83%;
+            width: ~"calc(100% - 150px)";
         }
 
         .clone_url_input {
             width: ~"calc(100% - 35px)";
-            padding:  5px;
+            padding: 6px 5px;
         }
 
         &.directory {
@@ -170,7 +171,7 @@
         .left-label;
         width: 150px;
     }
-    
+
     .right-content { // similar to form fields
         float: left;
         display: block;
@@ -214,13 +215,13 @@
 
     .comments-show { display: inline; }
     .comments-hide { display: none; }
-    
+
     &.comments-visible {
         .comments-show { display: none; }
         .comments-hide { display: inline; }
     }
 }
-    
+
 // Quick Start section
 .quick_start {
     float: left;
@@ -251,7 +252,7 @@
     width: 100%;
     margin: 0;
     padding: @space 0 10px 0;
-    border-top: @border-thickness solid @border-default-color; 
+    border-top: @border-thickness solid @border-default-color;
 
     .stats {
         float: left;
@@ -286,6 +287,6 @@
     .repo-size {
         margin-bottom: .5em;
     }
-    
+
 }
 
