@@ -575,11 +575,17 @@ ul#context-pages {
         }
     }
 
-    .pager_curpage, .pager_dotdot,
-    .paginate_button.current, .paginate_button.disabled,
+    .paginate_button.disabled,
     .disabled {
         color: @grey3;
         cursor: default;
+        opacity: 0.5;
+    }
+
+    .paginate_button.current, .pager_curpage {
+        background: @rcblue;
+        border-color: @rcblue;
+        color: @white;
     }
 
     .ellipsis {
