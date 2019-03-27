@@ -43,7 +43,7 @@
       %if c.repo:
         ${_('Current Integrations for Repository: {repo_name}').format(repo_name=c.repo.repo_name)}
       %elif c.repo_group:
-        ${_('Current Integrations for repository group: {repo_group_name}').format(repo_group_name=c.repo_group.group_name)}
+        ${_('Repository Group Integrations: {}').format(c.repo_group.group_name)}</h3>
       %else:
           ${_('Current Integrations')}
       %endif

@@ -16,7 +16,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Group: %s') % c.repo_group.group_name}</h3>
+        <h3 class="panel-title">${_('Repository Group Advanced: {}').format(c.repo_group.name)}</h3>
     </div>
     <div class="panel-body">
         ${base.dt_info_panel(elems)}

@@ -2,7 +2,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Group Permissions')}</h3>
+        <h3 class="panel-title">${_('Repository Group Permissions: {}').format(c.repo_group.name)}</h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_repo_group_perms_update', repo_group_name=c.repo_group.group_name), request=request)}
