@@ -168,6 +168,28 @@ class BaseAppView(object):
             from rhodecode.lib.base import attach_context_attributes
             attach_context_attributes(c, self.request, self.request.user.user_id)
 
+        c.is_super_admin = c.auth_user.is_admin
+
+        c.can_create_repo = c.is_super_admin
+        c.can_create_repo_group = c.is_super_admin
+        c.can_create_user_group = c.is_super_admin
+
+        c.is_delegated_admin = False
+
+        if not c.auth_user.is_default:
+            c.can_create_repo = h.HasPermissionAny('hg.create.repository')(
+                user=self.request.user)
+            repositories = c.auth_user.repositories_admin or c.can_create_repo
+
+            c.can_create_repo_group = h.HasPermissionAny('hg.repogroup.create.true')(
+                user=self.request.user)
+            repository_groups = c.auth_user.repository_groups_admin or c.can_create_repo_group
+
+            c.can_create_user_group = h.HasPermissionAny('hg.usergroup.create.true')(
+                user=self.request.user)
+            user_groups = c.auth_user.user_groups_admin or c.can_create_user_group
+            # delegated admin can create, or manage some objects
+            c.is_delegated_admin = repositories or repository_groups or user_groups
         return c
 
     def _get_template_context(self, tmpl_args, **kwargs):

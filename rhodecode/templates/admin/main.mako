@@ -34,16 +34,8 @@
 <div class="box">
 
     ##main
-    <div class='sidebar-col-wrapper'>
-      <div class="sidebar">
-          <ul class="nav nav-pills nav-stacked">
-            ${self.side_bar_nav()}
-          </ul>
-      </div>
-
-      <div class="main-content-auto-width">
+    <div class="main-content-auto-width">
         ${self.main_content()}
-      </div>
     </div>
 </div>
 

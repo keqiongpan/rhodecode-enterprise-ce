@@ -26,7 +26,7 @@
     <div class="title">
 
         <ul class="links">
-            %if h.HasPermissionAny('hg.admin','hg.repogroup.create.true')():
+            %if c.can_create_repo_group:
              <li>
                <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-success">${_(u'Add Repository Group')}</a>
              </li>

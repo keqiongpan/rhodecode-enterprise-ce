@@ -52,7 +52,7 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          % if h.HasPermissionAll('hg.admin')('access admin gists page'):
+          % if c.is_super_admin:
             <li class="${'active' if c.active=='all' else ''}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
           %endif
           <li class="${'active' if c.active=='public' else ''}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>

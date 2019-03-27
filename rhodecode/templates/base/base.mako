@@ -76,12 +76,6 @@
 
 <%def name="admin_menu(active=None)">
   <%
-    is_super_admin = c.rhodecode_user.is_admin
-    repositories=c.rhodecode_user.repositories_admin
-    repository_groups=c.rhodecode_user.repository_groups_admin
-    user_groups=c.rhodecode_user.user_groups_admin or h.HasPermissionAny('hg.usergroup.create.true')()
-    is_delegated_admin = repositories or repository_groups or user_groups
-
     def is_active(selected):
         if selected == active:
             return "active"
@@ -104,7 +98,7 @@
     <ul id="context-pages" class="navigation horizontal-list">
 
         ## super admin case
-        % if is_super_admin:
+        % if c.is_super_admin:
           <li class="${is_active('audit_logs')}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
           <li class="${is_active('repositories')}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
           <li class="${is_active('repository_groups')}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
@@ -117,7 +111,13 @@
           <li class="${is_active('settings')}"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
 
         ## delegated admin
-        % elif is_delegated_admin:
+        % elif c.is_delegated_admin:
+           <%
+           repositories=c.auth_user.repositories_admin or c.can_create_repo
+           repository_groups=c.auth_user.repository_groups_admin or c.can_create_repo_group
+           user_groups=c.auth_user.user_groups_admin or c.can_create_user_group
+           %>
+
            %if repositories:
               <li class="${is_active('repositories')} local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
            %endif
@@ -361,8 +361,6 @@
         if selected == active:
             return "active"
 
-    is_admin = h.HasPermissionAny('hg.admin')('can create repos index page')
-
     gr_name = c.repo_group.group_name if c.repo_group else None
     # create repositories with write permission on group is set to true
     create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
@@ -380,7 +378,7 @@
 
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
-        % if is_admin or group_admin:
+        % if c.is_super_admin or group_admin:
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a></li>
         % endif
 
@@ -389,10 +387,10 @@
               <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
           </a>
           <ul class="submenu">
-                %if is_admin or group_admin or (group_write and create_on_write):
+                %if c.is_super_admin or group_admin or (group_write and create_on_write):
                     <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
                 %endif
-                %if is_admin or group_admin:
+                %if c.is_super_admin or group_admin:
                     <li><a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'Add Parent Group')}</a></li>
                 %endif
              </ul>
@@ -611,11 +609,13 @@
           </a>
         </li>
 
+        % if c.is_super_admin or c.is_delegated_admin:
         <li class="${is_active('admin')}">
           <a class="menulink childs" title="${_('Admin settings')}" href="${h.route_path('admin_home')}">
             <div class="menulabel">${_('Admin')} </div>
           </a>
         </li>
+        % endif
 
       ## render extra user menu
       ${usermenu(active=(active=='my_account'))}

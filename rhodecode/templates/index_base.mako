@@ -14,20 +14,13 @@
         <div class="title">
             %if c.rhodecode_user.username != h.DEFAULT_USER:
               <div class="block-right">
-                <%
-                    is_admin = h.HasPermissionAny('hg.admin')('can create repos index page')
-                    create_repo = h.HasPermissionAny('hg.create.repository')('can create repository index page')
-                    create_repo_group = h.HasPermissionAny('hg.repogroup.create.true')('can create repository groups index page')
-                    create_user_group = h.HasPermissionAny('hg.usergroup.create.true')('can create user groups index page')
-                %>
-
                 %if not c.repo_group:
                     ## no repository group context here
-                    %if is_admin or create_repo:
+                    %if c.is_super_admin or c.can_create_repo:
                         <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
 
-                    %if is_admin or create_repo_group:
+                    %if c.is_super_admin or c.can_create_repo_group:
                         <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
                     %endif
                 %endif

@@ -2078,8 +2078,7 @@ class HasRepoPermissionAny(PermsFunction):
 class HasRepoGroupPermissionAny(PermsFunction):
     def __call__(self, group_name=None, check_location='', user=None):
         self.repo_group_name = group_name
-        return super(HasRepoGroupPermissionAny, self).__call__(
-            check_location, user)
+        return super(HasRepoGroupPermissionAny, self).__call__(check_location, user)
 
     def check_permissions(self, user):
         perms = user.permissions
@@ -2095,8 +2094,7 @@ class HasRepoGroupPermissionAny(PermsFunction):
 class HasRepoGroupPermissionAll(PermsFunction):
     def __call__(self, group_name=None, check_location='', user=None):
         self.repo_group_name = group_name
-        return super(HasRepoGroupPermissionAll, self).__call__(
-            check_location, user)
+        return super(HasRepoGroupPermissionAll, self).__call__(check_location, user)
 
     def check_permissions(self, user):
         perms = user.permissions
@@ -2112,8 +2110,7 @@ class HasRepoGroupPermissionAll(PermsFunction):
 class HasUserGroupPermissionAny(PermsFunction):
     def __call__(self, user_group_name=None, check_location='', user=None):
         self.user_group_name = user_group_name
-        return super(HasUserGroupPermissionAny, self).__call__(
-            check_location, user)
+        return super(HasUserGroupPermissionAny, self).__call__(check_location, user)
 
     def check_permissions(self, user):
         perms = user.permissions
@@ -2129,8 +2126,7 @@ class HasUserGroupPermissionAny(PermsFunction):
 class HasUserGroupPermissionAll(PermsFunction):
     def __call__(self, user_group_name=None, check_location='', user=None):
         self.user_group_name = user_group_name
-        return super(HasUserGroupPermissionAll, self).__call__(
-            check_location, user)
+        return super(HasUserGroupPermissionAll, self).__call__(check_location, user)
 
     def check_permissions(self, user):
         perms = user.permissions

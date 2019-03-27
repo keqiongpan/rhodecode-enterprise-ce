@@ -173,7 +173,7 @@
                     <span class="disabled">
                         ${_('Downloads are disabled for this repository')}.
                     </span>
-                    % if h.HasPermissionAll('hg.admin')('enable downloads on from summary'):
+                    % if c.is_super_admin:
                        ${h.link_to(_('Enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_downloads'))}
                     % endif
                 % else:
@@ -205,7 +205,7 @@
                   <span class="disabled">
                       ${_('Statistics are disabled for this repository')}.
                   </span>
-                  % if h.HasPermissionAll('hg.admin')('enable stats on from summary'):
+                  % if c.is_super_admin:
                      ${h.link_to(_('Enable statistics'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_statistics'))}
                   % endif
               % endif

@@ -288,7 +288,6 @@ def attach_context_attributes(context, request, user_id=None):
     """
     config = request.registry.settings
 
-
     rc_config = SettingsModel().get_all_settings(cache=True)
 
     context.rhodecode_version = rhodecode.__version__

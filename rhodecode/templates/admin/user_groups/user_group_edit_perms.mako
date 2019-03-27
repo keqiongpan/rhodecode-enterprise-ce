@@ -143,7 +143,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'usergroup.admin')}</td>
                     <td class="td-user">
                         <i class="icon-user-group"></i>
-                        %if h.HasPermissionAny('hg.admin')():
+                        %if c.is_super_admin:
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
                          </a>

@@ -25,7 +25,7 @@
 <div class="box">
     <div class="title">
         <ul class="links">
-            %if h.HasPermissionAny('hg.admin','hg.create.repository')():
+            %if c.can_create_repo:
              <li>
                <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success">${_(u'Add Repository')}</a>
              </li>
