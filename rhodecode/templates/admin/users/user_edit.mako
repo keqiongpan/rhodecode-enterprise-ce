@@ -25,13 +25,15 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='users')}
+</%def>
+
+
 <%def name="main()">
 <div class="box user_settings">
-    <div class="title">
-        ${self.breadcrumbs()}
-    </div>
 
-    ##main
+  ##main
   <div class="sidebar-col-wrapper">
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
