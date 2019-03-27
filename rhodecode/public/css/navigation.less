@@ -536,8 +536,9 @@ ul#context-pages {
 // PAGINATION
 
 .pagination {
-    border: @border-thickness solid @rcblue;
-    color: @rcblue;
+    border: @border-thickness solid @grey5;
+    color: @grey2;
+    box-shadow: @button-shadow;
 
     .current {
         color: @grey4;
@@ -554,19 +555,24 @@ ul#context-pages {
 .dataTables_paginate, .pagination-wh {
     text-align: left;
     display: inline-block;
-    border-left: 1px solid @rcblue;
+    border-left: 1px solid @grey5;
     float: none;
     overflow: hidden;
+    box-shadow: @button-shadow;
 
     .paginate_button, .pager_curpage,
     .pager_link, .pg-previous, .pg-next, .pager_dotdot {
         display: inline-block;
         padding: @menupadding/4 @menupadding;
-        border: 1px solid @rcblue;
+        border: 1px solid @grey5;
         border-left: 0;
-        color: @rcblue;
+        color: @grey2;
         cursor: pointer;
         float: left;
+
+        &:hover {
+            color: @rcdarkblue;
+        }
     }
 
     .pager_curpage, .pager_dotdot,
@@ -580,7 +586,7 @@ ul#context-pages {
         display: inline-block;
         text-align: left;
         padding: @menupadding/4 @menupadding;
-        border: 1px solid @rcblue;
+        border: 1px solid @grey5;
         border-left: 0;
         float: left;
     }

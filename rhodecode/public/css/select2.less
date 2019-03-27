@@ -169,6 +169,12 @@ select.select2{height:28px;visibility:hidden}
     width: 100%;
     margin: .5em 0;
     padding: .5em;
+    border-color: @grey4;
+
+    &:focus, &:hover {
+        border-color: @rcblue;
+        box-shadow: @button-shadow;
+    }
 }
 
 .select2-no-results {

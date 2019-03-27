@@ -60,13 +60,13 @@ form.rcform {
         max-width: 500px;
         margin: 0 0 @padding -@legend-width;
         padding: 0 0 0 @legend-width;
-        
+
         .btn {
             display: inline-block;
             margin: 0 1em @padding 0;
         }
     }
-    
+
     input,
     textarea {
         float: left;
@@ -113,7 +113,7 @@ form.rcform {
         opacity: 0.5;
       }
     }
- 
+
     input[type="radio"]:not(#ie),
     input[type="checkbox"]:not(#ie) {
         // Hide the input, but have it still be clickable
@@ -187,13 +187,13 @@ form.rcform {
             filter: progid:DXImageTransform.Microsoft.Matrix(sizingMethod='auto expand', M11=0.7071067811865476, M12=-0.7071067811865475, M21=0.7071067811865475, M22=0.7071067811865476); /* IE6,IE7 */
 
             -ms-filter: "progid:DXImageTransform.Microsoft.Matrix(SizingMethod='auto expand', M11=0.7071067811865476, M12=-0.7071067811865475, M21=0.7071067811865475, M22=0.7071067811865476)"; /* IE8 */        }
-    
+
         & + .label {
           float: left;
           margin-top: 5px
         }
     }
-    
+
     input[type=checkbox]:not(#ie) {
       visibility: hidden;
       &:checked + label:after {
@@ -244,7 +244,7 @@ form.rcform {
     .error-message {
         margin-top: 5px;
     }
-  
+
     input[type=submit] {
         &:extend(.btn-primary);
 
@@ -271,14 +271,15 @@ form.rcform {
 .badged-field {
     .user-badge {
         line-height: 25px;
-        padding: 10px 5px;
+        padding: .5em;
         border-radius: @border-radius;
-        border-top: 1px solid @rclightblue;
-        border-left: 1px solid @rclightblue;
-        border-bottom: 1px solid @rclightblue;
+        border-top: 1px solid @grey4;
+        border-left: 1px solid @grey4;
+        border-bottom: 1px solid @grey4;
         font-size: 14px;
         font-style: normal;
         color: @text-light;
+        background: @grey7;
         display: inline-block;
         vertical-align: top;
         cursor: default;

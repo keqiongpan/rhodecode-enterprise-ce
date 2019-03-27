@@ -605,10 +605,20 @@ button.close {
 }
 
 
-input {
+input, textarea {
 	&.disabled {
 		opacity: .5;
 	}
+
+    &:hover {
+        border-color: @grey3;
+        box-shadow: @button-shadow;
+    }
+
+    &:focus {
+        border-color: @rcblue;
+        box-shadow: @button-shadow;
+    }
 }
 
 // remove extra padding in firefox
@@ -643,16 +653,20 @@ select {
 	padding: 0 18px 0 8px;
 	line-height:1em;
 	font-size: @basefontsize;
-	border: @border-thickness solid @rcblue;
+	border: @border-thickness solid @grey5;
+    border-radius: @border-radius;
 	background:white url("../images/dt-arrow-dn.png") no-repeat 100% 50%;
-	color: @rcblue;
+	color: @grey4;
+    box-shadow: @button-shadow;
 
 	&:after {
 		content: "\00A0\25BE";
 	}
 
-	&:focus {
+	&:focus, &:hover {
 		outline: none;
+        border-color: @grey4;
+        color: @rcdarkblue;
 	}
 }
 
@@ -2112,7 +2126,7 @@ h3.files_location{
             box-shadow: @button-shadow;
 
             #at_rev, a {
-                padding: 0.6em 0.9em;
+                padding: 0.6em 0.4em;
                 margin: 0;
                 .box-shadow(none);
                 border: 0;
@@ -2122,7 +2136,7 @@ h3.files_location{
 
             input#at_rev {
                 max-width: 50px;
-                text-align: right;
+                text-align: center;
             }
 
 			&.previous {
