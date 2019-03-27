@@ -7,9 +7,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}

@@ -8,10 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    <span id="obj_count">0</span> ${_('tags')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -33,7 +30,8 @@
           </ul>
         %endif
         %if c.has_references:
-          ${self.breadcrumbs()}
+            <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+            <span id="obj_count">0</span> ${_('tags')}
         %endif
       </div>
       <table id="obj_list_table" class="display"></table>

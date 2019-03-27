@@ -8,10 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="repo_count">0</span> ${_('repositories')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
@@ -23,13 +20,17 @@
 
 <%def name="main()">
 <div class="box">
+
     <div class="title">
+        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+        <span id="repo_count">0</span> ${_('repositories')}
+
         <ul class="links">
-            %if c.can_create_repo:
-             <li>
-               <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success">${_(u'Add Repository')}</a>
-             </li>
-            %endif
+        %if c.can_create_repo:
+            <li>
+              <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success">${_(u'Add Repository')}</a>
+            </li>
+        %endif
         </ul>
     </div>
     <div id="repos_list_wrap">

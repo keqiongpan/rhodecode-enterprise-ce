@@ -8,11 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
-    &raquo;
-    ${_('Authentication Plugins')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}

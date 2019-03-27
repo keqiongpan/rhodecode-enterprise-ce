@@ -8,15 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${h.form(None, id_="filter_form", method="get")}
-        <input class="q_filter_box ${'' if c.search_term else 'initial'}" id="j_filter" size="15" type="text" name="filter" value="${c.search_term or ''}" placeholder="${_('filter...')}"/>
-        <input type='submit' value="${_('filter')}" class="btn" />
-        ${_('Audit logs')} - ${_ungettext('%s entry', '%s entries', c.audit_logs.item_count) % (c.audit_logs.item_count)}
-    ${h.end_form()}
-    <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
-    <pre id="search-help" style="display: none">${h.tooltip(h.journal_filter_help(request))}</pre>
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
@@ -28,6 +20,16 @@
 
 <%def name="main()">
 <div class="box">
+    <div class="title">
+        ${h.form(None, id_="filter_form", method="get")}
+            <input class="q_filter_box ${'' if c.search_term else 'initial'}" id="j_filter" size="15" type="text" name="filter" value="${c.search_term or ''}" placeholder="${_('filter...')}"/>
+            <input type='submit' value="${_('filter')}" class="btn" />
+            ${_('Audit logs')} - ${_ungettext('%s entry', '%s entries', c.audit_logs.item_count) % (c.audit_logs.item_count)}
+        ${h.end_form()}
+        <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Example Queries')}</p>
+        <pre id="search-help" style="display: none">${h.tooltip(h.journal_filter_help(request))}</pre>
+    </div>
+
     <div class="table">
         <div id="user_log">
             <%include file="/admin/admin_log_base.mako" />

@@ -8,10 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_count">0</span>
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
@@ -26,6 +23,9 @@
 <div class="box">
 
     <div class="title">
+        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+        <span id="user_count">0</span>
+
         <ul class="links">
           <li>
             <a href="${h.route_path('users_new')}" class="btn btn-small btn-success">${_(u'Add User')}</a>

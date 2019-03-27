@@ -13,9 +13,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-  ${_ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}

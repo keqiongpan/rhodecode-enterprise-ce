@@ -20,8 +20,7 @@
 </%def>
 
 
-<%def name="breadcrumbs_links()">
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 
 <%def name="main()">
