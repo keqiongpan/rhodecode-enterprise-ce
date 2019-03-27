@@ -1468,7 +1468,7 @@ class UserGroup(Base, BaseModel):
             entry.permission = _user_group.permission.permission_name
             if with_members:
                 entry.members = [x.user.get_dict()
-                                 for x in _user_group.users_group.members]
+                                 for x in _user_group.user_group.members]
             perm_rows.append(entry)
 
         perm_rows = sorted(perm_rows, key=display_user_group_sort)
