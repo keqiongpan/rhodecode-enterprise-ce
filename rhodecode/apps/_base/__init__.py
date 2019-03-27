@@ -176,7 +176,7 @@ class BaseAppView(object):
 
         c.is_delegated_admin = False
 
-        if not c.auth_user.is_default:
+        if not c.auth_user.is_default and not c.is_super_admin:
             c.can_create_repo = h.HasPermissionAny('hg.create.repository')(
                 user=self.request.user)
             repositories = c.auth_user.repositories_admin or c.can_create_repo
