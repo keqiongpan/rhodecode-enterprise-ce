@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2018 RhodeCode GmbH
+# Copyright (C) 2011-2019 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -32,9 +32,11 @@ log = logging.getLogger(__name__)
 
 
 @jsonrpc_method()
-def search(request, apiuser, search_query, search_type, page_limit=Optional(10), page=Optional(1), search_sort=Optional('newfirst'), repo_name=Optional(None), repo_group_name=Optional(None)):
+def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
+           page=Optional(1), search_sort=Optional('newfirst'),
+           repo_name=Optional(None), repo_group_name=Optional(None)):
     """
-    Search
+    Fetch Full Text Search results using API.
 
     :param apiuser: This is filled automatically from the |authtoken|.
     :type apiuser: AuthUser
@@ -59,14 +61,12 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
     :type repo_group_name: Optional(str)
     """
 
-    searcher = searcher_from_config(request.registry.settings)
     data = {'execution_time': ''}
     repo_name = Optional.extract(repo_name)
     repo_group_name = Optional.extract(repo_group_name)
 
     schema = search_schema.SearchParamsSchema()
 
-    search_params = {}
     try:
         search_params = schema.deserialize(
             dict(search_query=search_query,
@@ -86,6 +86,8 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
         page_limit = search_params['page_limit']
         requested_page = search_params['requested_page']
 
+        searcher = searcher_from_config(request.registry.settings)
+
         try:
             search_result = searcher.search(
                 search_query, search_type, apiuser, repo_name, repo_group_name,
@@ -104,6 +106,7 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
                 search_result['runtime'])
         else:
             node = schema['search_query']
-            raise JSONRPCValidationError(colander_exc=validation_schema.Invalid(node, search_result['error']))
+            raise JSONRPCValidationError(
+                colander_exc=validation_schema.Invalid(node, search_result['error']))
 
     return data
