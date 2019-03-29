@@ -5,7 +5,7 @@
 
 self: super: {
   "alembic" = super.buildPythonPackage {
-    name = "alembic-1.0.5";
+    name = "alembic-1.0.8";
     doCheck = false;
     propagatedBuildInputs = [
       self."sqlalchemy"
@@ -14,8 +14,8 @@ self: super: {
       self."python-dateutil"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1c/65/b8e4f5b2f345bb13b5e0a3fddd892b0b3f0e8ad4880e954fdc6a50d00d84/alembic-1.0.5.tar.gz";
-      sha256 = "0rpjqp2iq6p49x1nli18ivak1izz547nnjxi110mzrgc1v7dxzz9";
+      url = "https://files.pythonhosted.org/packages/d6/bb/ec1e21f2e303689ad2170eb47fc67df9ad4199ade6759a99474c4d3535c8/alembic-1.0.8.tar.gz";
+      sha256 = "1s34i1j0dsxbflxligwhnkf37a5hvcshsv8ibkcfdjf03ph42pah";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
