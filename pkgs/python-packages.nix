@@ -1051,14 +1051,14 @@ self: super: {
     };
   };
   "paste" = super.buildPythonPackage {
-    name = "paste-3.0.5";
+    name = "paste-3.0.8";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d4/41/91bde422400786b1b06357c1e6e3a5379f54dc3002aeb337cb767233304e/Paste-3.0.5.tar.gz";
-      sha256 = "1a6i8fh1fg8r4x800fvy9r82m15clwjim6yf2g9r4dff0y40dchv";
+      url = "https://files.pythonhosted.org/packages/66/65/e3acf1663438483c1f6ced0b6c6f3b90da9f0faacb0a6e2aa0f3f9f4b235/Paste-3.0.8.tar.gz";
+      sha256 = "05w1sh6ky4d7pmdb8nv82n13w22jcn3qsagg5ih3hjmbws9kkwf4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
