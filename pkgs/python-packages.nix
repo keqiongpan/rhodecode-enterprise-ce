@@ -1752,7 +1752,6 @@ self: super: {
     ];
     doCheck = true;
     propagatedBuildInputs = [
-      self."setuptools-scm"
       self."amqp"
       self."authomatic"
       self."babel"
@@ -1937,17 +1936,6 @@ self: super: {
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
       sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  "setuptools-scm" = super.buildPythonPackage {
-    name = "setuptools-scm-2.1.0";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e5/62/f9e1ac314464eb5945c97542acb6bf6f3381dfa5d7a658de7730c36f31a1/setuptools_scm-2.1.0.tar.gz";
-      sha256 = "0yb364cgk15sfw3x8ln4ssh98z1dj6n8iiz4r2rw1cfsxhgi8rx7";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

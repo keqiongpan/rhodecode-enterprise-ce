@@ -1,6 +1,5 @@
 ## dependencies
 
-setuptools-scm==2.1.0
 amqp==2.3.1
 # not released authomatic that has updated some oauth providers
 https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801#egg=authomatic==0.1.0.post1
