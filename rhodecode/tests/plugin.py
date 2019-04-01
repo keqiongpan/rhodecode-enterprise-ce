@@ -1224,7 +1224,7 @@ class UserUtility(object):
         return user_group
 
     def grant_user_permission(self, user_name, permission_name):
-        self._inherit_default_user_permissions(user_name, False)
+        self.inherit_default_user_permissions(user_name, False)
         self.user_permissions.append((user_name, permission_name))
 
     def grant_user_permission_to_repo_group(
@@ -1276,10 +1276,10 @@ class UserUtility(object):
         return permission
 
     def revoke_user_permission(self, user_name, permission_name):
-        self._inherit_default_user_permissions(user_name, True)
+        self.inherit_default_user_permissions(user_name, True)
         UserModel().revoke_perm(user_name, permission_name)
 
-    def _inherit_default_user_permissions(self, user_name, value):
+    def inherit_default_user_permissions(self, user_name, value):
         user = UserModel().get_by_username(user_name)
         user.inherit_default_permissions = value
         Session().add(user)
