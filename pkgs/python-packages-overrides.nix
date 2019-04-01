@@ -164,12 +164,6 @@ self: super: {
     };
   });
 
-  "pytest-runner" = super."pytest-runner".override (attrs: {
-    propagatedBuildInputs = [
-      self."setuptools-scm"
-    ];
-  });
-
   "python-ldap" = super."python-ldap".override (attrs: {
     propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
       pkgs.openldap

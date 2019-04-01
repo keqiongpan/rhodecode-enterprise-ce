@@ -5,7 +5,7 @@
 
 self: super: {
   "alembic" = super.buildPythonPackage {
-    name = "alembic-1.0.5";
+    name = "alembic-1.0.8";
     doCheck = false;
     propagatedBuildInputs = [
       self."sqlalchemy"
@@ -14,8 +14,8 @@ self: super: {
       self."python-dateutil"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1c/65/b8e4f5b2f345bb13b5e0a3fddd892b0b3f0e8ad4880e954fdc6a50d00d84/alembic-1.0.5.tar.gz";
-      sha256 = "0rpjqp2iq6p49x1nli18ivak1izz547nnjxi110mzrgc1v7dxzz9";
+      url = "https://files.pythonhosted.org/packages/d6/bb/ec1e21f2e303689ad2170eb47fc67df9ad4199ade6759a99474c4d3535c8/alembic-1.0.8.tar.gz";
+      sha256 = "1s34i1j0dsxbflxligwhnkf37a5hvcshsv8ibkcfdjf03ph42pah";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1051,14 +1051,14 @@ self: super: {
     };
   };
   "paste" = super.buildPythonPackage {
-    name = "paste-3.0.5";
+    name = "paste-3.0.8";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d4/41/91bde422400786b1b06357c1e6e3a5379f54dc3002aeb337cb767233304e/Paste-3.0.5.tar.gz";
-      sha256 = "1a6i8fh1fg8r4x800fvy9r82m15clwjim6yf2g9r4dff0y40dchv";
+      url = "https://files.pythonhosted.org/packages/66/65/e3acf1663438483c1f6ced0b6c6f3b90da9f0faacb0a6e2aa0f3f9f4b235/Paste-3.0.8.tar.gz";
+      sha256 = "05w1sh6ky4d7pmdb8nv82n13w22jcn3qsagg5ih3hjmbws9kkwf4";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1076,7 +1076,7 @@ self: super: {
     };
   };
   "pastescript" = super.buildPythonPackage {
-    name = "pastescript-3.0.0";
+    name = "pastescript-3.1.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."paste"
@@ -1084,8 +1084,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/08/2a/3797377a884ab9a064ad4d564ed612e54d26d7997caa8229c9c9df4eac31/PasteScript-3.0.0.tar.gz";
-      sha256 = "1hvmyz1sbn7ws1syw567ph7km9fi0wi75r3vlyzx6sk0z26xkm6r";
+      url = "https://files.pythonhosted.org/packages/9e/1d/14db1c283eb21a5d36b6ba1114c13b709629711e64acab653d9994fe346f/PasteScript-3.1.0.tar.gz";
+      sha256 = "02qcxjjr32ks7a6d4f533wl34ysc7yhwlrfcyqwqbzr52250v4fs";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1752,7 +1752,6 @@ self: super: {
     ];
     doCheck = true;
     propagatedBuildInputs = [
-      self."setuptools-scm"
       self."amqp"
       self."authomatic"
       self."babel"
@@ -1937,17 +1936,6 @@ self: super: {
     src = fetchurl {
       url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
       sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  "setuptools-scm" = super.buildPythonPackage {
-    name = "setuptools-scm-2.1.0";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e5/62/f9e1ac314464eb5945c97542acb6bf6f3381dfa5d7a658de7730c36f31a1/setuptools_scm-2.1.0.tar.gz";
-      sha256 = "0yb364cgk15sfw3x8ln4ssh98z1dj6n8iiz4r2rw1cfsxhgi8rx7";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

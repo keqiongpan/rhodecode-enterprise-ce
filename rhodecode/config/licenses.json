@@ -272,17 +272,6 @@
     {
         "license": [
             {
-                "fullName": "MIT License",
-                "shortName": "mit",
-                "spdxId": "MIT",
-                "url": "http://spdx.org/licenses/MIT.html"
-            }
-        ],
-        "name": "python2.7-setuptools-scm-2.1.0"
-    },
-    {
-        "license": [
-            {
                 "fullName": "BSD 4-clause \"Original\" or \"Old\" License",
                 "shortName": "bsdOriginal",
                 "spdxId": "BSD-4-Clause",
