@@ -1020,6 +1020,9 @@ class PullRequestModel(BaseModel):
         log.debug("Adding %s reviewers", ids_to_add)
         log.debug("Removing %s reviewers", ids_to_remove)
         changed = False
+        added_audit_reviewers = []
+        removed_audit_reviewers = []
+
         for uid in ids_to_add:
             changed = True
             _usr = self._get_user(uid)
@@ -1030,28 +1033,36 @@ class PullRequestModel(BaseModel):
             # NOTE(marcink): mandatory shouldn't be changed now
             # reviewer.mandatory = reviewers[uid]['reasons']
             Session().add(reviewer)
-            self._log_audit_action(
-                'repo.pull_request.reviewer.add', {'data': reviewer.get_dict()},
-                user, pull_request)
+            added_audit_reviewers.append(reviewer.get_dict())
 
         for uid in ids_to_remove:
             changed = True
+            # NOTE(marcink): we fetch "ALL" reviewers using .all(). This is an edge case
+            # that prevents and fixes cases that we added the same reviewer twice.
+            # this CAN happen due to the lack of DB checks
             reviewers = PullRequestReviewers.query()\
                 .filter(PullRequestReviewers.user_id == uid,
                         PullRequestReviewers.pull_request == pull_request)\
                 .all()
-            # use .all() in case we accidentally added the same person twice
-            # this CAN happen due to the lack of DB checks
+
             for obj in reviewers:
-                old_data = obj.get_dict()
+                added_audit_reviewers.append(obj.get_dict())
                 Session().delete(obj)
-                self._log_audit_action(
-                    'repo.pull_request.reviewer.delete',
-                    {'old_data': old_data}, user, pull_request)
 
         if changed:
+            Session().expire_all()
             pull_request.updated_on = datetime.datetime.now()
             Session().add(pull_request)
+
+        # finally store audit logs
+        for user_data in added_audit_reviewers:
+            self._log_audit_action(
+                'repo.pull_request.reviewer.add', {'data': user_data},
+                user, pull_request)
+        for user_data in removed_audit_reviewers:
+            self._log_audit_action(
+                'repo.pull_request.reviewer.delete', {'old_data': user_data},
+                user, pull_request)
 
         self.notify_reviewers(pull_request, ids_to_add)
         return ids_to_add, ids_to_remove

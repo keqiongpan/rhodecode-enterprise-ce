@@ -67,12 +67,6 @@ class RepoSettingsView(RepoAppView):
             .filter(UserFollowing.user_id == c.default_user_id) \
             .filter(UserFollowing.follows_repository == self.db_repo).scalar()
 
-        c.has_origin_repo_read_perm = False
-        if self.db_repo.fork:
-            c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
-                'repository.write', 'repository.read', 'repository.admin')(
-                self.db_repo.fork.repo_name, 'repo set as fork page')
-
         c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
 
         return self._get_template_context(c)
