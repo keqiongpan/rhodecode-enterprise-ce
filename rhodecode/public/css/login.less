@@ -95,7 +95,7 @@
                 margin: 0 1em @padding 0;
             }
         }
-        
+
         .checkbox {
             display: inline;
             width: auto;
@@ -198,7 +198,7 @@
 }
 
 .user-menu.submenu {
-    right: 0; 
+    right: 0;
     left: auto;
     min-width: 290px;
 }
@@ -206,7 +206,9 @@
 
 .user-menu {
     .bookmark-items {
-        padding: 4px 2px;
+        border-top: @border-thickness solid @grey6;
+        margin-top: 1em;
+        padding: 1em .5em;
         color: @grey3;
         border-bottom: @grey3;
 
@@ -227,8 +229,10 @@
     padding: @menupadding;
     z-index: 999;
     overflow: hidden;
-    background-color: @grey6;
+    background-color: @white;
+    border: 1px solid @grey5;
     color: @grey2;
+    box-shadow: @dropdown-shadow;
 
     h4 {
         margin-bottom: 12px;
@@ -261,7 +265,7 @@
     .buttons .register {
         a {
             color: @rcblue;
-    
+
             &:hover {
                 color: @rcdarkblue;
             }
@@ -289,15 +293,16 @@
     .big_gravatar {
         float: left;
         display: block;
-        margin-top: .5em;
+        padding: .5em;
     }
 
-    .full_name,
-    .email {
-        margin: 0 0 0 65px;
+    .full_name {
+        margin: 0 0 0 70px;
+        padding-top: 1em;
     }
 
     .email {
+        margin: 0 0 0 70px;
         font-family: @text-light;
     }
 
@@ -307,8 +312,6 @@
         padding: @padding 0 0 0;
 
         li {
-            border-top: @border-thickness solid @grey5;
-
             input {
                 margin: @padding 0 0 0;
             }
