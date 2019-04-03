@@ -23,11 +23,11 @@ import pytest
 
 from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.lib import helpers as h
-from rhodecode.model.db import Repository, UserRepoToPerm, User
+from rhodecode.model.db import Repository, UserRepoToPerm, User, RepoGroup
 from rhodecode.model.meta import Session
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.tests import (
-    assert_session_flash, TEST_USER_REGULAR_LOGIN, TESTS_TMP_PATH, TestController)
+    assert_session_flash, TEST_USER_REGULAR_LOGIN, TESTS_TMP_PATH)
 from rhodecode.tests.fixture import Fixture
 
 fixture = Fixture()
@@ -38,6 +38,7 @@ def route_path(name, params=None, **kwargs):
 
     base_url = {
         'repo_groups': ADMIN_PREFIX + '/repo_groups',
+        'repo_groups_data': ADMIN_PREFIX + '/repo_groups_data',
         'repo_group_new': ADMIN_PREFIX + '/repo_group/new',
         'repo_group_create': ADMIN_PREFIX + '/repo_group/create',
 
@@ -59,13 +60,30 @@ def _get_permission_for_user(user, repo):
 
 @pytest.mark.usefixtures("app")
 class TestAdminRepositoryGroups(object):
-    def test_show_repo_groups(self, autologin_user):
-        response = self.app.get(route_path('repo_groups'))
-        response.mustcontain('data: []')
 
-    def test_show_repo_groups_after_creating_group(self, autologin_user):
+    def test_show_repo_groups(self, autologin_user):
+        self.app.get(route_path('repo_groups'))
+
+    def test_show_repo_groups_data(self, autologin_user, xhr_header):
+        response = self.app.get(route_path(
+            'repo_groups_data'), extra_environ=xhr_header)
+
+        all_repo_groups = RepoGroup.query().count()
+        assert response.json['recordsTotal'] == all_repo_groups
+
+    def test_show_repo_groups_data_filtered(self, autologin_user, xhr_header):
+        response = self.app.get(route_path(
+            'repo_groups_data', params={'search[value]': 'empty_search'}),
+            extra_environ=xhr_header)
+
+        all_repo_groups = RepoGroup.query().count()
+        assert response.json['recordsTotal'] == all_repo_groups
+        assert response.json['recordsFiltered'] == 0
+
+    def test_show_repo_groups_after_creating_group(self, autologin_user, xhr_header):
         fixture.create_repo_group('test_repo_group')
-        response = self.app.get(route_path('repo_groups'))
+        response = self.app.get(route_path(
+            'repo_groups_data'), extra_environ=xhr_header)
         response.mustcontain('"name_raw": "test_repo_group"')
         fixture.destroy_repo_group('test_repo_group')
 

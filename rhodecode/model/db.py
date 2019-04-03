@@ -25,6 +25,7 @@ Database Models for RhodeCode Enterprise
 import re
 import os
 import time
+import string
 import hashlib
 import logging
 import datetime
@@ -50,6 +51,7 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 from zope.cachedescriptors.property import Lazy as LazyProperty
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
+from webhelpers.text import collapse, remove_formatting
 
 from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
@@ -2469,7 +2471,8 @@ class RepoGroup(Base, BaseModel):
     CHOICES_SEPARATOR = '/'  # used to generate select2 choices for nested groups
 
     group_id = Column("group_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
-    group_name = Column("group_name", String(255), nullable=False, unique=True, default=None)
+    _group_name = Column("group_name", String(255), nullable=False, unique=True, default=None)
+    group_name_hash = Column("repo_group_name_hash", String(1024), nullable=False, unique=False)
     group_parent_id = Column("group_parent_id", Integer(), ForeignKey('groups.group_id'), nullable=True, unique=None, default=None)
     group_description = Column("group_description", String(10000), nullable=True, unique=None, default=None)
     enable_locking = Column("enable_locking", Boolean(), nullable=False, unique=None, default=False)
@@ -2492,6 +2495,15 @@ class RepoGroup(Base, BaseModel):
         return u"<%s('id:%s:%s')>" % (
             self.__class__.__name__, self.group_id, self.group_name)
 
+    @hybrid_property
+    def group_name(self):
+        return self._group_name
+
+    @group_name.setter
+    def group_name(self, value):
+        self._group_name = value
+        self.group_name_hash = self.hash_repo_group_name(value)
+
     @validates('group_parent_id')
     def validate_group_parent_id(self, key, val):
         """
@@ -2506,6 +2518,18 @@ class RepoGroup(Base, BaseModel):
     def description_safe(self):
         from rhodecode.lib import helpers as h
         return h.escape(self.group_description)
+
+    @classmethod
+    def hash_repo_group_name(cls, repo_group_name):
+        val = remove_formatting(repo_group_name)
+        val = safe_str(val).lower()
+        chars = []
+        for c in val:
+            if c not in string.ascii_letters:
+                c = str(ord(c))
+            chars.append(c)
+
+        return ''.join(chars)
 
     @classmethod
     def _generate_choice(cls, repo_group):
@@ -2769,6 +2793,13 @@ class RepoGroup(Base, BaseModel):
             'owner': group.user.username,
         }
         return data
+
+    def get_dict(self):
+        # Since we transformed `group_name` to a hybrid property, we need to
+        # keep compatibility with the code which uses `group_name` field.
+        result = super(RepoGroup, self).get_dict()
+        result['group_name'] = result.pop('_group_name', None)
+        return result
 
 
 class Permission(Base, BaseModel):

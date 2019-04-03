@@ -66,7 +66,7 @@ $(document).ready(function() {
          { data: {"_": "state",
                   "sort": "state"}, title: "${_('State')}", className: "td-tags td-state" },
          { data: {"_": "action",
-                  "sort": "action"}, title: "${_('Action')}", className: "td-action" }
+                  "sort": "action"}, title: "${_('Action')}", className: "td-action", orderable: false }
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,

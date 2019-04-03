@@ -34,6 +34,8 @@ def route_path(name, params=None, **kwargs):
             ADMIN_PREFIX + '/repos',
         'repo_groups':
             ADMIN_PREFIX + '/repo_groups',
+        'repo_groups_data':
+            ADMIN_PREFIX + '/repo_groups_data',
         'user_groups':
             ADMIN_PREFIX + '/user_groups',
         'user_groups_data':
@@ -67,8 +69,9 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('data: []')
 
-        response = self.app.get(route_path('repo_groups'), status=200)
-        response.mustcontain('data: []')
+        response = self.app.get(route_path('repo_groups_data'),
+                                status=200, extra_environ=xhr_header)
+        assert response.json['data'] == []
 
         response = self.app.get(route_path('user_groups_data'),
                                 status=200, extra_environ=xhr_header)
@@ -102,7 +105,8 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(route_path('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups_data'),
+                                extra_environ=xhr_header, status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
@@ -144,7 +148,8 @@ class TestAdminDelegatedUser(TestController):
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(route_path('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups_data'),
+                                extra_environ=xhr_header, status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
