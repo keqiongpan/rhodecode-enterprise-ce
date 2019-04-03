@@ -348,7 +348,7 @@
     </div>
 
     <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
-    <div class="repo-group-desc">
+    <div class="repo-group-desc discreet">
     ${dt.repo_group_desc(repo_group_instance.description_safe, repo_group_instance.personal, c.visual.stylify_metatags)}
     </div>
 
