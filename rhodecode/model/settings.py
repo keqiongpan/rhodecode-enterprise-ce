@@ -449,6 +449,7 @@ class VcsSettingsModel(object):
         ('extensions', 'evolve'),
         ('extensions', 'topic'),
         ('experimental', 'evolution'),
+        ('experimental', 'evolution.exchange'),
     )
     GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),
@@ -461,6 +462,7 @@ class VcsSettingsModel(object):
         ('extensions', 'evolve'),
         ('extensions', 'topic'),
         ('experimental', 'evolution'),
+        ('experimental', 'evolution.exchange'),
     )
 
     GLOBAL_GIT_SETTINGS = (
