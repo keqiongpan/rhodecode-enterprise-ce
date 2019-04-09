@@ -1317,8 +1317,16 @@ class PullRequestModel(BaseModel):
             possible = pull_request.last_merge_status == MergeFailureReason.NONE
             metadata = {
                 'target_ref': pull_request.target_ref_parts,
-                'source_ref': pull_request.source_ref_parts
+                'source_ref': pull_request.source_ref_parts,
             }
+            if not possible and target_ref.type == 'branch':
+                # NOTE(marcink): case for mercurial multiple heads on branch
+                heads = target_vcs._heads(target_ref.name)
+                if len(heads) != 1:
+                    heads = '\n,'.join(target_vcs._heads(target_ref.name))
+                    metadata.update({
+                        'heads': heads
+                    })
             merge_state = MergeResponse(
                 possible, False, None, pull_request.last_merge_status, metadata=metadata)
 

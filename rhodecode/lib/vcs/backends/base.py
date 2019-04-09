@@ -161,7 +161,7 @@ class MergeResponse(object):
             u'This pull request cannot be merged because the source contains '
             u'more branches than the target.'),
         MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS: lazy_ugettext(
-            u'This pull request cannot be merged because the target '
+            u'This pull request cannot be merged because the target `{target_ref.name}` '
             u'has multiple heads: `{heads}`.'),
         MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
             u'This pull request cannot be merged because the target repository is '
@@ -308,6 +308,9 @@ class BaseRepository(object):
     @LazyProperty
     def _remote(self):
         raise NotImplementedError
+
+    def _heads(self, branch=None):
+        return []
 
     @LazyProperty
     def EMPTY_COMMIT(self):
