@@ -1931,11 +1931,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.8.0";
+    name = "setuptools-41.0.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
-      sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
+      url = "https://files.pythonhosted.org/packages/ed/69/c805067de1feedbb98c53174b0f2df44cc05e0e9ee73bb85eebc59e508c6/setuptools-41.0.0.zip";
+      sha256 = "1cfwy2g23qj3262ivj0b1182lgwz7bqqbka35rkqwypynra05lvr";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
