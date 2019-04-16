@@ -1186,15 +1186,15 @@ self: super: {
     };
   };
   "prompt-toolkit" = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.15";
+    name = "prompt-toolkit-1.0.16";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."wcwidth"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/8a/ad/cf6b128866e78ad6d7f1dc5b7f99885fb813393d9860778b2984582e81b5/prompt_toolkit-1.0.15.tar.gz";
-      sha256 = "05v9h5nydljwpj5nm8n804ms0glajwfy1zagrzqrg91wk3qqi1c5";
+      url = "https://files.pythonhosted.org/packages/f1/03/bb36771dc9fa7553ac4bdc639a9ecdf6fda0ff4176faf940d97e3c16e41d/prompt_toolkit-1.0.16.tar.gz";
+      sha256 = "1d65hm6nf0cbq0q0121m60zzy4s1fpg9fn761s1yxf08dridvkn1";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
