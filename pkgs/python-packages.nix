@@ -1118,14 +1118,14 @@ self: super: {
     };
   };
   "pexpect" = super.buildPythonPackage {
-    name = "pexpect-4.6.0";
+    name = "pexpect-4.7.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."ptyprocess"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/89/43/07d07654ee3e25235d8cea4164cdee0ec39d1fda8e9203156ebe403ffda4/pexpect-4.6.0.tar.gz";
-      sha256 = "1fla85g47iaxxpjhp9vkxdnv4pgc7rplfy6ja491smrrk0jqi3ia";
+      url = "https://files.pythonhosted.org/packages/1c/b1/362a0d4235496cb42c33d1d8732b5e2c607b0129ad5fdd76f5a583b9fcb3/pexpect-4.7.0.tar.gz";
+      sha256 = "1sv2rri15zwhds85a4kamwh9pj49qcxv7m4miyr4jfpfwv81yb4y";
     };
     meta = {
       license = [ pkgs.lib.licenses.isc { fullName = "ISC License (ISCL)"; } ];
