@@ -10,7 +10,7 @@ gprof2dot==2017.9.19
 
 mock==1.0.1
 cov-core==1.15.0
-coverage==4.5.1
+coverage==4.5.3
 
 webtest==2.0.33
 beautifulsoup4==4.6.3
