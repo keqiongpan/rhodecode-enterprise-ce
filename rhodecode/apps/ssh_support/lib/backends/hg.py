@@ -25,6 +25,7 @@ import tempfile
 import textwrap
 import collections
 from .base import VcsServer
+from rhodecode.model.db import RhodeCodeUi
 from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
@@ -45,16 +46,7 @@ class MercurialTunnelWrapper(object):
 
         content = textwrap.dedent(
             '''
-            # SSH hooks version=2.0.0
-            [hooks]
-            pretxnchangegroup.ssh_auth=python:vcsserver.hooks.pre_push_ssh_auth
-            pretxnchangegroup.ssh=python:vcsserver.hooks.pre_push_ssh
-            changegroup.ssh=python:vcsserver.hooks.post_push_ssh
-            
-            preoutgoing.ssh=python:vcsserver.hooks.pre_pull_ssh
-            outgoing.ssh=python:vcsserver.hooks.post_pull_ssh
-
-            # Custom Config version=2.0.0
+            # RhodeCode SSH hooks version=2.0.0
             {custom}
             '''
         ).format(custom='\n'.join(hg_flags))
@@ -105,7 +97,7 @@ class MercurialTunnelWrapper(object):
 
 class MercurialServer(VcsServer):
     backend = 'hg'
-    cli_flags = ['phases', 'largefiles', 'extensions', 'experimental']
+    cli_flags = ['phases', 'largefiles', 'extensions', 'experimental', 'hooks']
 
     def __init__(self, store, ini_path, repo_name, user, user_permissions, config, env):
         super(MercurialServer, self).__init__(user, user_permissions, config, env)
@@ -120,13 +112,31 @@ class MercurialServer(VcsServer):
         ui_sections = collections.defaultdict(list)
         ui = VcsSettingsModel(repo=repo_name).get_ui_settings(section=None, key=None)
 
+        # write default hooks
+        default_hooks = [
+            ('pretxnchangegroup.ssh_auth', 'python:vcsserver.hooks.pre_push_ssh_auth'),
+            ('pretxnchangegroup.ssh', 'python:vcsserver.hooks.pre_push_ssh'),
+            ('changegroup.ssh', 'python:vcsserver.hooks.post_push_ssh'),
+
+            ('preoutgoing.ssh', 'python:vcsserver.hooks.pre_pull_ssh'),
+            ('outgoing.ssh', 'python:vcsserver.hooks.post_pull_ssh'),
+        ]
+
+        for k, v in default_hooks:
+            ui_sections['hooks'].append((k, v))
+
         for entry in ui:
             if not entry.active:
                 continue
             sec = entry.section
+            key = entry.key
 
             if sec in self.cli_flags:
-                ui_sections[sec].append([entry.key, entry.value])
+                # we want only custom hooks, so we skip builtins
+                if sec == 'hooks' and key in RhodeCodeUi.HOOKS_BUILTIN:
+                    continue
+
+                ui_sections[sec].append([key, entry.value])
 
         flags = []
         for _sec, key_val in ui_sections.items():
