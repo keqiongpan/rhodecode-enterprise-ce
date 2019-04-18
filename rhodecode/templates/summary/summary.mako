@@ -9,43 +9,31 @@
 
 <%def name="main()">
 
-<div class="title">
-    ## Context Action
-    <div>
-        <ul class="links icon-only-links block-right">
-            <li>
-                %if c.rhodecode_user.username != h.DEFAULT_USER:
-                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-                %else:
-                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-                %endif
-            </li>
-        </ul>
-    </div>
-</div>
-
 <div id="repo-summary" class="summary">
     ${components.summary_detail(breadcrumbs_links=self.breadcrumbs_links(), show_downloads=True)}
     ${components.summary_stats(gravatar_function=self.gravatar_with_user)}
 </div><!--end repo-summary-->
 
 
-<div class="box" >
-    %if not c.repo_commits:
-        <div class="title">
-          <h3>${_('Quick start')}</h3>
+<div class="box">
+        %if not c.repo_commits:
+            <div class="empty-repo">
+                <div class="title">
+                  <h3>${_('Quick start')}</h3>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+         %endif
+        <div class="table">
+            <div id="shortlog_data">
+                <%include file='summary_commits.mako'/>
+            </div>
         </div>
-     %endif
-    <div class="table">
-        <div id="shortlog_data">
-            <%include file='summary_commits.mako'/>
-        </div>
-    </div>
 </div>
 
 %if c.readme_data:
 <div id="readme" class="anchor">
-<div class="box" >
+<div class="box">
     <div class="title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
         <h3 class="breadcrumbs">
             <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_rev[1],f_path=c.readme_file)}">${c.readme_file}</a>

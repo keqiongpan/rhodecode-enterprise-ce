@@ -106,30 +106,26 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
 %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
 <div class="quick_start">
   <div class="fieldset">
-    <div class="left-label">${_('Add or upload files directly via RhodeCode:')}</div>
-    <div class="right-content">
-      <div id="add_node_id" class="add_node">
-          <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
-      </div>
+    <p><b>${_('Add or upload files directly via RhodeCode:')}</b></p>
+    <div id="add_node_id" class="add_node">
+        <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
     </div>
     %endif
   </div>
 
   %if not h.is_svn(c.rhodecode_repo):
   <div class="fieldset">
-    <div class="left-label">${_('Push new repo:')}</div>
-    <div class="right-content">
+    <p><b>${_('Push new repo:')}</b></p>
       <pre>
 ${c.rhodecode_repo.alias} clone ${c.clone_repo_url}
 ${c.rhodecode_repo.alias} add README # add first file
 ${c.rhodecode_repo.alias} commit -m "Initial" # commit with message
 ${c.rhodecode_repo.alias} push ${'origin master' if h.is_git(c.rhodecode_repo) else ''} # push changes back
-      </pre>
-    </div>
+</pre>
   </div>
+
   <div class="fieldset">
-    <div class="left-label">${_('Existing repository?')}</div>
-    <div class="right-content">
+    <p><b>${_('Existing repository?')}</b></p>
       <pre>
       %if h.is_git(c.rhodecode_repo):
 git remote add origin ${c.clone_repo_url}
@@ -137,8 +133,7 @@ git push -u origin master
       %else:
 hg push ${c.clone_repo_url}
       %endif
-      </pre>
-    </div>
+</pre>
   </div>
   %endif
 </div>

@@ -1,29 +1,49 @@
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
     <span class="branchtag tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${_ungettext(
-      '%(num)s Branch','%(num)s Branches', len(branches)) % {'num': len(branches)}}</a>
+      <i class="icon-branch"></i>
+      % if len(branches) == 1:
+          <span>${len(branches)}</span> ${_('Branch')}
+      % else:
+          <span>${len(branches)}</span> ${_('Branches')}
+      % endif
+    </a>
     </span>
 
     %if closed_branches:
     <span class="branchtag tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
-      <i class="icon-branch"></i>${_ungettext(
-      '%(num)s Closed Branch', '%(num)s Closed Branches', len(closed_branches)) % {'num': len(closed_branches)}}</a>
+      <i class="icon-branch"></i>
+      % if len(closed_branches) == 1:
+          <span>${len(closed_branches)}</span> ${_('Closed Branch')}
+      % else:
+          <span>${len(closed_branches)}</span> ${_('Closed Branches')}
+      % endif
+      </a>
     </span>
     %endif
 
     <span class="tagtag tag">
     <a href="${h.route_path('tags_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-tag"></i>${_ungettext(
-        '%(num)s Tag', '%(num)s Tags', len(tags)) % {'num': len(tags)}}</a>
+        <i class="icon-tag"></i>
+        % if len(tags) == 1:
+            <span>${len(tags)}</span> ${_('Tag')}
+        % else:
+            <span>${len(tags)}</span> ${_('Tags')}
+        % endif
+        </a>
     </span>
 
     %if bookmarks:
     <span class="booktag tag">
     <a href="${h.route_path('bookmarks_home',repo_name=c.repo_name)}" class="childs">
-        <i class="icon-bookmark"></i>${_ungettext(
-        '%(num)s Bookmark', '%(num)s Bookmarks', len(bookmarks)) % {'num': len(bookmarks)}}</a>
+        <i class="icon-bookmark"></i>
+        % if len(bookmarks) == 1:
+            <span>${len(bookmarks)}</span> ${_('Bookmark')}
+        % else:
+            <span>${len(bookmarks)}</span> ${_('Bookmarks')}
+        % endif
+        </a>
     </span>
     %endif
 </%def>
@@ -32,19 +52,8 @@
     <% summary = lambda n:{False:'summary-short'}.get(n) %>
 
     <div id="summary-menu-stats" class="summary-detail">
-        <div class="summary-detail-header">
-            <div class="breadcrumbs files_location">
-                <h4>
-                  ${breadcrumbs_links}
-                </h4>
-            </div>
-            <div id="summary_details_expand" class="btn-collapse" data-toggle="summary-details">
-                ${_('Show More')}
-            </div>
-        </div>
-
         <div class="fieldset">
-
+          <div class="left-content">
             <div class="left-clone">
                 <select id="clone_option" name="clone_option">
                     <option value="http" selected="selected">HTTP</option>
@@ -54,6 +63,7 @@
                     % endif
                 </select>
             </div>
+
             <div class="right-clone">
                 <%
                     maybe_disabled = ''
@@ -79,14 +89,9 @@
                 % if maybe_disabled:
                     <p class="help-block">${_('SVN Protocol is disabled. To enable it, see the')} <a href="${h.route_url('enterprise_svn_setup')}" target="_blank">${_('documentation here')}</a>.</p>
                 % endif
-
             </div>
-        </div>
-
-        <div class="fieldset">
-          <div class="left-label-summary">
-            &nbsp;
           </div>
+
           <div class="right-content">
             <div class="commit-info">
                 <div class="tags">
@@ -105,29 +110,39 @@
                 ## commits
                 <span class="tag">
                   % if commit_rev == -1:
-                      ${_ungettext('%(num)s Commit', '%(num)s Commits', 0) % {'num': 0}}
+                      <i class="icon-tag"></i>
+                      % if commit_rev == -1:
+                            <span>0</span> ${_('Commit')}
+                        % else:
+                            <span>0</span> ${_('Commits')}
+                        % endif
                   % else:
                       <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
-                        ${_ungettext('%(num)s Commit', '%(num)s Commits', commit_rev) % {'num': commit_rev}}</a>
+                        <i class="icon-tag"></i>
+                        % if commit_rev == 1:
+                            <span>${commit_rev}</span> ${_('Commit')}
+                        % else:
+                            <span>${commit_rev}</span> ${_('Commits')}
+                        % endif
+                        </a>
                   % endif
                 </span>
 
                 ## forks
                 <span class="tag">
                   <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
-                     ${c.repository_forks} ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>
+                     <i class="icon-code-fork"></i>
+                     <span>${c.repository_forks}</span> ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>
                 </span>
-
                 </div>
             </div>
-          </div>
         </div>
+      </div>
 
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
-            ${_('Repository size')}:
-          </div>
-          <div class="right-content">
+            <p>${_('Repository size')}</p>
+
             <div class="commit-info">
                 <div class="tags">
                    ## repo size
@@ -148,9 +163,8 @@
 
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
-            ${_('Description')}:
-          </div>
-          <div class="right-content">
+            <p>${_('Description')}</p>
+
             <div class="input ${summary(c.show_stats)}">
                 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                 ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
@@ -161,9 +175,8 @@
         % if show_downloads:
           <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
             <div class="left-label-summary">
-              ${_('Downloads')}:
-            </div>
-            <div class="right-content">
+              <p>${_('Downloads')}</p>
+
               <div class="input ${summary(c.show_stats)} downloads">
                 % if c.rhodecode_repo and len(c.rhodecode_repo.commit_ids) == 0:
                   <span class="disabled">
@@ -193,9 +206,8 @@
         ## Statistics
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
-            ${_('Statistics')}:
-          </div>
-          <div class="right-content">
+            <p>${_('Statistics')}</p>
+
             <div class="input ${summary(c.show_stats)} statistics">
               % if c.show_stats:
                 <div id="lang_stats" class="enabled">
@@ -214,18 +226,34 @@
           </div>
         </div>
 
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            <p>${_('Owner')}</p>
+
+
+          </div>
+        </div>
+
+        ## Context Action
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            %if c.rhodecode_user.username != h.DEFAULT_USER:
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+            %else:
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+            %endif
+          </div>
+        </div>
+
     </div><!--end summary-detail-->
+
+    <div id="summary_details_expand" class="btn-collapse" data-toggle="summary-details">
+            ${_('Show More')}
+    </div>
 </%def>
 
 <%def name="summary_stats(gravatar_function)">
-    <div class="sidebar-right">
-      <div class="summary-detail-header">
-        <h4 class="item">
-             ${_('Owner')}
-        </h4>
-      </div>
-      <div class="sidebar-right-content">
-        ${gravatar_function(c.rhodecode_db_repo.user.email, 16)}
-      </div>
-    </div><!--end sidebar-right-->
+  <div class="">
+    ${gravatar_function(c.rhodecode_db_repo.user.email, 16)}
+  </div>
 </%def>
