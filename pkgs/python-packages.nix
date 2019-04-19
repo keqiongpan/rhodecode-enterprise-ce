@@ -5,7 +5,7 @@
 
 self: super: {
   "alembic" = super.buildPythonPackage {
-    name = "alembic-1.0.8";
+    name = "alembic-1.0.9";
     doCheck = false;
     propagatedBuildInputs = [
       self."sqlalchemy"
@@ -14,8 +14,8 @@ self: super: {
       self."python-dateutil"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d6/bb/ec1e21f2e303689ad2170eb47fc67df9ad4199ade6759a99474c4d3535c8/alembic-1.0.8.tar.gz";
-      sha256 = "1s34i1j0dsxbflxligwhnkf37a5hvcshsv8ibkcfdjf03ph42pah";
+      url = "https://files.pythonhosted.org/packages/fc/42/8729e2491fa9b8eae160d1cbb429f61712bfc2d779816488c25cfdabf7b8/alembic-1.0.9.tar.gz";
+      sha256 = "0a88rwp7fp0y8ykczj82ivr4ww1kiflcvb882lgfl9azm8csdfa0";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -310,11 +310,11 @@ self: super: {
     };
   };
   "coverage" = super.buildPythonPackage {
-    name = "coverage-4.5.1";
+    name = "coverage-4.5.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/35/fe/e7df7289d717426093c68d156e0fd9117c8f4872b6588e8a8928a0f68424/coverage-4.5.1.tar.gz";
-      sha256 = "1wbrzpxka3xd4nmmkc6q0ir343d91kymwsm8pbmwa0d2a7q4ir2n";
+      url = "https://files.pythonhosted.org/packages/82/70/2280b5b29a0352519bb95ab0ef1ea942d40466ca71c53a2085bdeff7b0eb/coverage-4.5.3.tar.gz";
+      sha256 = "02f6m073qdispn96rc616hg0rnmw1pgqzw3bgxwiwza4zf9hirlx";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -1118,14 +1118,14 @@ self: super: {
     };
   };
   "pexpect" = super.buildPythonPackage {
-    name = "pexpect-4.6.0";
+    name = "pexpect-4.7.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."ptyprocess"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/89/43/07d07654ee3e25235d8cea4164cdee0ec39d1fda8e9203156ebe403ffda4/pexpect-4.6.0.tar.gz";
-      sha256 = "1fla85g47iaxxpjhp9vkxdnv4pgc7rplfy6ja491smrrk0jqi3ia";
+      url = "https://files.pythonhosted.org/packages/1c/b1/362a0d4235496cb42c33d1d8732b5e2c607b0129ad5fdd76f5a583b9fcb3/pexpect-4.7.0.tar.gz";
+      sha256 = "1sv2rri15zwhds85a4kamwh9pj49qcxv7m4miyr4jfpfwv81yb4y";
     };
     meta = {
       license = [ pkgs.lib.licenses.isc { fullName = "ISC License (ISCL)"; } ];
@@ -1160,15 +1160,15 @@ self: super: {
     };
   };
   "plaster-pastedeploy" = super.buildPythonPackage {
-    name = "plaster-pastedeploy-0.6";
+    name = "plaster-pastedeploy-0.7";
     doCheck = false;
     propagatedBuildInputs = [
       self."pastedeploy"
       self."plaster"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3f/e7/6a6833158d2038ec40085433308a1e164fd1dac595513f6dd556d5669bb8/plaster_pastedeploy-0.6.tar.gz";
-      sha256 = "1bkggk18f4z2bmsmxyxabvf62znvjwbivzh880419r3ap0616cf2";
+      url = "https://files.pythonhosted.org/packages/99/69/2d3bc33091249266a1bd3cf24499e40ab31d54dffb4a7d76fe647950b98c/plaster_pastedeploy-0.7.tar.gz";
+      sha256 = "1zg7gcsvc1kzay1ry5p699rg2qavfsxqwl17mqxzr0gzw6j9679r";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1186,15 +1186,15 @@ self: super: {
     };
   };
   "prompt-toolkit" = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.15";
+    name = "prompt-toolkit-1.0.16";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."wcwidth"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/8a/ad/cf6b128866e78ad6d7f1dc5b7f99885fb813393d9860778b2984582e81b5/prompt_toolkit-1.0.15.tar.gz";
-      sha256 = "05v9h5nydljwpj5nm8n804ms0glajwfy1zagrzqrg91wk3qqi1c5";
+      url = "https://files.pythonhosted.org/packages/f1/03/bb36771dc9fa7553ac4bdc639a9ecdf6fda0ff4176faf940d97e3c16e41d/prompt_toolkit-1.0.16.tar.gz";
+      sha256 = "1d65hm6nf0cbq0q0121m60zzy4s1fpg9fn761s1yxf08dridvkn1";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1212,11 +1212,11 @@ self: super: {
     };
   };
   "psycopg2" = super.buildPythonPackage {
-    name = "psycopg2-2.7.7";
+    name = "psycopg2-2.8.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/63/54/c039eb0f46f9a9406b59a638415c2012ad7be9b4b97bfddb1f48c280df3a/psycopg2-2.7.7.tar.gz";
-      sha256 = "0zjbabb4qjx9dm07imhf8y5a9rpa06d5zah80myiimgdi83nslpl";
+      url = "https://files.pythonhosted.org/packages/23/7e/93c325482c328619870b6cd09370f6dbe1148283daca65115cd63642e60f/psycopg2-2.8.2.tar.gz";
+      sha256 = "122mn2z3r0zgs8jyq682jjjr6vq5690qmxqf22gj6g41dwdz5b2w";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "LGPL with exceptions or ZPL"; } ];
@@ -1373,7 +1373,7 @@ self: super: {
     };
   };
   "pyramid" = super.buildPythonPackage {
-    name = "pyramid-1.10.2";
+    name = "pyramid-1.10.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."hupper"
@@ -1388,8 +1388,8 @@ self: super: {
       self."repoze.lru"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/bc/0e/73de9b189ff00a963beeedaff90e27b134eedf2806279a1a3fe122fd65b6/pyramid-1.10.2.tar.gz";
-      sha256 = "0gn6sw6ml67ir150ffivc0ad5hd448p43p9z2bkyp12jh2n9n2p7";
+      url = "https://files.pythonhosted.org/packages/c2/43/1ae701c9c6bb3a434358e678a5e72c96e8aa55cf4cb1d2fa2041b5dd38b7/pyramid-1.10.4.tar.gz";
+      sha256 = "0rkxs1ajycg2zh1c94xlmls56mx5m161sn8112skj0amza6cn36q";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1931,11 +1931,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-40.8.0";
+    name = "setuptools-41.0.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/c2/f7/c7b501b783e5a74cf1768bc174ee4fb0a8a6ee5af6afa92274ff964703e0/setuptools-40.8.0.zip";
-      sha256 = "0k9hifpgahnw2a26w3cr346iy733k6d3nwh3f7g9m13y6f8fqkkf";
+      url = "https://files.pythonhosted.org/packages/ed/69/c805067de1feedbb98c53174b0f2df44cc05e0e9ee73bb85eebc59e508c6/setuptools-41.0.0.zip";
+      sha256 = "1cfwy2g23qj3262ivj0b1182lgwz7bqqbka35rkqwypynra05lvr";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2012,14 +2012,14 @@ self: super: {
     };
   };
   "supervisor" = super.buildPythonPackage {
-    name = "supervisor-3.3.5";
+    name = "supervisor-4.0.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."meld3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ba/65/92575a8757ed576beaee59251f64a3287bde82bdc03964b89df9e1d29e1b/supervisor-3.3.5.tar.gz";
-      sha256 = "1w3ahridzbc6rxfpbyx8lij6pjlcgf2ymzyg53llkjqxalp6sk8v";
+      url = "https://files.pythonhosted.org/packages/96/ec/f8190beeb0c6d29a30aea10389c11d0164b6ff221931ee84093315ecde6a/supervisor-4.0.1.tar.gz";
+      sha256 = "10l3z7v6v1fyv7m5zbazzxciwvli2n9a41pxi27p4kixgsfp0s1j";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];

@@ -512,7 +512,7 @@ def test_outdated_comments(
     (MergeFailureReason.HG_SOURCE_HAS_MORE_BRANCHES,
      'This pull request cannot be merged because the source contains more branches than the target.'),
     (MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS,
-     'This pull request cannot be merged because the target has multiple heads: `a,b,c`.'),
+     'This pull request cannot be merged because the target `ref_name` has multiple heads: `a,b,c`.'),
     (MergeFailureReason.TARGET_IS_LOCKED,
      'This pull request cannot be merged because the target repository is locked by user:123.'),
     (MergeFailureReason.MISSING_TARGET_REF,

@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import mock
 import pytest
 
@@ -68,14 +69,16 @@ def hg_server(app):
 
 class TestMercurialServer(object):
 
-    def test_command(self, hg_server):
+    def test_command(self, hg_server, tmpdir):
         server = hg_server.create()
+        custom_hgrc = os.path.join(str(tmpdir), 'hgrc')
         expected_command = (
-            'cd {root}; {hg_path} -R {root}{repo_name} serve --stdio'.format(
-                root=hg_server.root, hg_path=hg_server.hg_path,
+            'cd {root}; HGRCPATH={custom_hgrc} {hg_path} -R {root}{repo_name} serve --stdio'.format(
+                root=hg_server.root, custom_hgrc=custom_hgrc, hg_path=hg_server.hg_path,
                 repo_name=hg_server.repo_name)
         )
-        assert expected_command == server.tunnel.command()
+        server_command = server.tunnel.command(custom_hgrc)
+        assert expected_command == server_command
 
     @pytest.mark.parametrize('permissions, action, code', [
         ({}, 'pull', -2),

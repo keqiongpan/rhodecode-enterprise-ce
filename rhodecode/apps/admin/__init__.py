@@ -424,6 +424,10 @@ def admin_routes(config):
         pattern='/repo_groups')
 
     config.add_route(
+        name='repo_groups_data',
+        pattern='/repo_groups_data')
+
+    config.add_route(
         name='repo_group_new',
         pattern='/repo_group/new')
 

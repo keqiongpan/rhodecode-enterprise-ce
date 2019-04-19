@@ -133,13 +133,13 @@
 
                 <div class="checkbox">
                     ${h.checkbox('extensions_evolve' + suffix, 'True', **kwargs)}
-                    <label for="extensions_evolve${suffix}">${_('Enable evolve extension')}</label>
+                    <label for="extensions_evolve${suffix}">${_('Enable Evolve and Topic extension')}</label>
                 </div>
                 <div class="label">
                     % if display_globals:
-                        <span class="help-block">${_('Enable evolve extension for all repositories.')}</span>
+                        <span class="help-block">${_('Enable Evolve and Topic extensions for all repositories.')}</span>
                     % else:
-                        <span class="help-block">${_('Enable evolve extension for this repository.')}</span>
+                        <span class="help-block">${_('Enable Evolve and Topic extensions for this repository.')}</span>
                     % endif
                 </div>
 

@@ -105,7 +105,7 @@ $(document).ready(function() {
     // filter
     $('#q_filter').on('keyup',
         $.debounce(250, function() {
-            $('#user_group_list_table').DataTable().search(
+            $userGroupsListTable.DataTable().search(
                 $('#q_filter').val()
             ).draw();
         })

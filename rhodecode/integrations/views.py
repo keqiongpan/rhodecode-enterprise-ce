@@ -114,7 +114,6 @@ class IntegrationSettingsViewBase(BaseAppView):
         _ = self.request.translate
         c = super(IntegrationSettingsViewBase, self)._get_local_tmpl_context(
             include_app_defaults=include_app_defaults)
-
         c.active = 'integrations'
 
         return c
@@ -404,6 +403,11 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
 
+        c.has_origin_repo_read_perm = False
+        if self.db_repo.fork:
+            c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
+                'repository.write', 'repository.read', 'repository.admin')(
+                self.db_repo.fork.repo_name, 'summary fork link')
         return c
 
     @LoginRequired()

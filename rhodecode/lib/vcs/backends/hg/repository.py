@@ -715,11 +715,16 @@ class MercurialRepository(BaseRepository):
 
         try:
             if target_ref.type == 'branch' and len(self._heads(target_ref.name)) != 1:
-                heads = ','.join(self._heads(target_ref.name))
+                heads = '\n,'.join(self._heads(target_ref.name))
+                metadata = {
+                    'target_ref': target_ref,
+                    'source_ref': source_ref,
+                    'heads': heads
+                }
                 return MergeResponse(
                     False, False, None,
                     MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS,
-                    metadata={'heads': heads})
+                    metadata=metadata)
         except CommitDoesNotExistError:
             log.exception('Failure when looking up branch heads on hg target')
             return MergeResponse(

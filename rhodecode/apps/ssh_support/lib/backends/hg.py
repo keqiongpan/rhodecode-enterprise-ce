@@ -20,12 +20,13 @@
 
 import os
 import sys
-import shutil
 import logging
 import tempfile
 import textwrap
-
+import collections
 from .base import VcsServer
+from rhodecode.model.db import RhodeCodeUi
+from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -37,62 +38,46 @@ class MercurialTunnelWrapper(object):
         self.server = server
         self.stdin = sys.stdin
         self.stdout = sys.stdout
-        self.svn_conf_fd, self.svn_conf_path = tempfile.mkstemp()
-        self.hooks_env_fd, self.hooks_env_path = tempfile.mkstemp()
+        self.hooks_env_fd, self.hooks_env_path = tempfile.mkstemp(prefix='hgrc_rhodecode_')
 
     def create_hooks_env(self):
+        repo_name = self.server.repo_name
+        hg_flags = self.config_to_hgrc(repo_name)
 
         content = textwrap.dedent(
             '''
-            # SSH hooks version=1.0.0
-            [hooks]
-            pretxnchangegroup.ssh_auth=python:vcsserver.hooks.pre_push_ssh_auth
-            pretxnchangegroup.ssh=python:vcsserver.hooks.pre_push_ssh
-            changegroup.ssh=python:vcsserver.hooks.post_push_ssh
-            
-            preoutgoing.ssh=python:vcsserver.hooks.pre_pull_ssh
-            outgoing.ssh=python:vcsserver.hooks.post_pull_ssh
-
+            # RhodeCode SSH hooks version=2.0.0
+            {custom}
             '''
-        )
+        ).format(custom='\n'.join(hg_flags))
 
+        root = self.server.get_root_store()
+        hgrc_custom = os.path.join(root, repo_name, '.hg', 'hgrc_rhodecode')
+        hgrc_main = os.path.join(root, repo_name, '.hg', 'hgrc')
+
+        # cleanup custom hgrc file
+        if os.path.isfile(hgrc_custom):
+            with open(hgrc_custom, 'wb') as f:
+                f.write('')
+            log.debug('Cleanup custom hgrc file under %s', hgrc_custom)
+
+        # write temp
         with os.fdopen(self.hooks_env_fd, 'w') as hooks_env_file:
             hooks_env_file.write(content)
-        root = self.server.get_root_store()
 
-        hgrc_custom = os.path.join(
-            root, self.server.repo_name, '.hg', 'hgrc_rhodecode')
-        log.debug('Wrote custom hgrc file under %s', hgrc_custom)
-        shutil.move(
-            self.hooks_env_path, hgrc_custom)
+        return self.hooks_env_path
 
-        hgrc_main = os.path.join(
-            root, self.server.repo_name, '.hg', 'hgrc')
-        include_marker = '%include hgrc_rhodecode'
+    def remove_configs(self):
+        os.remove(self.hooks_env_path)
 
-        if not os.path.isfile(hgrc_main):
-            os.mknod(hgrc_main)
-
-        with open(hgrc_main, 'rb') as f:
-            data = f.read()
-            has_marker = include_marker in data
-
-        if not has_marker:
-            log.debug('Adding include marker for hooks')
-            with open(hgrc_main, 'wa') as f:
-                f.write(textwrap.dedent('''
-                # added by RhodeCode
-                {}
-                '''.format(include_marker)))
-
-    def command(self):
+    def command(self, hgrc_path):
         root = self.server.get_root_store()
 
         command = (
-            "cd {root}; {hg_path} -R {root}{repo_name} "
+            "cd {root}; HGRCPATH={hgrc} {hg_path} -R {root}{repo_name} "
             "serve --stdio".format(
                 root=root, hg_path=self.server.hg_path,
-                repo_name=self.server.repo_name))
+                repo_name=self.server.repo_name, hgrc=hgrc_path))
         log.debug("Final CMD: %s", command)
         return command
 
@@ -102,22 +87,61 @@ class MercurialTunnelWrapper(object):
         action = '?'
         # permissions are check via `pre_push_ssh_auth` hook
         self.server.update_environment(action=action, extras=extras)
-        self.create_hooks_env()
-        return os.system(self.command())
+        custom_hgrc_file = self.create_hooks_env()
+
+        try:
+            return os.system(self.command(custom_hgrc_file))
+        finally:
+            self.remove_configs()
 
 
 class MercurialServer(VcsServer):
     backend = 'hg'
+    cli_flags = ['phases', 'largefiles', 'extensions', 'experimental', 'hooks']
 
-    def __init__(self, store, ini_path, repo_name,
-                 user, user_permissions, config, env):
-        super(MercurialServer, self).\
-            __init__(user, user_permissions, config, env)
+    def __init__(self, store, ini_path, repo_name, user, user_permissions, config, env):
+        super(MercurialServer, self).__init__(user, user_permissions, config, env)
 
         self.store = store
         self.ini_path = ini_path
         self.repo_name = repo_name
-        self._path = self.hg_path = config.get(
-            'app:main', 'ssh.executable.hg')
-
+        self._path = self.hg_path = config.get('app:main', 'ssh.executable.hg')
         self.tunnel = MercurialTunnelWrapper(server=self)
+
+    def config_to_hgrc(self, repo_name):
+        ui_sections = collections.defaultdict(list)
+        ui = VcsSettingsModel(repo=repo_name).get_ui_settings(section=None, key=None)
+
+        # write default hooks
+        default_hooks = [
+            ('pretxnchangegroup.ssh_auth', 'python:vcsserver.hooks.pre_push_ssh_auth'),
+            ('pretxnchangegroup.ssh', 'python:vcsserver.hooks.pre_push_ssh'),
+            ('changegroup.ssh', 'python:vcsserver.hooks.post_push_ssh'),
+
+            ('preoutgoing.ssh', 'python:vcsserver.hooks.pre_pull_ssh'),
+            ('outgoing.ssh', 'python:vcsserver.hooks.post_pull_ssh'),
+        ]
+
+        for k, v in default_hooks:
+            ui_sections['hooks'].append((k, v))
+
+        for entry in ui:
+            if not entry.active:
+                continue
+            sec = entry.section
+            key = entry.key
+
+            if sec in self.cli_flags:
+                # we want only custom hooks, so we skip builtins
+                if sec == 'hooks' and key in RhodeCodeUi.HOOKS_BUILTIN:
+                    continue
+
+                ui_sections[sec].append([key, entry.value])
+
+        flags = []
+        for _sec, key_val in ui_sections.items():
+            flags.append(' ')
+            flags.append('[{}]'.format(_sec))
+            for key, val in key_val:
+                flags.append('{}= {}'.format(key, val))
+        return flags
