@@ -145,7 +145,7 @@
           <div class="left-label-summary">
             <p>${_('Repository size')}</p>
 
-            <div class="commit-info">
+            <div class="right-label-summary">
                 <div class="tags">
                    ## repo size
                     % if commit_rev == -1:
@@ -167,7 +167,7 @@
           <div class="left-label-summary">
             <p>${_('Description')}</p>
 
-            <div class="input ${summary(c.show_stats)}">
+            <div class="right-label-summary input ${summary(c.show_stats)}">
                 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                 ${dt.repo_desc(c.rhodecode_db_repo.description_safe, c.visual.stylify_metatags)}
             </div>
@@ -179,7 +179,7 @@
             <div class="left-label-summary">
               <p>${_('Downloads')}</p>
 
-              <div class="input ${summary(c.show_stats)} downloads">
+              <div class="right-label-summary input ${summary(c.show_stats)} downloads">
                 % if c.rhodecode_repo and len(c.rhodecode_repo.commit_ids) == 0:
                   <span class="disabled">
                     ${_('There are no downloads yet')}
@@ -210,7 +210,7 @@
           <div class="left-label-summary">
             <p>${_('Statistics')}</p>
 
-            <div class="input ${summary(c.show_stats)} statistics">
+            <div class="right-label-summary input ${summary(c.show_stats)} statistics">
               % if c.show_stats:
                 <div id="lang_stats" class="enabled">
                     ${_('Calculating Code Statistics...')}
@@ -231,7 +231,7 @@
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
             <p>${_('Owner')}</p>
-            <div class="">
+            <div class="right-label-summary">
                 ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16)}
             </div>
 

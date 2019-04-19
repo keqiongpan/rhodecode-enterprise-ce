@@ -4,12 +4,12 @@
 <table class="rctable repo_summary table_disp">
     <tr>
 
-        <th class="status" colspan="2"></th>
+        <th class="status"></th>
         <th>${_('Commit')}</th>
         <th>${_('Commit message')}</th>
         <th>${_('Age')}</th>
         <th>${_('Author')}</th>
-        <th>${_('Refs')}</th>
+        <th colspan="2">${_('Refs')}</th>
     </tr>
 
 ## to speed up lookups cache some functions before the loop
@@ -35,13 +35,6 @@
                 </div>
             %else:
                 <div class="tooltip flag_status not_reviewed" title="${_('Commit status: Not Reviewed')}"></div>
-            %endif
-        </td>
-        <td class="td-comments">
-            %if c.comments.get(cs.raw_id,[]):
-            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
-            </a>
             %endif
         </td>
         <td class="td-commit">
@@ -87,6 +80,13 @@
              </span>
             %endif
           </div>
+        </td>
+        <td class="td-comments">
+            %if c.comments.get(cs.raw_id,[]):
+            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
+                <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
+            </a>
+            %endif
         </td>
     </tr>
 %endfor
