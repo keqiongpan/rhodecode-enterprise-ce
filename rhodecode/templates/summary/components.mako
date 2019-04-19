@@ -1,3 +1,5 @@
+<%namespace name="base" file="/base/base.mako"/>
+
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
     <span class="branchtag tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
@@ -229,7 +231,9 @@
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
             <p>${_('Owner')}</p>
-
+            <div class="">
+                ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16)}
+            </div>
 
           </div>
         </div>
@@ -250,10 +254,4 @@
     <div id="summary_details_expand" class="btn-collapse" data-toggle="summary-details">
             ${_('Show More')}
     </div>
-</%def>
-
-<%def name="summary_stats(gravatar_function)">
-  <div class="">
-    ${gravatar_function(c.rhodecode_db_repo.user.email, 16)}
-  </div>
 </%def>
