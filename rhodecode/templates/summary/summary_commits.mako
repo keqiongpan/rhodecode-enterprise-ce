@@ -82,11 +82,14 @@
           </div>
         </td>
         <td class="td-comments">
-            %if c.comments.get(cs.raw_id,[]):
-            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
-            </a>
-            %endif
+            <% cs_comments = c.comments.get(cs.raw_id,[]) %>
+            % if cs_comments:
+                <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % cs_comments[0].comment_id)}">
+                    <i class="icon-comment"></i> ${len(cs_comments)}
+                </a>
+            % else:
+                <i class="icon-comment"></i> ${len(cs_comments)}
+            % endif
         </td>
     </tr>
 %endfor
