@@ -119,6 +119,7 @@ class SettingsModel(BaseModel):
         new_ui.ui_value = val
         new_ui.ui_active = active
 
+        repository_id = ''
         if self.repo:
             repo = self._get_repo(self.repo)
             repository_id = repo.repo_id
@@ -440,26 +441,37 @@ class VcsSettingsModel(object):
     HOOKS_SETTINGS = (
         ('hooks', 'changegroup.repo_size'),
         ('hooks', 'changegroup.push_logger'),
-        ('hooks', 'outgoing.pull_logger'),)
+        ('hooks', 'outgoing.pull_logger'),
+    )
     HG_SETTINGS = (
         ('extensions', 'largefiles'),
         ('phases', 'publish'),
-        ('extensions', 'evolve'),)
+        ('extensions', 'evolve'),
+        ('extensions', 'topic'),
+        ('experimental', 'evolution'),
+    )
     GIT_SETTINGS = (
-        ('vcs_git_lfs', 'enabled'),)
+        ('vcs_git_lfs', 'enabled'),
+    )
     GLOBAL_HG_SETTINGS = (
         ('extensions', 'largefiles'),
         ('largefiles', 'usercache'),
         ('phases', 'publish'),
         ('extensions', 'hgsubversion'),
-        ('extensions', 'evolve'),)
+        ('extensions', 'evolve'),
+        ('extensions', 'topic'),
+        ('experimental', 'evolution'),
+    )
+
     GLOBAL_GIT_SETTINGS = (
         ('vcs_git_lfs', 'enabled'),
-        ('vcs_git_lfs', 'store_location'))
+        ('vcs_git_lfs', 'store_location')
+    )
 
     GLOBAL_SVN_SETTINGS = (
         ('vcs_svn_proxy', 'http_requests_enabled'),
-        ('vcs_svn_proxy', 'http_server_url'))
+        ('vcs_svn_proxy', 'http_server_url')
+    )
 
     SVN_BRANCH_SECTION = 'vcs_svn_branch'
     SVN_TAG_SECTION = 'vcs_svn_tag'
@@ -574,12 +586,38 @@ class VcsSettingsModel(object):
     def create_repo_svn_settings(self, data):
         return self._create_svn_settings(self.repo_settings, data)
 
+    def _set_evolution(self, settings, is_enabled):
+        if is_enabled:
+            # if evolve is active set evolution=all
+
+            self._create_or_update_ui(
+                settings, *('experimental', 'evolution'), value='all',
+                active=True)
+            self._create_or_update_ui(
+                settings, *('experimental', 'evolution.exchange'), value='yes',
+                active=True)
+            # if evolve is active set topics server support
+            self._create_or_update_ui(
+                settings, *('extensions', 'topic'), value='',
+                active=True)
+
+        else:
+            self._create_or_update_ui(
+                settings, *('experimental', 'evolution'), value='',
+                active=False)
+            self._create_or_update_ui(
+                settings, *('experimental', 'evolution.exchange'), value='no',
+                active=False)
+            self._create_or_update_ui(
+                settings, *('extensions', 'topic'), value='',
+                active=False)
+
     @assert_repo_settings
     def create_or_update_repo_hg_settings(self, data):
         largefiles, phases, evolve = \
-            self.HG_SETTINGS
+            self.HG_SETTINGS[:3]
         largefiles_key, phases_key, evolve_key = \
-            self._get_settings_keys(self.HG_SETTINGS, data)
+            self._get_settings_keys(self.HG_SETTINGS[:3], data)
 
         self._create_or_update_ui(
             self.repo_settings, *largefiles, value='',
@@ -587,21 +625,22 @@ class VcsSettingsModel(object):
         self._create_or_update_ui(
             self.repo_settings, *evolve, value='',
             active=data[evolve_key])
+        self._set_evolution(self.repo_settings, is_enabled=data[evolve_key])
+
         self._create_or_update_ui(
             self.repo_settings, *phases, value=safe_str(data[phases_key]))
 
     def create_or_update_global_hg_settings(self, data):
         largefiles, largefiles_store, phases, hgsubversion, evolve \
-            = self.GLOBAL_HG_SETTINGS
+            = self.GLOBAL_HG_SETTINGS[:5]
         largefiles_key, largefiles_store_key, phases_key, subversion_key, evolve_key \
-            = self._get_settings_keys(self.GLOBAL_HG_SETTINGS, data)
+            = self._get_settings_keys(self.GLOBAL_HG_SETTINGS[:5], data)
 
         self._create_or_update_ui(
             self.global_settings, *largefiles, value='',
             active=data[largefiles_key])
         self._create_or_update_ui(
-            self.global_settings, *largefiles_store,
-            value=data[largefiles_store_key])
+            self.global_settings, *largefiles_store, value=data[largefiles_store_key])
         self._create_or_update_ui(
             self.global_settings, *phases, value=safe_str(data[phases_key]))
         self._create_or_update_ui(
@@ -609,9 +648,10 @@ class VcsSettingsModel(object):
         self._create_or_update_ui(
             self.global_settings, *evolve, value='',
             active=data[evolve_key])
+        self._set_evolution(self.global_settings, is_enabled=data[evolve_key])
 
     def create_or_update_repo_git_settings(self, data):
-        # NOTE(marcink): # comma make unpack work properly
+        # NOTE(marcink): # comma makes unpack work properly
         lfs_enabled, \
             = self.GIT_SETTINGS
 
@@ -675,6 +715,7 @@ class VcsSettingsModel(object):
     def get_repo_ui_settings(self, section=None, key=None):
         global_uis = self.global_settings.get_ui(section, key)
         repo_uis = self.repo_settings.get_ui(section, key)
+
         filtered_repo_uis = self._filter_ui_settings(repo_uis)
         filtered_repo_uis_keys = [
             (s.section, s.key) for s in filtered_repo_uis]
