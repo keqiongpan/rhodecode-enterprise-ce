@@ -743,4 +743,4 @@ class HomeView(BaseAppView):
         if existing_value != val:
             self.request.session[key] = val
 
-        return 'stored:{}'.format(key)
+        return 'stored:{}:{}'.format(key, val)

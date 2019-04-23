@@ -587,12 +587,14 @@ var CommentsController = function() {
           $('#content').removeClass("wrapper");
           $('#content').addClass("wide-mode-wrapper");
           $(node).addClass('btn-success');
+          return true
       } else {
           $('#content').removeClass("wide-mode-wrapper");
           $('#content').addClass("wrapper");
           $(node).removeClass('btn-success');
+          return false
       }
-      return false;
+
   };
 
   this.toggleComments = function(node, show) {
