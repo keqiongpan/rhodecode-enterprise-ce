@@ -94,8 +94,13 @@
 </table>
 
 <script type="text/javascript">
-  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 2000, scrollTo: false, push: false});
+  $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 5000, scrollTo: false, push: false});
   $(document).on('pjax:success', function(){ timeagoActivate(); });
+  $(document).on('pjax:timeout', function(event) {
+    // Prevent default timeout redirection behavior
+    event.preventDefault()
+  })
+
 </script>
 
 <div class="pagination-wh pagination-left">
