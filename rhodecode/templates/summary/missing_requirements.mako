@@ -6,7 +6,6 @@
 
   <div id="repo-summary" class="summary">
     ${components.summary_detail(breadcrumbs_links=self.breadcrumbs_links(), show_downloads=False)}
-    ${components.summary_stats(gravatar_function=self.gravatar_with_user)}
   </div><!--end repo-summary-->
 
   <div class="alert alert-dismissable alert-warning">
