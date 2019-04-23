@@ -110,11 +110,10 @@
                     <tr>
                       ## checkbox
                       <th></th>
-                      <th colspan="2"></th>
+                      <th></th>
 
                       <th>${_('Commit')}</th>
-                      ## Mercurial phase/evolve state
-                      <th></th>
+
                       ## commit message expand arrow
                       <th></th>
                       <th>${_('Commit Message')}</th>
@@ -123,6 +122,8 @@
                       <th>${_('Author')}</th>
 
                       <th>${_('Refs')}</th>
+                      ## comments
+                      <th></th>
                     </tr>
 
                     <tbody class="commits-range">
