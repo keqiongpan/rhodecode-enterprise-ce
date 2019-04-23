@@ -20,7 +20,7 @@
                 <div class="title">
                   <h3>${_('Quick start')}</h3>
                 </div>
-                <div class="clearfix"></div>
+                <div class="clear-fix"></div>
             </div>
          %endif
         <div class="table">
