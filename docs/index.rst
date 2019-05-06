@@ -64,19 +64,19 @@ and commit files and |repos| while managing their security permissions.
 
 .. toctree::
    :maxdepth: 1
+   :caption: User Documentation
+
+   usage/basic-usage
+   tutorials/tutorials
+
+.. toctree::
+   :maxdepth: 1
    :caption: Developer Documentation
 
    api/api
    tools/rhodecode-tools
    extensions/extensions-hooks
    contributing/contributing
-
-.. toctree::
-   :maxdepth: 1
-   :caption: User Documentation
-
-   usage/basic-usage
-   tutorials/tutorials
 
 .. toctree::
    :maxdepth: 1
