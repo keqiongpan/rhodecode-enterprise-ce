@@ -1,16 +1,5 @@
 <%namespace name="base" file="/base/base.mako"/>
 
-<div class="summary-detail-header">
-    <h4 class="item">
-        % if c.file_author:
-            ${_('Last Author')}
-        % else:
-            ${h.literal(_ungettext(u'File Author (%s)',u'File Authors (%s)',len(c.authors)) % ('<b>%s</b>' % len(c.authors))) }
-        % endif
-    </h4>
-    <a href="#" id="show_authors" class="action_link">${_('Show All')}</a>
-</div>
-
 % if c.authors:
 <ul class="sidebar-right-content">
     % for email, user, commits in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):

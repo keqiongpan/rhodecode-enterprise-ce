@@ -1,3 +1,4 @@
+<%namespace name="base" file="/base/base.mako"/>
 <%namespace name="file_base" file="/files/base.mako"/>
 
 <div class="fieldset collapsable-content no-hide" data-toggle="summary-details">
@@ -14,8 +15,6 @@
   <div class="commit right-content">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
 </div>
 
-
-
 <div class="fieldset">
   <div class="left-label">
     ${_('References')}:
@@ -31,6 +30,15 @@
   </div>
 </div>
 
+<div class="fieldset">
+  <div class="left-label">
+    ${_('Commit Author')}:
+  </div>
+  <div class="right-content">
+    ${base.gravatar_with_user(c.commit.author)}
+    <div class="user-inline-data">- ${h.age_component(c.commit.date)}</div>
+  </div>
+</div>
 
 <script>
   collapsableContent();

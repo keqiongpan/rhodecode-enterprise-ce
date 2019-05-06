@@ -1,3 +1,4 @@
+<%namespace name="base" file="/base/base.mako"/>
 <%namespace name="file_base" file="/files/base.mako"/>
 
 <div class="fieldset collapsable-content no-hide" data-toggle="summary-details">
@@ -60,6 +61,21 @@
   <div class="right-content">
   ${h.submit('diff_to_commit',_('Diff to Commit'),class_="btn disabled",disabled="true")}
   ${h.submit('show_at_commit',_('Show at Commit'),class_="btn disabled",disabled="true")}
+  </div>
+</div>
+
+<div class="fieldset collapsable-content" data-toggle="summary-details">
+  <div class="left-label" id="file_authors_title">
+    % if c.file_author:
+        ${_('Last Author')}
+    % else:
+        ${h.literal(_ungettext(u'File Author (%s)',u'File Authors (%s)',len(c.authors)) % ('<b>%s</b>' % len(c.authors))) }
+    % endif
+    <a href="#" id="show_authors" class="action_link">${_('Show All')}</a>
+  </div>
+  <div class="right-content" id="file_authors">
+    ## loads single author, or ALL
+    <%include file='file_authors_box.mako'/>
   </div>
 </div>
 

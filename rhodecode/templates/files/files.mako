@@ -205,6 +205,7 @@
                         timeout: pjaxTimeout
                     }).complete(function(){
                         $('#show_authors').hide();
+                        $('#file_authors_title').html(_gettext('All Authors'))
                     })
                 });
 
