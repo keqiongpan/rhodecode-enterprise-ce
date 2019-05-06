@@ -97,6 +97,8 @@ class RepoGroupModel(BaseModel):
         return string.Template(template).safe_substitute(
             username=user.username,
             user_id=user.user_id,
+            first_name=user.first_name,
+            last_name=user.last_name,
         )
 
     def create_personal_repo_group(self, user, commit_early=True):

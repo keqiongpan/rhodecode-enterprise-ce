@@ -682,8 +682,7 @@ class UsersView(UserAppView):
         if personal_repo_group:
             raise HTTPFound(h.route_path('user_edit_advanced', user_id=user_id))
 
-        personal_repo_group_name = RepoGroupModel().get_personal_group_name(
-            c.user)
+        personal_repo_group_name = RepoGroupModel().get_personal_group_name(c.user)
         named_personal_group = RepoGroup.get_by_group_name(
             personal_repo_group_name)
         try:
