@@ -19,14 +19,11 @@
         <div class="summary-detail-header">
             <div class="breadcrumbs files_location">
                 <h4>
-                    ${_('Location')}: ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path)}
+                     ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path)}
                     %if c.annotate:
                     - ${_('annotation')}
                     %endif
                 </h4>
-            </div>
-            <div  class="btn-collapse" data-toggle="summary-details">
-                ${_('Show More')}
             </div>
         </div><!--end summary-detail-header-->
 

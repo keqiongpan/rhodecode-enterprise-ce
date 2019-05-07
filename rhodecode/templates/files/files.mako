@@ -27,7 +27,7 @@
 </%def>
 
 <%def name="main()">
-    <div id="pjax-container" class="summary">
+    <div id="pjax-container">
         <div id="files_data">
             <%include file='files_pjax.mako'/>
         </div>

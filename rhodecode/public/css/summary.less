@@ -15,7 +15,6 @@
     margin-bottom: 20px;
 
     .summary-detail-header {
-        float: left;
         display: block;
         width: 100%;
         margin-bottom: @textmargin;
@@ -23,13 +22,12 @@
         border-bottom: @border-thickness solid @border-default-color;
 
         .breadcrumbs {
-            float: left;
             display: inline;
             margin: 0;
             padding: 0;
         }
+
         h4 {
-            float: left;
             margin: 0 1em 0 0;
             padding: 0;
             line-height: 1.2em;
@@ -192,6 +190,12 @@
     }
 }
 
+.summary {
+    .fieldset {
+        margin-bottom: 0;
+    }
+}
+
 .fieldset {
 
     .left-label { // similar to form legend
@@ -223,6 +227,13 @@
         width: ~"calc(50% - 20px)";
         float: left;
         margin: 15px 0 15px 20px;
+
+        .rc-user {
+            min-width: auto;
+            max-width: none;
+            min-height: auto;
+            padding-right: 5px;
+        }
     }
 
     .right-content { // similar to form fields
@@ -257,6 +268,10 @@
         .tag span, .tag i {
             color: @grey1;
         }
+    }
+    .commit {
+        color: @grey1;
+        margin-bottom: 10px;
     }
     .commit.truncate-wrap {
         overflow:hidden;
