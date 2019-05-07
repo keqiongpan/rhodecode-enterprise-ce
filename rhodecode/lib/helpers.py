@@ -1196,7 +1196,7 @@ class InitialsGravatar(object):
             </text>
         </svg>""".format(
             size=self.size,
-            f_size=self.size/1.85,  # scale the text inside the box nicely
+            f_size=self.size/2.05,  # scale the text inside the box nicely
             background=self.background,
             text_color=self.text_color,
             text=initials.upper(),

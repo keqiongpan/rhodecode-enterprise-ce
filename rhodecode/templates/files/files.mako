@@ -33,6 +33,8 @@
         </div>
     </div>
     <script>
+        var pjaxTimeout = 5000;
+
         var curState = {
             commit_id: "${c.commit.raw_id}"
         };
@@ -121,15 +123,6 @@
             var state = getState('callbacks');
             timeagoActivate();
 
-            // used for history, and switch to
-            var initialCommitData = {
-                id: null,
-                text: '${_("Pick Commit")}',
-                type: 'sha',
-                raw_id: null,
-                files_url: null
-            };
-
             if ($('#trimmed_message_box').height() < 50) {
                 $('#message_expand').hide();
             }
@@ -139,13 +132,21 @@
                 $(this).hide();
             });
 
+            // VIEW FOR FILE SOURCE
             if (fileSourcePage) {
                 // variants for with source code, not tree view
 
                 // select code link event
                 $("#hlcode").mouseup(getSelectionLink);
 
-                // file history select2
+                // file history select2 used for history, and switch to
+                var initialCommitData = {
+                    id: null,
+                    text: '${_("Pick Commit")}',
+                    type: 'sha',
+                    raw_id: null,
+                    files_url: null
+                };
                 select2FileHistorySwitcher('#diff1', initialCommitData, state);
 
                 // show at, diff to actions handlers
@@ -231,6 +232,7 @@
                 });
 
             }
+            // VIEW FOR FILE TREE BROWSER
             else {
                 getFilesMetadata();
 
@@ -238,7 +240,83 @@
                 fileBrowserListeners(state.node_list_url, state.url_base);
 
                 // switch to widget
-                select2RefSwitcher('#refs_filter', initialCommitData);
+                console.log(state)
+                var initialCommitData = {
+                    at_ref: '${request.GET.get('at')}',
+                    id: null,
+                    text: '${c.commit.raw_id}',
+                    type: 'sha',
+                    raw_id: '${c.commit.raw_id}',
+                    idx: ${c.commit.idx},
+                    files_url: null,
+                };
+
+                var loadUrl = pyroutes.url('repo_refs_data', {'repo_name': templateContext.repo_name});
+
+                var select2RefFileSwitcher = function (targetElement, loadUrl, initialData) {
+                    var formatResult = function (result, container, query) {
+                        return formatSelect2SelectionRefs(result);
+                    };
+
+                    var formatSelection = function (data, container) {
+                        var commit_ref = data;
+                        console.log(data)
+
+                        var tmpl = '';
+                        if (commit_ref.type === 'sha') {
+                            tmpl = commit_ref.raw_id.substr(0,8);
+                        } else if (commit_ref.type === 'branch') {
+                            tmpl = tmpl.concat('<i class="icon-branch"></i> ');
+                            tmpl = tmpl.concat(escapeHtml(commit_ref.text));
+                        } else if (commit_ref.type === 'tag') {
+                            tmpl = tmpl.concat('<i class="icon-tag"></i> ');
+                            tmpl = tmpl.concat(escapeHtml(commit_ref.text));
+                        } else if (commit_ref.type === 'book') {
+                            tmpl = tmpl.concat('<i class="icon-bookmark"></i> ');
+                            tmpl = tmpl.concat(escapeHtml(commit_ref.text));
+                        }
+
+                        tmpl = tmpl.concat('<span class="select-index-number">{0}</span>'.format(commit_ref.idx));
+                        return tmpl
+                    };
+
+                  $(targetElement).select2({
+                    cachedDataSource: {},
+                    dropdownAutoWidth: true,
+                    width: "resolve",
+                    containerCssClass: "drop-menu",
+                    dropdownCssClass: "drop-menu-dropdown",
+                    query: function(query) {
+                      var self = this;
+                      var cacheKey = '__ALL_FILE_REFS__';
+                      var cachedData = self.cachedDataSource[cacheKey];
+                      if (cachedData) {
+                        var data = select2RefFilterResults(query.term, cachedData);
+                        query.callback({results: data.results});
+                      } else {
+                        $.ajax({
+                          url: loadUrl,
+                          data: {},
+                          dataType: 'json',
+                          type: 'GET',
+                          success: function(data) {
+                            self.cachedDataSource[cacheKey] = data;
+                            query.callback({results: data.results});
+                          }
+                        });
+                      }
+                    },
+                    initSelection: function(element, callback) {
+                      callback(initialData);
+                    },
+                    formatResult: formatResult,
+                    formatSelection: formatSelection
+                  });
+
+                };
+
+                select2RefFileSwitcher('#refs_filter', loadUrl, initialCommitData);
+
                 $('#refs_filter').on('change', function(e) {
                     var data = $('#refs_filter').select2('data');
                     curState.commit_id = data.raw_id;
@@ -255,21 +333,8 @@
                     curState.commit_id = data.commitId;
                 });
 
-                $('#at_rev').on("keypress", function(e) {
-                    /* ENTER PRESSED */
-                    if (e.keyCode === 13) {
-                        var rev = $('#at_rev').val();
-                        // explicit reload page here. with pjax entering bad input
-                        // produces not so nice results
-                        window.location = pyroutes.url('repo_files',
-                                {'repo_name': templateContext.repo_name,
-                                 'commit_id': rev, 'f_path': state.f_path});
-                    }
-                });
             }
         };
-
-        var pjaxTimeout = 5000;
 
         $(document).pjax(".pjax-link", "#pjax-container", {
             "fragment": "#pjax-content",

@@ -2,18 +2,19 @@
 <div id="codeblock" class="browserblock">
     <div class="browser-header">
         <div class="browser-nav">
-            ${h.form(h.current_route_path(request), method='GET', id='at_rev_form')}
+
             <div class="info_box">
-              ${h.hidden('refs_filter')}
+
               <div class="info_box_elem previous">
-                    <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
+                  <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
               </div>
-              <div class="info_box_elem">${h.text('at_rev',value=c.commit.idx)}</div>
+
+              ${h.hidden('refs_filter')}
+
               <div class="info_box_elem next">
-                    <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
+                  <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
               </div>
             </div>
-            ${h.end_form()}
 
             <div id="search_activate_id" class="search_activate">
                <a class="btn btn-default" id="filter_activate" href="javascript:void(0)">${_('Search File List')}</a>
