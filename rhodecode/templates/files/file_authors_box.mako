@@ -5,11 +5,10 @@
     % for email, user, commits in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):
     <li class="file_author">
         <div class="tooltip" title="${h.tooltip(h.author_string(email))}">
-          ${base.gravatar(email, 16)}
-          <div class="user">${h.link_to_user(user)}</div>
+          <span class="user commit-author">${h.link_to_user(user)}</span>
 
             % if c.file_author:
-                <span>- ${h.age_component(c.file_last_commit.date)}</span>
+                <span class="commit-date">- ${h.age_component(c.file_last_commit.date)}</span>
             % elif c.file_last_commit.author_email==email:
                 <span> (${_('last author')})</span>
             % endif
@@ -23,9 +22,9 @@
                   % endif
                 </span>
             % endif
-
         </div>
     </li>
     % endfor
 </ul>
 % endif
+<a href="#" id="show_authors" class="action_link">${_('Show All')}</a>

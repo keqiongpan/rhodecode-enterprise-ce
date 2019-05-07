@@ -19,7 +19,7 @@
         </div>
 
         <div class="clear-fix">
-          <span class="commit-author">${h.link_to_user(c.commit.author)}</span><span class="commit-date">-${h.age_component(c.commit.date)}</span>
+          <span class="commit-author">${h.link_to_user(c.commit.author)}</span><span class="commit-date"> - ${h.age_component(c.commit.date)}</span>
         </div>
       </div>
     </div>
@@ -33,12 +33,12 @@
         ${file_base.refs(c.commit)}
       </div>
     </div>
-    <div class="clear-fix">
-  </div>
 
+    <div class="clear-fix"></div>
 
-  <div  class="btn-collapse" data-toggle="summary-details">
-      ${_('Show More')}
+    <div  class="btn-collapse" data-toggle="summary-details">
+        ${_('Show More')}
+    </div>
   </div>
 </div>
 <script>
