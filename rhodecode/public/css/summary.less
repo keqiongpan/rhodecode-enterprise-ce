@@ -234,6 +234,16 @@
             min-height: auto;
             padding-right: 5px;
         }
+
+        .left-content-avatar {
+            width: 45px;
+            float: left;
+            margin-top: 8px;
+        }
+
+        .left-content-message {
+            float: left;
+        }
     }
 
     .right-content { // similar to form fields
@@ -271,11 +281,17 @@
     }
     .commit {
         color: @grey1;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
     .commit.truncate-wrap {
         overflow:hidden;
         text-overflow: ellipsis;
+    }
+    .commit-author {
+        color: @grey1;
+    }
+    .commit-date {
+        color: @grey4;
     }
 }
 

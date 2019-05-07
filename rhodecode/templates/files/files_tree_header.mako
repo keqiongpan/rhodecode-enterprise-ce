@@ -4,15 +4,24 @@
 <div class="summary">
   <div class="fieldset">
     <div class="left-content">
-      <div class="fieldset collapsable-content no-hide" data-toggle="summary-details">
-        <div class="commit truncate-wrap">${h.urlify_commit_message(h.chop_at_smart(c.commit.message, '\n', suffix_if_chopped='...'), c.repo_name)}</div>
+
+      <div class="left-content-avatar">
+        ${base.gravatar(c.commit.author, 30)}
       </div>
 
-      <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="commit">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
-      </div>
+      <div class="left-content-message">
+        <div class="fieldset collapsable-content no-hide" data-toggle="summary-details">
+          <div class="commit truncate-wrap">${h.urlify_commit_message(h.chop_at_smart(c.commit.message, '\n', suffix_if_chopped='...'), c.repo_name)}</div>
+        </div>
 
-      <div class="clear-fix">${base.gravatar_with_user(c.commit.author)}-${h.age_component(c.commit.date)}</div>
+        <div class="fieldset collapsable-content" data-toggle="summary-details">
+          <div class="commit">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
+        </div>
+
+        <div class="clear-fix">
+          <span class="commit-author">${h.link_to_user(c.commit.author)}</span><span class="commit-date">-${h.age_component(c.commit.date)}</span>
+        </div>
+      </div>
     </div>
 
     <div class="right-content">

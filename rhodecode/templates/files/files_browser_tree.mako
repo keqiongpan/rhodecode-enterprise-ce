@@ -1,5 +1,5 @@
 <div id="file-tree-wrapper" class="browser-body ${'full-load' if c.full_load else ''}">
-    <table class="code-browser rctable">
+    <table class="code-browser rctable repo_summary">
         <thead>
             <tr>
                 <th>${_('Name')}</th>
