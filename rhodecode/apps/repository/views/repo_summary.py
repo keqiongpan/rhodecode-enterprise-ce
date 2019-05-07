@@ -367,8 +367,7 @@ class RepoSummaryView(RepoAppView):
                 })
         return result
 
-    def _create_reference_items(self, repo, full_repo_name, refs, ref_type,
-                                format_ref_id):
+    def _create_reference_items(self, repo, full_repo_name, refs, ref_type, format_ref_id):
         result = []
         is_svn = h.is_svn(repo)
         for ref_name, raw_id in refs.iteritems():
@@ -380,6 +379,7 @@ class RepoSummaryView(RepoAppView):
                 'raw_id': raw_id,
                 'type': ref_type,
                 'files_url': files_url,
+                'idx': 0,
             })
         return result
 

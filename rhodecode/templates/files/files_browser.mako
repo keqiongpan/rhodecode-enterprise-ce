@@ -6,13 +6,13 @@
             <div class="info_box">
 
               <div class="info_box_elem previous">
-                  <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class="pjax-link ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
+                  <a id="prev_commit_link" data-commit-id="${c.prev_commit.raw_id}" class=" ${'disabled' if c.url_prev == '#' else ''}" href="${c.url_prev}" title="${_('Previous commit')}"><i class="icon-left"></i></a>
               </div>
 
               ${h.hidden('refs_filter')}
 
               <div class="info_box_elem next">
-                  <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class="pjax-link ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
+                  <a id="next_commit_link" data-commit-id="${c.next_commit.raw_id}" class=" ${'disabled' if c.url_next == '#' else ''}" href="${c.url_next}" title="${_('Next commit')}"><i class="icon-right"></i></a>
               </div>
             </div>
 

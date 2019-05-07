@@ -217,9 +217,10 @@ class _ToolTip(object):
 tooltip = _ToolTip()
 
 
-def files_breadcrumbs(repo_name, commit_id, file_path):
+def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
+    route_qry = {'at': at_ref} if at_ref else None
 
     # TODO: johbo: Is this always a url like path, or is this operating
     # system dependent?
@@ -236,8 +237,9 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
                     'repo_files',
                     repo_name=repo_name,
                     commit_id=commit_id,
-                    f_path=''),
-                class_='pjax-link')]
+                    f_path='',
+                    _query=route_qry),
+                )]
 
     last_cnt = len(path_segments) - 1
     for cnt, segment in enumerate(path_segments):
@@ -253,8 +255,9 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
                         'repo_files',
                         repo_name=repo_name,
                         commit_id=commit_id,
-                        f_path='/'.join(path_segments[:cnt + 1])),
-                    class_='pjax-link'))
+                        f_path='/'.join(path_segments[:cnt + 1]),
+                        _query=route_qry),
+                    ))
         else:
             url_segments.append(segment_html)
 

@@ -1,9 +1,9 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title(*args)">
-    ${_('%s Files') % c.repo_name}
+    ${_('{} Files').format(c.repo_name)}
     %if hasattr(c,'file'):
-        &middot; ${h.safe_unicode(c.file.path) or '\\'}
+        &middot; ${(h.safe_unicode(c.file.path) or '\\')}
     %endif
 
     %if c.rhodecode_name:
@@ -27,17 +27,16 @@
 </%def>
 
 <%def name="main()">
-    <div id="pjax-container">
+    <div>
         <div id="files_data">
             <%include file='files_pjax.mako'/>
         </div>
     </div>
     <script>
-        var pjaxTimeout = 5000;
 
-        var curState = {
-            commit_id: "${c.commit.raw_id}"
-        };
+        var metadataRequest = null;
+        var fileSourcePage = ${c.file_source_page};
+        var atRef = '${request.GET.get('at', '')}';
 
         var getState = function(context) {
             var url = $(location).attr('href');
@@ -65,23 +64,30 @@
                 var f_path = parts2.join('/');
             }
 
+            var url_params = {
+                repo_name: templateContext.repo_name,
+                commit_id: rev,
+                f_path:'__FPATH__'
+            };
+            if (atRef !== '') {
+                url_params['at'] = atRef
+            }
+
+            var _url_base = pyroutes.url('repo_files', url_params);
             var _node_list_url = pyroutes.url('repo_files_nodelist',
                     {repo_name: templateContext.repo_name,
                      commit_id: rev, f_path: f_path});
-            var _url_base = pyroutes.url('repo_files',
-                    {repo_name: templateContext.repo_name,
-                     commit_id: rev, f_path:'__FPATH__'});
+
             return {
                 url: url,
                 f_path: f_path,
                 rev: rev,
-                commit_id: curState.commit_id,
+                commit_id: "${c.commit.raw_id}",
                 node_list_url: _node_list_url,
                 url_base: _url_base
             };
         };
 
-        var metadataRequest = null;
         var getFilesMetadata = function() {
             if (metadataRequest && metadataRequest.readyState != 4) {
                 metadataRequest.abort();
@@ -120,7 +126,6 @@
         };
 
         var callbacks = function() {
-            var state = getState('callbacks');
             timeagoActivate();
 
             if ($('#trimmed_message_box').height() < 50) {
@@ -131,6 +136,8 @@
                 $('#trimmed_message_box').css('max-height', 'none');
                 $(this).hide();
             });
+
+            var state = getState('callbacks');
 
             // VIEW FOR FILE SOURCE
             if (fileSourcePage) {
@@ -147,6 +154,7 @@
                     raw_id: null,
                     files_url: null
                 };
+
                 select2FileHistorySwitcher('#diff1', initialCommitData, state);
 
                 // show at, diff to actions handlers
@@ -200,7 +208,7 @@
 
                     $.pjax({
                         url: url,
-                        data: 'annotate=${"1" if c.annotate else "0"}',
+                        data: 'annotate=${("1" if c.annotate else "0")}',
                         container: '#file_authors',
                         push: false,
                         timeout: pjaxTimeout
@@ -240,9 +248,8 @@
                 fileBrowserListeners(state.node_list_url, state.url_base);
 
                 // switch to widget
-                console.log(state)
                 var initialCommitData = {
-                    at_ref: '${request.GET.get('at')}',
+                    at_ref: atRef,
                     id: null,
                     text: '${c.commit.raw_id}',
                     type: 'sha',
@@ -250,6 +257,12 @@
                     idx: ${c.commit.idx},
                     files_url: null,
                 };
+
+                // check if we have ref info.
+                var selectedRef =  fileTreeRefs[atRef];
+                if (selectedRef !== undefined) {
+                    $.extend(initialCommitData, selectedRef)
+                }
 
                 var loadUrl = pyroutes.url('repo_refs_data', {'repo_name': templateContext.repo_name});
 
@@ -260,7 +273,6 @@
 
                     var formatSelection = function (data, container) {
                         var commit_ref = data;
-                        console.log(data)
 
                         var tmpl = '';
                         if (commit_ref.type === 'sha') {
@@ -319,59 +331,11 @@
 
                 $('#refs_filter').on('change', function(e) {
                     var data = $('#refs_filter').select2('data');
-                    curState.commit_id = data.raw_id;
-                    $.pjax({url: data.files_url, container: '#pjax-container', timeout: pjaxTimeout});
-                });
-
-                $("#prev_commit_link").on('click', function(e) {
-                    var data = $(this).data();
-                    curState.commit_id = data.commitId;
-                });
-
-                $("#next_commit_link").on('click', function(e) {
-                    var data = $(this).data();
-                    curState.commit_id = data.commitId;
+                    window.location = data.files_url
                 });
 
             }
         };
-
-        $(document).pjax(".pjax-link", "#pjax-container", {
-            "fragment": "#pjax-content",
-            "maxCacheLength": 1000,
-            "timeout": pjaxTimeout
-        });
-
-        // define global back/forward states
-        var isPjaxPopState = false;
-        $(document).on('pjax:popstate', function() {
-            isPjaxPopState = true;
-        });
-
-        $(document).on('pjax:end', function(xhr, options) {
-            if (isPjaxPopState) {
-                isPjaxPopState = false;
-                callbacks();
-                _NODEFILTER.resetFilter();
-            }
-
-            // run callback for tracking if defined for google analytics etc.
-            // this is used to trigger tracking on pjax
-            if (typeof window.rhodecode_statechange_callback !== 'undefined') {
-                var state = getState('statechange');
-                rhodecode_statechange_callback(state.url, null)
-            }
-        });
-
-        $(document).on('pjax:success', function(event, xhr, options) {
-            if (event.target.id == "file_history_container") {
-                $('#file_history_overview').hide();
-                $('#file_history_overview_full').show();
-                timeagoActivate();
-            } else {
-                callbacks();
-            }
-        });
 
         $(document).ready(function() {
             callbacks();

@@ -225,8 +225,7 @@ class RepoFilesView(RepoAppView):
 
         return branch_name, sha_commit_id, is_head
 
-    def _get_tree_at_commit(
-            self, c, commit_id, f_path, full_load=False):
+    def _get_tree_at_commit(self, c, commit_id, f_path, full_load=False):
 
         repo_id = self.db_repo.repo_id
         force_recache = self.get_recache_flag()
@@ -632,8 +631,7 @@ class RepoFilesView(RepoAppView):
                 c.authors = []
                 # this loads a simple tree without metadata to speed things up
                 # later via ajax we call repo_nodetree_full and fetch whole
-                c.file_tree = self._get_tree_at_commit(
-                    c, c.commit.raw_id, f_path)
+                c.file_tree = self._get_tree_at_commit(c, c.commit.raw_id, f_path)
 
         except RepositoryError as e:
             h.flash(safe_str(h.escape(e)), category='error')

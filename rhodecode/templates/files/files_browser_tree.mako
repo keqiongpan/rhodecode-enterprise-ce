@@ -1,4 +1,10 @@
-<div id="file-tree-wrapper" class="browser-body ${'full-load' if c.full_load else ''}">
+<%
+    if request.GET.get('at'):
+        query={'at': request.GET.get('at')}
+    else:
+        query=None
+%>
+<div id="file-tree-wrapper" class="browser-body ${('full-load' if c.full_load else '')}">
     <table class="code-browser rctable repo_summary">
         <thead>
             <tr>
@@ -14,7 +20,7 @@
           %if c.file.parent:
           <tr class="parity0">
             <td class="td-componentname">
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path, _query=query)}">
                 <i class="icon-directory"></i>..
               </a>
             </td>
@@ -38,8 +44,9 @@
                 % endif
               </span>
             % else:
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
-                <i class="${'icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir'}"></i>${node.name}
+
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path), _query=query)}">
+                <i class="${('icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir')}"></i>${node.name}
               </a>
             % endif
             </td>

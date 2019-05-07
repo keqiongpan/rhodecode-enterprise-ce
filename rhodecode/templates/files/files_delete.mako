@@ -31,7 +31,7 @@
                 ${_('Path')}:
             </div>
             <div class="right-content">
-                <span id="path-breadcrumbs">${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path)}</span>
+                <span id="path-breadcrumbs">${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path, request.GET.get('at'))}</span>
             </div>
         </div>
     </div>

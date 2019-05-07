@@ -33,7 +33,7 @@
             </div>
             <div class="right-content">
                 <div id="specify-custom-path-container">
-                    <span id="path-breadcrumbs">${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path)}</span>
+                    <span id="path-breadcrumbs">${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path, request.GET.get('at'))}</span>
                     <a class="custom-path-link" id="specify-custom-path" href="#">${_('Specify Custom Path')}</a>
                 </div>
                 <div id="remove-custom-path-container" style="display: none;">

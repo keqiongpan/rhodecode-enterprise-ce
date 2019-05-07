@@ -9,17 +9,13 @@
     %endif
 </%def>
 
-<div id="pjax-content" data-title="${self.title()}">
-    <script>
-        // set the pageSource variable
-        var fileSourcePage = ${c.file_source_page};
-    </script>
+<div>
 
     <div class="summary-detail">
         <div class="summary-detail-header">
             <div class="breadcrumbs files_location">
                 <h4>
-                     ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path)}
+                     ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
                     %if c.annotate:
                     - ${_('annotation')}
                     %endif

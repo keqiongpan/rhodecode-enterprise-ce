@@ -142,7 +142,7 @@ var fileBrowserListeners = function(node_list_url, url_base){
             };
 
             var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
-            match.push('<tr class="browser-result"><td><a class="pjax-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url,typeIcon, n_hl));
+            match.push('<tr class="browser-result"><td><a class="match-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url,typeIcon, n_hl));
           }
         }
         if(results.length > limit){
@@ -231,8 +231,8 @@ var fileBrowserListeners = function(node_list_url, url_base){
     }
     if (e.keyCode === 13){ // Enter
       if ($('.browser-highlight').length !== 0){
-        var url = $('.browser-highlight').find('.pjax-link').attr('href');
-        $.pjax({url: url, container: '#pjax-container', timeout: pjaxTimeout});
+        var url = $('.browser-highlight').find('.match-link').attr('href');
+        window.location = url;
       }
     }
     if (e.keyCode === 27){ // Esc

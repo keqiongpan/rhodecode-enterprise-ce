@@ -41,19 +41,19 @@ def test_urlify_text(url, expected_url):
 
 @pytest.mark.parametrize('repo_name, commit_id, path, expected_result', [
     ('rX<X', 'cX<X', 'pX<X/aX<X/bX<X',
-     '<a class="pjax-link" href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/'
-     '<a class="pjax-link" href="/rX%3CX/files/cX%3CX/pX%3CX">pX&lt;X</a>/'
-     '<a class="pjax-link" href="/rX%3CX/files/cX%3CX/pX%3CX/aX%3CX">aX&lt;X'
+     '<a href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/'
+     '<a href="/rX%3CX/files/cX%3CX/pX%3CX">pX&lt;X</a>/'
+     '<a href="/rX%3CX/files/cX%3CX/pX%3CX/aX%3CX">aX&lt;X'
      '</a>/bX&lt;X'),
     # Path with only one segment
     ('rX<X', 'cX<X', 'pX<X',
-     '<a class="pjax-link" href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/pX&lt;X'),
+     '<a href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/pX&lt;X'),
     # Empty path
     ('rX<X', 'cX<X', '', 'rX&lt;X'),
     ('rX"X', 'cX"X', 'pX"X/aX"X/bX"X',
-     '<a class="pjax-link" href="/rX%22X/files/cX%22X/">rX&#34;X</a>/'
-     '<a class="pjax-link" href="/rX%22X/files/cX%22X/pX%22X">pX&#34;X</a>/'
-     '<a class="pjax-link" href="/rX%22X/files/cX%22X/pX%22X/aX%22X">aX&#34;X'
+     '<a href="/rX%22X/files/cX%22X/">rX&#34;X</a>/'
+     '<a href="/rX%22X/files/cX%22X/pX%22X">pX&#34;X</a>/'
+     '<a href="/rX%22X/files/cX%22X/pX%22X/aX%22X">aX&#34;X'
      '</a>/bX&#34;X'),
 ], ids=['simple', 'one_segment', 'empty_path', 'simple_quote'])
 def test_files_breadcrumbs_xss(
