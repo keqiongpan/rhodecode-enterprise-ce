@@ -102,7 +102,7 @@ var showRepoStats = function(target, data){
     var total = 0;
     var no_data = true;
     var tbl = document.createElement('table');
-    tbl.setAttribute('class', 'trending_language_tbl');
+    tbl.setAttribute('class', 'trending_language_tbl rctable');
 
     $.each(data, function(key, val){
         total += val.count;
@@ -120,54 +120,47 @@ var showRepoStats = function(target, data){
         cnt += 1;
         no_data = false;
 
-        var hide = cnt > 2;
         var tr = document.createElement('tr');
-        if (hide) {
-            tr.setAttribute('style', 'display:none');
-            tr.setAttribute('class', 'stats_hidden');
-        }
 
         var key = val[0];
         var obj = {"desc": val[1].desc, "count": val[1].count};
 
-        var percentage = Math.round((obj.count / total * 100), 2);
-
+        // meta language names
         var td1 = document.createElement('td');
-        td1.width = 300;
         var trending_language_label = document.createElement('div');
-        trending_language_label.innerHTML = obj.desc + " (.{0})".format(key);
+        trending_language_label.innerHTML = obj.desc;
         td1.appendChild(trending_language_label);
 
+        // extensions
         var td2 = document.createElement('td');
-        var trending_language = document.createElement('div');
-        var nr_files = obj.count +" "+ _ngettext('file', 'files', obj.count);
+        var extension = document.createElement('div');
+        extension.innerHTML = ".{0}".format(key)
+        td2.appendChild(extension);
 
-        trending_language.title = key + " " + nr_files;
+        // number of files
+        var td3 = document.createElement('td');
+        var file_count = document.createElement('div');
+        var percentage_num = Math.round((obj.count / total * 100), 2);
+        var label = _ngettext('file', 'files', obj.count);
+        file_count.innerHTML = "{0} {1} ({2}%)".format(obj.count, label, percentage_num) ;
+        td3.appendChild(file_count);
 
-        trending_language.innerHTML = "<span>" + percentage + "% " + nr_files
-                + "</span><b>" + percentage + "% " + nr_files + "</b>";
+        // percentage
+        var td4 = document.createElement('td');
+        td4.setAttribute("class", 'trending_language');
 
-        trending_language.setAttribute("class", 'trending_language');
-        $('b', trending_language)[0].style.width = percentage + "%";
-        td2.appendChild(trending_language);
+        var percentage = document.createElement('div');
+        percentage.setAttribute('class', 'lang-bar');
+        percentage.innerHTML = "&nbsp;";
+        percentage.style.width = percentage_num + '%';
+        td4.appendChild(percentage);
 
         tr.appendChild(td1);
         tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
         tbl.appendChild(tr);
-        if (cnt == 3) {
-            var show_more = document.createElement('tr');
-            var td = document.createElement('td');
-            lnk = document.createElement('a');
 
-            lnk.href = '#';
-            lnk.innerHTML = _gettext('Show more');
-            lnk.id = 'code_stats_show_more';
-            td.appendChild(lnk);
-
-            show_more.appendChild(td);
-            show_more.appendChild(document.createElement('td'));
-            tbl.appendChild(show_more);
-        }
     });
 
     $(container).html(tbl);

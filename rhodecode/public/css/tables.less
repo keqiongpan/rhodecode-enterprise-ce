@@ -408,29 +408,11 @@ table.trending_language_tbl {
 
 .trending_language {
     position: relative;
-    width: 100%;
-    height: 19px;
     overflow: hidden;
-    background-color: @grey6;
+    color: @text-color;
+    width: 400px;
 
-    span, b{
-        position: absolute;
-        display: block;
-        height: 12px;
-        margin-bottom: 0px;
-        white-space: pre;
-        padding: floor(@basefontsize/4);
-        top: 0;
-        left: 0;
-    }
-
-    span{
-        color: @text-color;
-        z-index: 0;
-        min-width: 20px;
-    }
-
-    b {
+    .lang-bar {
         z-index: 1;
         overflow: hidden;
         background-color: @rcblue;

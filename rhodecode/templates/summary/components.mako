@@ -139,30 +139,21 @@
                 </div>
             </div>
         </div>
-      </div>
+    </div>
+        ## owner, description, downloads, statistics
 
+        ## Owner
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
-            <p>${_('Repository size')}</p>
-
+            <p>${_('Owner')}</p>
             <div class="right-label-summary">
-                <div class="tags">
-                   ## repo size
-                    % if commit_rev == -1:
-                          <span class="stats-bullet">0 B</span>
-                    % else:
-                          <span>
-                              <a href="#showSize" onclick="calculateSize(); $(this).hide(); return false" id="show-repo-size">Show repository size</a>
-                          </span>
-                          <span class="stats-bullet" id="repo_size_container" style="display:none">
-                              ${_('Calculating Repository Size...')}
-                          </span>
-                    % endif
-                </div>
+                ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16)}
             </div>
+
           </div>
         </div>
 
+        ## Description
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
             <p>${_('Description')}</p>
@@ -174,6 +165,7 @@
           </div>
         </div>
 
+        ## Downloads
         % if show_downloads:
           <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
             <div class="left-label-summary">
@@ -205,15 +197,53 @@
           </div>
         % endif
 
+        ## Context Action
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            <p>${_('Feed')}</p>
+
+            <div class="right-label-summary">
+                %if c.rhodecode_user.username != h.DEFAULT_USER:
+                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                %else:
+                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                %endif
+            </div>
+          </div>
+        </div>
+
+        ## Repo size
+        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
+          <div class="left-label-summary">
+            <p>${_('Repository size')}</p>
+
+            <div class="right-label-summary">
+                <div class="tags">
+                   ## repo size
+                    % if commit_rev == -1:
+                          <span class="stats-bullet">0 B</span>
+                    % else:
+                          <span>
+                              <a href="#showSize" onclick="calculateSize(); $(this).hide(); return false" id="show-repo-size">Show repository size</a>
+                          </span>
+                          <span class="stats-bullet" id="repo_size_container" style="display:none">
+                              ${_('Calculating Repository Size...')}
+                          </span>
+                    % endif
+                </div>
+            </div>
+          </div>
+        </div>
+
         ## Statistics
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
-            <p>${_('Statistics')}</p>
+            <p>${_('Code Statistics')}</p>
 
             <div class="right-label-summary input ${summary(c.show_stats)} statistics">
               % if c.show_stats:
                 <div id="lang_stats" class="enabled">
-                    ${_('Calculating Code Statistics...')}
+                    <a href="#showSize" onclick="calculateSize(); $('#show-repo-size').hide(); $(this).hide(); return false" id="show-repo-size">Show code statistics</a>
                 </div>
               % else:
                   <span class="disabled">
@@ -228,26 +258,6 @@
           </div>
         </div>
 
-        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label-summary">
-            <p>${_('Owner')}</p>
-            <div class="right-label-summary">
-                ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16)}
-            </div>
-
-          </div>
-        </div>
-
-        ## Context Action
-        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label-summary">
-            %if c.rhodecode_user.username != h.DEFAULT_USER:
-                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-            %else:
-                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-            %endif
-          </div>
-        </div>
 
     </div><!--end summary-detail-->
 
