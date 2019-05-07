@@ -211,7 +211,7 @@
                         data: 'annotate=${("1" if c.annotate else "0")}',
                         container: '#file_authors',
                         push: false,
-                        timeout: pjaxTimeout
+                        timeout: 5000
                     }).complete(function(){
                         $('#show_authors').hide();
                         $('#file_authors_title').html(_gettext('All Authors'))
@@ -235,7 +235,7 @@
                         url: url,
                         container: '#file_history_container',
                         push: false,
-                        timeout: pjaxTimeout
+                        timeout: 5000
                     })
                 });
 
