@@ -5,7 +5,7 @@
 
 self: super: {
   "alembic" = super.buildPythonPackage {
-    name = "alembic-1.0.9";
+    name = "alembic-1.0.10";
     doCheck = false;
     propagatedBuildInputs = [
       self."sqlalchemy"
@@ -14,8 +14,8 @@ self: super: {
       self."python-dateutil"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/fc/42/8729e2491fa9b8eae160d1cbb429f61712bfc2d779816488c25cfdabf7b8/alembic-1.0.9.tar.gz";
-      sha256 = "0a88rwp7fp0y8ykczj82ivr4ww1kiflcvb882lgfl9azm8csdfa0";
+      url = "https://files.pythonhosted.org/packages/6e/8b/fa3bd058cccd5e9177fea4efa26bfb769228fdd3178436ad5e05830ef6ef/alembic-1.0.10.tar.gz";
+      sha256 = "1dwl0264r6ri2jyrjr68am04x538ab26xwy4crqjnnhm4alwm3c2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -380,11 +380,11 @@ self: super: {
     };
   };
   "defusedxml" = super.buildPythonPackage {
-    name = "defusedxml-0.5.0";
+    name = "defusedxml-0.6.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/74/ba/4ba4e89e21b5a2e267d80736ea674609a0a33cc4435a6d748ef04f1f9374/defusedxml-0.5.0.tar.gz";
-      sha256 = "1x54n0h8hl92vvwyymx883fbqpqjwn2mc8fb383bcg3z9zwz5mr4";
+      url = "https://files.pythonhosted.org/packages/a4/5f/f8aa58ca0cf01cbcee728abc9d88bfeb74e95e6cb4334cfd5bed5673ea77/defusedxml-0.6.0.tar.gz";
+      sha256 = "1xbp8fivl3wlbyg2jrvs4lalaqv1xp9a9f29p75wdx2s2d6h717n";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -1175,11 +1175,11 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.9.0";
+    name = "pluggy-0.11.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a7/8c/55c629849c64e665258d8976322dfdad171fa2f57117590662d8a67618a4/pluggy-0.9.0.tar.gz";
-      sha256 = "13yg2q0wgcb4l8lgdvcnzqa8db5lrw3nwn50lxjy1z5jkp7gkv0r";
+      url = "https://files.pythonhosted.org/packages/0d/a1/862ab336e8128fde20981d2c1aa8506693412daf5083b1911d539412676b/pluggy-0.11.0.tar.gz";
+      sha256 = "10511a54dvafw1jrk75mrhml53c7b7w4yaw7241696lc2hfvr895";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1282,14 +1282,14 @@ self: super: {
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.4";
+    name = "pyasn1-modules-0.2.5";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/bd/a5/ef7bf693e8a8f015386c9167483199f54f8a8ec01d1c737e05524f16e792/pyasn1-modules-0.2.4.tar.gz";
-      sha256 = "0z3w5dqrrvdplg9ma45j8n23xvyrj9ki8mg4ibqbn7l4qpl90855";
+      url = "https://files.pythonhosted.org/packages/ec/0b/69620cb04a016e4a1e8e352e8a42717862129b574b3479adb2358a1f12f7/pyasn1-modules-0.2.5.tar.gz";
+      sha256 = "15nvfx0vnl8akdlv3k6s0n80vqvryj82bm040jdsn7wmyxl1ywpg";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1931,11 +1931,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-41.0.0";
+    name = "setuptools-41.0.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ed/69/c805067de1feedbb98c53174b0f2df44cc05e0e9ee73bb85eebc59e508c6/setuptools-41.0.0.zip";
-      sha256 = "1cfwy2g23qj3262ivj0b1182lgwz7bqqbka35rkqwypynra05lvr";
+      url = "https://files.pythonhosted.org/packages/1d/64/a18a487b4391a05b9c7f938b94a16d80305bf0369c6b0b9509e86165e1d3/setuptools-41.0.1.zip";
+      sha256 = "04sns22y2hhsrwfy1mha2lgslvpjsjsz8xws7h2rh5a7ylkd28m2";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2012,14 +2012,14 @@ self: super: {
     };
   };
   "supervisor" = super.buildPythonPackage {
-    name = "supervisor-4.0.1";
+    name = "supervisor-4.0.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."meld3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/96/ec/f8190beeb0c6d29a30aea10389c11d0164b6ff221931ee84093315ecde6a/supervisor-4.0.1.tar.gz";
-      sha256 = "10l3z7v6v1fyv7m5zbazzxciwvli2n9a41pxi27p4kixgsfp0s1j";
+      url = "https://files.pythonhosted.org/packages/cb/02/95953c98a770803e42009f18c2eb361bc035ab6fb3cbb442ffcc94387eac/supervisor-4.0.2.tar.gz";
+      sha256 = "0xg5c41wd51wnf2ihc47gwkwjf29zq2q44lcwx8di2gvliyla12n";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
