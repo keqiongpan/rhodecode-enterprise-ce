@@ -897,11 +897,15 @@ class MercurialRepository(BaseRepository):
 
         def read_patterns(suffix):
             svalue = None
-            try:
-                svalue = hgacl.get('narrowhgacl', username + suffix)
-            except configparser.NoOptionError:
+            for section, option in [
+                ('narrowacl', username + suffix),
+                ('narrowacl', 'default' + suffix),
+                ('narrowhgacl', username + suffix),
+                ('narrowhgacl', 'default' + suffix)
+            ]:
                 try:
-                    svalue = hgacl.get('narrowhgacl', 'default' + suffix)
+                    svalue = hgacl.get(section, option)
+                    break  # stop at the first value we find
                 except configparser.NoOptionError:
                     pass
             if not svalue:

@@ -42,7 +42,7 @@ class MercurialTunnelWrapper(object):
 
     def create_hooks_env(self):
         repo_name = self.server.repo_name
-        hg_flags = self.config_to_hgrc(repo_name)
+        hg_flags = self.server.config_to_hgrc(repo_name)
 
         content = textwrap.dedent(
             '''
