@@ -190,7 +190,7 @@
 
 
 <%def name="repo_page_title(repo_instance)">
-<div class="title-content">
+<div class="title-content repo-title">
     <div class="title-main">
         ## SVN/HG/GIT icons
         %if h.is_hg(repo_instance):
@@ -212,6 +212,15 @@
 
         ## repo name with group name
         ${h.breadcrumb_repo_link(repo_instance)}
+
+        ## Context Actions
+        <div class="pull-right">
+            %if c.rhodecode_user.username != h.DEFAULT_USER:
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+            %else:
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+            %endif
+        </div>
 
     </div>
 

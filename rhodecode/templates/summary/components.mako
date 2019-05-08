@@ -197,21 +197,6 @@
           </div>
         % endif
 
-        ## Context Action
-        <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
-          <div class="left-label-summary">
-            <p>${_('Feed')}</p>
-
-            <div class="right-label-summary">
-                %if c.rhodecode_user.username != h.DEFAULT_USER:
-                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-                %else:
-                    <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
-                %endif
-            </div>
-          </div>
-        </div>
-
         ## Repo size
         <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
           <div class="left-label-summary">
