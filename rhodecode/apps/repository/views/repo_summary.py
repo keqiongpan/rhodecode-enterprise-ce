@@ -319,8 +319,7 @@ class RepoSummaryView(RepoAppView):
             (_("Tag"), repo.tags, 'tag'),
             (_("Bookmark"), repo.bookmarks, 'book'),
         ]
-        res = self._create_reference_data(
-            repo, self.db_repo_name, refs_to_create)
+        res = self._create_reference_data(repo, self.db_repo_name, refs_to_create)
         data = {
             'more': False,
             'results': res

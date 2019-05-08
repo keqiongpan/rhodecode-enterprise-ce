@@ -265,6 +265,60 @@
                 }
 
                 var loadUrl = pyroutes.url('repo_refs_data', {'repo_name': templateContext.repo_name});
+                var cacheKey = '__ALL_FILE_REFS__';
+                var cachedDataSource = {};
+
+                var loadRefsData = function (query) {
+                    $.ajax({
+                        url: loadUrl,
+                        data: {},
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            cachedDataSource[cacheKey] = data;
+                            query.callback({results: data.results});
+                        }
+                    });
+                };
+
+                var feedRefsData = function (query, cachedData) {
+                    var data = {results: []};
+                    //filter results
+                    $.each(cachedData.results, function () {
+                        var section = this.text;
+                        var children = [];
+                        $.each(this.children, function () {
+                            if (query.term.length === 0 || this.text.toUpperCase().indexOf(query.term.toUpperCase()) >= 0) {
+                                children.push(this)
+                            }
+                        });
+                        data.results.push({
+                            'text': section,
+                            'children': children
+                        })
+                    });
+
+                    //push the typed in commit idx
+                    if (!isNaN(query.term)) {
+                        var files_url = pyroutes.url('repo_files',
+                                    {'repo_name': templateContext.repo_name,
+                                     'commit_id': query.term, 'f_path': state.f_path});
+
+                        data.results.push({
+                            'text': _gettext('go to numeric commit'),
+                            'children': [{
+                                at_ref: null,
+                                id: null,
+                                text: 'r{0}'.format(query.term),
+                                type: 'sha',
+                                raw_id: query.term,
+                                idx: query.term,
+                                files_url: files_url,
+                            }]
+                        });
+                    }
+                    query.callback(data);
+                };
 
                 var select2RefFileSwitcher = function (targetElement, loadUrl, initialData) {
                     var formatResult = function (result, container, query) {
@@ -288,34 +342,22 @@
                             tmpl = tmpl.concat(escapeHtml(commit_ref.text));
                         }
 
-                        tmpl = tmpl.concat('<span class="select-index-number">{0}</span>'.format(commit_ref.idx));
+                        tmpl = tmpl.concat('<span class="select-index-number">r{0}</span>'.format(commit_ref.idx));
                         return tmpl
                     };
 
                   $(targetElement).select2({
-                    cachedDataSource: {},
                     dropdownAutoWidth: true,
                     width: "resolve",
                     containerCssClass: "drop-menu",
                     dropdownCssClass: "drop-menu-dropdown",
                     query: function(query) {
-                      var self = this;
-                      var cacheKey = '__ALL_FILE_REFS__';
-                      var cachedData = self.cachedDataSource[cacheKey];
+
+                      var cachedData = cachedDataSource[cacheKey];
                       if (cachedData) {
-                        var data = select2RefFilterResults(query.term, cachedData);
-                        query.callback({results: data.results});
+                        feedRefsData(query, cachedData)
                       } else {
-                        $.ajax({
-                          url: loadUrl,
-                          data: {},
-                          dataType: 'json',
-                          type: 'GET',
-                          success: function(data) {
-                            self.cachedDataSource[cacheKey] = data;
-                            query.callback({results: data.results});
-                          }
-                        });
+                        loadRefsData(query)
                       }
                     },
                     initSelection: function(element, callback) {
