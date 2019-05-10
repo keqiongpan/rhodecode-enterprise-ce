@@ -233,8 +233,6 @@ class RepoSummaryView(RepoAppView):
         c.enable_downloads = self.db_repo.enable_downloads
         c.repository_followers = scm_model.get_followers(self.db_repo)
         c.repository_forks = scm_model.get_forks(self.db_repo)
-        c.repository_is_user_following = scm_model.is_following_repo(
-            self.db_repo_name, self._rhodecode_user.user_id)
 
         # first interaction with the VCS instance after here...
         if c.repository_requirements_missing:

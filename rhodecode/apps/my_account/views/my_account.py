@@ -360,7 +360,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 'repository.read', 'repository.write', 'repository.admin'])
 
         repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin)
+            repo_list=repo_list, admin=admin, short_name=False)
         # json used to render the grid
         return json.dumps(repos_data)
 

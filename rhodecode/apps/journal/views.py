@@ -297,8 +297,7 @@ class JournalView(BaseAppView):
         user_id = self.request.POST.get('follows_user_id')
         if user_id:
             try:
-                ScmModel().toggle_following_user(
-                    user_id, self._rhodecode_user.user_id)
+                ScmModel().toggle_following_user(user_id, self._rhodecode_user.user_id)
                 Session().commit()
                 return 'ok'
             except Exception:
@@ -307,8 +306,7 @@ class JournalView(BaseAppView):
         repo_id = self.request.POST.get('follows_repo_id')
         if repo_id:
             try:
-                ScmModel().toggle_following_repo(
-                    repo_id, self._rhodecode_user.user_id)
+                ScmModel().toggle_following_repo(repo_id, self._rhodecode_user.user_id)
                 Session().commit()
                 return 'ok'
             except Exception:

@@ -237,6 +237,8 @@ class RepoAppView(BaseAppView):
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
         c.repository_pull_requests = self.db_repo_pull_requests
+        c.repository_is_user_following = ScmModel().is_following_repo(
+            self.db_repo_name, self._rhodecode_user.user_id)
         self.path_filter = PathFilter(None)
 
         c.repository_requirements_missing = {}
