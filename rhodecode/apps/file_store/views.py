@@ -30,7 +30,7 @@ from rhodecode.apps.file_store.exceptions import (
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
-from rhodecode.lib.auth import (CSRFRequired, NotAnonymous)
+from rhodecode.lib.auth import (CSRFRequired, NotAnonymous, HasRepoPermissionAny, HasRepoGroupPermissionAny)
 from rhodecode.model.db import Session, FileStore
 
 log = logging.getLogger(__name__)
@@ -108,6 +108,35 @@ class FileStoreView(BaseAppView):
         if not self.storage.exists(file_uid):
             log.debug('File with FID:%s not found in the store', file_uid)
             raise HTTPNotFound()
+
+        db_obj = FileStore().query().filter(FileStore.file_uid == file_uid).scalar()
+        if not db_obj:
+            raise HTTPNotFound()
+
+        # private upload for user
+        if db_obj.check_acl and db_obj.scope_user_id:
+            user = db_obj.user
+            if self._rhodecode_db_user.user_id != user.user_id:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
+
+        # scoped to repository permissions
+        if db_obj.check_acl and db_obj.scope_repo_id:
+            repo = db_obj.repo
+            perm_set = ['repository.read', 'repository.write', 'repository.admin']
+            has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'FileStore check')
+            if not has_perm:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
+
+        # scoped to repository group permissions
+        if db_obj.check_acl and db_obj.scope_repo_group_id:
+            repo_group = db_obj.repo_group
+            perm_set = ['group.read', 'group.write', 'group.admin']
+            has_perm = HasRepoGroupPermissionAny(*perm_set)(repo_group.group_name, 'FileStore check')
+            if not has_perm:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
 
         FileStore.bump_access_counter(file_uid)
 
