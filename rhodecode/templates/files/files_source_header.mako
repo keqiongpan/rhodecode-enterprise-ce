@@ -27,10 +27,10 @@
       </div>
 
       <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="">
-          <div class="tags">
-            ${_('File last commit')}
-            <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a></code>
+        <div class="left-label-summary-files">
+            <p>${_('File last commit')}</p>
+            <div class="right-label-summary">
+              <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a></code>
 
             ${file_base.refs(c.file_last_commit)}
           </div>
@@ -39,22 +39,24 @@
 
 
       <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="">
-        ${_('Show/Diff file')}
-        ${h.hidden('diff1')}
-        ${h.hidden('diff2',c.commit.raw_id)}
-        ${h.hidden('annotate', c.annotate)}
+        <div class="left-label-summary-files">
+          <p>${_('Show/Diff file')}</p>
+          <div class="right-label-summary">
+            ${h.hidden('diff1')}
+            ${h.hidden('diff2',c.commit.raw_id)}
+            ${h.hidden('annotate', c.annotate)}
+          </div>
         </div>
       </div>
 
 
       <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="">
-          ${_('Action')}:
-        </div>
-        <div class="">
-        ${h.submit('diff_to_commit',_('Diff to Commit'),class_="btn disabled",disabled="true")}
-        ${h.submit('show_at_commit',_('Show at Commit'),class_="btn disabled",disabled="true")}
+        <div class="left-label-summary-files">
+          <p>${_('Action')}</p>
+          <div class="right-label-summary">
+            ${h.submit('diff_to_commit',_('Diff to Commit'),class_="btn disabled",disabled="true")}
+            ${h.submit('show_at_commit',_('Show at Commit'),class_="btn disabled",disabled="true")}
+          </div>
         </div>
       </div>
     </div>

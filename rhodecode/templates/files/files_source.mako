@@ -3,24 +3,25 @@
 <div id="codeblock" class="codeblock">
     <div class="codeblock-header">
       <div class="stats">
-            <span class="stats-filename">
-                <strong>
-                    <i class="icon-file-text"></i>
-                    ${c.file.unicode_path_safe}
-                </strong>
-            </span>
-            <span class="item last"><i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.f_path}" title="${_('Copy the full path')}"></i></span>
-            <br/>
+        <span class="stats-filename">
+            <strong>
+                <i class="icon-file-text"></i>
+                ${c.file.unicode_path_safe}
+            </strong>
+        </span>
+        <span class="item last"><i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.f_path}" title="${_('Copy the full path')}"></i></span>
+        <br/>
 
-            % if c.lf_node:
-            <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
-            % endif
+        % if c.lf_node:
+        <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
+        % endif
 
-            <span class="stats-first-item">${c.file.lines()[0]} ${_ungettext('line', 'lines', c.file.lines()[0])}</span>
-            <span> | ${h.format_byte_size_binary(c.file.size)}</span>
-            <span> | ${c.file.mimetype} </span>
-            <span> | ${h.get_lexer_for_filenode(c.file).__class__.__name__}</span>
-
+        <div class="stats-info">
+          <span class="stats-first-item">${c.file.lines()[0]} ${_ungettext('line', 'lines', c.file.lines()[0])}</span>
+          <span> | ${h.format_byte_size_binary(c.file.size)}</span>
+          <span> | ${c.file.mimetype} </span>
+          <span> | ${h.get_lexer_for_filenode(c.file).__class__.__name__}</span>
+        </div>
       </div>
       <div class="buttons">
         <a id="file_history_overview" href="#">

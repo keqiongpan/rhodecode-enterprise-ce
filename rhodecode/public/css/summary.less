@@ -228,6 +228,23 @@
         }
     }
 
+    .left-label-summary-files {
+        padding-left: 45px;
+        margin-top: 5px;
+
+        p {
+            margin-bottom: 5px;
+            color: @grey1;
+            float: left;
+            width: 130px;
+        }
+
+        .right-label-summary {
+            float: left;
+            margin-top: 7px;
+        }
+    }
+
     .left-content {
         width: ~"calc(60% - 20px)";
         float: left;
@@ -386,11 +403,10 @@
     display: block;
     width: 100%;
     margin: 0;
-    padding: @space 0 10px 0;
-    border-top: @border-thickness solid @border-default-color;
 
     .stats {
         float: left;
+        padding: 10px;
     }
     .stats-filename {
         font-size: 120%;
@@ -399,10 +415,17 @@
         padding: 0px 0px 0px 3px;
     }
 
+    .stats-info {
+        margin-top: 5px;
+        color: @grey4;
+    }
+
     .buttons {
         float: right;
         text-align: right;
         color: @grey4;
+        padding: 10px;
+        margin-top: 15px;
     }
 
     .file-container {
