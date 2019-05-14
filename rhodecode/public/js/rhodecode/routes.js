@@ -131,6 +131,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_new', '/_admin/repos/new', []);
     pyroutes.register('repo_create', '/_admin/repos/create', []);
     pyroutes.register('repo_groups', '/_admin/repo_groups', []);
+    pyroutes.register('repo_groups_data', '/_admin/repo_groups_data', []);
     pyroutes.register('repo_group_new', '/_admin/repo_group/new', []);
     pyroutes.register('repo_group_create', '/_admin/repo_group/create', []);
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
@@ -356,6 +357,11 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_external_identity', '/_admin/my_account/external-identity', []);
     pyroutes.register('my_account_external_identity_delete', '/_admin/my_account/external-identity/delete', []);
+    pyroutes.register('repo_artifacts_list', '/%(repo_name)s/artifacts', ['repo_name']);
+    pyroutes.register('repo_artifacts_data', '/%(repo_name)s/artifacts_data', ['repo_name']);
+    pyroutes.register('repo_artifacts_new', '/%(repo_name)s/artifacts/new', ['repo_name']);
+    pyroutes.register('repo_artifacts_store', '/%(repo_name)s/artifacts/store', ['repo_name']);
+    pyroutes.register('repo_artifacts_delete', '/%(repo_name)s/artifacts/delete/%(uid)s', ['repo_name', 'uid']);
     pyroutes.register('repo_automation', '/%(repo_name)s/settings/automation', ['repo_name']);
     pyroutes.register('repo_automation_update', '/%(repo_name)s/settings/automation/%(entry_id)s/update', ['repo_name', 'entry_id']);
     pyroutes.register('edit_repo_remote_push', '/%(repo_name)s/settings/remote/push', ['repo_name']);
