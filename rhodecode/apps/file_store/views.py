@@ -68,7 +68,7 @@ class FileStoreView(BaseAppView):
                               'user_id': self._rhodecode_user.user_id,
                               'ip': self._rhodecode_user.ip_addr}}
         try:
-            store_fid, metadata = self.storage.save_file(
+            store_uid, metadata = self.storage.save_file(
                 file_obj.file, filename, extra_metadata=metadata)
         except FileNotAllowedException:
             return {'store_fid': None,
@@ -82,7 +82,7 @@ class FileStoreView(BaseAppView):
 
         try:
             entry = FileStore.create(
-                file_uid=store_fid, filename=metadata["filename"],
+                file_uid=store_uid, filename=metadata["filename"],
                 file_hash=metadata["sha256"], file_size=metadata["size"],
                 file_description='upload attachment',
                 check_acl=False, user_id=self._rhodecode_user.user_id
@@ -96,8 +96,8 @@ class FileStoreView(BaseAppView):
                     'access_path': None,
                     'error': 'File {} failed to store in DB.'.format(filename)}
 
-        return {'store_fid': store_fid,
-                'access_path': h.route_path('download_file', fid=store_fid)}
+        return {'store_fid': store_uid,
+                'access_path': h.route_path('download_file', fid=store_uid)}
 
     @view_config(route_name='download_file')
     def download_file(self):

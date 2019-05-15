@@ -209,3 +209,16 @@ class LocalFileStorage(object):
             filename = os.path.join(directory, filename)
 
         return filename, metadata
+
+    def get_metadata(self, filename):
+        """
+        Reads JSON stored metadata for a file
+
+        :param filename:
+        :return:
+        """
+        filename = self.store_path(filename)
+        filename_meta = filename + '.meta'
+
+        with open(filename_meta, "rb") as source_meta:
+            return json.loads(source_meta.read())

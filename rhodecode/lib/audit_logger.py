@@ -92,6 +92,9 @@ ACTIONS_V1 = {
     'repo.commit.comment.delete': {'data': {}},
     'repo.commit.vote': '',
 
+    'repo.artifact.add': '',
+    'repo.artifact.delete': '',
+
     'repo_group.create': {'data': {}},
     'repo_group.edit': {'old_data': {}},
     'repo_group.edit.permissions': {},
