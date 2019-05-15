@@ -33,7 +33,3 @@ def upgrade(migrate_engine):
 
 def downgrade(migrate_engine):
     pass
-
-
-def _generate_repo_group_name_hashes(models, op, session):
-    pass

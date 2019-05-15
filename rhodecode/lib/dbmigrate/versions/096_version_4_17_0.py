@@ -8,6 +8,7 @@ from sqlalchemy import String, Column
 from sqlalchemy.sql import text
 
 from rhodecode.lib.dbmigrate.versions import _reset_base
+from rhodecode.lib.utils2 import safe_str
 from rhodecode.model import meta, init_model_encryption
 from rhodecode.model.db import RepoGroup
 
@@ -44,7 +45,7 @@ def downgrade(migrate_engine):
 def _generate_repo_group_name_hashes(models, op, session):
     repo_groups = models.RepoGroup.get_all()
     for repo_group in repo_groups:
-        print(repo_group.group_name)
+        print(safe_str(repo_group.group_name))
         hash_ = RepoGroup.hash_repo_group_name(repo_group.group_name)
         params = {'hash': hash_, 'id': repo_group.group_id}
         query = text(
