@@ -391,12 +391,14 @@
 ##  <div class="grid_edit">
 ##     <a href="#Edit" title="${_('Edit')}">${_('Edit')}</a>
 ##  </div>
- <div class="grid_delete">
+% if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
+    <div class="grid_delete">
     ${h.secure_form(h.route_path('repo_artifacts_delete', repo_name=repo_name, uid=file_store_id), request=request)}
       ${h.submit('remove_',_('Delete'),id="remove_artifact_%s" % file_store_id, class_="btn btn-link btn-danger",
       onclick="return confirm('"+_('Confirm to delete this artifact: %s') % file_uid+"');")}
     ${h.end_form()}
  </div>
+% endif
 </%def>
 
 <%def name="markup_form(form_id, form_text='', help_text=None)">
