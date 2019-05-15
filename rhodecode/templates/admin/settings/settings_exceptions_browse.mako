@@ -6,18 +6,24 @@
         % if c.exception_list_count == 1:
             ${_('There is {} stored exception.').format(c.exception_list_count)}
         % else:
-            ${_('There are {} stored exceptions.').format(c.exception_list_count)}
+            ${_('There are total {} stored exceptions.').format(c.exception_list_count)}
         % endif
+        <br/>
         ${_('Store directory')}: ${c.exception_store_dir}
 
       ${h.secure_form(h.route_path('admin_settings_exception_tracker_delete_all'), request=request)}
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
-
+        <input type="hidden" name="type_filter", value="${c.type_filter}">
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete all exceptions')}');">
                 <i class="icon-remove-sign"></i>
-                ${_('Delete All')}
+                % if c.type_filter:
+                    ${_('Delete All `{}`').format(c.type_filter)}
+                % else:
+                    ${_('Delete All')}
+                % endif
+
             </button>
         </div>
 
@@ -48,7 +54,9 @@
                 <td><a href="${h.route_path('admin_settings_exception_tracker_show', exception_id=tb['exc_id'])}"><code>${tb['exc_id']}</code></a></td>
                 <td>${h.format_date(tb['exc_utc_date'])}</td>
                 <td>${tb['app_type']}</td>
-                <td>${tb['exc_type']}</td>
+                <td>
+                    <a href="${h.current_route_path(request, type_filter=tb['exc_type'])}">${tb['exc_type']}</a>
+                </td>
             </tr>
             <% cnt -=1 %>
         % endfor

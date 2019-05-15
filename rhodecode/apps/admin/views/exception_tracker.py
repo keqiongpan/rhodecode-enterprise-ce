@@ -50,7 +50,7 @@ class ExceptionsTrackerView(BaseAppView):
             count +=1
         return count
 
-    def get_all_exceptions(self, read_metadata=False, limit=None):
+    def get_all_exceptions(self, read_metadata=False, limit=None, type_filter=None):
         exc_store_path = exc_tracking.get_exc_store()
         exception_list = []
 
@@ -59,7 +59,7 @@ class ExceptionsTrackerView(BaseAppView):
                 return val.split('_')[-1]
             except Exception:
                 return 0
-        count = 0
+
         for fname in reversed(sorted(os.listdir(exc_store_path), key=key_sorter)):
 
             parts = fname.split('_', 2)
@@ -83,13 +83,17 @@ class ExceptionsTrackerView(BaseAppView):
                 except Exception:
                     log.exception('Failed to read exc data from:{}'.format(full_path))
                     pass
-
             # convert our timestamp to a date obj, for nicer representation
             exc['exc_utc_date'] = time_to_utcdatetime(exc['exc_timestamp'])
-            exception_list.append(exc)
 
-            count += 1
-            if limit and count >= limit:
+            type_present = exc.get('exc_type')
+            if type_filter:
+                if type_present and type_present == type_filter:
+                    exception_list.append(exc)
+            else:
+                exception_list.append(exc)
+
+            if limit and len(exception_list) >= limit:
                 break
         return exception_list
 
@@ -103,8 +107,10 @@ class ExceptionsTrackerView(BaseAppView):
         c = self.load_default_context()
         c.active = 'exceptions_browse'
         c.limit = safe_int(self.request.GET.get('limit')) or 50
+        c.type_filter = self.request.GET.get('type_filter')
         c.next_limit = c.limit + 50
-        c.exception_list = self.get_all_exceptions(read_metadata=True, limit=c.limit)
+        c.exception_list = self.get_all_exceptions(
+            read_metadata=True, limit=c.limit, type_filter=c.type_filter)
         c.exception_list_count = self.count_all_exceptions()
         c.exception_store_dir = exc_tracking.get_exc_store()
         return self._get_template_context(c)
@@ -132,12 +138,20 @@ class ExceptionsTrackerView(BaseAppView):
     def exception_delete_all(self):
         _ = self.request.translate
         c = self.load_default_context()
+        type_filter = self.request.POST.get('type_filter')
 
         c.active = 'exceptions'
-        all_exc = self.get_all_exceptions()
-        exc_count = len(all_exc)
+        all_exc = self.get_all_exceptions(read_metadata=bool(type_filter), type_filter=type_filter)
+        exc_count = 0
+
         for exc in all_exc:
-            exc_tracking.delete_exception(exc['exc_id'], prefix=None)
+            if type_filter:
+                if exc.get('exc_type') == type_filter:
+                    exc_tracking.delete_exception(exc['exc_id'], prefix=None)
+                    exc_count += 1
+            else:
+                exc_tracking.delete_exception(exc['exc_id'], prefix=None)
+                exc_count += 1
 
         h.flash(_('Removed {} Exceptions').format(exc_count), category='success')
         raise HTTPFound(h.route_path('admin_settings_exception_tracker'))
