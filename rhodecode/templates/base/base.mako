@@ -301,7 +301,7 @@
           </li>
         %endif
 
-        <li class="${is_active('artifacts')}"><a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}"><div class="menulabel">${_('Artifacts')}</div></a></li>
+        <li class="${is_active('artifacts')}"><a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}"><div class="menulabel">${_('Artifacts')} (BETA)</div></a></li>
 
         %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
