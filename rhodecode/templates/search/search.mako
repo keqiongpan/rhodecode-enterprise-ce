@@ -56,7 +56,7 @@
 </%def>
 
 <%def name="repo_group_icon()">
-    <i class="icon-folder-close"></i>
+    <i class="icon-repo-group"></i>
 </%def>
 
 <%def name="main()">

@@ -205,7 +205,7 @@
 <%def name="repo_group_name(repo_group_name, children_groups=None)">
   <div>
     <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
-    <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
+    <i class="icon-repo-group" title="${_('Repository group')}" style="font-size: 14px"></i>
       %if children_groups:
           ${h.literal(' &raquo; '.join(children_groups))}
       %else:

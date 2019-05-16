@@ -220,9 +220,9 @@
 
                 <a href="#WatchRepo" onclick="toggleFollowingRepo(this, templateContext.repo_id); return false" title="${_('Watch this Repository and actions on it in your personalized journal')}" class="btn btn-sm ${('watching' if c.repository_is_user_following else '')}">
                     % if c.repository_is_user_following:
-                        Unwatch
+                        <i class="icon-eye-off"></i>${_('Unwatch')}
                     % else:
-                        Watch
+                        <i class="icon-eye"></i>${_('Watch')}
                     % endif
 
                 </a>
@@ -361,7 +361,7 @@
 <div class="title-content">
     <div class="title-main">
         ## Repository Group icon
-        <i class="icon-folder-close"></i>
+        <i class="icon-repo-group"></i>
 
         ## repo name with group name
         ${h.breadcrumb_repo_group_link(repo_group_instance)}
@@ -492,7 +492,7 @@
                               <div>
                                 <a class="bookmark-item" href="${h.route_path('my_account_goto_bookmark', bookmark_id=item.position)}">
                                 <code>${item.position}</code>
-                                <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
+                                <i class="icon-repo-group" title="${_('Repository group')}" style="font-size: 14px"></i>
                                 ${(item.title or h.shorter(item.repository_group.group_name, 30))}
                               </a>
                               </div>
@@ -552,7 +552,7 @@
                         ##<a href="${h.route_path('search_repo',repo_name=c.template_context['search_context']['repo_name'])}">
                             <span class="tag">
                                 This repo
-                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-delete"></i></a>
+                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-cancel-circled"></i></a>
                             </span>
                         ##</a>
                         </li>
@@ -561,7 +561,7 @@
                         ##<a href="${h.route_path('search_repo_group',repo_group_name=c.template_context['search_context']['repo_group_name'])}">
                             <span class="tag">
                                 This group
-                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-delete"></i></a>
+                                <a href="#removeGoToFilter" onclick="removeGoToFilter(); return false"><i class="icon-cancel-circled"></i></a>
                             </span>
                         ##</a>
                         </li>
@@ -696,7 +696,7 @@
 
                 if(data){
 
-                    tmpl += '<i class="icon-folder-close"></i> ';
+                    tmpl += '<i class="icon-repo-group"></i> ';
 
                 }
                 tmpl += escapeMarkup(repoGroupName);
@@ -743,7 +743,7 @@
             var icon = '';
 
             if (searchType === 'hint') {
-                icon += '<i class="icon-folder-close"></i> ';
+                icon += '<i class="icon-repo-group"></i> ';
             }
             // full text search
             else if (searchType === 'search') {
@@ -764,7 +764,7 @@
             }
             // repository groups
             else if (searchType === 'repo_group') {
-                icon += '<i class="icon-folder-close"></i> ';
+                icon += '<i class="icon-repo-group"></i> ';
             }
             // user group
             else if (searchType === 'user_group') {

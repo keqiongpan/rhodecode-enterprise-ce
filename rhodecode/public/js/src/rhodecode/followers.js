@@ -24,11 +24,11 @@ var onSuccessFollow = function (target) {
         if (targetEl.hasClass('watching')) {
             targetEl.removeClass('watching');
             targetEl.attr('title', _gettext('Stopped watching this repository'));
-            $(targetEl).html(_gettext('Watch'));
+            $(targetEl).html('<i class="icon-eye"></i>'+_gettext('Watch'));
         } else {
             targetEl.addClass('watching');
             targetEl.attr('title', _gettext('Started watching this repository'));
-            $(targetEl).html(_gettext('Unwatch'));
+            $(targetEl).html('<i class="icon-eye-off"></i>'+_gettext('Unwatch'));
         }
     };
     targetEl.animate({'opacity': 0.15}, 200, callback);
