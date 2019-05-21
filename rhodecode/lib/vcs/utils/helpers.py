@@ -101,23 +101,34 @@ def parse_datetime(text):
     :param text: string of desired date/datetime or something more verbose,
       like *yesterday*, *2weeks 3days*, etc.
     """
+    if not text:
+        raise ValueError('Wrong date: "%s"' % text)
+
+    if isinstance(text, datetime.datetime):
+        return text
 
     text = text.strip().lower()
 
-    INPUT_FORMATS = (
+    input_formats = (
         '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%dT%H:%M:%S',
         '%Y-%m-%d %H:%M',
+        '%Y-%m-%dT%H:%M',
         '%Y-%m-%d',
         '%m/%d/%Y %H:%M:%S',
+        '%m/%d/%YT%H:%M:%S',
         '%m/%d/%Y %H:%M',
+        '%m/%d/%YT%H:%M',
         '%m/%d/%Y',
         '%m/%d/%y %H:%M:%S',
+        '%m/%d/%yT%H:%M:%S',
         '%m/%d/%y %H:%M',
+        '%m/%d/%yT%H:%M',
         '%m/%d/%y',
     )
-    for format in INPUT_FORMATS:
+    for format_def in input_formats:
         try:
-            return datetime.datetime(*time.strptime(text, format)[:6])
+            return datetime.datetime(*time.strptime(text, format_def)[:6])
         except ValueError:
             pass
 

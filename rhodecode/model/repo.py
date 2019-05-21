@@ -192,7 +192,7 @@ class RepoModel(BaseModel):
         return repo_log
 
     @classmethod
-    def update_repoinfo(cls, repositories=None):
+    def update_commit_cache(cls, repositories=None):
         if not repositories:
             repositories = Repository.getAll()
         for repo in repositories:

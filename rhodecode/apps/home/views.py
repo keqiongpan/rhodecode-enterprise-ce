@@ -703,8 +703,9 @@ class HomeView(BaseAppView):
     def repo_group_main_page(self):
         c = self.load_default_context()
         c.repo_group = self.request.db_repo_group
-        repo_data, repo_group_data = self._get_groups_and_repos(
-            c.repo_group.group_id)
+        repo_data, repo_group_data = self._get_groups_and_repos(c.repo_group.group_id)
+
+        c.repo_group.update_commit_cache()
 
         # json used to render the grids
         c.repos_data = json.dumps(repo_data)

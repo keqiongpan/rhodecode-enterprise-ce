@@ -1489,10 +1489,12 @@ def breadcrumb_repo_link(repo):
     """
 
     path = [
-        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name))
+        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name),
+                title='last change:{}'.format(format_date(group.last_commit_change)))
         for group in repo.groups_with_parents
     ] + [
-        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name))
+        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name),
+                title='last change:{}'.format(format_date(repo.last_commit_change)))
     ]
 
     return literal(' &raquo; '.join(path))
@@ -1510,11 +1512,13 @@ def breadcrumb_repo_group_link(repo_group):
 
     path = [
         link_to(group.name,
-                route_path('repo_group_home', repo_group_name=group.group_name))
+                route_path('repo_group_home', repo_group_name=group.group_name),
+                title='last change:{}'.format(format_date(group.last_commit_change)))
         for group in repo_group.parents
     ] + [
         link_to(repo_group.name,
-                route_path('repo_group_home', repo_group_name=repo_group.group_name))
+                route_path('repo_group_home', repo_group_name=repo_group.group_name),
+                title='last change:{}'.format(format_date(repo_group.last_commit_change)))
     ]
 
     return literal(' &raquo; '.join(path))
