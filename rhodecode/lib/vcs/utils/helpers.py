@@ -111,19 +111,19 @@ def parse_datetime(text):
 
     input_formats = (
         '%Y-%m-%d %H:%M:%S',
-        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%dt%H:%M:%S',
         '%Y-%m-%d %H:%M',
-        '%Y-%m-%dT%H:%M',
+        '%Y-%m-%dt%H:%M',
         '%Y-%m-%d',
         '%m/%d/%Y %H:%M:%S',
-        '%m/%d/%YT%H:%M:%S',
+        '%m/%d/%Yt%H:%M:%S',
         '%m/%d/%Y %H:%M',
-        '%m/%d/%YT%H:%M',
+        '%m/%d/%Yt%H:%M',
         '%m/%d/%Y',
         '%m/%d/%y %H:%M:%S',
-        '%m/%d/%yT%H:%M:%S',
+        '%m/%d/%yt%H:%M:%S',
         '%m/%d/%y %H:%M',
-        '%m/%d/%yT%H:%M',
+        '%m/%d/%yt%H:%M',
         '%m/%d/%y',
     )
     for format_def in input_formats:
