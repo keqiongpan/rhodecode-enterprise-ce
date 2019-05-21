@@ -107,7 +107,8 @@ def parse_datetime(text):
     if isinstance(text, datetime.datetime):
         return text
 
-    text = text.strip().lower()
+    # we limit a format to no include microseconds e.g 2017-10-17t17:48:23.XXXX
+    text = text.strip().lower()[:19]
 
     input_formats = (
         '%Y-%m-%d %H:%M:%S',
