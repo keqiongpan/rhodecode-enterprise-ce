@@ -8,7 +8,7 @@ the information in the following sections.
 
 .. toctree::
 
-   nginx-config-example
-   nginx-diffie-hellman
-   nginx-proxy-conf
-   nginx-url-prefix
+   nginx/nginx-config-example
+   nginx/nginx-diffie-hellman
+   nginx/nginx-proxy-conf
+   nginx/nginx-url-prefix

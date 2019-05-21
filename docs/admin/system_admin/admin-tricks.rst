@@ -57,7 +57,7 @@ you can add a message to be displayed using the following steps:
 3. Select :guilabel:`Save`, and you will see the message once your page
    refreshes.
 
-.. image:: ../images/server-wide-announcement.png
+.. image:: ../../images/server-wide-announcement.png
    :alt: Server Wide Announcement
 
 .. _md-rst:
@@ -207,7 +207,7 @@ do this, use the following steps.
    Instance "enterprise-2" successfully stopped.
    Instance "enterprise-2" successfully started.
 
-.. image:: ../images/language.png
+.. image:: ../../images/language.png
 
 .. _set-repo-pub:
 

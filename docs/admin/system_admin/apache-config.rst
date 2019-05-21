@@ -8,7 +8,7 @@ the information in the following sections.
 
 .. toctree::
 
-   apache-conf-example
-   apache-diffie-hellman
-   apache-subdirectory
-   apache-wsgi-coding
+   apache/apache-conf-example
+   apache/apache-diffie-hellman
+   apache/apache-subdirectory
+   apache/apache-wsgi-coding

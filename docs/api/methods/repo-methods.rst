@@ -462,6 +462,7 @@ get_repo_file
    :param cache: Use internal caches for fetching files. If disabled fetching
        files is slower but more memory efficient
    :type cache: Optional(bool)
+
    Example output:
 
    .. code-block:: bash
@@ -499,53 +500,51 @@ get_repo_nodes
 .. py:function:: get_repo_nodes(apiuser, repoid, revision, root_path, ret_type=<Optional:'all'>, details=<Optional:'basic'>, max_file_bytes=<Optional:None>)
 
    Returns a list of nodes and children in a flat list for a given
-       path at given revision.
+   path at given revision.
 
-       It's possible to specify ret_type to show only `files` or `dirs`.
+   It's possible to specify ret_type to show only `files` or `dirs`.
 
-       This command can only be run using an |authtoken| with admin rights,
-       or users with at least read rights to |repos|.
+   This command can only be run using an |authtoken| with admin rights,
+   or users with at least read rights to |repos|.
 
-       :param apiuser: This is filled automatically from the |authtoken|.
-       :type apiuser: AuthUser
-       :param repoid: The repository name or repository ID.
-       :type repoid: str or int
-       :param revision: The revision for which listing should be done.
-       :type revision: str
-       :param root_path: The path from which to start displaying.
-       :type root_path: str
-       :param ret_type: Set the return type. Valid options are
-           ``all`` (default), ``files`` and ``dirs``.
-       :type ret_type: Optional(str)
-       :param details: Returns extended information about nodes, such as
-           md5, binary, and or content.
-           The valid options are ``basic`` and ``full``.
-       :type details: Optional(str)
-       :param max_file_bytes: Only return file content under this file size bytes
-       :type details: Optional(int)
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param repoid: The repository name or repository ID.
+   :type repoid: str or int
+   :param revision: The revision for which listing should be done.
+   :type revision: str
+   :param root_path: The path from which to start displaying.
+   :type root_path: str
+   :param ret_type: Set the return type. Valid options are
+       ``all`` (default), ``files`` and ``dirs``.
+   :type ret_type: Optional(str)
+   :param details: Returns extended information about nodes, such as
+       md5, binary, and or content.
+       The valid options are ``basic`` and ``full``.
+   :type details: Optional(str)
+   :param max_file_bytes: Only return file content under this file size bytes
+   :type details: Optional(int)
 
-       Example output:
+   Example output:
 
-       .. code-block:: bash
+   .. code-block:: bash
 
-           id : <id_given_in_input>
-           result: [
-                       {
-                         "binary": false,
-                         "content": "File line
-   Line2
-   ",
-                         "extension": "md",
-                         "lines": 2,
-                         "md5": "059fa5d29b19c0657e384749480f6422",
-                         "mimetype": "text/x-minidsrc",
-                         "name": "file.md",
-                         "size": 580,
-                         "type": "file"
-                       },
-                     ...
-                   ]
-           error:  null
+       id : <id_given_in_input>
+       result: [
+                   {
+                     "binary": false,
+                     "content": "File line",
+                     "extension": "md",
+                     "lines": 2,
+                     "md5": "059fa5d29b19c0657e384749480f6422",
+                     "mimetype": "text/x-minidsrc",
+                     "name": "file.md",
+                     "size": 580,
+                     "type": "file"
+                   },
+                 ...
+               ]
+       error:  null
 
 
 get_repo_refs 
