@@ -17,8 +17,7 @@
                 %if c.visual.use_gravatar:
                     ${base.gravatar(c.user.email, 100)}
                 %else:
-                    ${base.gravatar(c.user.email, 20)}
-                    ${_('Avatars are disabled')}
+                    ${base.gravatar(c.user.email, 100)}
                 %endif
             </div>
         </div>
