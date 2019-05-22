@@ -1,12 +1,13 @@
 @font-face {
   font-family: 'rcicons';
 
-  src: url('../fonts/RCIcons/rcicons.eot?65095490');
-  src: url('../fonts/RCIcons/rcicons.eot?65095490#iefix') format('embedded-opentype'),
-       url('../fonts/RCIcons/rcicons.woff2?65095490') format('woff2'),
-       url('../fonts/RCIcons/rcicons.woff?65095490') format('woff'),
-       url('../fonts/RCIcons/rcicons.ttf?65095490') format('truetype'),
-       url('../fonts/RCIcons/rcicons.svg?65095490#rcicons') format('svg');
+  src: url('../fonts/RCIcons/rcicons.eot?73199028');
+  src: url('../fonts/RCIcons/rcicons.eot?73199028#iefix') format('embedded-opentype'),
+       url('../fonts/RCIcons/rcicons.woff2?73199028') format('woff2'),
+       url('../fonts/RCIcons/rcicons.woff?73199028') format('woff'),
+       url('../fonts/RCIconst/rcicons.ttf?73199028') format('truetype'),
+       url('../fonts/RCIcons/rcicons.svg?73199028#rcicons') format('svg');
+
   font-weight: normal;
   font-style: normal;
 }
@@ -55,6 +56,91 @@
   /* Uncomment for 3D effect */
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
+
+.animate-spin {
+  -moz-animation: spin 2s infinite linear;
+  -o-animation: spin 2s infinite linear;
+  -webkit-animation: spin 2s infinite linear;
+  animation: spin 2s infinite linear;
+  display: inline-block;
+}
+@-moz-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-webkit-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-o-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-ms-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+
+
 
 .icon-no-margin::before {
     margin: 0;
@@ -121,6 +207,8 @@
 .icon-file-code:before { content: '\f1c9'; } /* '' */
 .icon-sliders:before { content: '\f1de'; } /* '' */
 .icon-trash:before { content: '\f1f8'; } /* '' */
+.icon-spin-alt:before { content: '\e834'; } /* '' */
+.icon-spin:before { content: '\e838'; } /* '' */
 
 
 // MERGED ICONS BASED ON CURRENT ONES

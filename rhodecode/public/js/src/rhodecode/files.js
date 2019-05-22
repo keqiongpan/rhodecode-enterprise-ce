@@ -56,9 +56,9 @@ var fileBrowserListeners = function (node_list_url, url_base) {
         if (!$filterInput.hasClass('init')) {
             return NodeFilter.handleKey(e);
         }
-
-        var org = $('.files-filter-box-path .tag').html();
-        $('.files-filter-box-path .tag').html('loading...');
+        var iconLoading = 'icon-spin animate-spin';
+        var iconSearch = 'icon-search';
+        $('.files-filter-box-path i').removeClass(iconSearch).addClass(iconLoading);
         $filterInput.addClass('loading');
 
         var callback = function (org) {
@@ -67,7 +67,7 @@ var fileBrowserListeners = function (node_list_url, url_base) {
                     $filterInput.removeClass('init');
                     $filterInput.removeClass('loading');
                 }
-                $('.files-filter-box-path .tag').html(org);
+                $('.files-filter-box-path i').removeClass(iconLoading).addClass(iconSearch);
 
                 // auto re-filter if we filled in the input
                 if (n_filter.value !== "") {
@@ -77,7 +77,7 @@ var fileBrowserListeners = function (node_list_url, url_base) {
             }
         };
         // load node data
-        NodeFilter.fetchNodes(callback(org));
+        NodeFilter.fetchNodes(callback());
 
     };
 

@@ -540,6 +540,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "5d2d07f112b8de19f2c0dbfec3e42c05",
+      "css": "spin",
+      "code": 59448,
+      "src": "fontelico"
+    },
+    {
+      "uid": "9bd60140934a1eb9236fd7a8ab1ff6ba",
+      "css": "spin-alt",
+      "code": 59444,
+      "src": "fontelico"
+    },
+    {
       "uid": "c43db6645e7515889fc2193294f50767",
       "css": "plus",
       "code": 59411,
