@@ -2100,8 +2100,8 @@ BIN_FILENODE = 7
 .new-file,
 #filter_activate,
 #filter_deactivate {
-    float: left;
-    margin: 0 0 0 15px;
+    float: right;
+    margin: 0 0 0 10px;
 }
 
 h3.files_location{
@@ -2109,11 +2109,12 @@ h3.files_location{
 }
 
 .browser-nav {
+    width: 100%;
 	display: table;
-	margin-bottom: @space;
-
+    margin-bottom: 20px;
 
 	.info_box {
+        float: left;
 		display: inline-table;
 		height: 2.5em;
 
@@ -2121,6 +2122,10 @@ h3.files_location{
 			display: table-cell;
 			vertical-align: middle;
 		}
+
+        .drop-menu {
+            margin: 0 10px;
+        }
 
 		.info_box_elem {
 			border-top: @border-thickness solid @grey5;
@@ -2223,14 +2228,15 @@ h3.files_location{
 
 .files-quick-filter {
   float: right;
-  margin: 0 25px;
+  width: 180px;
+  position: relative;
 }
 
 .files-filter-box {
   display: flex;
   padding: 0px;
   border-radius: 3px;
-  border: 1px solid @grey3;
+  margin-bottom: 0;
 
   a {
     border: none !important;
@@ -2241,19 +2247,30 @@ h3.files_location{
   }
 }
 
-
 .files-filter-box-path {
-  line-height: 28px;
-  padding: 0 5px;
-
+  line-height: 33px;
+  padding: 0;
+  width: 20px;
+  position: absolute;
+  z-index: 11;
+  left: 5px;
 }
 
 .files-filter-box-input {
-  background-color: @grey3 !important;
   margin-right: 0;
 
   input {
-    border: none
+    border: 1px solid @white;
+    padding-left: 25px;
+    width: 145px;
+
+    &:hover {
+        border-color: @grey6;
+    }
+
+    &:focus {
+        border-color: @grey5;
+    }
   }
 }
 

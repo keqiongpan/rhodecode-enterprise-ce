@@ -3,24 +3,6 @@
     <div class="browser-header">
         <div class="browser-nav">
 
-            <div class="files-quick-filter">
-
-                <ul class="files-filter-box">
-
-                    <li class="files-filter-box-path">
-                        <span class="tag">
-                        ${h.get_last_path_part(c.file)}
-                        </span>
-                    </li>
-
-                    <li class="files-filter-box-input">
-                        <input onkeydown="NodeFilter.initFilter(event)" class="init" type="text" name="filter" size="25" id="node_filter" autocomplete="off">
-                    </li>
-
-                </ul>
-
-            </div>
-
             <div class="info_box">
 
               <div class="info_box_elem previous">
@@ -40,6 +22,7 @@
                     ${_('Add File')}</a>
               </div>
             % endif
+
             % if c.enable_downloads:
               <% at_path = '{}.zip'.format(request.GET.get('at') or c.commit.raw_id[:6]) %>
               <div title="${_('Download tree at {}').format(at_path)}" class="btn btn-default new-file">
@@ -49,6 +32,16 @@
               </div>
             % endif
 
+            <div class="files-quick-filter">
+                <ul class="files-filter-box">
+                    <li class="files-filter-box-path">
+                        <i class="icon-search"></i>
+                    </li>
+                    <li class="files-filter-box-input">
+                        <input onkeydown="NodeFilter.initFilter(event)" class="init" type="text" placeholder="Quick filter" name="filter" size="25" id="node_filter" autocomplete="off">
+                    </li>
+                </ul>
+            </div>
         </div>
 
     </div>

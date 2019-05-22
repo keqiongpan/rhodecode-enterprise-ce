@@ -32,7 +32,6 @@
         % endif
 
     </div> <!--end summary-detail-->
-
     % if c.file.is_dir():
         <%include file='files_browser.mako'/>
     % else:
