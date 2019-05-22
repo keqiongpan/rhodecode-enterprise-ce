@@ -2221,25 +2221,41 @@ h3.files_location{
 	margin: -25px 0px 5px 0px;
 }
 
-.node-filter {
-  font-size: @repo-title-fontsize;
-  padding: 4px 0px 0px 0px;
-
-  .node-filter-path {
-      float: left;
-      color: @grey4;
-    }
-    .node-filter-input {
-        float: left;
-        margin: -2px 0px 0px 2px;
-        input {
-            padding: 2px;
-            border: none;
-            font-size: @repo-title-fontsize;
-        }
-    }
+.files-quick-filter {
+  float: right;
+  margin: 0 25px;
 }
 
+.files-filter-box {
+  display: flex;
+  padding: 0px;
+  border-radius: 3px;
+  border: 1px solid @grey3;
+
+  a {
+    border: none !important;
+  }
+
+  li {
+    list-style-type: none
+  }
+}
+
+
+.files-filter-box-path {
+  line-height: 28px;
+  padding: 0 5px;
+
+}
+
+.files-filter-box-input {
+  background-color: @grey3 !important;
+  margin-right: 0;
+
+  input {
+    border: none
+  }
+}
 
 .browser-result{
 	td a{

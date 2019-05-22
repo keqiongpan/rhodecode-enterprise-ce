@@ -1951,7 +1951,7 @@ def get_visual_attr(tmpl_context_var, attr_name):
 
 def get_last_path_part(file_node):
     if not file_node.path:
-        return u''
+        return u'/'
 
     path = safe_unicode(file_node.path.split('/')[-1])
     return u'../' + path

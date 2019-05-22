@@ -19,234 +19,254 @@
 /**
  * Search file list
  */
-// global reference to file-node filter
-var _NODEFILTER = {};
 
-var fileBrowserListeners = function(node_list_url, url_base){
-  var n_filter = $('#node_filter').get(0);
+var NodeFilter = {};
 
-  _NODEFILTER.filterTimeout = null;
-  var nodes = null;
+var fileBrowserListeners = function (node_list_url, url_base) {
+    var $filterInput = $('#node_filter');
+    var n_filter = $filterInput.get(0);
 
-  _NODEFILTER.fetchNodes = function(callback) {
-    $.ajax({url: node_list_url, headers: {'X-PARTIAL-XHR': true}})
-      .done(function(data){
-        nodes = data.nodes;
-        if (callback) {
-          callback();
+    NodeFilter.filterTimeout = null;
+    var nodes = null;
+
+    NodeFilter.focus = function () {
+        $filterInput.focus()
+    };
+
+    NodeFilter.fetchNodes = function (callback) {
+        $.ajax(
+            {url: node_list_url, headers: {'X-PARTIAL-XHR': true}})
+            .done(function (data) {
+                nodes = data.nodes;
+                if (callback) {
+                    callback();
+                }
+            })
+            .fail(function (data) {
+                console.log('failed to load');
+            });
+    };
+
+    NodeFilter.initFilter = function (e) {
+        if ($filterInput.hasClass('loading')) {
+            return
         }
-      })
-      .fail(function(data){
-        console.log('failed to load');
-      });
-  };
 
-  _NODEFILTER.fetchNodesCallback = function() {
-    $('#node_filter_box_loading').hide();
-    $('#node_filter_box').removeClass('hidden').show();
-    n_filter.focus();
-    if ($('#node_filter').hasClass('init')){
-      n_filter.value = '';
-      $('#node_filter').removeClass('init');
-    }
-  };
-
-  _NODEFILTER.initFilter = function(){
-    $('#node_filter_box_loading').removeClass('hidden').show();
-    $('#search_activate_id').hide();
-    $('#search_deactivate_id').removeClass('hidden').show();
-    $('#add_node_id').hide();
-    _NODEFILTER.fetchNodes(_NODEFILTER.fetchNodesCallback);
-  };
-
-  _NODEFILTER.resetFilter = function(){
-    $('#node_filter_box_loading').hide();
-    $('#node_filter_box').hide();
-    $('#search_activate_id').show();
-    $('#search_deactivate_id').hide();
-    $('#add_node_id').show();
-    $('#tbody').show();
-    $('#tbody_filtered').hide();
-    $('#node_filter').val('');
-  };
-
-  _NODEFILTER.fuzzy_match = function(filepath, query) {
-    var highlight = [];
-    var order = 0;
-    for (var i = 0; i < query.length; i++) {
-      var match_position = filepath.indexOf(query[i]);
-      if (match_position !== -1) {
-        var prev_match_position = highlight[highlight.length-1];
-        if (prev_match_position === undefined) {
-          highlight.push(match_position);
-        } else {
-          var current_match_position = prev_match_position + match_position + 1;
-          highlight.push(current_match_position);
-          order = order + current_match_position - prev_match_position;
+        // in case we are already loaded, do nothing
+        if (!$filterInput.hasClass('init')) {
+            return NodeFilter.handleKey(e);
         }
-        filepath = filepath.substring(match_position+1);
-      } else {
-        return false;
-      }
-    }
-    return {'order': order,
-            'highlight': highlight};
-  };
 
-  _NODEFILTER.sortPredicate = function(a, b) {
-    if (a.order < b.order) return -1;
-    if (a.order > b.order) return 1;
-    if (a.filepath < b.filepath) return -1;
-    if (a.filepath > b.filepath) return 1;
-    return 0;
-  };
+        var org = $('.files-filter-box-path .tag').html();
+        $('.files-filter-box-path .tag').html('loading...');
+        $filterInput.addClass('loading');
 
-  _NODEFILTER.updateFilter = function(elem, e) {
-    return function(){
-      // Reset timeout
-      _NODEFILTER.filterTimeout = null;
-      var query = elem.value.toLowerCase();
-      var match = [];
-      var matches_max = 20;
-      if (query !== ""){
-        var results = [];
-        for(var k=0;k<nodes.length;k++){
-          var result = _NODEFILTER.fuzzy_match(
-              nodes[k].name.toLowerCase(), query);
-          if (result) {
-            result.type = nodes[k].type;
-            result.filepath = nodes[k].name;
-            results.push(result);
-          }
-        }
-        results = results.sort(_NODEFILTER.sortPredicate);
-        var limit = matches_max;
-        if (results.length < matches_max) {
-          limit = results.length;
-        }
-        for (var i=0; i<limit; i++){
-          if(query && results.length > 0){
-            var n = results[i].filepath;
-            var t = results[i].type;
-            var n_hl = n.split("");
-            var pos = results[i].highlight;
-            for (var j = 0; j < pos.length; j++) {
-                n_hl[pos[j]] = "<em>" + n_hl[pos[j]] + "</em>";
+        var callback = function (org) {
+            return function () {
+                if ($filterInput.hasClass('init')) {
+                    $filterInput.removeClass('init');
+                    $filterInput.removeClass('loading');
+                }
+                $('.files-filter-box-path .tag').html(org);
+
+                // auto re-filter if we filled in the input
+                if (n_filter.value !== "") {
+                    NodeFilter.updateFilter(n_filter, e)()
+                }
+
             }
-            n_hl = n_hl.join("");
-            var new_url = url_base.replace('__FPATH__',n);
-
-            var typeObj = {
-              dir: 'icon-directory browser-dir',
-              file: 'icon-file-text browser-file'
-            };
-
-            var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
-            match.push('<tr class="browser-result"><td><a class="match-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url,typeIcon, n_hl));
-          }
-        }
-        if(results.length > limit){
-          var truncated_count = results.length - matches_max;
-          if (truncated_count === 1) {
-            match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated result')));
-          } else {
-            match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated results')));
-          }
-        }
-      }
-      if (query !== ""){
-        $('#tbody').hide();
-        $('#tbody_filtered').show();
-
-        if (match.length === 0){
-          match.push('<tr><td>{0}</td><td colspan="5"></td></tr>'.format(_gettext('No matching files')));
-        }
-        $('#tbody_filtered').html(match.join(""));
-      }
-      else{
-        $('#tbody').show();
-        $('#tbody_filtered').hide();
-      }
+        };
+        // load node data
+        NodeFilter.fetchNodes(callback(org));
 
     };
-  };
 
-  var scrollDown = function(element){
-    var elementBottom = element.offset().top + $(element).outerHeight();
-    var windowBottom = window.innerHeight + $(window).scrollTop();
-    if (elementBottom > windowBottom) {
-      var offset = elementBottom - window.innerHeight;
-      $('html,body').scrollTop(offset);
-      return false;
-    }
-    return true;
-  };
+    NodeFilter.resetFilter = function () {
+        $('#tbody').show();
+        $('#tbody_filtered').hide();
+        $filterInput.val('');
+    };
 
-  var scrollUp = function(element){
-    if (element.offset().top < $(window).scrollTop()) {
-      $('html,body').scrollTop(element.offset().top);
-      return false;
-    }
-    return true;
-  };
+    NodeFilter.handleKey = function (e) {
+        var scrollDown = function (element) {
+            var elementBottom = element.offset().top + $(element).outerHeight();
+            var windowBottom = window.innerHeight + $(window).scrollTop();
+            if (elementBottom > windowBottom) {
+                var offset = elementBottom - window.innerHeight;
+                $('html,body').scrollTop(offset);
+                return false;
+            }
+            return true;
+        };
 
-  $('#filter_activate').click(function() {
-    _NODEFILTER.initFilter();
-  });
+        var scrollUp = function (element) {
+            if (element.offset().top < $(window).scrollTop()) {
+                $('html,body').scrollTop(element.offset().top);
+                return false;
+            }
+            return true;
+        };
+        var $hlElem = $('.browser-highlight');
 
-  $('#filter_deactivate').click(function() {
-    _NODEFILTER.resetFilter();
-  });
+        if (e.keyCode === 40) { // Down
+            if ($hlElem.length === 0) {
+                $('.browser-result').first().addClass('browser-highlight');
+            } else {
+                var next = $hlElem.next();
+                if (next.length !== 0) {
+                    $hlElem.removeClass('browser-highlight');
+                    next.addClass('browser-highlight');
+                }
+            }
 
-  $(n_filter).click(function() {
-    if ($('#node_filter').hasClass('init')){
-      n_filter.value = '';
-      $('#node_filter').removeClass('init');
-    }
-  });
-
-  $(n_filter).keydown(function(e) {
-    if (e.keyCode === 40){ // Down
-      if ($('.browser-highlight').length === 0){
-        $('.browser-result').first().addClass('browser-highlight');
-      } else {
-        var next = $('.browser-highlight').next();
-        if (next.length !== 0) {
-          $('.browser-highlight').removeClass('browser-highlight');
-          next.addClass('browser-highlight');
+            if ($hlElem.get(0) !== undefined){
+                scrollDown($hlElem);
+            }
         }
-      }
-      scrollDown($('.browser-highlight'));
-    }
-    if (e.keyCode === 38){ // Up
-      e.preventDefault();
-      if ($('.browser-highlight').length !== 0){
-        var next = $('.browser-highlight').prev();
-        if (next.length !== 0) {
-          $('.browser-highlight').removeClass('browser-highlight');
-          next.addClass('browser-highlight');
+        if (e.keyCode === 38) { // Up
+            e.preventDefault();
+            if ($hlElem.length !== 0) {
+                var next = $hlElem.prev();
+                if (next.length !== 0) {
+                    $('.browser-highlight').removeClass('browser-highlight');
+                    next.addClass('browser-highlight');
+                }
+            }
+
+            if ($hlElem.get(0) !== undefined){
+                scrollUp($hlElem);
+            }
+
         }
-      }
-      scrollUp($('.browser-highlight'));
-    }
-    if (e.keyCode === 13){ // Enter
-      if ($('.browser-highlight').length !== 0){
-        var url = $('.browser-highlight').find('.match-link').attr('href');
-        window.location = url;
-      }
-    }
-    if (e.keyCode === 27){ // Esc
-      _NODEFILTER.resetFilter();
-      $('html,body').scrollTop(0);
-    }
-  });
-  var capture_keys = [40, 38, 39, 37, 13, 27];
-  $(n_filter).keyup(function(e) {
-    if ($.inArray(e.keyCode, capture_keys) === -1){
-      clearTimeout(_NODEFILTER.filterTimeout);
-      _NODEFILTER.filterTimeout = setTimeout(_NODEFILTER.updateFilter(n_filter, e),200);
-    }
-  });
+        if (e.keyCode === 13) { // Enter
+            if ($('.browser-highlight').length !== 0) {
+                var url = $('.browser-highlight').find('.match-link').attr('href');
+                window.location = url;
+            }
+        }
+        if (e.keyCode === 27) { // Esc
+            NodeFilter.resetFilter();
+            $('html,body').scrollTop(0);
+        }
+
+        var capture_keys = [
+            40, // ArrowDown
+            38, // ArrowUp
+            39, // ArrowRight
+            37, // ArrowLeft
+            13, // Enter
+            27  // Esc
+        ];
+
+        if ($.inArray(e.keyCode, capture_keys) === -1) {
+            clearTimeout(NodeFilter.filterTimeout);
+            NodeFilter.filterTimeout = setTimeout(NodeFilter.updateFilter(n_filter, e), 200);
+        }
+
+    };
+
+    NodeFilter.fuzzy_match = function (filepath, query) {
+        var highlight = [];
+        var order = 0;
+        for (var i = 0; i < query.length; i++) {
+            var match_position = filepath.indexOf(query[i]);
+            if (match_position !== -1) {
+                var prev_match_position = highlight[highlight.length - 1];
+                if (prev_match_position === undefined) {
+                    highlight.push(match_position);
+                } else {
+                    var current_match_position = prev_match_position + match_position + 1;
+                    highlight.push(current_match_position);
+                    order = order + current_match_position - prev_match_position;
+                }
+                filepath = filepath.substring(match_position + 1);
+            } else {
+                return false;
+            }
+        }
+        return {
+            'order': order,
+            'highlight': highlight
+        };
+    };
+
+    NodeFilter.sortPredicate = function (a, b) {
+        if (a.order < b.order) return -1;
+        if (a.order > b.order) return 1;
+        if (a.filepath < b.filepath) return -1;
+        if (a.filepath > b.filepath) return 1;
+        return 0;
+    };
+
+    NodeFilter.updateFilter = function (elem, e) {
+        return function () {
+            // Reset timeout
+            NodeFilter.filterTimeout = null;
+            var query = elem.value.toLowerCase();
+            var match = [];
+            var matches_max = 20;
+            if (query !== "") {
+                var results = [];
+                for (var k = 0; k < nodes.length; k++) {
+                    var result = NodeFilter.fuzzy_match(
+                            nodes[k].name.toLowerCase(), query);
+                    if (result) {
+                        result.type = nodes[k].type;
+                        result.filepath = nodes[k].name;
+                        results.push(result);
+                    }
+                }
+                results = results.sort(NodeFilter.sortPredicate);
+                var limit = matches_max;
+                if (results.length < matches_max) {
+                    limit = results.length;
+                }
+                for (var i = 0; i < limit; i++) {
+                    if (query && results.length > 0) {
+                        var n = results[i].filepath;
+                        var t = results[i].type;
+                        var n_hl = n.split("");
+                        var pos = results[i].highlight;
+                        for (var j = 0; j < pos.length; j++) {
+                            n_hl[pos[j]] = "<em>" + n_hl[pos[j]] + "</em>";
+                        }
+                        n_hl = n_hl.join("");
+                        var new_url = url_base.replace('__FPATH__', n);
+
+                        var typeObj = {
+                            dir: 'icon-directory browser-dir',
+                            file: 'icon-file-text browser-file'
+                        };
+
+                        var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
+                        match.push('<tr class="browser-result"><td><a class="match-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url, typeIcon, n_hl));
+                    }
+                }
+                if (results.length > limit) {
+                    var truncated_count = results.length - matches_max;
+                    if (truncated_count === 1) {
+                        match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated result')));
+                    } else {
+                        match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated results')));
+                    }
+                }
+            }
+            if (query !== "") {
+                $('#tbody').hide();
+                $('#tbody_filtered').show();
+
+                if (match.length === 0) {
+                    match.push('<tr><td>{0}</td><td colspan="5"></td></tr>'.format(_gettext('No matching files')));
+                }
+                $('#tbody_filtered').html(match.join(""));
+            } else {
+                $('#tbody').show();
+                $('#tbody_filtered').hide();
+            }
+
+        };
+    };
+
 };
 
 var getIdentNode = function(n){
