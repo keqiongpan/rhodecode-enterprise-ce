@@ -8,18 +8,19 @@
         %endif
     </div>
 
-    <div class="panel-body user-profile-content">
-
-        <div class="fieldset">
-            <div class="left-label">
+    <div class="panel-body user-profile-content fields">
+        <div class="field">
+            <div class="label">
                 ${_('Group Name')}:
             </div>
-            <div class="right-content">
+            <div class="input">
+                <div class="text-as-placeholder">
                 ${c.user_group.users_group_name}
+                </div>
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('Owner')}:
             </div>
             <div class="group_member">
@@ -28,20 +29,24 @@
 
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('Active')}:
             </div>
-            <div class="right-content">
+            <div class="input">
+                <div class="text-as-placeholder">
                 ${c.user_group.users_group_active}
+                </div>
             </div>
         </div>
         % if not c.anonymous:
-            <div class="fieldset">
-                <div class="left-label">
+        <div class="field">
+                <div class="label">
                     ${_('Members')}:
                 </div>
-                <div class="right-content">
+
+            <div class="input">
+                <div class="text-as-placeholder">
                 <table id="group_members_placeholder" class="rctable group_members">
                     <th>${_('Username')}</th>
                     % if c.group_members:
@@ -65,6 +70,7 @@
                 </table>
                 </div>
             </div>
+        </div>
         % endif
     </div>
 </div>
