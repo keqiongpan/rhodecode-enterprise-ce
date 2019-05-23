@@ -40,7 +40,7 @@
 
       <div class="fieldset collapsable-content" data-toggle="summary-details">
         <div class="left-label-summary-files">
-          <p>${_('Show/Diff file')}</p>
+          <p class="spacing">${_('Show/Diff file')}</p>
           <div class="right-label-summary">
             ${h.hidden('diff1')}
             ${h.hidden('diff2',c.commit.raw_id)}
