@@ -17,7 +17,7 @@
     .summary-detail-header {
         display: block;
         width: 100%;
-        margin-bottom: @textmargin;
+        margin-bottom: 10px;
         padding: 0 0 .5em 0;
         border-bottom: @border-thickness solid @border-default-color;
 
@@ -29,7 +29,7 @@
 
         h4 {
             margin: 0 1em 0 0;
-            padding: 0;
+            padding: 10px 0 5px 20px;
             line-height: 1.2em;
             font-size: @basefontsize;
         }
@@ -49,7 +49,7 @@
         position: relative;
         width: 100%;
         margin: 0;
-        padding: 0;
+        padding: 0 0 20px 0;
 
         .file_diff_buttons {
             margin-top: @space;
@@ -220,6 +220,10 @@
             color: @grey1;
             float: left;
             width: 130px;
+
+            &.spacing {
+                margin-top: 10px;
+            }
         }
 
         .right-label-summary {
@@ -238,6 +242,10 @@
             color: @grey1;
             float: left;
             width: 130px;
+
+            &.spacing {
+                margin-top: 10px;
+            }
         }
 
         .right-label-summary {

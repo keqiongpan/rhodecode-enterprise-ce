@@ -47,14 +47,13 @@
                         % endif
                     </h4>
                   </span>
+                  <div class="clear-fix"></div>
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Target')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Target')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
                                 ## The hidden elements are replaced with a select2 widget
@@ -66,11 +65,9 @@
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Source')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Source')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
                                 ## The hidden elements are replaced with a select2 widget
@@ -82,14 +79,11 @@
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Actions')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Actions')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
-
                                 <div class="compare-buttons">
                                 % if c.compare_home:
                                   <a id="compare_revs" class="btn btn-primary"> ${_('Compare Commits')}</a>
@@ -120,31 +114,31 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
               </div>
 
               ## commit status form
               <div class="fieldset" id="compare_changeset_status" style="display: none; margin-bottom: -80px;">
-                <div class="left-label">
-                  ${_('Commit status')}:
-                </div>
-                <div class="right-content">
-                    <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
-                    ## main comment form and it status
-                    <%
-                    def revs(_revs):
-                        form_inputs = []
-                        for cs in _revs:
-                            tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
-                            form_inputs.append(tmpl)
-                        return form_inputs
-                    %>
-                    <div>
-                        ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Commit status')}:</p>
+                    <div class="right-label-summary">
+                        <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
+                        ## main comment form and it status
+                        <%
+                        def revs(_revs):
+                            form_inputs = []
+                            for cs in _revs:
+                                tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
+                                form_inputs.append(tmpl)
+                            return form_inputs
+                        %>
+                        <div>
+                            ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                        </div>
                     </div>
                 </div>
               </div>
-
+              <div class="clear-fix"></div>
             </div> <!-- end summary-detail -->
         </div> <!-- end summary -->
 
