@@ -6,7 +6,7 @@
     <div class="left-content">
 
       <div class="left-content-avatar">
-        ${base.gravatar(c.commit.author, 30)}
+        ${base.gravatar(c.commit.author_email, 30)}
       </div>
 
       <div class="left-content-message">
