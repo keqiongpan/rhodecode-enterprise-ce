@@ -90,7 +90,7 @@ def includeme(config):
     # Files
     config.add_route(
         name='repo_archivefile',
-        pattern='/{repo_name:.*?[^/]}/archive/{fname}', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/archive/{fname:.*}', repo_route=True)
 
     config.add_route(
         name='repo_files_diff',
