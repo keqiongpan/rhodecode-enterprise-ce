@@ -254,8 +254,8 @@ class RepoModel(BaseModel):
                                  repo.private, repo.archived, repo.fork),
                 "name_raw": repo.repo_name.lower(),
 
-                "last_change": last_change(repo.last_db_change),
-                "last_change_raw": datetime_to_time(repo.last_db_change),
+                "last_change": last_change(repo.last_commit_change),
+                "last_change_raw": datetime_to_time(repo.last_commit_change),
 
                 "last_changeset": last_rev(repo.repo_name, cs_cache),
                 "last_changeset_raw": cs_cache.get('revision'),
