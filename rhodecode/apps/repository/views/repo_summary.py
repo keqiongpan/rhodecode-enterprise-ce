@@ -202,6 +202,10 @@ class RepoSummaryView(RepoAppView):
         # Prepare the clone URL
         self._prepare_and_set_clone_url(c)
 
+        # update every 5 min
+        if self.db_repo.last_commit_cache_update_diff > 60 * 5:
+            self.db_repo.update_commit_cache()
+
         # If enabled, get statistics data
 
         c.show_stats = bool(self.db_repo.enable_statistics)

@@ -214,6 +214,7 @@ class _ToolTip(object):
         tooltip_title = escape(tooltip_title)
         tooltip_title = tooltip_title.replace('<', '&lt;').replace('>', '&gt;')
         return tooltip_title
+
 tooltip = _ToolTip()
 
 

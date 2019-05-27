@@ -2185,6 +2185,10 @@ class Repository(Base, BaseModel):
         return make_lock, currently_locked, lock_info
 
     @property
+    def last_commit_cache_update_diff(self):
+        return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
+
+    @property
     def last_commit_change(self):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
@@ -2295,6 +2299,7 @@ class Repository(Base, BaseModel):
             message
             date
             author
+            updated_on
 
         """
         from rhodecode.lib.vcs.backends.base import BaseChangeset
@@ -2330,6 +2335,7 @@ class Repository(Base, BaseModel):
             if last_change_timestamp > current_timestamp:
                 cs_cache['date'] = _default
 
+            cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
             Session().add(self)
             Session().commit()
@@ -2671,6 +2677,10 @@ class RepoGroup(Base, BaseModel):
         return groups
 
     @property
+    def last_commit_cache_update_diff(self):
+        return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
+
+    @property
     def last_commit_change(self):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
@@ -2817,6 +2827,7 @@ class RepoGroup(Base, BaseModel):
                     latest_repo_cs_cache = repo_cs_cache
                     latest_repo_cs_cache['source_repo_id'] = repo.repo_id
 
+            latest_repo_cs_cache['updated_on'] = time.time()
             repo_group.changeset_cache = latest_repo_cs_cache
             Session().add(repo_group)
             Session().commit()

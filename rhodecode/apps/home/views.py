@@ -705,7 +705,9 @@ class HomeView(BaseAppView):
         c.repo_group = self.request.db_repo_group
         repo_data, repo_group_data = self._get_groups_and_repos(c.repo_group.group_id)
 
-        c.repo_group.update_commit_cache()
+        # update every 5 min
+        if self.request.db_repo_group.last_commit_cache_update_diff > 60 * 5:
+            self.request.db_repo_group.update_commit_cache()
 
         # json used to render the grids
         c.repos_data = json.dumps(repo_data)
