@@ -206,7 +206,9 @@
                         tmpl = tmpl.concat(escapeHtml(commit_ref.text));
                     }
                     var idx = commit_ref.idx || 0;
-                    tmpl = tmpl.concat('<span class="select-index-number">r{0}</span>'.format(idx));
+                    if (idx !== 0) {
+                        tmpl = tmpl.concat('<span class="select-index-number">r{0}</span>'.format(idx));
+                    }
                     return tmpl
                 };
 
@@ -397,7 +399,9 @@
                     }
 
                     var idx = commit_ref.idx || 0;
-                    tmpl = tmpl.concat('<span class="select-index-number">r{0}</span>'.format(idx));
+                    if (idx !== 0) {
+                        tmpl = tmpl.concat('<span class="select-index-number">r{0}</span>'.format(idx));
+                    }
                     return tmpl
                 };
 
