@@ -73,10 +73,3 @@ var select2RefSwitcher = function(targetElement, initialData) {
     {'repo_name': templateContext.repo_name});
   select2RefBaseSwitcher(targetElement, loadUrl, initialData);
 };
-
-var select2FileHistorySwitcher = function(targetElement, initialData, state) {
-  var loadUrl = pyroutes.url('repo_file_history',
-    {'repo_name': templateContext.repo_name, 'commit_id': state.rev,
-     'f_path': state.f_path});
-  select2RefBaseSwitcher(targetElement, loadUrl, initialData);
-};

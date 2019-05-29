@@ -17,19 +17,13 @@
         </thead>
 
         <tbody id="tbody">
-          %if c.file.parent:
-          <tr class="parity0">
-            <td class="td-componentname">
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path, _query=query)}">
-                <i class="icon-directory"></i>..
-              </a>
+        <tr>
+            <td colspan="5">
+
+                ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'), limit_items=True)}
+
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          %endif
+        </tr>
           %for cnt,node in enumerate(c.file):
           <tr class="parity${cnt%2}">
             <td class="td-componentname">

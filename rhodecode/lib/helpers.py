@@ -199,6 +199,7 @@ class _GetError(object):
         if form_errors and field_name in form_errors:
             return literal(tmpl % form_errors.get(field_name))
 
+
 get_error = _GetError()
 
 
@@ -215,33 +216,30 @@ class _ToolTip(object):
         tooltip_title = tooltip_title.replace('<', '&lt;').replace('>', '&gt;')
         return tooltip_title
 
+
 tooltip = _ToolTip()
 
 
-def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None):
+def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
+
     route_qry = {'at': at_ref} if at_ref else None
 
-    # TODO: johbo: Is this always a url like path, or is this operating
-    # system dependent?
+    # first segment is a `..` link to repo files
+    root_name = literal(u'<i class="icon-home"></i>')
+    url_segments = [
+        link_to(
+            root_name,
+            route_path(
+                'repo_files',
+                repo_name=repo_name,
+                commit_id=commit_id,
+                f_path='',
+                _query=route_qry),
+        )]
+
     path_segments = file_path.split('/')
-
-    repo_name_html = escape(repo_name)
-    if len(path_segments) == 1 and path_segments[0] == '':
-        url_segments = [repo_name_html]
-    else:
-        url_segments = [
-            link_to(
-                repo_name_html,
-                route_path(
-                    'repo_files',
-                    repo_name=repo_name,
-                    commit_id=commit_id,
-                    f_path='',
-                    _query=route_qry),
-                )]
-
     last_cnt = len(path_segments) - 1
     for cnt, segment in enumerate(path_segments):
         if not segment:
@@ -262,7 +260,16 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None):
         else:
             url_segments.append(segment_html)
 
-    return literal('/'.join(url_segments))
+    limited_url_segments = url_segments[:1] + ['...'] + url_segments[-5:]
+    if limit_items and len(limited_url_segments) < len(url_segments):
+        url_segments = limited_url_segments
+
+    full_path = file_path
+    icon = '<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'.format(full_path)
+    if file_path == '':
+        return root_name
+    else:
+        return literal(' / '.join(url_segments) + icon)
 
 
 def code_highlight(code, lexer, formatter, use_hl_filter=False):

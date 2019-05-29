@@ -36,29 +36,6 @@
           </div>
         </div>
       </div>
-
-
-      <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="left-label-summary-files">
-          <p class="spacing">${_('Show/Diff file')}</p>
-          <div class="right-label-summary">
-            ${h.hidden('diff1')}
-            ${h.hidden('diff2',c.commit.raw_id)}
-            ${h.hidden('annotate', c.annotate)}
-          </div>
-        </div>
-      </div>
-
-
-      <div class="fieldset collapsable-content" data-toggle="summary-details">
-        <div class="left-label-summary-files">
-          <p>${_('Action')}</p>
-          <div class="right-label-summary">
-            ${h.submit('diff_to_commit',_('Diff to Commit'),class_="btn disabled",disabled="true")}
-            ${h.submit('show_at_commit',_('Show at Commit'),class_="btn disabled",disabled="true")}
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="right-content">

@@ -10,6 +10,7 @@
             <span class="user commit-author">${h.link_to_user(user)}</span>
             % if c.file_author:
                 <span class="commit-date">- ${h.age_component(c.file_last_commit.date)}</span>
+                <a href="#ShowAuthors" id="show_authors" class="action_link"> - ${_('Load All Authors')}</a>
             % elif c.file_last_commit.author_email==email:
                 <span> (${_('last author')})</span>
             % endif
@@ -27,13 +28,7 @@
             % endif
         </td>
     </tr>
-    <tr>
-        <td colspan="2">
-            % if c.file_author:
-            <a href="#ShowAuthors" id="show_authors" class="action_link">${_('Show Authors')}</a>
-            % endif
-        </td>
-    </tr>
+
     % endfor
 </table>
 % endif

@@ -13,14 +13,7 @@
 
     <div class="summary-detail">
         <div class="summary-detail-header">
-            <div class="breadcrumbs files_location">
-                <h4>
-                     ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
-                    %if c.annotate:
-                    - ${_('annotation')}
-                    %endif
-                </h4>
-            </div>
+
         </div><!--end summary-detail-header-->
 
         % if c.file.is_submodule():

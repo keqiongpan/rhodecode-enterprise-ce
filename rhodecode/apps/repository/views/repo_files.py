@@ -873,18 +873,17 @@ class RepoFilesView(RepoAppView):
             self.db_repo_name, self.db_repo.repo_id, commit.raw_id, f_path)
         return {'nodes': metadata}
 
-    def _create_references(
-            self, branches_or_tags, symbolic_reference, f_path):
+    def _create_references(self, branches_or_tags, symbolic_reference, f_path, ref_type):
         items = []
         for name, commit_id in branches_or_tags.items():
-            sym_ref = symbolic_reference(commit_id, name, f_path)
-            items.append((sym_ref, name))
+            sym_ref = symbolic_reference(commit_id, name, f_path, ref_type)
+            items.append((sym_ref, name, ref_type))
         return items
 
-    def _symbolic_reference(self, commit_id, name, f_path):
+    def _symbolic_reference(self, commit_id, name, f_path, ref_type):
         return commit_id
 
-    def _symbolic_reference_svn(self, commit_id, name, f_path):
+    def _symbolic_reference_svn(self, commit_id, name, f_path, ref_type):
         new_f_path = vcspath.join(name, f_path)
         return u'%s@%s' % (new_f_path, commit_id)
 
@@ -914,7 +913,7 @@ class RepoFilesView(RepoAppView):
         for commit in commits:
             branch = ' (%s)' % commit.branch if commit.branch else ''
             n_desc = 'r%s:%s%s' % (commit.idx, commit.short_id, branch)
-            commits_group[0].append((commit.raw_id, n_desc,))
+            commits_group[0].append((commit.raw_id, n_desc, 'sha'))
         history.append(commits_group)
 
         symbolic_reference = self._symbolic_reference
@@ -930,11 +929,11 @@ class RepoFilesView(RepoAppView):
                 symbolic_reference = self._symbolic_reference_svn
 
         branches = self._create_references(
-            self.rhodecode_vcs_repo.branches, symbolic_reference, f_path)
+            self.rhodecode_vcs_repo.branches, symbolic_reference, f_path, 'branch')
         branches_group = (branches, _("Branches"))
 
         tags = self._create_references(
-            self.rhodecode_vcs_repo.tags, symbolic_reference, f_path)
+            self.rhodecode_vcs_repo.tags, symbolic_reference, f_path, 'tag')
         tags_group = (tags, _("Tags"))
 
         history.append(branches_group)
@@ -962,7 +961,7 @@ class RepoFilesView(RepoAppView):
             for obj in file_history:
                 res.append({
                     'text': obj[1],
-                    'children': [{'id': o[0], 'text': o[1]} for o in obj[0]]
+                    'children': [{'id': o[0], 'text': o[1], 'type': o[2]} for o in obj[0]]
                 })
 
             data = {

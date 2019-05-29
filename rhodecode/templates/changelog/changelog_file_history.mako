@@ -3,7 +3,7 @@
 
     <table class="table rctable file_history">
     %for cnt,cs in enumerate(c.pagination):
-        <tr id="chg_${cnt+1}" class="${'tablerow%s' % (cnt%2)}">
+        <tr id="chg_${cnt+1}" class="${('tablerow%s' % (cnt%2))}">
             <td class="td-user">
                 ${base.gravatar_with_user(cs.author, 16)}
             </td>
@@ -33,7 +33,19 @@
                     ${_('Show File')}
                 </a>
             </td>
+            <td class="td-actions">
+                <a href="${h.route_path('repo_compare',repo_name=c.repo_name, source_ref_type="rev", source_ref=cs.raw_id,target_ref_type="rev", target_ref=c.commit_id,_query=dict(merge='1',f_path=c.changelog_for_path))}">
+                    ${_('Diff File')}
+                </a>
+            </td>
         </tr>
     %endfor
+        <tr>
+            <td colspan="6">
+                <a id="file_history_overview_full" href="${h.route_path('repo_changelog_file',repo_name=c.repo_name, commit_id=c.commit_id, f_path=c.f_path)}">
+               ${_('Show Full History')}
+                </a>
+            </td>
+        </tr>
     </table>
 </div>
