@@ -52,10 +52,10 @@
     </div>
 
     <div class="codeblock codeblock-header">
+      <div class="stats">
       <div>
         ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
       </div>
-      <div class="stats">
 
         % if c.lf_node:
         <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
@@ -69,7 +69,7 @@
         </div>
 
       </div>
-      <div class="pull-right">
+      <div class="pull-right stats">
             <a id="file_history_overview" href="#loadHistory">
                 ${_('History')}
             </a>
