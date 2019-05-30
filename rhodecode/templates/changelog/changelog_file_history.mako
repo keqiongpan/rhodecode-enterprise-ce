@@ -35,7 +35,7 @@
             </td>
             <td class="td-actions">
                 <a href="${h.route_path('repo_compare',repo_name=c.repo_name, source_ref_type="rev", source_ref=cs.raw_id,target_ref_type="rev", target_ref=c.commit_id,_query=dict(merge='1',f_path=c.changelog_for_path))}">
-                    ${_('Diff File')}
+                    <span title="${'Diff {} vs {}'.format(cs.raw_id[:8],c.commit_id[:8])}">${_('Diff File')}</span>
                 </a>
             </td>
         </tr>

@@ -1094,12 +1094,12 @@ class BaseCommit(object):
         """
         return None
 
-    def archive_repo(self, file_path, kind='tgz', subrepos=None,
-                     prefix=None, write_metadata=False, mtime=None):
+    def archive_repo(self, archive_dest_path, kind='tgz', subrepos=None,
+                     prefix=None, write_metadata=False, mtime=None, archive_at_path='/'):
         """
         Creates an archive containing the contents of the repository.
 
-        :param file_path: path to the file which to create the archive.
+        :param archive_dest_path: path to the file which to create the archive.
         :param kind: one of following: ``"tbz2"``, ``"tgz"``, ``"zip"``.
         :param prefix: name of root directory in archive.
             Default is repository name and commit's short_id joined with dash:
@@ -1107,6 +1107,7 @@ class BaseCommit(object):
         :param write_metadata: write a metadata file into archive.
         :param mtime: custom modification time for archive creation, defaults
             to time.time() if not given.
+        :param archive_at_path: pack files at this path (default '/')
 
         :raise VCSError: If prefix has a problem.
         """
@@ -1122,7 +1123,7 @@ class BaseCommit(object):
 
         file_info = []
         cur_rev = self.repository.get_commit(commit_id=self.raw_id)
-        for _r, _d, files in cur_rev.walk('/'):
+        for _r, _d, files in cur_rev.walk(archive_at_path):
             for f in files:
                 f_path = os.path.join(prefix, f.path)
                 file_info.append(
@@ -1131,6 +1132,7 @@ class BaseCommit(object):
         if write_metadata:
             metadata = [
                 ('repo_name', self.repository.name),
+                ('commit_id', self.raw_id),
                 ('rev', self.raw_id),
                 ('create_time', mtime),
                 ('branch', self.branch),
@@ -1139,7 +1141,7 @@ class BaseCommit(object):
             meta = ["%s:%s" % (f_name, value) for f_name, value in metadata]
             file_info.append(('.archival.txt', 0o644, False, '\n'.join(meta)))
 
-        connection.Hg.archive_repo(file_path, mtime, file_info, kind)
+        connection.Hg.archive_repo(archive_dest_path, mtime, file_info, kind)
 
     def _validate_archive_prefix(self, prefix):
         if prefix is None:

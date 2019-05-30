@@ -42,7 +42,7 @@ from rhodecode.lib.exceptions import NonRelativePathError
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils2 import (
-    convert_line_endings, detect_mode, safe_str, str2bool, safe_int)
+    convert_line_endings, detect_mode, safe_str, str2bool, safe_int, sha1)
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.vcs import path as vcspath
@@ -243,16 +243,16 @@ class RepoFilesView(RepoAppView):
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
                                                condition=cache_on)
-        def compute_file_tree(repo_id, commit_id, f_path, full_load):
-            log.debug('Generating cached file tree for repo_id: %s, %s, %s',
-                      repo_id, commit_id, f_path)
+        def compute_file_tree(ver, repo_id, commit_id, f_path, full_load):
+            log.debug('Generating cached file tree at ver:%s for repo_id: %s, %s, %s',
+                      ver, repo_id, commit_id, f_path)
 
             c.full_load = full_load
             return render(
                 'rhodecode:templates/files/files_browser_tree.mako',
                 self._get_template_context(c), self.request)
 
-        return compute_file_tree(self.db_repo.repo_id, commit_id, f_path, full_load)
+        return compute_file_tree('v1', self.db_repo.repo_id, commit_id, f_path, full_load)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)
@@ -291,6 +291,7 @@ class RepoFilesView(RepoAppView):
 
         fname = self.request.matchdict['fname']
         subrepos = self.request.GET.get('subrepos') == 'true'
+        at_path = self.request.GET.get('at_path') or '/'
 
         if not self.db_repo.enable_downloads:
             return Response(_('Downloads disabled'))
@@ -310,10 +311,19 @@ class RepoFilesView(RepoAppView):
         except EmptyRepositoryError:
             return Response(_('Empty repository'))
 
-        archive_name = '%s-%s%s%s' % (
+        try:
+            at_path = commit.get_node(at_path).path
+        except Exception:
+            return Response(_('No node at path {} for this repository').format(at_path))
+
+        path_sha = sha1(at_path)[:8]
+
+        archive_name = '{}-{}{}-{}{}'.format(
             safe_str(self.db_repo_name.replace('/', '_')),
             '-sub' if subrepos else '',
-            safe_str(commit.short_id), ext)
+            safe_str(commit.short_id),
+            path_sha,
+            ext)
 
         use_cached_archive = False
         archive_cache_enabled = CONFIG.get(
@@ -338,7 +348,8 @@ class RepoFilesView(RepoAppView):
             fd, archive = tempfile.mkstemp()
             log.debug('Creating new temp archive in %s', archive)
             try:
-                commit.archive_repo(archive, kind=fileformat, subrepos=subrepos)
+                commit.archive_repo(archive, kind=fileformat, subrepos=subrepos,
+                                    archive_at_path=at_path)
             except ImproperArchiveTypeError:
                 return _('Unknown archive type')
             if archive_cache_enabled:
