@@ -39,13 +39,21 @@
                 </div>
             </div>
         </div>
-        <div id="filename_container" class="fieldset">
+
+        <div id="upload_file_container" class="fieldset">
             <div class="filename-label left-label">
                 ${_('Filename')}:
             </div>
             <div class="right-content">
-                <input class="input-small" type="text" value="" size="46" name="filename" id="filename">
+                <input class="input-small" type="text" value="" size="46" name="filename_upload" id="filename_upload" placeholder="${_('No file selected')}">
+            </div>
+            <div class="filename-label left-label file-upload-label">
+                ${_('Upload file')}:
+            </div>
+            <div class="right-content file-upload-input">
+                <label for="upload_file" class="btn btn-default">Browse</label>
 
+                <input type="file" name="upload_file" id="upload_file">
             </div>
         </div>
 

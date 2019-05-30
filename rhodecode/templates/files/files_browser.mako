@@ -18,10 +18,10 @@
 
             % if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
               <div>
-                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path, _anchor='edit')}">
+                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
                     ${_('Upload File')}
                 </a>
-                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path, _anchor='edit')}">
+                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
                     ${_('Add File')}
                 </a>
               </div>

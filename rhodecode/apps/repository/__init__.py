@@ -172,6 +172,10 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/add_file/{commit_id}/{f_path:.*}',
         repo_route=True)
     config.add_route(
+        name='repo_files_upload_file',
+        pattern='/{repo_name:.*?[^/]}/upload_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
         name='repo_files_create_file',
         pattern='/{repo_name:.*?[^/]}/create_file/{commit_id}/{f_path:.*}',
         repo_route=True)

@@ -1250,6 +1250,9 @@ class RepoFilesView(RepoAppView):
     @view_config(
         route_name='repo_files_add_file', request_method='GET',
         renderer='rhodecode:templates/files/files_add.mako')
+    @view_config(
+        route_name='repo_files_upload_file', request_method='GET',
+        renderer='rhodecode:templates/files/files_upload.mako')
     def repo_files_add_file(self):
         _ = self.request.translate
         c = self.load_default_context()
