@@ -218,7 +218,7 @@ class RepoCompareView(RepoAppView):
             if source_commit == target_commit:
                 c.commit_ranges = []
             else:
-                c.commit_ranges = [target_commit]
+                c.commit_ranges = [source_commit, target_commit]
         else:
             try:
                 c.commit_ranges = source_scm.compare(
