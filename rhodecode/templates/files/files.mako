@@ -27,105 +27,27 @@
 </%def>
 
 <%def name="main()">
+    <script type="text/javascript">
+        var fileSourcePage = ${c.file_source_page};
+        var atRef = '${request.GET.get('at', '')}';
+
+        // global state for fetching metadata
+        metadataRequest = null;
+
+        // global metadata about URL
+        filesUrlData = ${h.json.dumps(request.matchdict)|n};
+    </script>
+
     <div>
         <div id="files_data">
             <%include file='files_pjax.mako'/>
         </div>
     </div>
-    <script>
 
-        var metadataRequest = null;
-        var fileSourcePage = ${c.file_source_page};
-        var atRef = '${request.GET.get('at', '')}';
-
-        var getState = function(context) {
-            var url = $(location).attr('href');
-            var _base_url = '${h.route_path("repo_files",repo_name=c.repo_name,commit_id='',f_path='')}';
-            var _annotate_url = '${h.route_path("repo_files:annotated",repo_name=c.repo_name,commit_id='',f_path='')}';
-            _base_url = _base_url.replace('//', '/');
-            _annotate_url = _annotate_url.replace('//', '/');
-
-            //extract f_path from url.
-            var parts = url.split(_base_url);
-            if (parts.length != 2) {
-                parts = url.split(_annotate_url);
-                if (parts.length != 2) {
-                    var rev = "tip";
-                    var f_path = "";
-                } else {
-                    var parts2 = parts[1].split('/');
-                    var rev = parts2.shift(); // pop the first element which is the revision
-                    var f_path = parts2.join('/');
-                }
-
-            } else {
-                var parts2 = parts[1].split('/');
-                var rev = parts2.shift(); // pop the first element which is the revision
-                var f_path = parts2.join('/');
-            }
-
-            var url_params = {
-                repo_name: templateContext.repo_name,
-                commit_id: rev,
-                f_path:'__FPATH__'
-            };
-            if (atRef !== '') {
-                url_params['at'] = atRef
-            }
-
-            var _url_base = pyroutes.url('repo_files', url_params);
-            var _node_list_url = pyroutes.url('repo_files_nodelist',
-                    {repo_name: templateContext.repo_name,
-                     commit_id: rev, f_path: f_path});
-
-            return {
-                url: url,
-                f_path: f_path,
-                rev: rev,
-                commit_id: "${c.commit.raw_id}",
-                node_list_url: _node_list_url,
-                url_base: _url_base
-            };
-        };
-
-        var getFilesMetadata = function() {
-            if (metadataRequest && metadataRequest.readyState != 4) {
-                metadataRequest.abort();
-            }
-            if (fileSourcePage) {
-                return false;
-            }
-
-            if ($('#file-tree-wrapper').hasClass('full-load')) {
-                // in case our HTML wrapper has full-load class we don't
-                // trigger the async load of metadata
-                return false;
-            }
-
-            var state = getState('metadata');
-            var url_data = {
-                'repo_name': templateContext.repo_name,
-                'commit_id': state.commit_id,
-                'f_path': state.f_path
-            };
-
-            var url = pyroutes.url('repo_nodetree_full', url_data);
-
-            metadataRequest = $.ajax({url: url});
-
-            metadataRequest.done(function(data) {
-                $('#file-tree').html(data);
-                timeagoActivate();
-            });
-            metadataRequest.fail(function (data, textStatus, errorThrown) {
-                if (data.status != 0) {
-                    alert("Error while fetching metadata.\nError code {0} ({1}).Please consider reloading the page".format(data.status,data.statusText));
-                }
-            });
-        };
+    <script type="text/javascript">
 
         var initFileJS = function () {
-            var state = getState('callbacks');
+            var state = getFileState();
 
             // select code link event
             $("#hlcode").mouseup(getSelectionLink);
@@ -147,7 +69,7 @@
                 $.extend(initialCommitData, selectedRef)
             }
 
-            var loadUrl = pyroutes.url('repo_file_history', {'repo_name': templateContext.repo_name, 'commit_id': state.rev,'f_path': state.f_path});
+            var loadUrl = pyroutes.url('repo_file_history', {'repo_name': templateContext.repo_name, 'commit_id': state.commit_id,'f_path': state.f_path});
             var cacheKey = '__SINGLE_FILE_REFS__';
             var cachedDataSource = {};
 
@@ -253,25 +175,6 @@
 
             });
 
-            // show more authors
-            $('#show_authors').on('click', function(e) {
-                e.preventDefault();
-                var url = pyroutes.url('repo_file_authors',
-                            {'repo_name': templateContext.repo_name,
-                             'commit_id': state.rev, 'f_path': state.f_path});
-
-                $.pjax({
-                    url: url,
-                    data: 'annotate=${("1" if c.annotate else "0")}',
-                    container: '#file_authors',
-                    push: false,
-                    timeout: 5000
-                }).complete(function(){
-                    $('#show_authors').hide();
-                    $('#file_authors_title').html(_gettext('All Authors'))
-                })
-            });
-
             // load file short history
             $('#file_history_overview').on('click', function(e) {
                 e.preventDefault();
@@ -281,7 +184,7 @@
                 }
                 var url = pyroutes.url('repo_changelog_file',
                         {'repo_name': templateContext.repo_name,
-                         'commit_id': state.rev, 'f_path': path, 'limit': 6});
+                         'commit_id': state.commit_id, 'f_path': path, 'limit': 6});
                 $('#file_history_container').show();
                 $('#file_history_container').html('<div class="file-history-inner">{0}</div>'.format(_gettext('Loading ...')));
 
@@ -293,11 +196,10 @@
                 });
             });
 
-
         };
 
         var initTreeJS = function () {
-            var state = getState('callbacks');
+            var state = getFileState();
             getFilesMetadata();
 
             // fuzzy file filter

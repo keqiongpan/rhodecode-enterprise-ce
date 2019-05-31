@@ -328,3 +328,84 @@ var getSelectionLink = function(e) {
     }
   }
 };
+
+var getFileState = function() {
+    // relies on a global set filesUrlData
+    var f_path = filesUrlData['f_path'];
+    var commit_id = filesUrlData['commit_id'];
+
+    var url_params = {
+        repo_name: templateContext.repo_name,
+        commit_id: commit_id,
+        f_path:'__FPATH__'
+    };
+    if (atRef !== '') {
+        url_params['at'] = atRef
+    }
+
+    var _url_base = pyroutes.url('repo_files', url_params);
+    var _node_list_url = pyroutes.url('repo_files_nodelist',
+            {repo_name: templateContext.repo_name,
+             commit_id: commit_id, f_path: f_path});
+
+    return {
+        f_path: f_path,
+        commit_id: commit_id,
+        node_list_url: _node_list_url,
+        url_base: _url_base
+    };
+};
+
+var getFilesMetadata = function() {
+    // relies on metadataRequest global state
+    if (metadataRequest && metadataRequest.readyState != 4) {
+        metadataRequest.abort();
+    }
+
+    if ($('#file-tree-wrapper').hasClass('full-load')) {
+        // in case our HTML wrapper has full-load class we don't
+        // trigger the async load of metadata
+        return false;
+    }
+
+    var state = getFileState();
+    var url_data = {
+        'repo_name': templateContext.repo_name,
+        'commit_id': state.commit_id,
+        'f_path': state.f_path
+    };
+
+    var url = pyroutes.url('repo_nodetree_full', url_data);
+
+    metadataRequest = $.ajax({url: url});
+
+    metadataRequest.done(function(data) {
+        $('#file-tree').html(data);
+        timeagoActivate();
+    });
+    metadataRequest.fail(function (data, textStatus, errorThrown) {
+        if (data.status != 0) {
+            alert("Error while fetching metadata.\nError code {0} ({1}).Please consider reloading the page".format(data.status,data.statusText));
+        }
+    });
+};
+
+// show more authors
+var showAuthors = function(elem, annotate) {
+    var state = getFileState('callbacks');
+
+    var url = pyroutes.url('repo_file_authors',
+                {'repo_name': templateContext.repo_name,
+                 'commit_id': state.commit_id, 'f_path': state.f_path});
+
+    $.pjax({
+        url: url,
+        data: 'annotate={0}'.format(annotate),
+        container: '#file_authors',
+        push: false,
+        timeout: 5000
+    }).complete(function(){
+        $(elem).hide();
+        $('#file_authors_title').html(_gettext('All Authors'))
+    })
+};
