@@ -7,6 +7,9 @@
     <tr class="file_author tooltip" title="${h.tooltip(h.author_string(email))}">
 
         <td>
+            % if not c.file_author:
+            ${base.gravatar(email, 16)}
+            % endif
             <span class="user commit-author">${h.link_to_user(user)}</span>
             % if c.file_author:
                 <span class="commit-date">- ${h.age_component(c.file_last_commit.date)}</span>
