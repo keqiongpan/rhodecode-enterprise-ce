@@ -52,38 +52,49 @@
     </div>
 
     <div class="codeblock codeblock-header">
-      <div class="stats">
-      <div>
-        ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
-      </div>
 
-        % if c.lf_node:
-        <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
-        % endif
+        <div class="file-filename">
+            <i class="icon-file"></i> ${c.file}
+        </div>
+
+        <div class="file-stats">
 
         <div class="stats-info">
           <span class="stats-first-item">${c.file.lines()[0]} ${_ungettext('line', 'lines', c.file.lines()[0])}</span>
+
           <span> | ${h.format_byte_size_binary(c.file.size)}</span>
+          % if c.lf_node:
+          <span title="${_('This file is a pointer to large binary file')}"> | ${_('LargeFile')} ${h.format_byte_size_binary(c.lf_node.size)} </span>
+          % endif
           <span> | ${c.file.mimetype} </span>
           <span> | ${h.get_lexer_for_filenode(c.file).__class__.__name__}</span>
         </div>
 
       </div>
-      <div class="pull-right stats">
-            <a id="file_history_overview" href="#loadHistory">
-                ${_('History')}
-            </a>
-             |
-            %if c.annotate:
-              ${h.link_to(_('Source'), h.route_path('repo_files', repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
-            %else:
-              ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
-            %endif
-             | ${h.link_to(_('Raw'), h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
 
-      </div>
+        <div class="code-body">
 
-    <div class="code-body">
+          <div>
+              <div class="pull-left">
+                ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
+              </div>
+
+              <div class="pull-right stats">
+                    <a id="file_history_overview" href="#loadHistory">
+                        ${_('History')}
+                    </a>
+                     |
+                    %if c.annotate:
+                      ${h.link_to(_('Source'), h.route_path('repo_files', repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
+                    %else:
+                      ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
+                    %endif
+                     | ${h.link_to(_('Raw'), h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
+
+              </div>
+          </div>
+
+
      %if c.file.is_binary:
            <% rendered_binary = h.render_binary(c.repo_name, c.file)%>
            % if rendered_binary:
@@ -124,7 +135,8 @@
         %endif
      %endif
     </div>
-</div>
+
+    </div>
 
 <script type="text/javascript">
 % if request.GET.get('mark'):
