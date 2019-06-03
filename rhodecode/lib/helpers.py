@@ -272,6 +272,18 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
         return literal(' / '.join(url_segments) + icon)
 
 
+def files_url_data(request):
+    matchdict = request.matchdict
+
+    if 'f_path' not in matchdict:
+        matchdict['f_path'] = ''
+
+    if 'commit_id' not in matchdict:
+        matchdict['commit_id'] = 'tip'
+
+    return json.dumps(matchdict)
+
+
 def code_highlight(code, lexer, formatter, use_hl_filter=False):
     """
     Lex ``code`` with ``lexer`` and format it with the formatter ``formatter``.

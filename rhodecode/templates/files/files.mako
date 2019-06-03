@@ -35,7 +35,7 @@
         metadataRequest = null;
 
         // global metadata about URL
-        filesUrlData = ${h.json.dumps(request.matchdict)|n};
+        filesUrlData = ${h.files_url_data(request)|n};
     </script>
 
     <div>
