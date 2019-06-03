@@ -752,8 +752,8 @@ class PullRequestModel(BaseModel):
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)
 
-        ancestor = target_repo.get_common_ancestor(
-            target_commit.raw_id, source_commit.raw_id, source_repo)
+        ancestor = source_repo.get_common_ancestor(
+            source_commit.raw_id, target_commit.raw_id, target_repo)
 
         pull_request.source_ref = '%s:%s:%s' % (
             source_ref_type, source_ref_name, source_commit.raw_id)
