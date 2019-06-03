@@ -22,7 +22,7 @@
     <div class="box">
 
     <h4>${_('This feature is available in RhodeCode EE edition only. Contact {sales_email} to obtain a trial license.').format(sales_email='<a href="mailto:sales@rhodecode.com">sales@rhodecode.com</a>')|n}</h4>
-    <img style="width: 100%; height: 100%" src="${h.asset('images/ee_features/repo_artifacts.png')}"/>
+    ##<img style="width: 100%; height: 100%" src="${h.asset('images/ee_features/repo_artifacts.png')}"/>
     </div>
 
 </%def>
