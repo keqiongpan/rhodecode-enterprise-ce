@@ -47,6 +47,7 @@
                         % endif
                     </h4>
                   </span>
+
                   <div class="clear-fix"></div>
               </div>
 
@@ -87,6 +88,21 @@
                                 <div class="compare-buttons">
                                 % if c.compare_home:
                                   <a id="compare_revs" class="btn btn-primary"> ${_('Compare Commits')}</a>
+                                  %if c.rhodecode_db_repo.fork:
+
+                                       <a class="btn btn-default" title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
+                                          href="${h.route_path('repo_compare',
+                                                repo_name=c.rhodecode_db_repo.fork.repo_name,
+                                                source_ref_type=c.rhodecode_db_repo.landing_rev[0],
+                                                source_ref=c.rhodecode_db_repo.landing_rev[1],
+                                                target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
+                                                target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
+                                                _query=dict(merge=1))}"
+                                        >
+                                       ${_('Compare with origin')}
+                                       </a>
+
+                                  %endif
 
                                   <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Swap')}</a>
                                   <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Comment')}</a>

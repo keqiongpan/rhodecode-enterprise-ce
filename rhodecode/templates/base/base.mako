@@ -308,43 +308,34 @@
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
         %endif
 
+        ## determine if we have "any" option available
+        <%
+            can_lock = h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking
+            has_actions = (c.rhodecode_user.username != h.DEFAULT_USER and c.rhodecode_db_repo.repo_type in ['git','hg'] ) or can_lock
+        %>
         <li class="${is_active('options')}">
-          <a class="menulink dropdown">
-              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-          </a>
-          <ul class="submenu">
-
-              %if c.rhodecode_db_repo.fork:
-               <li>
-                   <a title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
-                      href="${h.route_path('repo_compare',
-                            repo_name=c.rhodecode_db_repo.fork.repo_name,
-                            source_ref_type=c.rhodecode_db_repo.landing_rev[0],
-                            source_ref=c.rhodecode_db_repo.landing_rev[1],
-                            target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
-                            target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
-                            _query=dict(merge=1))}"
-                    >
-                   ${_('Compare fork')}
-                   </a>
-               </li>
-              %endif
-
-              %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking:
-                %if c.rhodecode_db_repo.locked[0]:
-                  <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock')}</a></li>
-                %else:
-                  <li><a class="locking_add" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Lock')}</a></li>
+          % if has_actions:
+            <a class="menulink dropdown">
+              <div class="menulabel">${_('Options')}<div class="show_more"></div></div>
+            </a>
+            <ul class="submenu">
+                <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork this repository')}</a></li>
+                <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
+                %if can_lock:
+                    %if c.rhodecode_db_repo.locked[0]:
+                      <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock Repository')}</a></li>
+                    %else:
+                      <li><a class="locking_add" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Lock Repository')}</a></li>
+                    %endif
                 %endif
-              %endif
-              %if c.rhodecode_user.username != h.DEFAULT_USER:
-                %if c.rhodecode_db_repo.repo_type in ['git','hg']:
-                  <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork')}</a></li>
-                  <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
-                %endif
-              %endif
-             </ul>
+            </ul>
+          % else:
+            <a class="menulink disabled">
+              <div class="menulabel">${_('Options')}<div class="show_more"></div></div>
+            </a>
+          % endif
         </li>
+
       </ul>
     </div>
     <div class="clear"></div>
@@ -402,19 +393,30 @@
         % if c.is_super_admin or group_admin:
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a></li>
         % endif
-
+        ## determine if we have "any" option available
+        <%
+            can_create_repos = c.is_super_admin or group_admin or (group_write and create_on_write)
+            can_create_repo_groups = c.is_super_admin or group_admin
+            has_actions = can_create_repos or can_create_repo_groups
+        %>
         <li class="${is_active('options')}">
-          <a class="menulink dropdown">
+          % if has_actions:
+            <a class="menulink dropdown">
               <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-          </a>
-          <ul class="submenu">
-                %if c.is_super_admin or group_admin or (group_write and create_on_write):
+            </a>
+            <ul class="submenu">
+                %if can_create_repos:
                     <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
                 %endif
-                %if c.is_super_admin or group_admin:
+                %if can_create_repo_groups:
                     <li><a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'Add Repository Group')}</a></li>
                 %endif
-             </ul>
+            </ul>
+          % else:
+            <a class="menulink disabled">
+              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
+            </a>
+          % endif
         </li>
       </ul>
     </div>
