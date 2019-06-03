@@ -115,8 +115,11 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
 <div class="quick_start">
   <div class="fieldset">
     <p><b>${_('Add or upload files directly via RhodeCode:')}</b></p>
-    <div id="add_node_id" class="add_node">
-        <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
+    <div class="pull-left">
+        <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='')}" class="btn btn-default">${_('Add New File')}</a>
+    </div>
+    <div class="pull-left">
+        <a href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=0, f_path='')}" class="btn btn-default">${_('Upload New File')}</a>
     </div>
     %endif
   </div>
