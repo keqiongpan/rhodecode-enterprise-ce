@@ -18,7 +18,7 @@
           <div class="commit">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
         </div>
 
-        <div class="clear-fix">
+        <div class="fieldset clear-fix">
           <span class="commit-author">${h.link_to_user(c.commit.author)}</span><span class="commit-date"> - ${h.age_component(c.commit.date)}</span>
         </div>
       </div>
