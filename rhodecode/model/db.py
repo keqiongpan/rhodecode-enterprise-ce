@@ -2343,6 +2343,12 @@ class Repository(Base, BaseModel):
             log.debug('updated repo %s with new commit cache %s',
                       self.repo_name, cs_cache)
         else:
+            cs_cache = self.changeset_cache
+            cs_cache['updated_on'] = time.time()
+            self.changeset_cache = cs_cache
+            Session().add(self)
+            Session().commit()
+
             log.debug('Skipping update_commit_cache for repo:`%s` '
                       'commit already with latest changes', self.repo_name)
 
