@@ -407,7 +407,6 @@ div.codeblock {
     overflow: auto;
     padding: 0px;
     border: @border-thickness solid @grey6;
-    background: @grey7;
     .border-radius(@border-radius);
 
     #remove_gist {
@@ -497,7 +496,14 @@ div.codeblock {
     }
 
     .codeblock-header {
-        border-bottom: 1px solid #eaeaea;
+        background: @grey7;
+        height: 36px;
+    }
+
+    .path {
+        border-bottom: 1px solid @grey6;
+        padding: .65em 1em;
+        height: 18px;
     }
 }
 
