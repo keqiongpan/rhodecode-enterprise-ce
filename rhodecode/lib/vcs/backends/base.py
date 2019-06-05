@@ -383,7 +383,7 @@ class BaseRepository(object):
         return commit.size
 
     def is_empty(self):
-        return not bool(self.commit_ids)
+        return self._remote.is_empty()
 
     @staticmethod
     def check_url(url, config):

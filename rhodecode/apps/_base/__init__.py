@@ -244,7 +244,10 @@ class RepoAppView(BaseAppView):
         c.repository_requirements_missing = {}
         try:
             self.rhodecode_vcs_repo = self.db_repo.scm_instance()
-            if self.rhodecode_vcs_repo:
+            # NOTE(marcink):
+            # comparison to None since if it's an object __bool__ is expensive to
+            # calculate
+            if self.rhodecode_vcs_repo is not None:
                 path_perms = self.rhodecode_vcs_repo.get_path_permissions(
                     c.auth_user.username)
                 self.path_filter = PathFilter(path_perms)
