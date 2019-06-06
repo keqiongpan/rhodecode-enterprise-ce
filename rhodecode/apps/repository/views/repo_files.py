@@ -312,7 +312,7 @@ class RepoFilesView(RepoAppView):
             return Response(_('Empty repository'))
 
         try:
-            at_path = commit.get_node(at_path).path
+            at_path = commit.get_node(at_path).path or default_at_path
         except Exception:
             return Response(_('No node at path {} for this repository').format(at_path))
 

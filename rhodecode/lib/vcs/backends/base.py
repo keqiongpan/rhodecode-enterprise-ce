@@ -1119,7 +1119,7 @@ class BaseCommit(object):
 
         prefix = self._validate_archive_prefix(prefix)
 
-        mtime = mtime or time.mktime(self.date.timetuple())
+        mtime = mtime is not None or time.mktime(self.date.timetuple())
 
         file_info = []
         cur_rev = self.repository.get_commit(commit_id=self.raw_id)
@@ -1132,8 +1132,8 @@ class BaseCommit(object):
         if write_metadata:
             metadata = [
                 ('repo_name', self.repository.name),
-                ('rev', self.raw_id),
-                ('create_time', mtime),
+                ('commit_id', self.raw_id),
+                ('mtime', mtime),
                 ('branch', self.branch),
                 ('tags', ','.join(self.tags)),
             ]
