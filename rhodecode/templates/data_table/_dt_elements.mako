@@ -379,12 +379,12 @@
 
 ## ARTIFACT RENDERERS
 
-<%def name="repo_artifact_uid(file_uid)">
-    <code><a href="${h.route_path('download_file', fid=file_uid)}">${file_uid}</a></code>
+<%def name="repo_artifact_uid(repo_name, file_uid)">
+    <code><a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">${file_uid}</a></code>
 </%def>
 
-<%def name="repo_artifact_uid_action(file_uid)">
-    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('download_file', fid=file_uid)}" title="${_('Copy the full url')}"></i>
+<%def name="repo_artifact_uid_action(repo_name, file_uid)">
+    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
 </%def>
 
 <%def name="repo_artifact_actions(repo_name, file_store_id, file_uid)">
