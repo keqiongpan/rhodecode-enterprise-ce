@@ -2556,8 +2556,14 @@ form.markup-form {
     background-color: white;
 }
 
+
+.dropzone-wrapper {
+  border: 1px solid @grey5;
+  padding: 20px;
+}
+
 .dropzone {
-    border: 2px dashed @rcdarkblue;
+    border: 2px dashed @grey5;
     border-radius: 5px;
     background: white;
     min-height: 200px;
@@ -2573,16 +2579,23 @@ form.markup-form {
 }
 
 .dz-preview {
-    margin: 10px -40px !important;
+    margin: 10px 0px !important;
     position: relative;
     vertical-align: top;
-    border: 1px solid @grey4;
-    border-radius: 5px;
     padding: 10px;
 }
 
 .dz-filename {
     font-weight: 700;
+    float:left;
+}
+
+.dz-response {
+  clear:both
+}
+
+.dz-filename-size {
+    float:right
 }
 
 .dz-error-message {
