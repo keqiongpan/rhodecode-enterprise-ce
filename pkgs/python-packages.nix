@@ -1329,11 +1329,11 @@ self: super: {
     };
   };
   "pygments" = super.buildPythonPackage {
-    name = "pygments-2.3.1";
+    name = "pygments-2.4.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/64/69/413708eaf3a64a6abb8972644e0f20891a55e621c6759e2c3f3891e05d63/Pygments-2.3.1.tar.gz";
-      sha256 = "0ji87g09jph8jqcvclgb02qvxasdnr9pzvk90rl66d90yqcxmyjz";
+      url = "https://files.pythonhosted.org/packages/7e/ae/26808275fc76bf2832deb10d3a3ed3107bc4de01b85dcccbe525f2cd6d1e/Pygments-2.4.2.tar.gz";
+      sha256 = "15v2sqm5g12bqa0c7wikfh9ck2nl97ayizy1hpqhmws5gqalq748";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
