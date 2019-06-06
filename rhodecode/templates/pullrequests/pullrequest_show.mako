@@ -72,7 +72,7 @@
                     ## branch link is only valid if it is a branch
                     <span class="tag">
                       %if c.pull_request.source_ref_parts.type == 'branch':
-                        <a href="${h.route_path('repo_changelog', repo_name=c.pull_request.source_repo.repo_name, _query=dict(branch=c.pull_request.source_ref_parts.name))}">${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}</a>
+                        <a href="${h.route_path('repo_commits', repo_name=c.pull_request.source_repo.repo_name, _query=dict(branch=c.pull_request.source_ref_parts.name))}">${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}</a>
                       %else:
                         ${c.pull_request.source_ref_parts.type}: ${c.pull_request.source_ref_parts.name}
                       %endif
@@ -108,7 +108,7 @@
                     ## branch link is only valid if it is a branch
                     <span class="tag">
                       %if c.pull_request.target_ref_parts.type == 'branch':
-                        <a href="${h.route_path('repo_changelog', repo_name=c.pull_request.target_repo.repo_name, _query=dict(branch=c.pull_request.target_ref_parts.name))}">${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}</a>
+                        <a href="${h.route_path('repo_commits', repo_name=c.pull_request.target_repo.repo_name, _query=dict(branch=c.pull_request.target_ref_parts.name))}">${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}</a>
                       %else:
                         ${c.pull_request.target_ref_parts.type}: ${c.pull_request.target_ref_parts.name}
                       %endif

@@ -469,7 +469,7 @@ class HomeView(BaseAppView):
                                     _query=query_modifier())
                 }
 
-            if repo_context in ['commit', 'changelog']:
+            if repo_context in ['commit', 'commits']:
                 queries.extend([commit_qry, file_qry])
             elif repo_context in ['files', 'summary']:
                 queries.extend([file_qry, commit_qry])
@@ -509,7 +509,7 @@ class HomeView(BaseAppView):
                                     _query=query_modifier())
                 }
 
-            if repo_context in ['commit', 'changelog']:
+            if repo_context in ['commit', 'commits']:
                 queries.extend([commit_qry, file_qry])
             elif repo_context in ['files', 'summary']:
                 queries.extend([file_qry, commit_qry])

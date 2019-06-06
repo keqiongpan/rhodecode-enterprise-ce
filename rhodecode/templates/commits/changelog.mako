@@ -23,7 +23,7 @@
 </%def>
 
 <%def name="menu_bar_subnav()">
-    ${self.repo_menu(active='changelog')}
+    ${self.repo_menu(active='commits')}
 </%def>
 
 <%def name="main()">
@@ -241,7 +241,7 @@
 
             $("#clear_filter").on("click", function() {
                 var filter = {'repo_name': '${c.repo_name}'};
-                window.location = pyroutes.url('repo_changelog', filter);
+                window.location = pyroutes.url('repo_commits', filter);
             });
 
             $("#branch_filter").select2({
@@ -295,7 +295,7 @@
                 else if (data.type == 'book'){
                     filter["bookmark"] = selected;
                 }
-                window.location = pyroutes.url('repo_changelog', filter);
+                window.location = pyroutes.url('repo_commits', filter);
             });
 
             commitsController = new CommitsController();

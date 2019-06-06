@@ -25,7 +25,7 @@
 </%def>
 
 <%def name="menu_bar_subnav()">
-    ${self.repo_menu(active='changelog')}
+    ${self.repo_menu(active='commits')}
 </%def>
 
 <%def name="main()">

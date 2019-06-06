@@ -42,7 +42,7 @@
     %endfor
         <tr>
             <td colspan="6">
-                <a id="file_history_overview_full" href="${h.route_path('repo_changelog_file',repo_name=c.repo_name, commit_id=c.commit_id, f_path=c.f_path)}">
+                <a id="file_history_overview_full" href="${h.route_path('repo_commits_file',repo_name=c.repo_name, commit_id=c.commit_id, f_path=c.f_path)}">
                ${_('Show Full History')}
                 </a>
             </td>

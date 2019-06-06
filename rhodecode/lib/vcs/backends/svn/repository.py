@@ -277,7 +277,7 @@ class SubversionRepository(base.BaseRepository):
             try:
                 commit_id = self.commit_ids[commit_idx]
             except IndexError:
-                raise CommitDoesNotExistError
+                raise CommitDoesNotExistError('No commit with idx: {}'.format(commit_idx))
 
         commit_id = self._sanitize_commit_id(commit_id)
         commit = SubversionCommit(repository=self, commit_id=commit_id)

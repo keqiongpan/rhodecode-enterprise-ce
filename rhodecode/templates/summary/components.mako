@@ -119,7 +119,7 @@
                             <span>0</span> ${_('Commits')}
                         % endif
                   % else:
-                      <a href="${h.route_path('repo_changelog', repo_name=c.repo_name)}">
+                      <a href="${h.route_path('repo_commits', repo_name=c.repo_name)}">
                         <i class="icon-tag"></i>
                         % if commit_rev == 1:
                             <span>${commit_rev}</span> ${_('Commit')}

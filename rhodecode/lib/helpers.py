@@ -2061,7 +2061,8 @@ def reviewer_as_json(*args, **kwargs):
 def get_repo_view_type(request):
     route_name = request.matched_route.name
     route_to_view_type = {
-        'repo_changelog': 'changelog',
+        'repo_changelog': 'commits',
+        'repo_commits': 'commits',
         'repo_files': 'files',
         'repo_summary': 'summary',
         'repo_commit': 'commit'

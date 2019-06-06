@@ -193,19 +193,27 @@ def includeme(config):
         name='repo_stats',
         pattern='/{repo_name:.*?[^/]}/repo_stats/{commit_id}', repo_route=True)
 
-    # Changelog
+    # Commits
+    config.add_route(
+        name='repo_commits',
+        pattern='/{repo_name:.*?[^/]}/commits', repo_route=True)
+    config.add_route(
+        name='repo_commits_file',
+        pattern='/{repo_name:.*?[^/]}/commits/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_commits_elements',
+        pattern='/{repo_name:.*?[^/]}/commits_elements', repo_route=True)
+    config.add_route(
+        name='repo_commits_elements_file',
+        pattern='/{repo_name:.*?[^/]}/commits_elements/{commit_id}/{f_path:.*}', repo_route=True)
+
+    # Changelog (old deprecated name for commits page)
     config.add_route(
         name='repo_changelog',
         pattern='/{repo_name:.*?[^/]}/changelog', repo_route=True)
     config.add_route(
         name='repo_changelog_file',
         pattern='/{repo_name:.*?[^/]}/changelog/{commit_id}/{f_path:.*}', repo_route=True)
-    config.add_route(
-        name='repo_changelog_elements',
-        pattern='/{repo_name:.*?[^/]}/changelog_elements', repo_route=True)
-    config.add_route(
-        name='repo_changelog_elements_file',
-        pattern='/{repo_name:.*?[^/]}/changelog_elements/{commit_id}/{f_path:.*}', repo_route=True)
 
     # Compare
     config.add_route(

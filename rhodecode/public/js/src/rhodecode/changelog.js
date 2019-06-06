@@ -112,10 +112,10 @@ var CommitsController = function () {
         }
 
         if (urlData['commit_id'] && urlData['f_path']) {
-            return pyroutes.url('repo_changelog_elements_file', urlData);
+            return pyroutes.url('repo_commits_elements_file', urlData);
         }
         else {
-            return pyroutes.url('repo_changelog_elements', urlData);
+            return pyroutes.url('repo_commits_elements', urlData);
         }
 
     };

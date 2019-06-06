@@ -283,7 +283,7 @@
 
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
-        <li class="${is_active('changelog')}"><a class="menulink" href="${h.route_path('repo_changelog', repo_name=c.repo_name)}"><div class="menulabel">${_('Changelog')}</div></a></li>
+        <li class="${is_active('commits')}"><a class="menulink" href="${h.route_path('repo_commits', repo_name=c.repo_name)}"><div class="menulabel">${_('Commits')}</div></a></li>
         <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
 

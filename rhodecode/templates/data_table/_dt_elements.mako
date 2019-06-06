@@ -48,8 +48,8 @@
          </a>
       </li>
       <li>
-         <a title="${_('Changelog')}" href="${h.route_path('repo_changelog',repo_name=repo_name)}">
-         <span>${_('Changelog')}</span>
+         <a title="${_('Commits')}" href="${h.route_path('repo_commits',repo_name=repo_name)}">
+         <span>${_('Commits')}</span>
          </a>
       </li>
       <li>

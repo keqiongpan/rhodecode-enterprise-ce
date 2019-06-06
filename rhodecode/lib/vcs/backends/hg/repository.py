@@ -478,11 +478,11 @@ class MercurialRepository(BaseRepository):
           ``end`` could not be found.
         """
         # actually we should check now if it's not an empty repo
-        branch_ancestors = False
         if self.is_empty():
             raise EmptyRepositoryError("There are no commits yet")
         self._validate_branch_name(branch_name)
 
+        branch_ancestors = False
         if start_id is not None:
             self._validate_commit_id(start_id)
             c_start = self.get_commit(commit_id=start_id)

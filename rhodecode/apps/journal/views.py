@@ -153,7 +153,7 @@ class JournalView(BaseAppView):
             desc = action_extra()
             _url = h.route_url('home')
             if entry.repository is not None:
-                _url = h.route_url('repo_changelog',
+                _url = h.route_url('repo_commits',
                                    repo_name=entry.repository.repo_name)
 
             feed.add_item(
@@ -199,7 +199,7 @@ class JournalView(BaseAppView):
             desc = action_extra()
             _url = h.route_url('home')
             if entry.repository is not None:
-                _url = h.route_url('repo_changelog',
+                _url = h.route_url('repo_commits',
                                    repo_name=entry.repository.repo_name)
 
             feed.add_item(

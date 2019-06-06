@@ -48,7 +48,7 @@
                 <span class="item">${h.format_byte_size_binary(c.file.size)}</span>
                 <span class="item last">${c.file.mimetype}</span>
                 <div class="buttons">
-                  <a class="btn btn-mini" href="${h.route_path('repo_changelog_file',repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">
+                  <a class="btn btn-mini" href="${h.route_path('repo_commits_file',repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">
                       <i class="icon-time"></i> ${_('history')}
                   </a>
 

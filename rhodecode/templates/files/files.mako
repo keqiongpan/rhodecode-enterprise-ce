@@ -182,7 +182,7 @@
                 if (path.indexOf("#") >= 0) {
                     path = path.slice(0, path.indexOf("#"));
                 }
-                var url = pyroutes.url('repo_changelog_file',
+                var url = pyroutes.url('repo_commits_file',
                         {'repo_name': templateContext.repo_name,
                          'commit_id': state.commit_id, 'f_path': path, 'limit': 6});
                 $('#file_history_container').show();

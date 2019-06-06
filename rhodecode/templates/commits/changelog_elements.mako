@@ -102,7 +102,7 @@
         ## branch
         %if commit.branch:
           <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % commit.branch)}">
-             <a href="${h.route_path('repo_changelog',repo_name=c.repo_name,_query=dict(branch=commit.branch))}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
+             <a href="${h.route_path('repo_commits',repo_name=c.repo_name,_query=dict(branch=commit.branch))}"><i class="icon-code-fork"></i>${h.shorter(commit.branch)}</a>
           </span>
         %endif
 
