@@ -42,12 +42,16 @@ BACKENDS = {
     'svn': 'rhodecode.lib.vcs.backends.svn.SubversionRepository',
 }
 
-# TODO: Remove once controllers/files.py is adjusted
-ARCHIVE_SPECS = {
-    'tbz2': ('application/x-bzip2', '.tar.bz2'),
-    'tgz': ('application/x-gzip', '.tar.gz'),
-    'zip': ('application/zip', '.zip'),
-}
+
+ARCHIVE_SPECS = [
+    ('tbz2', 'application/x-bzip2', 'tbz2'),
+    ('tbz2', 'application/x-bzip2', '.tar.bz2'),
+
+    ('tgz', 'application/x-gzip', '.tgz'),
+    ('tgz', 'application/x-gzip', '.tar.gz'),
+
+    ('zip', 'application/zip', '.zip'),
+]
 
 HOOKS_PROTOCOL = None
 HOOKS_DIRECT_CALLS = False

@@ -1111,7 +1111,7 @@ class BaseCommit(object):
 
         :raise VCSError: If prefix has a problem.
         """
-        allowed_kinds = settings.ARCHIVE_SPECS.keys()
+        allowed_kinds = [x[0] for x in settings.ARCHIVE_SPECS]
         if kind not in allowed_kinds:
             raise ImproperArchiveTypeError(
                 'Archive kind (%s) not supported use one of %s' %

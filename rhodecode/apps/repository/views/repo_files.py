@@ -260,8 +260,7 @@ class RepoFilesView(RepoAppView):
         fileformat = None
         ext = None
         content_type = None
-        for a_type, ext_data in settings.ARCHIVE_SPECS.items():
-            content_type, extension = ext_data
+        for a_type, content_type, extension in settings.ARCHIVE_SPECS:
 
             if fname.endswith(extension):
                 fileformat = a_type

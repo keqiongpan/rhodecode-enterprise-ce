@@ -521,10 +521,10 @@ class TestRepositoryArchival(object):
     def test_archival(self, backend):
         backend.enable_downloads()
         commit = backend.repo.get_commit(commit_idx=173)
-        for archive, info in settings.ARCHIVE_SPECS.items():
-            mime_type, arch_ext = info
-            short = commit.short_id + arch_ext
-            fname = commit.raw_id + arch_ext
+        for a_type, content_type, extension in settings.ARCHIVE_SPECS:
+
+            short = commit.short_id + extension
+            fname = commit.raw_id + extension
             filename = '%s-%s' % (backend.repo_name, short)
             response = self.app.get(
                 route_path('repo_archivefile',
@@ -534,7 +534,7 @@ class TestRepositoryArchival(object):
             assert response.status == '200 OK'
             headers = [
                 ('Content-Disposition', 'attachment; filename=%s' % filename),
-                ('Content-Type', '%s' % mime_type),
+                ('Content-Type', '%s' % content_type),
             ]
 
             for header in headers:
