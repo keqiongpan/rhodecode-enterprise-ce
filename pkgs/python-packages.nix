@@ -2159,11 +2159,11 @@ self: super: {
     };
   };
   "waitress" = super.buildPythonPackage {
-    name = "waitress-1.1.0";
+    name = "waitress-1.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/3c/68/1c10dd5c556872ceebe88483b0436140048d39de83a84a06a8baa8136f4f/waitress-1.1.0.tar.gz";
-      sha256 = "1a85gyji0kajc3p0s1pwwfm06w4wfxjkvvl4rnrz3h164kbd6g6k";
+      url = "https://files.pythonhosted.org/packages/43/50/9890471320d5ad22761ae46661cf745f487b1c8c4ec49352b99e1078b970/waitress-1.3.0.tar.gz";
+      sha256 = "09j5dzbbcxib7vdskhx39s1qsydlr4n2p2png71d7mjnr9pnwajf";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 ];
