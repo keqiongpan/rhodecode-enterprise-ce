@@ -2012,14 +2012,14 @@ self: super: {
     };
   };
   "supervisor" = super.buildPythonPackage {
-    name = "supervisor-4.0.2";
+    name = "supervisor-4.0.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."meld3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/cb/02/95953c98a770803e42009f18c2eb361bc035ab6fb3cbb442ffcc94387eac/supervisor-4.0.2.tar.gz";
-      sha256 = "0xg5c41wd51wnf2ihc47gwkwjf29zq2q44lcwx8di2gvliyla12n";
+      url = "https://files.pythonhosted.org/packages/97/48/f38bf70bd9282d1a18d591616557cc1a77a1c627d57dff66ead65c891dc8/supervisor-4.0.3.tar.gz";
+      sha256 = "17hla7mx6w5m5jzkkjxgqa8wpswqmfhbhf49f692hw78fg0ans7p";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
