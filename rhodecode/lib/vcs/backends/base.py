@@ -1132,7 +1132,6 @@ class BaseCommit(object):
         if write_metadata:
             metadata = [
                 ('repo_name', self.repository.name),
-                ('commit_id', self.raw_id),
                 ('rev', self.raw_id),
                 ('create_time', mtime),
                 ('branch', self.branch),
