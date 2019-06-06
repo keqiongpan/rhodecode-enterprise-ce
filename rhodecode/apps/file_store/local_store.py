@@ -38,19 +38,18 @@ class LocalFileStorage(object):
         """
         Resolves a unique name and the correct path. If a filename
         for that path already exists then a numeric prefix with values > 0 will be
-        added, for example test.jpg -> test-1.jpg etc. initially file would have 0 prefix.
+        added, for example test.jpg -> 1-test.jpg etc. initially file would have 0 prefix.
 
         :param name: base name of file
         :param directory: absolute directory path
         """
 
-        basename, ext = os.path.splitext(name)
         counter = 0
         while True:
-            name = '%s-%d%s' % (basename, counter, ext)
+            name = '%d-%s' % (counter, name)
 
             # sub_store prefix to optimize disk usage, e.g some_path/ab/final_file
-            sub_store = cls._sub_store_from_filename(basename)
+            sub_store = cls._sub_store_from_filename(name)
             sub_store_path = os.path.join(directory, sub_store)
             if not os.path.exists(sub_store_path):
                 os.makedirs(sub_store_path)

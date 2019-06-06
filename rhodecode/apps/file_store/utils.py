@@ -19,8 +19,9 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 
-import os
 import uuid
+
+import pathlib2
 
 
 def get_file_storage(settings):
@@ -28,6 +29,11 @@ def get_file_storage(settings):
     from rhodecode.apps.file_store import config_keys
     store_path = settings.get(config_keys.store_path)
     return LocalFileStorage(base_path=store_path)
+
+
+def splitext(filename):
+    ext = ''.join(pathlib2.Path(filename).suffixes)
+    return filename, ext
 
 
 def uid_filename(filename, randomized=True):
@@ -38,7 +44,8 @@ def uid_filename(filename, randomized=True):
     :param filename: the original filename
     :param randomized: define if filename should be stable (sha1 based) or randomized
     """
-    _, ext = os.path.splitext(filename)
+
+    _, ext = splitext(filename)
     if randomized:
         uid = uuid.uuid4()
     else:
