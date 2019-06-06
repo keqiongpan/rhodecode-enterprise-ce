@@ -88,8 +88,8 @@ self: super: {
     name = "authomatic-0.1.0.post1";
     doCheck = false;
     src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801";
-      sha256 = "1cgk0a86sbsjbri06gf5z5l4npwkjdxw6fdnwl4vvfmxs2sx9yxw";
+      url = "https://code.rhodecode.com/upstream/authomatic/artifacts/download/0-4fe9c041-a567-4f84-be4c-7efa2a606d3c.tar.gz?md5=f6bdc3c769688212db68233e8d2b0383";
+      sha256 = "0pc716mva0ym6xd8jwzjbjp8dqxy9069wwwv2aqwb8lyhl4757ab";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -277,8 +277,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/configobj/archive/a11ff0a0bd4fbda9e3a91267e720f88329efb4a6.tar.gz?md5=9916c524ea11a6c418217af6b28d4b3c";
-      sha256 = "1hhcxirwvg58grlfr177b3awhbq8hlx1l3lh69ifl1ki7lfd1s1x";
+      url = "https://code.rhodecode.com/upstream/configobj/artifacts/download/0-012de99a-b1e1-4f64-a5c0-07a98a41b324.tar.gz?md5=6a513f51fe04b2c18cf84c1395a7c626";
+      sha256 = "0kqfrdfr14mw8yd8qwq14dv2xghpkjmd3yjsy8dfcbvpcc17xnxp";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -534,8 +534,8 @@ self: super: {
       self."configparser"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/entrypoints/archive/96e6d645684e1af3d7df5b5272f3fe85a546b233.tar.gz?md5=7db37771aea9ac9fefe093e5d6987313";
-      sha256 = "0bihrdp8ahsys437kxdhk52gz6kib8rxjv71i93wkw7594fcaxll";
+      url = "https://code.rhodecode.com/upstream/entrypoints/artifacts/download/0-8e9ee9e4-c4db-409c-b07e-81568fd1832d.tar.gz?md5=3a027b8ff1d257b91fe257de6c43357d";
+      sha256 = "0qih72n2myclanplqipqxpgpj9d2yhff1pz5d02zq1cfqyd173w5";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1886,8 +1886,8 @@ self: super: {
       self."elasticsearch1-dsl"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.2.1.tar.gz?md5=25bc2f7de1da318e547236d3fb463d28";
-      sha256 = "1k8l3s4mvshza1zay6dfxprq54fyb5dc85dqdva9wa3f466y0adk";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-10ac93f4-bb7d-4b97-baea-68110743dd5a.tar.gz?md5=962dc77c06aceee62282b98d33149661";
+      sha256 = "1vfhgf46inbx7jvlfx4fdzh3vz7lh37r291gzb5hx447pfm3qllg";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];

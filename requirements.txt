@@ -2,7 +2,7 @@
 
 amqp==2.3.1
 # not released authomatic that has updated some oauth providers
-https://code.rhodecode.com/upstream/authomatic/archive/90a9ce60cc405ae8a2bf5c3713acd5d78579a04e.tar.gz?md5=3c68720a1322b25254009518d1ff6801#egg=authomatic==0.1.0.post1
+https://code.rhodecode.com/upstream/authomatic/artifacts/download/0-4fe9c041-a567-4f84-be4c-7efa2a606d3c.tar.gz?md5=f6bdc3c769688212db68233e8d2b0383#egg=authomatic==0.1.0.post1
 
 babel==1.3
 beaker==1.9.1
@@ -12,7 +12,7 @@ channelstream==0.5.2
 click==7.0
 colander==1.7.0
 # our custom configobj
-https://code.rhodecode.com/upstream/configobj/archive/a11ff0a0bd4fbda9e3a91267e720f88329efb4a6.tar.gz?md5=9916c524ea11a6c418217af6b28d4b3c#egg=configobj==5.0.6
+https://code.rhodecode.com/upstream/configobj/artifacts/download/0-012de99a-b1e1-4f64-a5c0-07a98a41b324.tar.gz?md5=6a513f51fe04b2c18cf84c1395a7c626#egg=configobj==5.0.6
 cssselect==1.0.3
 cryptography==2.6.1
 decorator==4.1.2
@@ -91,7 +91,7 @@ psycopg2==2.8.2
 
 # IPYTHON RENDERING
 # entrypoints backport, pypi version doesn't support egg installs
-https://code.rhodecode.com/upstream/entrypoints/archive/96e6d645684e1af3d7df5b5272f3fe85a546b233.tar.gz?md5=7db37771aea9ac9fefe093e5d6987313#egg=entrypoints==0.2.2.rhodecode-upstream1
+https://code.rhodecode.com/upstream/entrypoints/artifacts/download/0-8e9ee9e4-c4db-409c-b07e-81568fd1832d.tar.gz?md5=3a027b8ff1d257b91fe257de6c43357d#egg=entrypoints==0.2.2.rhodecode-upstream1
 nbconvert==5.3.1
 nbformat==4.4.0
 jupyter_client==5.0.0
@@ -112,7 +112,7 @@ ipdb==0.12.0
 ipython==5.1.0
 
 ## rhodecode-tools, special case
-https://code.rhodecode.com/rhodecode-tools-ce/archive/v1.2.1.tar.gz?md5=25bc2f7de1da318e547236d3fb463d28#egg=rhodecode-tools==1.2.1
+https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-10ac93f4-bb7d-4b97-baea-68110743dd5a.tar.gz?md5=962dc77c06aceee62282b98d33149661#egg=rhodecode-tools==1.2.1
 
 ## appenlight
 appenlight-client==0.6.26
