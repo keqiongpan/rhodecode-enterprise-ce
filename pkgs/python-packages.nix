@@ -2001,11 +2001,11 @@ self: super: {
     };
   };
   "subprocess32" = super.buildPythonPackage {
-    name = "subprocess32-3.5.3";
+    name = "subprocess32-3.5.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/be/2b/beeba583e9877e64db10b52a96915afc0feabf7144dcbf2a0d0ea68bf73d/subprocess32-3.5.3.tar.gz";
-      sha256 = "1hr5fan8i719hmlmz73hf8rhq74014w07d8ryg7krvvf6692kj3b";
+      url = "https://files.pythonhosted.org/packages/32/c8/564be4d12629b912ea431f1a50eb8b3b9d00f1a0b1ceff17f266be190007/subprocess32-3.5.4.tar.gz";
+      sha256 = "17f7mvwx2271s1wrl0qac3wjqqnrqag866zs3qc8v5wp0k43fagb";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
