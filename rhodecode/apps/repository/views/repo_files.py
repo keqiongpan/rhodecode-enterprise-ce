@@ -288,10 +288,10 @@ class RepoFilesView(RepoAppView):
         from rhodecode import CONFIG
         _ = self.request.translate
         self.load_default_context()
-
+        default_at_path = '/'
         fname = self.request.matchdict['fname']
         subrepos = self.request.GET.get('subrepos') == 'true'
-        at_path = self.request.GET.get('at_path') or '/'
+        at_path = self.request.GET.get('at_path') or default_at_path
 
         if not self.db_repo.enable_downloads:
             return Response(_('Downloads disabled'))
@@ -318,12 +318,24 @@ class RepoFilesView(RepoAppView):
 
         path_sha = sha1(at_path)[:8]
 
-        archive_name = '{}-{}{}-{}{}'.format(
-            safe_str(self.db_repo_name.replace('/', '_')),
-            '-sub' if subrepos else '',
-            safe_str(commit.short_id),
-            path_sha,
-            ext)
+        # original backward compat name of archive
+        clean_name = safe_str(self.db_repo_name.replace('/', '_'))
+        short_sha = safe_str(commit.short_id)
+
+        if at_path == default_at_path:
+            archive_name = '{}-{}{}{}'.format(
+                clean_name,
+                '-sub' if subrepos else '',
+                short_sha,
+                ext)
+        # custom path and new name
+        else:
+            archive_name = '{}-{}{}-{}{}'.format(
+                clean_name,
+                '-sub' if subrepos else '',
+                short_sha,
+                path_sha,
+                ext)
 
         use_cached_archive = False
         archive_cache_enabled = CONFIG.get(
