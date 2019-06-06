@@ -683,6 +683,8 @@ class PullRequestModel(BaseModel):
 
         # source repo
         source_repo = pull_request.source_repo.scm_instance()
+        source_repo.count()  # cache rebuild
+
         try:
             source_commit = source_repo.get_commit(commit_id=source_ref_name)
         except CommitDoesNotExistError:
@@ -696,6 +698,8 @@ class PullRequestModel(BaseModel):
 
         # target repo
         target_repo = pull_request.target_repo.scm_instance()
+        target_repo.count()  # cache rebuild
+
         try:
             target_commit = target_repo.get_commit(commit_id=target_ref_name)
         except CommitDoesNotExistError:
@@ -1337,6 +1341,8 @@ class PullRequestModel(BaseModel):
             name_or_id = reference.name
         else:
             name_or_id = reference.commit_id
+
+        vcs_repository.count() # cache rebuild
         refreshed_commit = vcs_repository.get_commit(name_or_id)
         refreshed_reference = Reference(
             reference.type, reference.name, refreshed_commit.raw_id)

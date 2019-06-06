@@ -631,7 +631,9 @@ class Backend(object):
         commits = commits or [
             {'message': 'Commit %s of %s' % (x, self.repo_name)}
             for x in range(number_of_commits)]
-        self._add_commits_to_repo(repo.scm_instance(), commits)
+        vcs_repo = repo.scm_instance()
+        vcs_repo.count()
+        self._add_commits_to_repo(vcs_repo, commits)
         if heads:
             self.pull_heads(repo, heads)
 
