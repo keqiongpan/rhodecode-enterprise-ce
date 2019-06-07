@@ -402,7 +402,8 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.rhodecode_db_repo = self.repo
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
-
+        c.repository_is_user_following = ScmModel().is_following_repo(
+            c.repo_name, self._rhodecode_user.user_id)
         c.has_origin_repo_read_perm = False
         if self.db_repo.fork:
             c.has_origin_repo_read_perm = h.HasRepoPermissionAny(
