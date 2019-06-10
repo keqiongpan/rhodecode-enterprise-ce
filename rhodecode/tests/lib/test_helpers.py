@@ -40,27 +40,52 @@ def test_urlify_text(url, expected_url):
 
 
 @pytest.mark.parametrize('repo_name, commit_id, path, expected_result', [
+    # Simple case 1
+    ('repo', 'commit', 'a/b',
+     '<a href="/repo/files/commit/"><i class="icon-home"></i></a>'
+     ' / '
+     '<a href="/repo/files/commit/a">a</a>'
+     ' / '
+     'b'),
+
+    # Simple case
     ('rX<X', 'cX<X', 'pX<X/aX<X/bX<X',
-     '<a href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/'
-     '<a href="/rX%3CX/files/cX%3CX/pX%3CX">pX&lt;X</a>/'
-     '<a href="/rX%3CX/files/cX%3CX/pX%3CX/aX%3CX">aX&lt;X'
-     '</a>/bX&lt;X'),
+     '<a href="/rX%3CX/files/cX%3CX/"><i class="icon-home"></i></a>'
+     ' / '
+     '<a href="/rX%3CX/files/cX%3CX/pX%3CX">pX&lt;X</a>'
+     ' / '
+     '<a href="/rX%3CX/files/cX%3CX/pX%3CX/aX%3CX">aX&lt;X</a>'
+     ' / '
+     'bX&lt;X'),
+
     # Path with only one segment
     ('rX<X', 'cX<X', 'pX<X',
-     '<a href="/rX%3CX/files/cX%3CX/">rX&lt;X</a>/pX&lt;X'),
+     '<a href="/rX%3CX/files/cX%3CX/"><i class="icon-home"></i></a>'
+     ' / '
+     'pX&lt;X'),
+
     # Empty path
-    ('rX<X', 'cX<X', '', 'rX&lt;X'),
+    ('rX<X', 'cX<X', '',
+     '<i class="icon-home"></i>'),
+
+    # simple quote
     ('rX"X', 'cX"X', 'pX"X/aX"X/bX"X',
-     '<a href="/rX%22X/files/cX%22X/">rX&#34;X</a>/'
-     '<a href="/rX%22X/files/cX%22X/pX%22X">pX&#34;X</a>/'
-     '<a href="/rX%22X/files/cX%22X/pX%22X/aX%22X">aX&#34;X'
-     '</a>/bX&#34;X'),
-], ids=['simple', 'one_segment', 'empty_path', 'simple_quote'])
+     '<a href="/rX%22X/files/cX%22X/"><i class="icon-home"></i></a>'
+     ' / '
+     '<a href="/rX%22X/files/cX%22X/pX%22X">pX&#34;X</a>'
+     ' / '
+     '<a href="/rX%22X/files/cX%22X/pX%22X/aX%22X">aX&#34;X</a>'
+     ' / '
+     'bX&#34;X'),
+
+], ids=['simple1', 'simple2', 'one_segment', 'empty_path', 'simple_quote'])
 def test_files_breadcrumbs_xss(
         repo_name, commit_id, path, app, expected_result):
     result = helpers.files_breadcrumbs(repo_name, commit_id, path)
     # Expect it to encode all path fragments properly. This is important
     # because it returns an instance of `literal`.
+    if path != '':
+        expected_result = expected_result + helpers.files_icon.format(helpers.escape(path))
     assert result == expected_result
 
 

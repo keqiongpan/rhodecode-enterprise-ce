@@ -219,6 +219,7 @@ class _ToolTip(object):
 
 tooltip = _ToolTip()
 
+files_icon = icon = '<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
 
 def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False):
     if isinstance(file_path, str):
@@ -265,7 +266,7 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
         url_segments = limited_url_segments
 
     full_path = file_path
-    icon = '<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'.format(full_path)
+    icon = files_icon.format(escape(full_path))
     if file_path == '':
         return root_name
     else:
