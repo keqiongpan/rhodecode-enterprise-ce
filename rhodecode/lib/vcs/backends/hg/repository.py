@@ -425,18 +425,20 @@ class MercurialRepository(BaseRepository):
         if commit_id is not None:
             self._validate_commit_id(commit_id)
             try:
+                # we have cached idx, use it without contacting the remote
                 idx = self._commit_ids[commit_id]
                 return MercurialCommit(self, commit_id, idx, pre_load=pre_load)
             except KeyError:
                 pass
+
         elif commit_idx is not None:
             self._validate_commit_idx(commit_idx)
             try:
-                id_ = self.commit_ids[commit_idx]
+                _commit_id = self.commit_ids[commit_idx]
                 if commit_idx < 0:
-                    commit_idx += len(self.commit_ids)
-                return MercurialCommit(
-                    self, id_, commit_idx, pre_load=pre_load)
+                    commit_idx = self.commit_ids.index(_commit_id)
+
+                return MercurialCommit(self, _commit_id, commit_idx, pre_load=pre_load)
             except IndexError:
                 commit_id = commit_idx
         else:
@@ -448,8 +450,7 @@ class MercurialRepository(BaseRepository):
         try:
             raw_id, idx = self._remote.lookup(commit_id, both=True)
         except CommitDoesNotExistError:
-            msg = "Commit %s does not exist for %s" % (
-                commit_id, self)
+            msg = "Commit %s does not exist for %s" % (commit_id, self.name)
             raise CommitDoesNotExistError(msg)
 
         return MercurialCommit(self, raw_id, idx, pre_load=pre_load)

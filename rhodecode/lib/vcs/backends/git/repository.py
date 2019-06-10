@@ -222,12 +222,9 @@ class GitRepository(BaseRepository):
             return []
         return output.splitlines()
 
-    def _get_commit_id(self, commit_id_or_idx):
+    def _lookup_commit(self, commit_id_or_idx, translate_tag=True):
         def is_null(value):
             return len(value) == commit_id_or_idx.count('0')
-
-        if self.is_empty():
-            raise EmptyRepositoryError("There are no commits yet")
 
         if commit_id_or_idx in (None, '', 'tip', 'HEAD', 'head', -1):
             return self.commit_ids[-1]
@@ -238,8 +235,7 @@ class GitRepository(BaseRepository):
             try:
                 commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
             except Exception:
-                msg = "Commit %s does not exist for %s" % (
-                    commit_id_or_idx, self)
+                msg = "Commit %s does not exist for %s" % (commit_id_or_idx, self.name)
                 raise CommitDoesNotExistError(msg)
 
         elif is_bstr:
@@ -261,8 +257,7 @@ class GitRepository(BaseRepository):
 
             if (not SHA_PATTERN.match(commit_id_or_idx) or
                     commit_id_or_idx not in self.commit_ids):
-                msg = "Commit %s does not exist for %s" % (
-                    commit_id_or_idx, self)
+                msg = "Commit %s does not exist for %s" % (commit_id_or_idx, self.name)
                 raise CommitDoesNotExistError(msg)
 
         # Ensure we return full id
@@ -431,19 +426,42 @@ class GitRepository(BaseRepository):
         Returns `GitCommit` object representing commit from git repository
         at the given `commit_id` or head (most recent commit) if None given.
         """
+        if self.is_empty():
+            raise EmptyRepositoryError("There are no commits yet")
+
         if commit_id is not None:
             self._validate_commit_id(commit_id)
+            try:
+                # we have cached idx, use it without contacting the remote
+                idx = self._commit_ids[commit_id]
+                return GitCommit(self, commit_id, idx, pre_load=pre_load)
+            except KeyError:
+                pass
+
         elif commit_idx is not None:
             self._validate_commit_idx(commit_idx)
-            commit_id = commit_idx
-        commit_id = self._get_commit_id(commit_id)
+            try:
+                _commit_id = self.commit_ids[commit_idx]
+                if commit_idx < 0:
+                    commit_idx = self.commit_ids.index(_commit_id)
+                return GitCommit(self, _commit_id, commit_idx, pre_load=pre_load)
+            except IndexError:
+                commit_id = commit_idx
+        else:
+            commit_id = "tip"
+
+        commit_id = self._lookup_commit(commit_id)
+        remote_idx = None
+        if translate_tag:
+            # Need to call remote to translate id for tagging scenario
+            remote_data = self._remote.get_object(commit_id)
+            commit_id = remote_data["commit_id"]
+            remote_idx = remote_data["idx"]
+
         try:
-            if translate_tag:
-                # Need to call remote to translate id for tagging scenario
-                commit_id = self._remote.get_object(commit_id)["commit_id"]
             idx = self._commit_ids[commit_id]
         except KeyError:
-            raise RepositoryError("Cannot get object with id %s" % commit_id)
+            idx = remote_idx or 0
 
         return GitCommit(self, commit_id, idx, pre_load=pre_load)
 
@@ -472,6 +490,7 @@ class GitRepository(BaseRepository):
         """
         if self.is_empty():
             raise EmptyRepositoryError("There are no commits yet")
+
         self._validate_branch_name(branch_name)
 
         if start_id is not None:
@@ -479,9 +498,9 @@ class GitRepository(BaseRepository):
         if end_id is not None:
             self._validate_commit_id(end_id)
 
-        start_raw_id = self._get_commit_id(start_id)
+        start_raw_id = self._lookup_commit(start_id)
         start_pos = self._commit_ids[start_raw_id] if start_id else None
-        end_raw_id = self._get_commit_id(end_id)
+        end_raw_id = self._lookup_commit(end_id)
         end_pos = max(0, self._commit_ids[end_raw_id]) if end_id else None
 
         if None not in [start_id, end_id] and start_pos > end_pos:

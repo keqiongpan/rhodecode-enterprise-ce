@@ -94,8 +94,9 @@ class GitInMemoryCommit(base.BaseInMemoryCommit):
             commit_data, branch, commit_tree, updated, removed)
 
         # Update vcs repository object
-        self.repository.commit_ids.append(commit_id)
-        self.repository._rebuild_cache(self.repository.commit_ids)
+        if commit_id not in self.repository.commit_ids:
+            self.repository.commit_ids.append(commit_id)
+            self.repository._rebuild_cache(self.repository.commit_ids)
 
         # invalidate parsed refs after commit
         self.repository._refs = self.repository._get_refs()

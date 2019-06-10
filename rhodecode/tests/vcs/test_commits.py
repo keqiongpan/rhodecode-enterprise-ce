@@ -159,8 +159,7 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
             parents=[initial],
             branch=DEFAULT_BRANCH,)
 
-        default_branch_commits = self.repo.get_commits(
-            branch_name=DEFAULT_BRANCH)
+        default_branch_commits = self.repo.get_commits(branch_name=DEFAULT_BRANCH)
         assert docs_branch_commit1 not in list(default_branch_commits)
         assert docs_branch_commit2 not in list(default_branch_commits)
 

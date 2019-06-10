@@ -148,7 +148,6 @@ def _add_commits_to_repo(repo, commits):
             author=unicode(commit['author']),
             date=commit['date'],
             branch=commit.get('branch'))
-
     return tip
 
 

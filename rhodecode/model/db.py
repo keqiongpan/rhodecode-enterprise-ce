@@ -2437,6 +2437,7 @@ class Repository(Base, BaseModel):
         # control over cache behaviour
         if cache is None and full_cache and not config:
             return self._get_instance_cached()
+        # cache here is sent to the "vcs server"
         return self._get_instance(cache=bool(cache), config=config)
 
     def _get_instance_cached(self):
@@ -2479,7 +2480,8 @@ class Repository(Base, BaseModel):
             with_wire=custom_wire,
             create=False,
             _vcs_alias=self.repo_type)
-
+        if repo is not None:
+            repo.count()  # cache rebuild
         return repo
 
     def __json__(self):
@@ -4433,9 +4435,9 @@ class Gist(Base, BaseModel):
 
     def scm_instance(self, **kwargs):
         """
-        Get explicit Mercurial repository used
+        Get an instance of VCS Repository
+
         :param kwargs:
-        :return:
         """
         from rhodecode.model.gist import GistModel
         full_repo_path = os.path.join(self.base_path(), self.gist_access_id)

@@ -1091,23 +1091,23 @@ class TestGitSpecificWithRepo(BackendTestMixin):
         self.repo.get_diff(self.repo[0], self.repo[1])
         self.repo.run_git_command.assert_called_once_with(
             ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(0),
-             self.repo._get_commit_id(1)])
+             '--abbrev=40', self.repo._lookup_commit(0),
+             self.repo._lookup_commit(1)])
 
     def test_get_diff_runs_git_command_with_str_hashes(self):
         self.repo.run_git_command = mock.Mock(return_value=['', ''])
         self.repo.get_diff(self.repo.EMPTY_COMMIT, self.repo[1])
         self.repo.run_git_command.assert_called_once_with(
             ['show', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(1)])
+             '--abbrev=40', self.repo._lookup_commit(1)])
 
     def test_get_diff_runs_git_command_with_path_if_its_given(self):
         self.repo.run_git_command = mock.Mock(return_value=['', ''])
         self.repo.get_diff(self.repo[0], self.repo[1], 'foo')
         self.repo.run_git_command.assert_called_once_with(
             ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(0),
-             self.repo._get_commit_id(1), '--', 'foo'])
+             '--abbrev=40', self.repo._lookup_commit(0),
+             self.repo._lookup_commit(1), '--', 'foo'])
 
 
 @pytest.mark.usefixtures("vcs_repository_support")

@@ -129,20 +129,19 @@ def test_strip_with_single_heads(backend_hg):
     assert commit_ids['b'] not in rest_commit_ids
 
 
-def test_get_nodes_returns_unicode_flat(backend_random):
-    repo = backend_random.repo
-    directories, files = scm.ScmModel().get_nodes(
-        repo.repo_name, repo.get_commit(commit_idx=0).raw_id,
-        flat=True)
+def test_get_nodes_returns_unicode_flat(backend):
+    repo = backend.repo
+    commit_id = repo.get_commit(commit_idx=0).raw_id
+    directories, files = scm.ScmModel().get_nodes(repo.repo_name, commit_id, flat=True)
     assert_contains_only_unicode(directories)
     assert_contains_only_unicode(files)
 
 
-def test_get_nodes_returns_unicode_non_flat(backend_random):
-    repo = backend_random.repo
-    directories, files = scm.ScmModel().get_nodes(
-        repo.repo_name, repo.get_commit(commit_idx=0).raw_id,
-        flat=False)
+def test_get_nodes_returns_unicode_non_flat(backend):
+    repo = backend.repo
+    commit_id = repo.get_commit(commit_idx=0).raw_id
+
+    directories, files = scm.ScmModel().get_nodes(repo.repo_name, commit_id, flat=False)
     # johbo: Checking only the names for now, since that is the critical
     # part.
     assert_contains_only_unicode([d['name'] for d in directories])
