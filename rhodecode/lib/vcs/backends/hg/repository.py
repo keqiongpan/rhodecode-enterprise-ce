@@ -24,9 +24,11 @@ HG repository module
 import os
 import logging
 import binascii
+import time
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
@@ -85,11 +87,14 @@ class MercurialRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
+        # dependent that trigger re-computation of  commit_ids
+        self._commit_ids_ver = 0
+
     @LazyProperty
     def _remote(self):
         return connection.Hg(self.path, self.config, with_wire=self.with_wire)
 
-    @LazyProperty
+    @CachedProperty('_commit_ids_ver')
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -157,8 +162,7 @@ class MercurialRepository(BaseRepository):
 
         return OrderedDict(sorted(_tags, key=get_name, reverse=True))
 
-    def tag(self, name, user, commit_id=None, message=None, date=None,
-            **kwargs):
+    def tag(self, name, user, commit_id=None, message=None, date=None, **kwargs):
         """
         Creates and returns a tag for the given ``commit_id``.
 
@@ -172,6 +176,7 @@ class MercurialRepository(BaseRepository):
         """
         if name in self.tags:
             raise TagAlreadyExistError("Tag %s already exists" % name)
+
         commit = self.get_commit(commit_id=commit_id)
         local = kwargs.setdefault('local', False)
 
@@ -180,8 +185,7 @@ class MercurialRepository(BaseRepository):
 
         date, tz = date_to_timestamp_plus_offset(date)
 
-        self._remote.tag(
-            name, commit.raw_id, message, local, user, date, tz)
+        self._remote.tag(name, commit.raw_id, message, local, user, date, tz)
         self._remote.invalidate_vcs_cache()
 
         # Reinitialize tags
@@ -203,6 +207,7 @@ class MercurialRepository(BaseRepository):
         """
         if name not in self.tags:
             raise TagDoesNotExistError("Tag %s does not exist" % name)
+
         if message is None:
             message = "Removed tag %s" % name
         local = False
@@ -271,8 +276,9 @@ class MercurialRepository(BaseRepository):
         self._remote.strip(commit_id, update=False, backup="none")
 
         self._remote.invalidate_vcs_cache()
-        self.commit_ids = self._get_all_commit_ids()
-        self._rebuild_cache(self.commit_ids)
+        self._commit_ids_ver = time.time()
+        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        return len(self.commit_ids)
 
     def verify(self):
         verify = self._remote.verify()
@@ -450,7 +456,8 @@ class MercurialRepository(BaseRepository):
         try:
             raw_id, idx = self._remote.lookup(commit_id, both=True)
         except CommitDoesNotExistError:
-            msg = "Commit %s does not exist for %s" % (commit_id, self.name)
+            msg = "Commit {} does not exist for {}".format(
+                *map(safe_str, [commit_id, self.name]))
             raise CommitDoesNotExistError(msg)
 
         return MercurialCommit(self, raw_id, idx, pre_load=pre_load)

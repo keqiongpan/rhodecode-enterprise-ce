@@ -27,6 +27,7 @@ import os
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import date_astimestamp
@@ -75,6 +76,9 @@ class SubversionRepository(base.BaseRepository):
 
         self._init_repo(create, src_url)
 
+        # dependent that trigger re-computation of  commit_ids
+        self._commit_ids_ver = 0
+
     @LazyProperty
     def _remote(self):
         return connection.Svn(self.path, self.config)
@@ -93,10 +97,13 @@ class SubversionRepository(base.BaseRepository):
         else:
             self._check_path()
 
-    @LazyProperty
+    @CachedProperty('_commit_ids_ver')
     def commit_ids(self):
         head = self._remote.lookup(None)
         return [str(r) for r in xrange(1, head + 1)]
+
+    def _rebuild_cache(self, commit_ids):
+        pass
 
     def run_svn_command(self, cmd, **opts):
         """

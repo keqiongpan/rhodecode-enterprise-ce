@@ -29,8 +29,7 @@ from rhodecode.lib.vcs.backends import base
 
 class GitInMemoryCommit(base.BaseInMemoryCommit):
 
-    def commit(self, message, author, parents=None, branch=None, date=None,
-               **kwargs):
+    def commit(self, message, author, parents=None, branch=None, date=None, **kwargs):
         """
         Performs in-memory commit (doesn't check workdir in any way) and
         returns newly created `GitCommit`. Updates repository's
@@ -94,13 +93,12 @@ class GitInMemoryCommit(base.BaseInMemoryCommit):
             commit_data, branch, commit_tree, updated, removed)
 
         # Update vcs repository object
-        if commit_id not in self.repository.commit_ids:
-            self.repository.commit_ids.append(commit_id)
-            self.repository._rebuild_cache(self.repository.commit_ids)
+        self.repository.append_commit_id(commit_id)
 
         # invalidate parsed refs after commit
         self.repository._refs = self.repository._get_refs()
         self.repository.branches = self.repository._get_branches()
-        tip = self.repository.get_commit()
+        tip = self.repository.get_commit(commit_id)
+
         self.reset()
         return tip

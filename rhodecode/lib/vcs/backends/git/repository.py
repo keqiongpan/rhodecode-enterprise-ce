@@ -25,8 +25,10 @@ GIT repository module
 import logging
 import os
 import re
+import time
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
@@ -69,6 +71,9 @@ class GitRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
+        # dependent that trigger re-computation of  commit_ids
+        self._commit_ids_ver = 0
+
     @LazyProperty
     def _remote(self):
         return connection.Git(self.path, self.config, with_wire=self.with_wire)
@@ -81,7 +86,7 @@ class GitRepository(BaseRepository):
     def head(self):
         return self._remote.head()
 
-    @LazyProperty
+    @CachedProperty('_commit_ids_ver')
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -608,8 +613,9 @@ class GitRepository(BaseRepository):
         commit = commit.parents[0]
         self._remote.set_refs('refs/heads/%s' % branch_name, commit.raw_id)
 
-        self.commit_ids = self._get_all_commit_ids()
-        self._rebuild_cache(self.commit_ids)
+        self._commit_ids_ver = time.time()
+        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        return len(self.commit_ids)
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
         if commit_id1 == commit_id2:

@@ -33,6 +33,8 @@ import collections
 import warnings
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
+
 from pyramid import compat
 
 from rhodecode.translation import lazy_ugettext
@@ -261,6 +263,7 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
+    _commit_ids_ver = 0
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -403,6 +406,15 @@ class BaseRepository(object):
     # ==========================================================================
     # COMMITS
     # ==========================================================================
+
+    @CachedProperty('_commit_ids_ver')
+    def commit_ids(self):
+        raise NotImplementedError
+
+    def append_commit_id(self, commit_id):
+        if commit_id not in self.commit_ids:
+            self._rebuild_cache(self.commit_ids + [commit_id])
+            self._commit_ids_ver = time.time()
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
@@ -1509,9 +1521,7 @@ class BaseInMemoryCommit(object):
                 "Cannot remove node at %s from "
                 "following parents: %s" % (not_removed, parents))
 
-    def commit(
-            self, message, author, parents=None, branch=None, date=None,
-            **kwargs):
+    def commit(self, message, author, parents=None, branch=None, date=None, **kwargs):
         """
         Performs in-memory commit (doesn't check workdir in any way) and
         returns newly created :class:`BaseCommit`. Updates repository's
