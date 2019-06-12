@@ -221,7 +221,8 @@ tooltip = _ToolTip()
 
 files_icon = icon = '<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
 
-def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False):
+
+def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
 
@@ -247,7 +248,12 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
             continue
         segment_html = escape(segment)
 
-        if cnt != last_cnt:
+        last_item = cnt == last_cnt
+
+        if last_item and linkify_last_item is False:
+            # plain version
+            url_segments.append(segment_html)
+        else:
             url_segments.append(
                 link_to(
                     segment_html,
@@ -257,9 +263,7 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
                         commit_id=commit_id,
                         f_path='/'.join(path_segments[:cnt + 1]),
                         _query=route_qry),
-                    ))
-        else:
-            url_segments.append(segment_html)
+                ))
 
     limited_url_segments = url_segments[:1] + ['...'] + url_segments[-5:]
     if limit_items and len(limited_url_segments) < len(url_segments):

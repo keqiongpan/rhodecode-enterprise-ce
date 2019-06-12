@@ -58,65 +58,50 @@
   %>
   ## search results are additionally filtered, and this check is just a safe gate
   % if c.rhodecode_user.is_admin or h.HasRepoPermissionAny('repository.write','repository.read','repository.admin')(entry['repository'], 'search results content check'):
-      <div id="codeblock" class="codeblock">
+      <div class="codeblock">
+        <h1>
+          <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
+          ${search.repo_icon(repo_type)}
+          ${h.link_to(entry['repository'], h.route_path('repo_summary', repo_name=entry['repository']))}
+        </h1>
+
         <div class="codeblock-header">
-          <h1>
-            <% repo_type = entry.get('repo_type') or h.get_repo_type_by_name(entry.get('repository')) %>
-            ${search.repo_icon(repo_type)}
-            ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
-          </h1>
-          ## level 1
-          <div class="file-container">
 
+            <div class="file-filename">
+                <i class="icon-file"></i> ${entry['f_path'].split('/')[-1]}
+            </div>
+
+            <div class="file-stats">
+                <div class="stats-info">
+                    <span class="stats-first-item">
+                        ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
+                        (${len(matching_lines)} ${_ungettext('matched', 'matched', len(matching_lines))})
+                    </span>
+                    <span>
+                        % if entry.get('size'):
+                          | ${h.format_byte_size_binary(entry['size'])}
+                        % endif
+                    </span>
+                    <span>
+                        % if entry.get('mimetype'):
+                          | ${entry.get('mimetype', "unknown mimetype")}
+                        % endif
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="path clear-fix">
             <div class="pull-left">
-                <span class="stats-filename">
-                    <strong>
-                        <i class="icon-file-text"></i>
-                        ${h.link_to(h.literal(entry['f_path']), h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
-                    </strong>
-                </span>
-                <span class="item last">
-                    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${entry['f_path']}" title="${_('Copy the full path')}"></i>
-                </span>
+                ${h.files_breadcrumbs(entry['repository'],entry.get('commit_id', 'tip'),entry['f_path'], linkify_last_item=True)}
             </div>
 
-            <div class="pull-right">
-              <div class="buttons">
-                <a id="file_history_overview_full" href="${h.route_path('repo_commits_file',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
-                   ${_('Show Full History')}
-                </a>
-                 | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-                 | ${h.link_to(_('Raw'), h.route_path('repo_file_raw', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-                 | ${h.link_to(_('Download'), h.route_path('repo_file_download',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
-              </div>
-            </div>
-
-          </div>
-          ## level 2
-          <div class="file-container">
-
-            <div class="pull-left">
-                <span class="stats-first-item">
-                    %if entry.get('lines'):
-                      ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
-                      (${len(matching_lines)} ${_ungettext('matched', 'matched', len(matching_lines))})
-                    %endif
-                </span>
-
-                <span>
-                    %if entry.get('size'):
-                      | ${h.format_byte_size_binary(entry['size'])}
-                    %endif
-                </span>
-
-                <span>
-                    %if entry.get('mimetype'):
-                      | ${entry.get('mimetype', "unknown mimetype")}
-                    %endif
-                </span>
-            </div>
-
-            <div class="pull-right">
+            <div class="pull-right stats">
+##                     <a id="file_history_overview_full" href="${h.route_path('repo_commits_file',repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path',''))}">
+##                        ${_('Show Full History')}
+##                     </a>
+##                     | ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
+##                     | ${h.link_to(_('Raw'), h.route_path('repo_file_raw', repo_name=entry.get('repository',''),commit_id=entry.get('commit_id', 'tip'),f_path=entry.get('f_path','')))}
                 <div class="search-tags">
 
                     <% repo_group = entry.get('repository_group')%>
@@ -135,13 +120,13 @@
                     </span>
                     % endif
                 </div>
+
             </div>
-
-          </div>
-
+            <div class="clear-fix"></div>
         </div>
-        <div class="code-body search-code-body">
 
+
+        <div class="code-body search-code-body clear-fix">
             ${highlight_text_file(
                 has_matched_content=has_matched_content,
                 file_content=file_content,

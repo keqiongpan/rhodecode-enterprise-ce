@@ -2360,7 +2360,7 @@ div.search-code-body {
     }
 
     .code-body {
-        border: @border-thickness solid @border-default-color;
+        border: @border-thickness solid @grey6;
         .border-radius(@border-radius);
     }
 
@@ -2380,6 +2380,11 @@ div.search-code-body {
         .break { background-color: #DDE7EF; width: 100%; color: #747474; display: block; }
     }
 
+    .path {
+      border-bottom: none !important;
+      border-left: 1px solid @grey6 !important;
+      border-right: 1px solid @grey6 !important;
+    }
 }
 
 table.rctable td.td-search-results div {
