@@ -272,6 +272,11 @@
         if selected == active:
             return "active"
     %>
+    % if c.rhodecode_db_repo.archived:
+    <div class="alert alert-warning text-center">
+        <strong>${_('This repository has been archived. It is now read-only.')}</strong>
+    </div>
+    % endif
 
   <!--- REPO CONTEXT BAR -->
   <div id="context-bar">
@@ -340,11 +345,7 @@
     </div>
     <div class="clear"></div>
   </div>
-    % if c.rhodecode_db_repo.archived:
-    <div class="alert alert-warning text-center">
-        <strong>${_('This repository has been archived. It is now read-only.')}</strong>
-    </div>
-    % endif
+
   <!--- REPO END CONTEXT BAR -->
 
 </%def>
