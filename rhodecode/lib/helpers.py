@@ -219,7 +219,7 @@ class _ToolTip(object):
 
 tooltip = _ToolTip()
 
-files_icon = icon = '<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
+files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
 
 
 def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):

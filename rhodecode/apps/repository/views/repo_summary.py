@@ -72,6 +72,7 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(_renderer_type).search(commit)
             if readme_node:
+                log.debug('Found README node: %s', readme_node)
                 relative_urls = {
                     'raw': h.route_path(
                         'repo_file_raw', repo_name=_repo_name,
@@ -82,7 +83,8 @@ class RepoSummaryView(RepoAppView):
                 }
                 readme_data = self._render_readme_or_none(
                     commit, readme_node, relative_urls)
-                readme_filename = readme_node.path
+                readme_filename = readme_node.unicode_path
+
             return readme_data, readme_filename
 
         inv_context_manager = rc_cache.InvalidationContext(
