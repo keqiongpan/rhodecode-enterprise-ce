@@ -1395,21 +1395,6 @@ self: super: {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
-  "pyramid-beaker" = super.buildPythonPackage {
-    name = "pyramid-beaker-0.8";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."pyramid"
-      self."beaker"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d9/6e/b85426e00fd3d57f4545f74e1c3828552d8700f13ededeef9233f7bca8be/pyramid_beaker-0.8.tar.gz";
-      sha256 = "0hflx3qkcdml1mwpq53sz46s7jickpfn0zy0ns2c7j445j66bp3p";
-    };
-    meta = {
-      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
-    };
-  };
   "pyramid-debugtoolbar" = super.buildPythonPackage {
     name = "pyramid-debugtoolbar-4.5";
     doCheck = false;
@@ -1793,7 +1778,6 @@ self: super: {
       self."pycrypto"
       self."pygments"
       self."pyparsing"
-      self."pyramid-beaker"
       self."pyramid-debugtoolbar"
       self."pyramid-mako"
       self."pyramid"

@@ -250,7 +250,7 @@ def includeme(config):
 
     # Includes which are required. The application would fail without them.
     config.include('pyramid_mako')
-    config.include('pyramid_beaker')
+    config.include('rhodecode.lib.rc_beaker')
     config.include('rhodecode.lib.rc_cache')
 
     config.include('rhodecode.apps._base.navigation')
