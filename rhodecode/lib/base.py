@@ -374,20 +374,25 @@ def attach_context_attributes(context, request, user_id=None):
         "sideside": "sideside"
     }.get(request.GET.get('diffmode'))
 
-    if diffmode and diffmode != request.session.get('rc_user_session_attr.diffmode'):
-        request.session['rc_user_session_attr.diffmode'] = diffmode
-
-    # session settings per user
+    is_api = hasattr(request, 'rpc_user')
     session_attrs = {
         # defaults
         "clone_url_format": "http",
         "diffmode": "sideside"
     }
-    for k, v in request.session.items():
-        pref = 'rc_user_session_attr.'
-        if k and k.startswith(pref):
-            k = k[len(pref):]
-            session_attrs[k] = v
+
+    if not is_api:
+        # don't access pyramid session for API calls
+        if diffmode and diffmode != request.session.get('rc_user_session_attr.diffmode'):
+            request.session['rc_user_session_attr.diffmode'] = diffmode
+
+        # session settings per user
+
+        for k, v in request.session.items():
+            pref = 'rc_user_session_attr.'
+            if k and k.startswith(pref):
+                k = k[len(pref):]
+                session_attrs[k] = v
 
     context.user_session_attrs = session_attrs
 
@@ -419,8 +424,12 @@ def attach_context_attributes(context, request, user_id=None):
         'extra': {'plugins': {}}
     }
     # END CONFIG VARS
+    if is_api:
+        csrf_token = None
+    else:
+        csrf_token = auth.get_csrf_token(session=request.session)
 
-    context.csrf_token = auth.get_csrf_token(session=request.session)
+    context.csrf_token = csrf_token
     context.backends = rhodecode.BACKENDS.keys()
     context.backends.sort()
     unread_count = 0
