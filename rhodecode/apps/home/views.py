@@ -442,12 +442,14 @@ class HomeView(BaseAppView):
             def query_modifier():
                 qry = query
                 return {'q': qry, 'type': 'content'}
-            label = u'File search for `{}` in this repository.'.format(query)
+
+            label = u'File search for `{}`'.format(h.escape(query))
             file_qry = {
                 'id': -10,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo',
                 'url': h.route_path('search_repo',
                                     repo_name=repo_name,
                                     _query=query_modifier())
@@ -458,12 +460,13 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'commit'}
 
-            label = u'Commit search for `{}` in this repository.'.format(query)
+            label = u'Commit search for `{}`'.format(h.escape(query))
             commit_qry = {
                 'id': -20,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo',
                 'url': h.route_path('search_repo',
                                     repo_name=repo_name,
                                     _query=query_modifier())
@@ -482,12 +485,13 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'content'}
 
-            label = u'File search for `{}` in this repository group'.format(query)
+            label = u'File search for `{}`'.format(query)
             file_qry = {
                 'id': -30,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
                                     repo_group_name=repo_group_name,
                                     _query=query_modifier())
@@ -498,12 +502,13 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'commit'}
 
-            label = u'Commit search for `{}` in this repository group'.format(query)
+            label = u'Commit search for `{}`'.format(query)
             commit_qry = {
                 'id': -40,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
                                     repo_group_name=repo_group_name,
                                     _query=query_modifier())
@@ -524,6 +529,7 @@ class HomeView(BaseAppView):
                     'value': query,
                     'value_display': u'File search for: `{}`'.format(query),
                     'type': 'search',
+                    'subtype': 'global',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'content'})
                 })
@@ -533,6 +539,7 @@ class HomeView(BaseAppView):
                     'value': query,
                     'value_display': u'Commit search for: `{}`'.format(query),
                     'type': 'search',
+                    'subtype': 'global',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'commit'})
                 })

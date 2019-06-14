@@ -572,7 +572,7 @@
                     % endif
 
                     <li class="searchTagInput">
-                        <input class="main_filter_input" id="main_filter" size="15" type="text" name="main_filter" placeholder="${_('search / go to...')}" value="" />
+                        <input class="main_filter_input" id="main_filter" size="25" type="text" name="main_filter" placeholder="${_('search / go to...')}" value="" />
                     </li>
                     <li class="searchTag searchTagHelp">
                         <a href="#showFilterHelp" onclick="showMainFilterBox(); return false">?</a>
@@ -733,6 +733,7 @@
             }
 
             var searchType = data['type'];
+            var searchSubType = data['subtype'];
             var valueDisplay = data['value_display'];
 
             var pattern = '(' + escapeRegExChars(value) + ')';
@@ -749,9 +750,15 @@
             if (searchType === 'hint') {
                 icon += '<i class="icon-repo-group"></i> ';
             }
-            // full text search
+            // full text search/hints
             else if (searchType === 'search') {
                 icon += '<i class="icon-more"></i> ';
+                if (searchSubType !== undefined && searchSubType == 'repo') {
+                    valueDisplay += '<div class="pull-right tag">repository</div>';
+                }
+                else if (searchSubType !== undefined && searchSubType == 'repo_group') {
+                    valueDisplay += '<div class="pull-right tag">repo group</div>';
+                }
             }
             // repository
             else if (searchType === 'repo') {
@@ -857,6 +864,7 @@
             deferRequestBy: 300, //miliseconds
             tabDisabled: true,
             autoSelectFirst: false,
+            containerClass: 'autocomplete-qfilter-suggestions',
             formatResult: autocompleteMainFilterFormatResult,
             lookupFilter: autocompleteMainFilterResult,
             onSelect: function (element, suggestion) {
