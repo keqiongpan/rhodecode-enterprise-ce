@@ -423,7 +423,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         default_redirect_url = ''
 
         # save repo
-        if entry.get('bookmark_repo'):
+        if entry.get('bookmark_repo') and safe_int(entry.get('bookmark_repo')):
             repo = Repository.get(entry['bookmark_repo'])
             perm_check = HasRepoPermissionAny(
                 'repository.read', 'repository.write', 'repository.admin')
@@ -432,7 +432,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 should_save = True
                 default_redirect_url = '${repo_url}'
         # save repo group
-        elif entry.get('bookmark_repo_group'):
+        elif entry.get('bookmark_repo_group') and safe_int(entry.get('bookmark_repo_group')):
             repo_group = RepoGroup.get(entry['bookmark_repo_group'])
             perm_check = HasRepoGroupPermissionAny(
                 'group.read', 'group.write', 'group.admin')
