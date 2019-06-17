@@ -1678,10 +1678,11 @@ class Repository(Base, BaseModel):
         cascade="all, delete, delete-orphan")
     ui = relationship('RepoRhodeCodeUi', cascade="all")
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
-    integrations = relationship('Integration',
-                                cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
 
     scoped_tokens = relationship('UserApiKeys', cascade="all")
+
+    artifacts = relationship('FileStore', cascade="all")
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
