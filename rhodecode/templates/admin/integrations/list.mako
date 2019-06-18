@@ -107,11 +107,9 @@
   %for IntegrationType, integration in c.integrations_list:
         <tr id="integration_${integration.integration_id}">
           <td class="td-enabled">
-            %if integration.enabled:
-            <div class="flag_status approved pull-left"></div>
-            %else:
-            <div class="flag_status rejected pull-left"></div>
-            %endif
+            <div class="pull-left">
+                ${h.bool2icon(integration.enabled)}
+            </div>
           </td>
           <td class="td-description">
             ${integration.name}
