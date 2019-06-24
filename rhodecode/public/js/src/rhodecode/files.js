@@ -409,3 +409,109 @@ var showAuthors = function(elem, annotate) {
         $('#file_authors_title').html(_gettext('All Authors'))
     })
 };
+
+
+(function (mod) {
+
+    if (typeof exports == "object" && typeof module == "object") {
+        // CommonJS
+        module.exports = mod();
+    } else {
+        // Plain browser env
+        (this || window).FileEditor = mod();
+    }
+
+})(function () {
+    "use strict";
+
+    function FileEditor(textAreaElement, options) {
+        if (!(this instanceof FileEditor)) {
+            return new FileEditor(textAreaElement, options);
+        }
+        // bind the element instance to our Form
+        var te = $(textAreaElement).get(0);
+        if (te !== undefined) {
+            te.FileEditor = this;
+        }
+
+        this.modes_select = '#set_mode';
+        this.filename_selector = '#filename';
+        this.commit_btn_selector = '#commit_btn';
+        this.line_wrap_selector = '#line_wrap';
+        this.editor_preview_selector = '#editor_preview';
+
+        if (te !== undefined) {
+            this.cm = initCodeMirror(textAreaElement, null, false);
+        }
+
+        // FUNCTIONS and helpers
+        var self = this;
+
+        this.submitHandler = function() {
+            $(self.commit_btn_selector).on('click', function(e) {
+
+                var filename = $(self.filename_selector).val();
+                if (filename === "") {
+                    alert("Missing filename");
+                    e.preventDefault();
+                }
+
+                var button = $(this);
+                if (button.hasClass('clicked')) {
+                    button.attr('disabled', true);
+                } else {
+                    button.addClass('clicked');
+                }
+            });
+        };
+        this.submitHandler();
+
+        // on select line wraps change the editor
+        this.lineWrapHandler = function () {
+            $(self.line_wrap_selector).on('change', function (e) {
+                var selected = e.currentTarget;
+                var line_wraps = {'on': true, 'off': false}[selected.value];
+                setCodeMirrorLineWrap(self.cm, line_wraps)
+            });
+        };
+        this.lineWrapHandler();
+
+
+        this.showPreview = function () {
+
+            var _text = self.cm.getValue();
+            var _file_path = $(self.filename_selector).val();
+            if (_text && _file_path) {
+                $('.show-preview').addClass('active');
+                $('.show-editor').removeClass('active');
+
+                $(self.editor_preview_selector).show();
+                $(self.cm.getWrapperElement()).hide();
+
+
+                var post_data = {'text': _text, 'file_path': _file_path, 'csrf_token': CSRF_TOKEN};
+                $(self.editor_preview_selector).html(_gettext('Loading ...'));
+
+                var url = pyroutes.url('file_preview');
+
+                ajaxPOST(url, post_data, function (o) {
+                    $(self.editor_preview_selector).html(o);
+                })
+            }
+
+        };
+
+        this.showEditor = function () {
+            $(self.editor_preview_selector).hide();
+            $('.show-editor').addClass('active');
+            $('.show-preview').removeClass('active');
+
+            $(self.cm.getWrapperElement()).show();
+        };
+
+
+    }
+
+    return FileEditor;
+});
+

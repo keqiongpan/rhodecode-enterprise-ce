@@ -149,6 +149,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_group_list_data', '/_repo_groups', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('markup_preview', '/_markup_preview', []);
+    pyroutes.register('file_preview', '/_file_preview', []);
     pyroutes.register('store_user_session_value', '/_store_session_attr', []);
     pyroutes.register('journal', '/_admin/journal', []);
     pyroutes.register('journal_rss', '/_admin/journal/rss', []);

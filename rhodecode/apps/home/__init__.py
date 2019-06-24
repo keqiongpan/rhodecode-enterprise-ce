@@ -68,6 +68,10 @@ def includeme(config):
         pattern='/_markup_preview')
 
     config.add_route(
+        name='file_preview',
+        pattern='/_file_preview')
+
+    config.add_route(
         name='store_user_session_value',
         pattern='/_store_session_attr')
 

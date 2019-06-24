@@ -818,6 +818,8 @@ class ScmModel(BaseModel):
                 repo_name=repo.repo_name, repo_alias=scm_instance.alias,
                 commit_ids=[tip.raw_id])
 
+        return tip
+
     def delete_nodes(self, user, repo, message, nodes, parent_commit=None,
                      author=None, trigger_push_hook=True):
         """

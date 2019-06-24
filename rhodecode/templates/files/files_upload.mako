@@ -1,7 +1,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s Files Add') % c.repo_name}
+    ${_('{} Files Upload').format(c.repo_name)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -11,180 +11,197 @@
     ${self.menu_items(active='repositories')}
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Add new file')} @ ${h.show_id(c.commit)} ${_('Branch')}: ${c.commit.branch}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_subnav()">
     ${self.repo_menu(active='files')}
 </%def>
 
 <%def name="main()">
+
 <div class="box">
+    ## Template for uploads
+    <div style="display: none" id="tpl-dropzone">
+        <div class="dz-preview dz-file-preview">
+            <div class="dz-details">
+
+                <div class="dz-filename">
+                    <span data-dz-name></span>
+                </div>
+                <div class="dz-filename-size">
+                    <span class="dz-size" data-dz-size></span>
+
+                </div>
+
+                <div class="dz-sending" style="display: none">${_('Uploading...')}</div>
+                <div class="dz-response" style="display: none">
+                    ${_('Uploaded')} 100%
+                </div>
+
+            </div>
+            <div class="dz-progress">
+                <span class="dz-upload" data-dz-uploadprogress></span>
+            </div>
+
+            <div class="dz-error-message">
+            </div>
+        </div>
+    </div>
 
     <div class="edit-file-title">
-        ${self.breadcrumbs()}
+        <span class="title-heading">${_('Upload new file')} @ <code>${h.show_id(c.commit)}</code></span>
+        <span class="tag branchtag"><i class="icon-branch"></i> ${c.commit.branch}</span>
     </div>
 
-    ${h.secure_form(h.route_path('repo_files_create_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', enctype="multipart/form-data", class_="form-horizontal", request=request)}
+    <% form_url = h.route_path('repo_files_upload_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path) %>
+    ##${h.secure_form(form_url, id='eform', enctype="multipart/form-data", request=request)}
     <div class="edit-file-fieldset">
-        <div class="fieldset">
-            <div id="destination-label" class="left-label">
-                ${_('Path')}:
-            </div>
-            <div class="right-content">
+        <div class="path-items">
+            <ul>
+            <li class="breadcrumb-path">
                 <div>
-                    ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path, request.GET.get('at'))} /
-                    <input type="input-small" value="${c.f_path}" size="46" name="location" id="location">
+                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path='')}"><i class="icon-home"></i></a> /
+                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">${c.f_path}</a> ${('/' if c.f_path else '')}
                 </div>
-            </div>
-        </div>
+            </li>
+            <li class="location-path">
 
-        <div id="upload_file_container" class="fieldset">
-            <div class="filename-label left-label">
-                ${_('Filename')}:
-            </div>
-            <div class="right-content">
-                <input class="input-small" type="text" value="" size="46" name="filename_upload" id="filename_upload" placeholder="${_('No file selected')}">
-            </div>
-            <div class="filename-label left-label file-upload-label">
-                ${_('Upload file')}:
-            </div>
-            <div class="right-content file-upload-input">
-                <label for="upload_file" class="btn btn-default">Browse</label>
-
-                <input type="file" name="upload_file" id="upload_file">
-            </div>
+            </li>
+            </ul>
         </div>
 
     </div>
 
-    <div class="table">
+    <div class="upload-form table">
         <div id="files_data">
-            <div id="codeblock" class="codeblock">
-            <div class="code-header form" id="set_mode_header">
-                <div class="fields">
-                    ${h.dropdownmenu('set_mode','plain',[('plain',_('plain'))],enable_filter=True)}
-                    <label for="line_wrap">${_('line wraps')}</label>
-                    ${h.dropdownmenu('line_wrap', 'off', [('on', _('on')), ('off', _('off')),])}
 
-                    <div id="render_preview" class="btn btn-small preview hidden" >${_('Preview')}</div>
+            <div class="dropzone-wrapper" id="file-uploader">
+                <div class="dropzone-pure">
+                    <div class="dz-message">
+                    <i class="icon-upload" style="font-size:36px"></i></br>
+                    ${_("Drag'n Drop files here or")} <span class="link">${_('Choose your files')}</span>.<br>
+                    </div>
                 </div>
-            </div>
-                <div id="editor_container">
-                    <pre id="editor_pre"></pre>
-                    <textarea id="editor" name="content" ></textarea>
-                    <div id="editor_preview"></div>
-                </div>
+
             </div>
         </div>
+
     </div>
 
-    <div class="edit-file-fieldset">
+    <div class="upload-form edit-file-fieldset">
         <div class="fieldset">
-            <div id="commit-message-label" class="commit-message-label left-label">
-                ${_('Commit Message')}:
-            </div>
-            <div class="right-content">
-                <div class="message">
-                    <textarea id="commit" name="message"  placeholder="${c.default_message}"></textarea>
-                </div>
+            <div class="message">
+                <textarea id="commit" name="message"  placeholder="${c.default_message}"></textarea>
             </div>
         </div>
-        <div class="pull-right">
-            ${h.reset('reset',_('Cancel'),class_="btn btn-small")}
-            ${h.submit('commit_btn',_('Commit changes'),class_="btn btn-small btn-success")}
+        <div class="pull-left">
+            ${h.submit('commit_btn',_('Commit changes'), class_="btn btn-small btn-success")}
         </div>
     </div>
-    ${h.end_form()}
+    ##${h.end_form()}
+
+    <div class="file-upload-transaction-wrapper" style="display: none">
+    <div class="file-upload-transaction">
+        <h3>${_('Commiting...')}</h3>
+        <p>${_('Please wait while the files are being uploaded')}</p>
+        <p class="error" style="display: none">
+
+        </p>
+        <i class="icon-spin animate-spin"></i>
+        <p></p>
+    </div>
+    </div>
+
 </div>
+
 <script type="text/javascript">
 
-    $('#commit_btn').on('click', function() {
-        var button = $(this);
-        if (button.hasClass('clicked')) {
-            button.attr('disabled', true);
-        } else {
-            button.addClass('clicked');
-        }
+    $(document).ready(function () {
+
+        //see: https://www.dropzonejs.com/#configuration
+        myDropzone = new Dropzone("div#file-uploader", {
+            url: "${form_url}",
+            headers: {"X-CSRF-Token": CSRF_TOKEN},
+            paramName: function () {
+                return "files_upload"
+            }, // The name that will be used to transfer the file
+            parallelUploads: 20,
+            maxFiles: 20,
+            uploadMultiple: true,
+            //chunking: true, // use chunking transfer, not supported at the moment
+            //maxFilesize: 2, // in MBs
+            autoProcessQueue: false, // if false queue will not be processed automatically.
+            createImageThumbnails: false,
+            previewTemplate: document.querySelector('#tpl-dropzone').innerHTML,
+            accept: function (file, done) {
+                done();
+            },
+            init: function () {
+                this.on("addedfile", function (file) {
+
+                });
+
+                this.on("sending", function (file, xhr, formData) {
+                    formData.append("message", $('#commit').val());
+                    $(file.previewElement).find('.dz-sending').show();
+                });
+
+                this.on("success", function (file, response) {
+                    $(file.previewElement).find('.dz-sending').hide();
+                    $(file.previewElement).find('.dz-response').show();
+
+                    if (response.error !== null) {
+                        $('.file-upload-transaction-wrapper .error').html('ERROR: {0}'.format(response.error));
+                        $('.file-upload-transaction-wrapper .error').show();
+                        $('.file-upload-transaction-wrapper i').hide()
+                    }
+
+                    var redirect_url = response.redirect_url || '/';
+                    window.location = redirect_url
+
+                });
+
+                this.on("error", function (file, errorMessage, xhr) {
+                    var error = null;
+
+                    if (xhr !== undefined){
+                        var httpStatus = xhr.status + " " + xhr.statusText;
+                        if (xhr.status >= 500) {
+                            error = httpStatus;
+                        }
+                    }
+
+                    if (error === null) {
+                        error = errorMessage.error || errorMessage || httpStatus;
+                    }
+
+                    $(file.previewElement).find('.dz-error-message').html('ERROR: {0}'.format(error));
+                });
+            }
+            });
+
+        $('#commit_btn').on('click', function(e) {
+            e.preventDefault();
+            var button = $(this);
+            if (button.hasClass('clicked')) {
+                button.attr('disabled', true);
+            } else {
+                button.addClass('clicked');
+            }
+
+            var files = myDropzone.getQueuedFiles();
+            if (files.length === 0) {
+                alert("Missing files");
+                e.preventDefault();
+            }
+
+            $('.upload-form').hide();
+            $('.file-upload-transaction-wrapper').show();
+            myDropzone.processQueue();
+
+        });
+
     });
-
-    var hide_upload = function(){
-        $('#files_data').show();
-        $('#upload_file_container').hide();
-        $('#filename_container').show();
-    };
-
-    $('#file_enable').on('click', function(e){
-        e.preventDefault();
-        hide_upload();
-    });
-
-    var renderer = "";
-    var reset_url = "${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}";
-    var myCodeMirror = initCodeMirror('editor', reset_url, false);
-
-    var modes_select = $('#set_mode');
-    fillCodeMirrorOptions(modes_select);
-
-    var filename_selector = '#filename';
-    var callback = function(filename, mimetype, mode){
-        CodeMirrorPreviewEnable(mode);
-    };
-    // on change of select field set mode
-    setCodeMirrorModeFromSelect(
-            modes_select, filename_selector, myCodeMirror, callback);
-
-    // on entering the new filename set mode, from given extension
-    setCodeMirrorModeFromInput(
-        modes_select, filename_selector, myCodeMirror, callback);
-
-    // if the file is renderable set line wraps automatically
-    if (renderer !== ""){
-        var line_wrap = 'on';
-        $($('#line_wrap option[value="'+line_wrap+'"]')[0]).attr("selected", "selected");
-        setCodeMirrorLineWrap(myCodeMirror, true);
-    }
-
-    // on select line wraps change the editor
-    $('#line_wrap').on('change', function(e){
-        var selected = e.currentTarget;
-        var line_wraps = {'on': true, 'off': false}[selected.value];
-        setCodeMirrorLineWrap(myCodeMirror, line_wraps)
-    });
-
-    // render preview/edit button
-    $('#render_preview').on('click', function(e){
-        if($(this).hasClass('preview')){
-            $(this).removeClass('preview');
-            $(this).html("${_('Edit')}");
-            $('#editor_preview').show();
-            $(myCodeMirror.getWrapperElement()).hide();
-
-            var possible_renderer = {
-                'rst':'rst',
-                'markdown':'markdown',
-                'gfm': 'markdown'}[myCodeMirror.getMode().name];
-            var _text = myCodeMirror.getValue();
-            var _renderer = possible_renderer || DEFAULT_RENDERER;
-            var post_data = {'text': _text, 'renderer': _renderer, 'csrf_token': CSRF_TOKEN};
-            $('#editor_preview').html(_gettext('Loading ...'));
-            var url = pyroutes.url('repo_commit_comment_preview',
-                    {'repo_name': '${c.repo_name}',
-                     'commit_id': '${c.commit.raw_id}'});
-
-            ajaxPOST(url, post_data, function(o){
-                $('#editor_preview').html(o);
-            })
-        }
-        else{
-            $(this).addClass('preview');
-            $(this).html("${_('Preview')}");
-            $('#editor_preview').hide();
-            $(myCodeMirror.getWrapperElement()).show();
-        }
-    });
-    $('#filename').focus();
 
 </script>
 </%def>

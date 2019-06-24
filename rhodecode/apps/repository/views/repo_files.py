@@ -25,6 +25,7 @@ import shutil
 import tempfile
 import collections
 import urllib
+import pathlib2
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound
 from pyramid.view import view_config
@@ -42,7 +43,7 @@ from rhodecode.lib.exceptions import NonRelativePathError
 from rhodecode.lib.codeblocks import (
     filenode_as_lines_tokens, filenode_as_annotated_lines_tokens)
 from rhodecode.lib.utils2 import (
-    convert_line_endings, detect_mode, safe_str, str2bool, safe_int, sha1)
+    convert_line_endings, detect_mode, safe_str, str2bool, safe_int, sha1, safe_unicode)
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.lib.vcs import path as vcspath
@@ -87,7 +88,7 @@ class RepoFilesView(RepoAppView):
         c.enable_downloads = self.db_repo.enable_downloads
         return c
 
-    def _ensure_not_locked(self):
+    def _ensure_not_locked(self, commit_id='tip'):
         _ = self.request.translate
 
         repo = self.db_repo
@@ -98,21 +99,40 @@ class RepoFilesView(RepoAppView):
                     'warning')
             files_url = h.route_path(
                 'repo_files:default_path',
-                repo_name=self.db_repo_name, commit_id='tip')
+                repo_name=self.db_repo_name, commit_id=commit_id)
             raise HTTPFound(files_url)
 
-    def check_branch_permission(self, branch_name):
+    def forbid_non_head(self, is_head, f_path, commit_id='tip', json_mode=False):
+        _ = self.request.translate
+
+        if not is_head:
+            message = _('You can only modify files with commit being a valid branch head.')
+            h.flash(message, category='warning')
+
+            if json_mode:
+                return message
+
+            files_url = h.route_path(
+                'repo_files', repo_name=self.db_repo_name, commit_id=commit_id,
+                f_path=f_path)
+            raise HTTPFound(files_url)
+
+    def check_branch_permission(self, branch_name, commit_id='tip', json_mode=False):
         _ = self.request.translate
 
         rule, branch_perm = self._rhodecode_user.get_rule_and_branch_permission(
             self.db_repo_name, branch_name)
         if branch_perm and branch_perm not in ['branch.push', 'branch.push_force']:
-            h.flash(
-                _('Branch `{}` changes forbidden by rule {}.').format(branch_name, rule),
-                'warning')
+            message = _('Branch `{}` changes forbidden by rule {}.').format(
+                branch_name, rule)
+            h.flash(message, 'warning')
+
+            if json_mode:
+                return message
+
             files_url = h.route_path(
-                'repo_files:default_path',
-                repo_name=self.db_repo_name, commit_id='tip')
+                'repo_files:default_path', repo_name=self.db_repo_name, commit_id=commit_id)
+
             raise HTTPFound(files_url)
 
     def _get_commit_and_path(self):
@@ -146,8 +166,7 @@ class RepoFilesView(RepoAppView):
 
             _url = h.route_path(
                 'repo_files_add_file',
-                repo_name=self.db_repo_name, commit_id=0, f_path='',
-                _anchor='edit')
+                repo_name=self.db_repo_name, commit_id=0, f_path='')
 
             if h.HasRepoPermissionAny(
                     'repository.write', 'repository.admin')(self.db_repo_name):
@@ -217,7 +236,7 @@ class RepoFilesView(RepoAppView):
                 break
 
         # checked branches, means we only need to try to get the branch/commit_sha
-        if not repo.is_empty:
+        if not repo.is_empty():
             commit = repo.get_commit(commit_id=commit_id)
             if commit:
                 branch_name = commit.branch
@@ -275,6 +294,15 @@ class RepoFilesView(RepoAppView):
         commit_id = fname[:-len(ext)]
 
         return commit_id, ext, fileformat, content_type
+
+    def create_pure_path(self, *parts):
+        # Split paths and sanitize them, removing any ../ etc
+        sanitized_path = [
+            x for x in pathlib2.PurePath(*parts).parts
+            if x not in ['.', '..']]
+
+        pure_path = pathlib2.PurePath(*sanitized_path)
+        return pure_path
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
@@ -1054,15 +1082,9 @@ class RepoFilesView(RepoAppView):
         _branch_name, _sha_commit_id, is_head = \
             self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not is_head:
-            h.flash(_('You can only delete files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
-
+        self.forbid_non_head(is_head, f_path)
         self.check_branch_permission(_branch_name)
+
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
 
@@ -1088,13 +1110,7 @@ class RepoFilesView(RepoAppView):
         _branch_name, _sha_commit_id, is_head = \
             self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not is_head:
-            h.flash(_('You can only delete files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
+        self.forbid_non_head(is_head, f_path)
         self.check_branch_permission(_branch_name)
 
         c.commit = self._get_commit_or_redirect(commit_id)
@@ -1144,14 +1160,8 @@ class RepoFilesView(RepoAppView):
         _branch_name, _sha_commit_id, is_head = \
             self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not is_head:
-            h.flash(_('You can only edit files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
-        self.check_branch_permission(_branch_name)
+        self.forbid_non_head(is_head, f_path, commit_id=commit_id)
+        self.check_branch_permission(_branch_name, commit_id=commit_id)
 
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
@@ -1163,8 +1173,7 @@ class RepoFilesView(RepoAppView):
                 commit_id=c.commit.raw_id, f_path=f_path)
             raise HTTPFound(files_url)
 
-        c.default_message = _(
-            'Edited file {} via RhodeCode Enterprise').format(f_path)
+        c.default_message = _('Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
 
         return self._get_template_context(c)
@@ -1181,32 +1190,23 @@ class RepoFilesView(RepoAppView):
         commit_id, f_path = self._get_commit_and_path()
 
         self._ensure_not_locked()
-        _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
-
-        if not is_head:
-            h.flash(_('You can only edit files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
-
-        self.check_branch_permission(_branch_name)
 
         c.commit = self._get_commit_or_redirect(commit_id)
         c.file = self._get_filenode_or_redirect(c.commit, f_path)
 
         if c.file.is_binary:
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name,
-                             commit_id=c.commit.raw_id,
-                             f_path=f_path))
+            raise HTTPFound(h.route_path('repo_files', repo_name=self.db_repo_name,
+                                         commit_id=c.commit.raw_id, f_path=f_path))
 
-        c.default_message = _(
-            'Edited file {} via RhodeCode Enterprise').format(f_path)
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        self.forbid_non_head(is_head, f_path, commit_id=commit_id)
+        self.check_branch_permission(_branch_name, commit_id=commit_id)
+
+        c.default_message = _('Edited file {} via RhodeCode Enterprise').format(f_path)
         c.f_path = f_path
+
         old_content = c.file.content
         sl = old_content.splitlines(1)
         first_line = sl[0] if sl else ''
@@ -1217,20 +1217,25 @@ class RepoFilesView(RepoAppView):
         content = convert_line_endings(r_post.get('content', ''), line_ending_mode)
 
         message = r_post.get('message') or c.default_message
-        org_f_path = c.file.unicode_path
+        org_node_path = c.file.unicode_path
         filename = r_post['filename']
-        org_filename = c.file.name
 
-        if content == old_content and filename == org_filename:
-            h.flash(_('No changes'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_commit', repo_name=self.db_repo_name,
-                             commit_id='tip'))
+        root_path = c.file.dir_path
+        pure_path = self.create_pure_path(root_path, filename)
+        node_path = safe_unicode(bytes(pure_path))
+
+        default_redirect_url = h.route_path('repo_commit', repo_name=self.db_repo_name,
+                                            commit_id=commit_id)
+        if content == old_content and node_path == org_node_path:
+            h.flash(_('No changes detected on {}').format(org_node_path),
+                    category='warning')
+            raise HTTPFound(default_redirect_url)
+
         try:
             mapping = {
-                org_f_path: {
-                    'org_filename': org_f_path,
-                    'filename': os.path.join(c.file.dir_path, filename),
+                org_node_path: {
+                    'org_filename': org_node_path,
+                    'filename': node_path,
                     'content': content,
                     'lexer': '',
                     'op': 'mod',
@@ -1238,7 +1243,7 @@ class RepoFilesView(RepoAppView):
                 }
             }
 
-            ScmModel().update_nodes(
+            commit = ScmModel().update_nodes(
                 user=self._rhodecode_db_user.user_id,
                 repo=self.db_repo,
                 message=message,
@@ -1246,15 +1251,16 @@ class RepoFilesView(RepoAppView):
                 parent_commit=c.commit,
             )
 
-            h.flash(
-                _('Successfully committed changes to file `{}`').format(
+            h.flash(_('Successfully committed changes to file `{}`').format(
                     h.escape(f_path)), category='success')
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id=commit.raw_id)
+
         except Exception:
             log.exception('Error occurred during commit')
             h.flash(_('Error occurred during commit'), category='error')
-        raise HTTPFound(
-            h.route_path('repo_commit', repo_name=self.db_repo_name,
-                         commit_id='tip'))
+
+        raise HTTPFound(default_redirect_url)
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
@@ -1274,10 +1280,8 @@ class RepoFilesView(RepoAppView):
         c.commit = self._get_commit_or_redirect(commit_id, redirect_after=False)
         if c.commit is None:
             c.commit = EmptyCommit(alias=self.rhodecode_vcs_repo.alias)
-        c.default_message = (_('Added file via RhodeCode Enterprise'))
-        c.f_path = f_path.lstrip('/')  # ensure not relative path
 
-        if self.rhodecode_vcs_repo.is_empty:
+        if self.rhodecode_vcs_repo.is_empty():
             # for empty repository we cannot check for current branch, we rely on
             # c.commit.branch instead
             _branch_name = c.commit.branch
@@ -1286,15 +1290,11 @@ class RepoFilesView(RepoAppView):
             _branch_name, _sha_commit_id, is_head = \
                 self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not is_head:
-            h.flash(_('You can only add files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
+        self.forbid_non_head(is_head, f_path, commit_id=commit_id)
+        self.check_branch_permission(_branch_name, commit_id=commit_id)
 
-        self.check_branch_permission(_branch_name)
+        c.default_message = (_('Added file via RhodeCode Enterprise'))
+        c.f_path = f_path.lstrip('/')  # ensure not relative path
 
         return self._get_template_context(c)
 
@@ -1311,14 +1311,19 @@ class RepoFilesView(RepoAppView):
 
         self._ensure_not_locked()
 
-        r_post = self.request.POST
-
-        c.commit = self._get_commit_or_redirect(
-            commit_id, redirect_after=False)
+        c.commit = self._get_commit_or_redirect(commit_id, redirect_after=False)
         if c.commit is None:
             c.commit = EmptyCommit(alias=self.rhodecode_vcs_repo.alias)
 
-        if self.rhodecode_vcs_repo.is_empty:
+        # calculate redirect URL
+        if self.rhodecode_vcs_repo.is_empty():
+            default_redirect_url = h.route_path(
+                'repo_summary', repo_name=self.db_repo_name)
+        else:
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
+
+        if self.rhodecode_vcs_repo.is_empty():
             # for empty repository we cannot check for current branch, we rely on
             # c.commit.branch instead
             _branch_name = c.commit.branch
@@ -1327,70 +1332,42 @@ class RepoFilesView(RepoAppView):
             _branch_name, _sha_commit_id, is_head = \
                 self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
 
-        if not is_head:
-            h.flash(_('You can only add files with commit '
-                      'being a valid branch head.'), category='warning')
-            raise HTTPFound(
-                h.route_path('repo_files',
-                             repo_name=self.db_repo_name, commit_id='tip',
-                             f_path=f_path))
-
-        self.check_branch_permission(_branch_name)
+        self.forbid_non_head(is_head, f_path, commit_id=commit_id)
+        self.check_branch_permission(_branch_name, commit_id=commit_id)
 
         c.default_message = (_('Added file via RhodeCode Enterprise'))
         c.f_path = f_path
+
+        r_post = self.request.POST
+        message = r_post.get('message') or c.default_message
+        filename = r_post.get('filename')
         unix_mode = 0
         content = convert_line_endings(r_post.get('content', ''), unix_mode)
 
-        message = r_post.get('message') or c.default_message
-        filename = r_post.get('filename')
-        location = r_post.get('location', '')  # dir location
-        file_obj = r_post.get('upload_file', None)
-
-        if file_obj is not None and hasattr(file_obj, 'filename'):
-            filename = r_post.get('filename_upload')
-            content = file_obj.file
-
-            if hasattr(content, 'file'):
-                # non posix systems store real file under file attr
-                content = content.file
-
-        if self.rhodecode_vcs_repo.is_empty:
-            default_redirect_url = h.route_path(
-                'repo_summary', repo_name=self.db_repo_name)
-        else:
-            default_redirect_url = h.route_path(
-                'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
-
-        # If there's no commit, redirect to repo summary
-        if type(c.commit) is EmptyCommit:
-            redirect_url = h.route_path(
-                'repo_summary', repo_name=self.db_repo_name)
-        else:
-            redirect_url = default_redirect_url
-
         if not filename:
-            h.flash(_('No filename'), category='warning')
+            # If there's no commit, redirect to repo summary
+            if type(c.commit) is EmptyCommit:
+                redirect_url = h.route_path(
+                    'repo_summary', repo_name=self.db_repo_name)
+            else:
+                redirect_url = default_redirect_url
+            h.flash(_('No filename specified'), category='warning')
             raise HTTPFound(redirect_url)
 
-        # extract the location from filename,
-        # allows using foo/bar.txt syntax to create subdirectories
-        subdir_loc = filename.rsplit('/', 1)
-        if len(subdir_loc) == 2:
-            location = os.path.join(location, subdir_loc[0])
+        root_path = f_path
+        pure_path = self.create_pure_path(root_path, filename)
+        node_path = safe_unicode(bytes(pure_path).lstrip('/'))
 
-        # strip all crap out of file, just leave the basename
-        filename = os.path.basename(filename)
-        node_path = os.path.join(location, filename)
         author = self._rhodecode_db_user.full_contact
+        nodes = {
+            node_path: {
+                'content': content
+            }
+        }
 
         try:
-            nodes = {
-                node_path: {
-                    'content': content
-                }
-            }
-            ScmModel().create_nodes(
+
+            commit = ScmModel().create_nodes(
                 user=self._rhodecode_db_user.user_id,
                 repo=self.db_repo,
                 message=message,
@@ -1399,14 +1376,16 @@ class RepoFilesView(RepoAppView):
                 author=author,
             )
 
-            h.flash(
-                _('Successfully committed new file `{}`').format(
+            h.flash(_('Successfully committed new file `{}`').format(
                     h.escape(node_path)), category='success')
+
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id=commit.raw_id)
+
         except NonRelativePathError:
             log.exception('Non Relative path found')
-            h.flash(_(
-                'The location specified must be a relative path and must not '
-                'contain .. in the path'), category='warning')
+            h.flash(_('The location specified must be a relative path and must not '
+                      'contain .. in the path'), category='warning')
             raise HTTPFound(default_redirect_url)
         except (NodeError, NodeAlreadyExistsError) as e:
             h.flash(_(h.escape(e)), category='error')
@@ -1415,3 +1394,135 @@ class RepoFilesView(RepoAppView):
             h.flash(_('Error occurred during commit'), category='error')
 
         raise HTTPFound(default_redirect_url)
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='repo_files_upload_file', request_method='POST',
+        renderer='json_ext')
+    def repo_files_upload_file(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        commit_id, f_path = self._get_commit_and_path()
+
+        self._ensure_not_locked()
+
+        c.commit = self._get_commit_or_redirect(commit_id, redirect_after=False)
+        if c.commit is None:
+            c.commit = EmptyCommit(alias=self.rhodecode_vcs_repo.alias)
+
+        # calculate redirect URL
+        if self.rhodecode_vcs_repo.is_empty():
+            default_redirect_url = h.route_path(
+                'repo_summary', repo_name=self.db_repo_name)
+        else:
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id='tip')
+
+        if self.rhodecode_vcs_repo.is_empty():
+            # for empty repository we cannot check for current branch, we rely on
+            # c.commit.branch instead
+            _branch_name = c.commit.branch
+            is_head = True
+        else:
+            _branch_name, _sha_commit_id, is_head = \
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        error = self.forbid_non_head(is_head, f_path, json_mode=True)
+        if error:
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+        error = self.check_branch_permission(_branch_name, json_mode=True)
+        if error:
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+
+        c.default_message = (_('Uploaded file via RhodeCode Enterprise'))
+        c.f_path = f_path
+
+        r_post = self.request.POST
+
+        message = c.default_message
+        user_message = r_post.getall('message')
+        if isinstance(user_message, list) and user_message:
+            # we take the first from duplicated results if it's not empty
+            message = user_message[0] if user_message[0] else message
+
+        nodes = {}
+
+        for file_obj in r_post.getall('files_upload') or []:
+            content = file_obj.file
+            filename = file_obj.filename
+
+            root_path = f_path
+            pure_path = self.create_pure_path(root_path, filename)
+            node_path = safe_unicode(bytes(pure_path).lstrip('/'))
+
+            nodes[node_path] = {
+                'content': content
+            }
+
+        if not nodes:
+            error = 'missing files'
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+
+        author = self._rhodecode_db_user.full_contact
+
+        try:
+            commit = ScmModel().create_nodes(
+                user=self._rhodecode_db_user.user_id,
+                repo=self.db_repo,
+                message=message,
+                nodes=nodes,
+                parent_commit=c.commit,
+                author=author,
+            )
+            if len(nodes) == 1:
+                flash_message = _('Successfully committed {} new files').format(len(nodes))
+            else:
+                flash_message = _('Successfully committed 1 new file')
+
+            h.flash(flash_message, category='success')
+
+            default_redirect_url = h.route_path(
+                'repo_commit', repo_name=self.db_repo_name, commit_id=commit.raw_id)
+
+        except NonRelativePathError:
+            log.exception('Non Relative path found')
+            error = _('The location specified must be a relative path and must not '
+                      'contain .. in the path')
+            h.flash(error, category='warning')
+
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+        except (NodeError, NodeAlreadyExistsError) as e:
+            error = h.escape(e)
+            h.flash(error, category='error')
+
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+        except Exception:
+            log.exception('Error occurred during commit')
+            error = _('Error occurred during commit')
+            h.flash(error, category='error')
+            return {
+                'error': error,
+                'redirect_url': default_redirect_url
+            }
+
+        return {
+            'error': None,
+            'redirect_url': default_redirect_url
+        }

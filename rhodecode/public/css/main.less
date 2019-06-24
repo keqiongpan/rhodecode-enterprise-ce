@@ -277,7 +277,9 @@ input.inline[type="file"] {
 // Gists
 #files_data {
     clear: both; //for firefox
+    padding-top: 10px;
 }
+
 #gistid {
     margin-right: @padding;
 }
@@ -1327,9 +1329,9 @@ table.integrations {
         }
     }
 
-    #editor_container{
-        position: relative;
-        margin: @padding;
+    #editor_container {
+      position: relative;
+      margin: @padding 10px;
     }
 }
 
@@ -2063,15 +2065,15 @@ BIN_FILENODE = 7
 
 // Files
 .edit-file-title {
-    border-bottom: @border-thickness solid @border-default-color;
+    font-size: 16px;
 
-    .breadcrumbs {
-        margin-bottom: 0;
+    .title-heading {
+      padding: 2px;
     }
 }
 
 .edit-file-fieldset {
-    margin-top: @sidebarpadding;
+    margin: @sidebarpadding 0;
 
     .fieldset {
         .left-label {
@@ -2118,6 +2120,27 @@ BIN_FILENODE = 7
 #filter_deactivate {
     float: right;
     margin: 0 0 0 10px;
+}
+
+.file-upload-transaction-wrapper {
+    margin-top: 57px;
+    clear: both;
+}
+
+.file-upload-transaction-wrapper .error {
+    color: @color5;
+}
+
+.file-upload-transaction {
+    min-height: 200px;
+    padding: 54px;
+    border: 1px solid @grey5;
+    text-align: center;
+    clear: both;
+}
+
+.file-upload-transaction i {
+    font-size: 48px
 }
 
 h3.files_location{
@@ -2306,6 +2329,101 @@ h3.files_location{
 .browser-highlight{
 	background-color: @grey5-alpha;
 }
+
+
+.edit-file-fieldset #location,
+.edit-file-fieldset #filename {
+  display: flex;
+  width: -moz-available; /* WebKit-based browsers will ignore this. */
+  width: -webkit-fill-available; /* Mozilla-based browsers will ignore this. */
+  width: fill-available;
+  border: 0;
+}
+
+.path-items {
+  display: flex;
+  padding: 0;
+  border: 1px solid #eeeeee;
+  width: 100%;
+  float: left;
+
+  .breadcrumb-path {
+    line-height: 30px;
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+
+  .location-path {
+    width: -moz-available; /* WebKit-based browsers will ignore this. */
+    width: -webkit-fill-available; /* Mozilla-based browsers will ignore this. */
+    width: fill-available;
+
+    .file-name-input {
+      padding: 0.5em 0;
+    }
+
+  }
+
+  ul {
+    display: flex;
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    list-style-type: none;
+  }
+}
+
+.editor-items {
+  height: 40px;
+  margin: 10px 0 -17px 10px;
+
+  .editor-action {
+    cursor: pointer;
+  }
+
+  .editor-action.active {
+    border-bottom: 2px solid #5C5C5C;
+  }
+
+  li {
+    list-style-type: none;
+  }
+}
+
+.edit-file-fieldset .message textarea {
+  border: 1px solid #eeeeee;
+}
+
+#files_data .codeblock {
+  background-color: #F5F5F5;
+}
+
+#editor_preview {
+  background: white;
+}
+
+.show-editor {
+  padding: 10px;
+  background-color: white;
+
+}
+
+.show-preview {
+  padding: 10px;
+  background-color: white;
+  border-left: 1px solid #eeeeee;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 // Search
@@ -2577,32 +2695,37 @@ form.markup-form {
   padding: 20px;
 }
 
-.dropzone {
+.dropzone,
+.dropzone-pure {
     border: 2px dashed @grey5;
     border-radius: 5px;
     background: white;
     min-height: 200px;
     padding: 54px;
-}
-.dropzone .dz-message {
-    font-weight: 700;
-}
 
-.dropzone .dz-message {
-    text-align: center;
-    margin: 2em 0;
+  .dz-message {
+      font-weight: 700;
+      text-align: center;
+      margin: 2em 0;
+  }
+
 }
 
 .dz-preview {
-    margin: 10px 0px !important;
+    margin: 10px 0 !important;
     position: relative;
     vertical-align: top;
     padding: 10px;
+    border-bottom: 1px solid @grey5;
 }
 
 .dz-filename {
     font-weight: 700;
     float:left;
+}
+
+.dz-sending {
+  float: right;
 }
 
 .dz-response {
@@ -2615,4 +2738,6 @@ form.markup-form {
 
 .dz-error-message {
     color: @alert2;
+    padding-top: 10px;
+    clear: both;
 }

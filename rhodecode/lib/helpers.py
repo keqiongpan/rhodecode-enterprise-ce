@@ -1939,23 +1939,26 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)
+
     select2 = """
         <script>
             $(document).ready(function() {
                   $('#%s').select2({
-                      containerCssClass: 'drop-menu',
+                      containerCssClass: 'drop-menu %s',
                       dropdownCssClass: 'drop-menu-dropdown',
                       dropdownAutoWidth: true%s
                   });
             });
         </script>
     """
+
     filter_option = """,
                         minimumResultsForSearch: -1
     """
     input_id = attrs.get('id') or name
+    extra_classes = ' '.join(attrs.pop('extra_classes', []))
     filter_enabled = "" if enable_filter else filter_option
-    select_script = literal(select2 % (input_id, filter_enabled))
+    select_script = literal(select2 % (input_id, extra_classes, filter_enabled))
 
     return literal(select_html+select_script)
 

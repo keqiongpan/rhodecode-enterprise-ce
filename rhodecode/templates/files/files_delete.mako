@@ -1,7 +1,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s Files Delete') % c.repo_name}
+    ${_('{} Files Delete').format(c.repo_name)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -11,29 +11,36 @@
     ${self.menu_items(active='repositories')}
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Delete file')} @ ${h.show_id(c.commit)}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_subnav()">
     ${self.repo_menu(active='files')}
 </%def>
 
 <%def name="main()">
+
 <div class="box">
+
     <div class="edit-file-title">
-        ${self.breadcrumbs()}
+        <span class="title-heading">${_('Delete file')} @ <code>${h.show_id(c.commit)}</code></span>
+        <span class="tag branchtag"><i class="icon-branch"></i> ${c.commit.branch}</span>
     </div>
-    ${h.secure_form(h.route_path('repo_files_delete_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', class_="form-horizontal", request=request)}
+
+    ${h.secure_form(h.route_path('repo_files_delete_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path), id='eform', request=request)}
     <div class="edit-file-fieldset">
-        <div class="fieldset">
-            <div id="destination-label" class="left-label">
-                ${_('Path')}:
-            </div>
-            <div class="right-content">
-                <span id="path-breadcrumbs">${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.f_path, request.GET.get('at'))}</span>
-            </div>
+        <div class="path-items">
+            <li class="breadcrumb-path">
+                <div>
+                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path='')}"><i class="icon-home"></i></a> /
+                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.file.dir_path)}">${c.file.dir_path}</a> ${('/' if c.file.dir_path else '')}
+                </div>
+            </li>
+            <li class="location-path">
+                <input type="hidden" value="${c.f_path}" name="root_path">
+                <input  class="file-name-input input-small" type="text" value="${c.file.name}" name="filename" id="filename" disabled="disabled">
+            </li>
         </div>
+
     </div>
 
     <div id="codeblock" class="codeblock delete-file-preview">
@@ -53,20 +60,26 @@
 
     <div class="edit-file-fieldset">
         <div class="fieldset">
-            <div id="commit-message-label" class="commit-message-label left-label">
-                ${_('Commit Message')}:
-            </div>
-            <div class="right-content">
-                <div class="message">
-                    <textarea id="commit" name="message"  placeholder="${c.default_message}"></textarea>
-                </div>
+            <div class="message">
+                <textarea id="commit" name="message"  placeholder="${c.default_message}"></textarea>
             </div>
         </div>
-        <div class="pull-right">
-            ${h.reset('reset',_('Cancel'),class_="btn btn-small btn-danger")}
-            ${h.submit('commit',_('Delete File'),class_="btn btn-small btn-danger-action")}
+        <div class="pull-left">
+            ${h.submit('commit',_('Commit changes'),class_="btn btn-small btn-danger-action")}
         </div>
     </div>
     ${h.end_form()}
 </div>
+
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        fileEditor = new FileEditor('#editor');
+
+    });
+
+</script>
+
 </%def>
