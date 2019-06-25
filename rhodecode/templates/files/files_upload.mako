@@ -50,7 +50,11 @@
 
     <div class="edit-file-title">
         <span class="title-heading">${_('Upload new file')} @ <code>${h.show_id(c.commit)}</code></span>
-        <span class="tag branchtag"><i class="icon-branch"></i> ${c.commit.branch}</span>
+        % if c.commit.branch:
+        <span class="tag branchtag">
+            <i class="icon-branch"></i> ${c.commit.branch}
+        </span>
+        % endif
     </div>
 
     <% form_url = h.route_path('repo_files_upload_file', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path) %>
