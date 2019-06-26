@@ -3,9 +3,9 @@
 
 <%def name="title()">
     %if c.show_private:
-        ${_('Private Gists for user %s') % c.rhodecode_user.username}
+        ${_('Private Gists for user {}').format(c.rhodecode_user.username)}
     %elif c.show_public:
-        ${_('Public Gists for user %s') % c.rhodecode_user.username}
+        ${_('Public Gists for user {}').format(c.rhodecode_user.username)}
     %else:
         ${_('Public Gists')}
     %endif
@@ -20,22 +20,20 @@
     ${self.menu_items(active='gists')}
 </%def>
 
-
-
 <%def name="main()">
 
 <div class="box">
-  <div class="title">
+    <div class="title">
 
     <ul class="button-links">
       % if c.is_super_admin:
-        <li class="btn ${'active' if c.active=='all' else ''}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
+        <li class="btn ${('active' if c.active=='all' else '')}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
       %endif
-      <li class="btn ${'active' if c.active=='public' else ''}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>
+      <li class="btn ${('active' if c.active=='public' else '')}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>
       %if c.rhodecode_user.username != h.DEFAULT_USER:
-        <li class="btn ${'active' if c.active=='my_all' else ''}"><a href="${h.route_path('gists_show', _query={'public':1, 'private': 1})}">${_('My gists')}</a></li>
-        <li class="btn ${'active' if c.active=='my_private' else ''}"><a href="${h.route_path('gists_show', _query={'private': 1})}">${_('My private')}</a></li>
-        <li class="btn ${'active' if c.active=='my_public' else ''}"><a href="${h.route_path('gists_show', _query={'public': 1})}">${_('My public')}</a></li>
+        <li class="btn ${('active' if c.active=='my_all' else '')}"><a href="${h.route_path('gists_show', _query={'public':1, 'private': 1})}">${_('My gists')}</a></li>
+        <li class="btn ${('active' if c.active=='my_private' else '')}"><a href="${h.route_path('gists_show', _query={'private': 1})}">${_('My private')}</a></li>
+        <li class="btn ${('active' if c.active=='my_public' else '')}"><a href="${h.route_path('gists_show', _query={'public': 1})}">${_('My public')}</a></li>
       %endif
     </ul>
 
