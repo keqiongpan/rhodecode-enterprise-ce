@@ -558,6 +558,12 @@
       "src": "entypo"
     },
     {
+      "uid": "d4816c0845aa43767213d45574b3b145",
+      "css": "history",
+      "code": 61914,
+      "src": "fontawesome"
+    },
+    {
       "uid": "c43db6645e7515889fc2193294f50767",
       "css": "plus",
       "code": 59411,
@@ -597,6 +603,20 @@
       },
       "search": [
         "remove"
+      ]
+    },
+    {
+      "uid": "b1afcccc053ecb95fbcacf06e5c0d554",
+      "css": "history",
+      "code": 59418,
+      "src": "custom_icons",
+      "selected": false,
+      "svg": {
+        "path": "",
+        "width": 1143
+      },
+      "search": [
+        "history"
       ]
     }
   ]

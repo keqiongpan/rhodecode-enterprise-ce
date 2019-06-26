@@ -112,7 +112,7 @@
                 ## commits
                 <span class="tag">
                   % if commit_rev == -1:
-                      <i class="icon-tag"></i>
+                      <i class="icon-history"></i>
                       % if commit_rev == -1:
                             <span>0</span> ${_('Commit')}
                         % else:
@@ -120,7 +120,7 @@
                         % endif
                   % else:
                       <a href="${h.route_path('repo_commits', repo_name=c.repo_name)}">
-                        <i class="icon-tag"></i>
+                        <i class="icon-history"></i>
                         % if commit_rev == 1:
                             <span>${commit_rev}</span> ${_('Commit')}
                         % else:
