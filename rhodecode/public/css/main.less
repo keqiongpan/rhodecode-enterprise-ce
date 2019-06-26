@@ -2423,15 +2423,53 @@ h3.files_location{
   background-color: white;
   border-left: 1px solid #eeeeee;
 }
+// quick filter
+.grid-quick-filter {
+  float: right;
+    position: relative;
+}
 
+.grid-filter-box {
+  display: flex;
+  padding: 0px;
+  border-radius: 3px;
+  margin-bottom: 0;
 
+  a {
+    border: none !important;
+  }
 
+  li {
+    list-style-type: none
+  }
+}
 
+.grid-filter-box-icon {
+  line-height: 33px;
+  padding: 0;
+  width: 20px;
+  position: absolute;
+  z-index: 11;
+  left: 5px;
+}
 
+.grid-filter-box-input {
+  margin-right: 0;
 
+  input {
+    border: 1px solid @white;
+    padding-left: 25px;
+    width: 145px;
 
+    &:hover {
+        border-color: @grey6;
+    }
 
-
+    &:focus {
+        border-color: @grey5;
+    }
+  }
+}
 
 
 
