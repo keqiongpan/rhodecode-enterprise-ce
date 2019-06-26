@@ -20,9 +20,6 @@
 
 
 <%def name="main()">
-    <style>
-
-    </style>
 
 <div class="box">
     <div class="title">
@@ -47,32 +44,10 @@
         % endif
     </ul>
 
-    ${self.breadcrumbs()}
     </div>
 
     <div class="main-content-full-width">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">
-              %if c.source:
-                  ${_('Pull Requests from %(repo_name)s repository') % {'repo_name': c.repo_name}}
-              %elif c.closed:
-                  ${_('Closed Pull Requests to repository %(repo_name)s') % {'repo_name': c.repo_name}}
-              %elif c.my:
-                  ${_('Pull Requests to %(repo_name)s repository opened by me') % {'repo_name': c.repo_name}}
-              %elif c.awaiting_review:
-                  ${_('Pull Requests to %(repo_name)s repository awaiting review') % {'repo_name': c.repo_name}}
-              %elif c.awaiting_my_review:
-                  ${_('Pull Requests to %(repo_name)s repository awaiting my review') % {'repo_name': c.repo_name}}
-              %else:
-                  ${_('Pull Requests to %(repo_name)s repository') % {'repo_name': c.repo_name}}
-              %endif
-          </h3>
-        </div>
-        <div class="panel-body panel-body-min-height">
-          <table id="pull_request_list_table" class="display"></table>
-        </div>
-      </div>
+        <table id="pull_request_list_table" class="display"></table>
     </div>
 
 </div>
