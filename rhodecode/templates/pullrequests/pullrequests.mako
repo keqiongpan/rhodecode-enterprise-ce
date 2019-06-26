@@ -20,34 +20,34 @@
 
 
 <%def name="main()">
+    <style>
+
+    </style>
+
 <div class="box">
-  <div class="title">
-      <ul class="links">
+    <div class="title">
+    <ul class="button-links">
+      <li class="btn ${('active' if c.active=='open' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
+      <li class="btn ${('active' if c.active=='my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
+      <li class="btn ${('active' if c.active=='awaiting' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
+      <li class="btn ${('active' if c.active=='awaiting_my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
+      <li class="btn ${('active' if c.active=='closed' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
+      <li class="btn ${('active' if c.active=='source' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
+    </ul>
+
+    <ul class="links">
+        % if c.rhodecode_user.username != h.DEFAULT_USER:
         <li>
-           %if c.rhodecode_user.username != h.DEFAULT_USER:
             <span>
                 <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">
                     ${_('Open new Pull Request')}
                 </a>
             </span>
-           %endif
         </li>
-      </ul>
+        % endif
+    </ul>
 
     ${self.breadcrumbs()}
-  </div>
-
-  <div class="sidebar-col-wrapper">
-    ##main
-    <div class="sidebar">
-        <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='open' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
-          <li class="${'active' if c.active=='my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
-          <li class="${'active' if c.active=='awaiting' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
-          <li class="${'active' if c.active=='awaiting_my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
-          <li class="${'active' if c.active=='closed' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
-          <li class="${'active' if c.active=='source' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
-        </ul>
     </div>
 
     <div class="main-content-full-width">
@@ -74,7 +74,7 @@
         </div>
       </div>
     </div>
-  </div>
+
 </div>
 
 <script type="text/javascript">
