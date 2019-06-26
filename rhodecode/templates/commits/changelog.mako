@@ -29,10 +29,30 @@
 <%def name="main()">
 
 <div class="box">
+
     <div class="title">
+        <div id="filter_changelog">
+            ${h.hidden('branch_filter')}
+             %if c.selected_name:
+             <div class="btn btn-default" id="clear_filter" >
+                 ${_('Clear filter')}
+             </div>
+            %endif
+        </div>
+        <div class="pull-left obsolete-toggle">
+            % if h.is_hg(c.rhodecode_repo):
+                % if c.show_hidden:
+                    <a class="action-link" href="${h.current_route_path(request, evolve=0)}">${_('Hide obsolete/hidden')}</a>
+                % else:
+                    <a class="action-link" href="${h.current_route_path(request, evolve=1)}">${_('Show obsolete/hidden')}</a>
+                % endif
+            % else:
+                    <span class="action-link disabled">${_('Show hidden')}</span>
+            % endif
+        </div>
         <ul class="links">
             <li>
-                <a href="#" class="btn btn-small" id="rev_range_container" style="display:none;"></a>
+
                 %if c.rhodecode_db_repo.fork:
                     <span>
                         <a  id="compare_fork_button"
@@ -60,11 +80,6 @@
                     </span>
                 %endif
 
-                ## clear selection
-                <div title="${_('Clear selection')}" class="btn" id="rev_range_clear" style="display:none">
-                    ${_('Clear selection')}
-                </div>
-
             </li>
         </ul>
     </div>
@@ -73,29 +88,7 @@
         <script type="text/javascript" src="${h.asset('js/src/plugins/jquery.commits-graph.js')}"></script>
 
         <div class="graph-header">
-            <div id="filter_changelog">
-                ${h.hidden('branch_filter')}
-                 %if c.selected_name:
-                 <div class="btn btn-default" id="clear_filter" >
-                     ${_('Clear filter')}
-                 </div>
-                %endif
-            </div>
             ${self.breadcrumbs('breadcrumbs_light')}
-            <div class="pull-right">
-                % if h.is_hg(c.rhodecode_repo):
-                    % if c.show_hidden:
-                        <a class="action-link" href="${h.current_route_path(request, evolve=0)}">${_('Hide obsolete/hidden')}</a>
-                    % else:
-                        <a class="action-link" href="${h.current_route_path(request, evolve=1)}">${_('Show obsolete/hidden')}</a>
-                    % endif
-                % else:
-                        <span class="action-link disabled">${_('Show hidden')}</span>
-                % endif
-            </div>
-            <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
-                ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
-            </div>
         </div>
 
         <div id="graph">
@@ -103,14 +96,23 @@
               <div id="graph_nodes">
                 <div id="graph_canvas"></div>
             </div>
-            <div id="graph_content" class="main-content graph_full_width">
+            <div id="graph_content" class="graph_full_width">
 
               <div class="table">
                 <table id="changesets" class="rctable">
                     <tr>
                       ## checkbox
-                      <th></th>
-                      <th></th>
+                      <th colspan="4">
+                        ## clear selection
+                        <div title="${_('Clear selection')}" class="btn btn-sm" id="rev_range_clear" style="display:none">
+                            <i class="icon-cancel-circled2"></i>
+                        </div>
+                        <div class="btn btn-sm disabled" disabled="disabled" id="rev_range_more" style="display:none;">${_('Select second commit')}</div>
+                        <a href="#" class="btn btn-success btn-sm" id="rev_range_container" style="display:none;"></a>
+                      </th>
+                      ## graph
+
+                      ## review box
 
                       <th>${_('Commit')}</th>
 
@@ -135,6 +137,9 @@
             <div class="pagination-wh pagination-left">
             ${c.pagination.pager('$link_previous ~2~ $link_next')}
             </div>
+            <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
+                ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}
+            </div>
         </div>
 
         <script type="text/javascript">
@@ -144,6 +149,7 @@
             // Create links to commit ranges when range checkboxes are selected
             var $commitCheckboxes = $('.commit-range');
             // cache elements
+            var $commitRangeMore = $('#rev_range_more');
             var $commitRangeContainer = $('#rev_range_container');
             var $commitRangeClear = $('#rev_range_clear');
 
@@ -155,57 +161,67 @@
                     }
                 }
                 var open_new_pull_request = $('#open_new_pull_request');
-                if(open_new_pull_request){
-                      var selected_changes = selectedCheckboxes.length;
-                      if (selected_changes > 1 || selected_changes == 1 && templateContext.repo_type == 'svn') {
-                          open_new_pull_request.hide();
-                      } else {
-                          if (selected_changes == 1) {
-                             open_new_pull_request.html(_gettext('Open new pull request for selected commit'));
-                          } else if (selected_changes == 0) {
-                             open_new_pull_request.html(_gettext('Open new pull request'));
-                          }
-                          open_new_pull_request.show();
-                      }
+
+                if (open_new_pull_request) {
+                    var selected_changes = selectedCheckboxes.length;
+                    open_new_pull_request.hide();
+                    if (selected_changes == 1) {
+                        open_new_pull_request.html(_gettext('Open new pull request for selected commit'));
+                    } else {
+                        open_new_pull_request.html(_gettext('Open new pull request'));
+                    }
+                    open_new_pull_request.show();
                 }
 
-                if (selectedCheckboxes.length>0){
-                    var revEnd = selectedCheckboxes[0].name;
-                    var revStart = selectedCheckboxes[selectedCheckboxes.length-1].name;
-                    var url = pyroutes.url('repo_commit',
-                            {'repo_name': '${c.repo_name}',
-                             'commit_id': revStart+'...'+revEnd});
-
-                    var link = (revStart == revEnd)
-                        ? _gettext('Show selected commit __S')
-                        : _gettext('Show selected commits __S ... __E');
-
-                    link = link.replace('__S', revStart.substr(0,6));
-                    link = link.replace('__E', revEnd.substr(0,6));
-
-                    $commitRangeContainer
-                        .attr('href',url)
-                        .html(link)
-                        .show();
-
-                    $commitRangeClear.show();
-                    var _url = pyroutes.url('pullrequest_new',
-                                    {'repo_name': '${c.repo_name}',
-                                     'commit': revEnd});
-                    open_new_pull_request.attr('href', _url);
+                if (selectedCheckboxes.length > 0) {
                     $('#compare_fork_button').hide();
+                    var commitStart = $(selectedCheckboxes[selectedCheckboxes.length-1]).data();
+
+                    var revStart = commitStart.commitId;
+
+                    var commitEnd = $(selectedCheckboxes[0]).data();
+                    var revEnd = commitEnd.commitId;
+
+                    var lbl_start = 'r{0}:{1}'.format(commitStart.commitIdx, commitStart.commitId.substr(0,6));
+                    var lbl_end = 'r{0}:{1}'.format(commitEnd.commitIdx, commitEnd.commitId.substr(0,6));
+                    var url = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}', 'commit_id': revStart+'...'+revEnd});
+                    var link = _gettext('Show selected commits {0} ... {1}').format(lbl_start, lbl_end);
+
+                    if (selectedCheckboxes.length > 1) {
+                        $commitRangeClear.show();
+                        $commitRangeMore.hide();
+
+                        $commitRangeContainer
+                            .attr('href',url)
+                            .html(link)
+                            .show();
+
+
+                    } else {
+                        $commitRangeContainer.hide();
+                        $commitRangeClear.show();
+                        $commitRangeMore.show();
+                    }
+
+                    // pull-request link
+                    if (selectedCheckboxes.length == 1){
+                        var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}', 'commit': revEnd});
+                        open_new_pull_request.attr('href', _url);
+                    } else {
+                        var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}'});
+                        open_new_pull_request.attr('href', _url);
+                    }
+
                 } else {
                     $commitRangeContainer.hide();
                     $commitRangeClear.hide();
+                    $commitRangeMore.hide();
 
                     %if c.branch_name:
-                        var _url = pyroutes.url('pullrequest_new',
-                                        {'repo_name': '${c.repo_name}',
-                                         'branch':'${c.branch_name}'});
+                        var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}', 'branch':'${c.branch_name}'});
                         open_new_pull_request.attr('href', _url);
                     %else:
-                        var _url = pyroutes.url('pullrequest_new',
-                                        {'repo_name': '${c.repo_name}'});
+                        var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}'});
                         open_new_pull_request.attr('href', _url);
                     %endif
                     $('#compare_fork_button').show();
@@ -247,7 +263,7 @@
             $("#branch_filter").select2({
                 'dropdownAutoWidth': true,
                 'width': 'resolve',
-                'placeholder': "${c.selected_name or _('Filter changelog')}",
+                'placeholder': "${c.selected_name or _('Branch filter')}",
                 containerCssClass: "drop-menu",
                 dropdownCssClass: "drop-menu-dropdown",
                 query: function(query){

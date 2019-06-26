@@ -960,9 +960,6 @@ label {
 }
 
 
-#graph_nodes {
-    padding-top: 43px;
-}
 
 #graph_content{
 
@@ -995,13 +992,12 @@ label {
     }
 
     .graph-col-wrapper {
-        padding-left: 110px;
 
         #graph_nodes {
             width: 100px;
-            margin-left: -110px;
-            float: left;
-            clear: left;
+            position: absolute;
+            left: 120px;
+            z-index: -1;
         }
     }
 
@@ -1016,6 +1012,16 @@ label {
         display: block;
       }
     }
+}
+
+.obsolete-toggle {
+    line-height: 30px;
+    margin-left: -15px;
+}
+
+#rev_range_container, #rev_range_clear, #rev_range_more {
+    margin-top: -5px;
+    margin-bottom: -5px;
 }
 
 #filter_changelog {
