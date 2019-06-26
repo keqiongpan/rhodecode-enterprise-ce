@@ -12,13 +12,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Commits')} -
-    r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}
-    ...
-    r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
-    ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -29,44 +23,65 @@
 </%def>
 
 <%def name="main()">
+    <div class="box">
+        <div class="summary changeset">
+            <div class="summary-detail">
+              <div class="summary-detail-header">
+                  <span class="breadcrumbs files_location">
+                    <h4>
+                        ${_('Commit Range')}
+                    </h4>
+                  </span>
 
-    <div class="summary changeset">
-        <div class="summary-detail">
-          <div class="summary-detail-header">
-              <span class="breadcrumbs files_location">
-                <h4>
-                    ${_('Commit Range')}
-                    <code>
-                    r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}...r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
-                    </code>
-                </h4>
-              </span>
-          </div>
-
-          <div class="fieldset">
-            <div class="left-label">
-              ${_('Diff option')}:
-            </div>
-            <div class="right-content">
-              <div class="btn btn-primary">
-                <a href="${h.route_path('repo_compare',
-                repo_name=c.repo_name,
-                source_ref_type='rev',
-                source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
-                target_ref_type='rev',
-                target_ref=c.commit_ranges[-1].raw_id)}"
-                >
-                    ${_('Show combined compare')}
-                </a>
+                  <div class="clear-fix"></div>
               </div>
-            </div>
-          </div>
 
-        </div> <!-- end summary-detail -->
+              <div class="fieldset">
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Range')}:</p>
+                    <div class="right-label-summary">
+                        <div class="code-header" >
+                            <div class="compare_header">
+                                <code class="fieldset-text-line">
+                                r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}
+                                ...
+                                r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
+                                ${_ungettext('(%s commit)','(%s commits)', len(c.commit_ranges)) % len(c.commit_ranges)}
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
 
-    </div> <!-- end summary -->
+              <div class="fieldset">
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Diff Option')}:</p>
+                    <div class="right-label-summary">
+                        <div class="code-header" >
+                            <div class="compare_header">
+                              <div class="btn btn-primary">
+                                <a href="${h.route_path('repo_compare',
+                                repo_name=c.repo_name,
+                                source_ref_type='rev',
+                                source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
+                                target_ref_type='rev',
+                                target_ref=c.commit_ranges[-1].raw_id)}"
+                                >
+                                    ${_('Show combined diff')}
+                                </a>
+                              </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
 
-    <div id="changeset_compare_view_content">
+              <div class="clear-fix"></div>
+            </div> <!-- end summary-detail -->
+        </div> <!-- end summary -->
+
+        <div id="changeset_compare_view_content">
     <div class="pull-left">
       <div class="btn-group">
           <a
@@ -99,4 +114,6 @@
         %endfor
     </div>
   </div>
+    </div>
+
 </%def>

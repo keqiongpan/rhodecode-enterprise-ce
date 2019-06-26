@@ -279,8 +279,6 @@
 
         ## table diff data
         <div class="table">
-
-
             % if not c.compare_home:
                 <div id="changeset_compare_view_content">
                     <div class="pull-left">
