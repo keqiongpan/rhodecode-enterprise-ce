@@ -99,8 +99,7 @@ class CustomTestResponse(TestResponse):
         """
         This returns the session from a response object.
         """
-
-        from pyramid_beaker import session_factory_from_settings
+        from rhodecode.lib.rc_beaker import session_factory_from_settings
         session = session_factory_from_settings(self.test_app._pyramid_settings)
         return session(self.request)
 
