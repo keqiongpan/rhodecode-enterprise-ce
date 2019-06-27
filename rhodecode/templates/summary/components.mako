@@ -1,7 +1,7 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <%def name="refs_counters(branches, closed_branches, tags, bookmarks)">
-    <span class="branchtag tag">
+    <span class="summary-branchtag summary-tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
       <i class="icon-branch"></i>
       % if len(branches) == 1:
@@ -13,7 +13,7 @@
     </span>
 
     %if closed_branches:
-    <span class="branchtag tag">
+    <span class="summary-branchtag summary-tag">
     <a href="${h.route_path('branches_home',repo_name=c.repo_name)}" class="childs">
       <i class="icon-branch"></i>
       % if len(closed_branches) == 1:
@@ -25,7 +25,7 @@
     </span>
     %endif
 
-    <span class="tagtag tag">
+    <span class="summary-tagtag summary-tag">
     <a href="${h.route_path('tags_home',repo_name=c.repo_name)}" class="childs">
         <i class="icon-tag"></i>
         % if len(tags) == 1:
@@ -37,7 +37,7 @@
     </span>
 
     %if bookmarks:
-    <span class="booktag tag">
+    <span class="summary-booktag summary-tag">
     <a href="${h.route_path('bookmarks_home',repo_name=c.repo_name)}" class="childs">
         <i class="icon-bookmark"></i>
         % if len(bookmarks) == 1:
@@ -110,7 +110,7 @@
                 % endif
 
                 ## commits
-                <span class="tag">
+                <span class="summary-tag">
                   % if commit_rev == -1:
                       <i class="icon-history"></i>
                       % if commit_rev == -1:
@@ -131,7 +131,7 @@
                 </span>
 
                 ## forks
-                <span class="tag">
+                <span class="summary-tag">
                   <a title="${_('Number of Repository Forks')}" href="${h.route_path('repo_forks_show_all', repo_name=c.repo_name)}">
                      <i class="icon-code-fork"></i>
                      <span>${c.repository_forks}</span> ${_ungettext('Fork', 'Forks', c.repository_forks)}</a>

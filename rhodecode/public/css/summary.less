@@ -299,7 +299,12 @@
             margin-top: 7px;
         }
 
-        .tag, .tagtag, .branchtag, .booktag, .metatag, .perm_tag {
+        .summary-tag,
+        .summary-tagtag,
+        .summary-branchtag,
+        .summary-booktag,
+        .summary-metatag,
+        .summary-perm_tag {
             background:transparent;
             border: none;
             box-shadow: none;
@@ -307,9 +312,12 @@
             font-size: 13px;
         }
 
-        .tag span, .tag i {
+        .summary-tag span,
+        .summary-tag i,
+        .summary-tag a {
             color: @grey1;
         }
+
     }
     .commit {
         color: @grey1;
