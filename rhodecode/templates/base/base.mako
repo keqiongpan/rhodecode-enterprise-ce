@@ -298,9 +298,9 @@
             <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
               <div class="menulabel">
               %if c.repository_pull_requests == 1:
-                  ${c.repository_pull_requests} ${_('Pull Request')}
+                  ${_('Pull Request')} ${c.repository_pull_requests}
               %else:
-                  ${c.repository_pull_requests} ${_('Pull Requests')}
+                  ${_('Pull Requests')} ${c.repository_pull_requests} 
               %endif
               </div>
             </a>
