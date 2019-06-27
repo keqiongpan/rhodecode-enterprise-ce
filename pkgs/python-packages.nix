@@ -845,14 +845,14 @@ self: super: {
     };
   };
   "jupyter-core" = super.buildPythonPackage {
-    name = "jupyter-core-4.4.0";
+    name = "jupyter-core-4.5.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."traitlets"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b6/2d/2804f4de3a95583f65e5dcb4d7c8c7183124882323758996e867f47e72af/jupyter_core-4.4.0.tar.gz";
-      sha256 = "1dy083rarba8prn9f9srxq3c7n7vyql02ycrqq306c40lr57aw5s";
+      url = "https://files.pythonhosted.org/packages/4a/de/ff4ca734656d17ebe0450807b59d728f45277e2e7f4b82bc9aae6cb82961/jupyter_core-4.5.0.tar.gz";
+      sha256 = "1xr4pbghwk5hayn5wwnhb7z95380r45p79gf5if5pi1akwg7qvic";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
