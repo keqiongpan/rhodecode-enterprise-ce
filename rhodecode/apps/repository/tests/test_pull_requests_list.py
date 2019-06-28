@@ -40,11 +40,11 @@ def route_path(name, params=None, **kwargs):
 class TestPullRequestList(object):
 
     @pytest.mark.parametrize('params, expected_title', [
-        ({'source': 0, 'closed': 1}, 'Closed Pull Requests'),
-        ({'source': 0, 'my': 1}, 'opened by me'),
-        ({'source': 0, 'awaiting_review': 1}, 'awaiting review'),
-        ({'source': 0, 'awaiting_my_review': 1}, 'awaiting my review'),
-        ({'source': 1}, 'Pull Requests from'),
+        ({'source': 0, 'closed': 1}, 'Closed'),
+        ({'source': 0, 'my': 1}, 'Opened by me'),
+        ({'source': 0, 'awaiting_review': 1}, 'Awaiting review'),
+        ({'source': 0, 'awaiting_my_review': 1}, 'Awaiting my review'),
+        ({'source': 1}, 'From this repo'),
     ])
     def test_showing_list_page(self, backend, pr_util, params, expected_title):
         pull_request = pr_util.create_pull_request()
@@ -55,9 +55,10 @@ class TestPullRequestList(object):
                        params=params))
 
         assert_response = response.assert_response()
-        assert_response.element_equals_to('.panel-title', expected_title)
-        element = assert_response.get_element('.panel-title')
-        element_text = assert_response._element_to_string(element)
+
+        element = assert_response.get_element('.title .active')
+        element_text = element.text_content()
+        assert expected_title == element_text
 
     def test_showing_list_page_data(self, backend, pr_util, xhr_header):
         pull_request = pr_util.create_pull_request()

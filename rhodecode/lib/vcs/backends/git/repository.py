@@ -240,7 +240,7 @@ class GitRepository(BaseRepository):
             try:
                 commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
             except Exception:
-                msg = "Commit %s does not exist for %s" % (commit_id_or_idx, self.name)
+                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
                 raise CommitDoesNotExistError(msg)
 
         elif is_bstr:
@@ -262,7 +262,7 @@ class GitRepository(BaseRepository):
 
             if (not SHA_PATTERN.match(commit_id_or_idx) or
                     commit_id_or_idx not in self.commit_ids):
-                msg = "Commit %s does not exist for %s" % (commit_id_or_idx, self.name)
+                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
                 raise CommitDoesNotExistError(msg)
 
         # Ensure we return full id

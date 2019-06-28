@@ -456,7 +456,7 @@ class MercurialRepository(BaseRepository):
         try:
             raw_id, idx = self._remote.lookup(commit_id, both=True)
         except CommitDoesNotExistError:
-            msg = "Commit {} does not exist for {}".format(
+            msg = "Commit {} does not exist for `{}`".format(
                 *map(safe_str, [commit_id, self.name]))
             raise CommitDoesNotExistError(msg)
 

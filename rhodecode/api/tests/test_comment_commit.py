@@ -37,11 +37,11 @@ class TestCommentCommit(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.parametrize("commit_id, expected_err", [
-        ('abcabca', {'hg': 'Commit {commit} does not exist for {repo}',
-                     'git': 'Commit {commit} does not exist for {repo}',
+        ('abcabca', {'hg': 'Commit {commit} does not exist for `{repo}`',
+                     'git': 'Commit {commit} does not exist for `{repo}`',
                      'svn': 'Commit id {commit} not understood.'}),
-        ('idontexist', {'hg': 'Commit {commit} does not exist for {repo}',
-                        'git': 'Commit {commit} does not exist for {repo}',
+        ('idontexist', {'hg': 'Commit {commit} does not exist for `{repo}`',
+                        'git': 'Commit {commit} does not exist for `{repo}`',
                         'svn': 'Commit id {commit} not understood.'}),
     ])
     def test_api_comment_commit_wrong_hash(self, backend, commit_id, expected_err):
@@ -53,7 +53,7 @@ class TestCommentCommit(object):
 
         expected_err = expected_err[backend.alias]
         expected_err = expected_err.format(
-            repo=backend.repo.scm_instance(), commit=commit_id)
+            repo=backend.repo.scm_instance().name, commit=commit_id)
         assert_error(id_, expected_err, given=response.body)
 
     @pytest.mark.parametrize("status_change, message, commit_id", [
