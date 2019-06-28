@@ -110,11 +110,6 @@
                         <div class="btn btn-sm disabled" disabled="disabled" id="rev_range_more" style="display:none;">${_('Select second commit')}</div>
                         <a href="#" class="btn btn-success btn-sm" id="rev_range_container" style="display:none;"></a>
                       </th>
-                      ## graph
-
-                      ## review box
-
-                      <th>${_('Commit')}</th>
 
                       ## commit message expand arrow
                       <th></th>
@@ -184,8 +179,12 @@
 
                     var lbl_start = 'r{0}:{1}'.format(commitStart.commitIdx, commitStart.commitId.substr(0,6));
                     var lbl_end = 'r{0}:{1}'.format(commitEnd.commitIdx, commitEnd.commitId.substr(0,6));
+
+                    var lbl_start = '{0}'.format(commitStart.commitId.substr(0,6));
+                    var lbl_end = '{0}'.format(commitEnd.commitId.substr(0,6));
+
                     var url = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}', 'commit_id': revStart+'...'+revEnd});
-                    var link = _gettext('Show selected commits {0} ... {1}').format(lbl_start, lbl_end);
+                    var link = _gettext('Show commit range {0} ... {1}').format(lbl_start, lbl_end);
 
                     if (selectedCheckboxes.length > 1) {
                         $commitRangeClear.show();

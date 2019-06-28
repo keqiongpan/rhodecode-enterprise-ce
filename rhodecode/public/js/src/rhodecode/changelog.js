@@ -98,9 +98,9 @@ var CommitsController = function () {
 
         this.setLabelText(edgeData);
 
-        var padding = 98;
+        var padding = 90;
         if (prev_link) {
-            padding += 32;
+            padding += 34;
 
         }
         $('#graph_nodes').css({'padding-top': padding});

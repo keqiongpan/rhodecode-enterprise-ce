@@ -3,7 +3,7 @@
 
 % if c.prev_page:
     <tr>
-        <td colspan="9" class="load-more-commits">
+        <td colspan="10" class="load-more-commits">
             <a class="prev-commits" href="#loadPrevCommits" onclick="commitsController.loadPrev(this, ${c.prev_page}, '${c.branch_name}', '${c.commit_id}', '${c.f_path}');return false">
             ${_('load previous')}
             </a>
