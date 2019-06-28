@@ -1212,11 +1212,11 @@ self: super: {
     };
   };
   "psycopg2" = super.buildPythonPackage {
-    name = "psycopg2-2.8.2";
+    name = "psycopg2-2.8.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/23/7e/93c325482c328619870b6cd09370f6dbe1148283daca65115cd63642e60f/psycopg2-2.8.2.tar.gz";
-      sha256 = "122mn2z3r0zgs8jyq682jjjr6vq5690qmxqf22gj6g41dwdz5b2w";
+      url = "https://files.pythonhosted.org/packages/5c/1c/6997288da181277a0c29bc39a5f9143ff20b8c99f2a7d059cfb55163e165/psycopg2-2.8.3.tar.gz";
+      sha256 = "0ms4kx0p5n281l89awccix4d05ybmdngnjjpi9jbzd0rhf1nwyl9";
     };
     meta = {
       license = [ pkgs.lib.licenses.zpl21 { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "LGPL with exceptions or ZPL"; } ];
