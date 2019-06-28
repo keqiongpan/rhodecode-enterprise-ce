@@ -442,11 +442,11 @@ self: super: {
     };
   };
   "ecdsa" = super.buildPythonPackage {
-    name = "ecdsa-0.13";
+    name = "ecdsa-0.13.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f9/e5/99ebb176e47f150ac115ffeda5fedb6a3dbb3c00c74a59fd84ddf12f5857/ecdsa-0.13.tar.gz";
-      sha256 = "1yj31j0asmrx4an9xvsaj2icdmzy6pw0glfpqrrkrphwdpi1xkv4";
+      url = "https://files.pythonhosted.org/packages/51/76/139bf6e9b7b6684d5891212cdbd9e0739f2bfc03f380a1a6ffa700f392ac/ecdsa-0.13.2.tar.gz";
+      sha256 = "116qaq7bh4lcynzi613960jhsnn19v0kmsqwahiwjfj14gx4y0sw";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
