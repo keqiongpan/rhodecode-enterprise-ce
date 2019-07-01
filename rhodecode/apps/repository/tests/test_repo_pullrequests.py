@@ -40,8 +40,8 @@ def route_path(name, params=None, **kwargs):
     base_url = {
         'repo_changelog': '/{repo_name}/changelog',
         'repo_changelog_file': '/{repo_name}/changelog/{commit_id}/{f_path}',
-        'repo_commits': '/{repo_name}/changelog',
-        'repo_commits_file': '/{repo_name}/changelog/{commit_id}/{f_path}',
+        'repo_commits': '/{repo_name}/commits',
+        'repo_commits_file': '/{repo_name}/commits/{commit_id}/{f_path}',
         'pullrequest_show': '/{repo_name}/pull-request/{pull_request_id}',
         'pullrequest_show_all': '/{repo_name}/pull-request',
         'pullrequest_show_all_data': '/{repo_name}/pull-request-data',
