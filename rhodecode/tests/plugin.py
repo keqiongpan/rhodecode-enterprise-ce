@@ -1886,3 +1886,17 @@ def repo_groups(request):
         fixture.destroy_repo_group(parent_group)
 
     return zombie_group, parent_group, child_group
+
+
+@pytest.fixture(scope="session")
+def tmp_path_factory(request):
+    """Return a :class:`_pytest.tmpdir.TempPathFactory` instance for the test session.
+    """
+
+    class TempPathFactory:
+
+        def mktemp(self, basename):
+            import tempfile
+            return tempfile.mktemp(basename)
+
+    return TempPathFactory()
