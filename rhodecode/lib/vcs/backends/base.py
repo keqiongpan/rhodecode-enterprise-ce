@@ -55,6 +55,7 @@ log = logging.getLogger(__name__)
 
 FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
+EMPTY_COMMIT_ID = '0' * 40
 
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
 
@@ -1569,7 +1570,7 @@ class EmptyCommit(BaseCommit):
     """
 
     def __init__(
-            self, commit_id='0' * 40, repo=None, alias=None, idx=-1,
+            self, commit_id=EMPTY_COMMIT_ID, repo=None, alias=None, idx=-1,
             message='', author='', date=None):
         self._empty_commit_id = commit_id
         # TODO: johbo: Solve idx parameter, default value does not make
@@ -1629,7 +1630,7 @@ class EmptyChangeset(EmptyCommit):
             "Use EmptyCommit instead of EmptyChangeset", DeprecationWarning)
         return super(EmptyCommit, cls).__new__(cls, *args, **kwargs)
 
-    def __init__(self, cs='0' * 40, repo=None, requested_revision=None,
+    def __init__(self, cs=EMPTY_COMMIT_ID, repo=None, requested_revision=None,
                  alias=None, revision=-1, message='', author='', date=None):
         if requested_revision is not None:
             warnings.warn(

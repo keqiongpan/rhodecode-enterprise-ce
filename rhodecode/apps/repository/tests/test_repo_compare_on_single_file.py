@@ -21,6 +21,7 @@
 import pytest
 
 from rhodecode.lib.vcs import nodes
+from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import commit_change
 
@@ -43,70 +44,7 @@ def route_path(name, params=None, **kwargs):
 @pytest.mark.usefixtures("autologin_user", "app")
 class TestSideBySideDiff(object):
 
-    def test_diff_side_by_side(self, app, backend, backend_stub):
-        f_path = 'test_sidebyside_file.py'
-        commit1_content = 'content-25d7e49c18b159446c\n'
-        commit2_content = 'content-603d6c72c46d953420\n'
-        repo = backend.create_repo()
-
-        commit1 = commit_change(
-            repo.repo_name, filename=f_path, content=commit1_content,
-            message='A', vcs_type=backend.alias, parent=None, newfile=True)
-
-        commit2 = commit_change(
-            repo.repo_name, filename=f_path, content=commit2_content,
-            message='B, child of A', vcs_type=backend.alias, parent=commit1)
-
-        response = self.app.get(route_path(
-            'repo_compare',
-            repo_name=repo.repo_name,
-            source_ref_type='rev',
-            source_ref=commit1.raw_id,
-            target_ref_type='rev',
-            target_ref=commit2.raw_id,
-            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
-        ))
-
-        response.mustcontain('Expand 1 commit')
-        response.mustcontain('1 file changed')
-
-        response.mustcontain(
-            'r%s:%s...r%s:%s' % (
-            commit1.idx, commit1.short_id, commit2.idx, commit2.short_id))
-
-        response.mustcontain('<strong>{}</strong>'.format(f_path))
-
-    def test_diff_side_by_side_with_empty_file(self, app, backend, backend_stub):
-        commits = [
-            {'message': 'First commit'},
-            {'message': 'Commit with binary',
-             'added': [nodes.FileNode('file.empty', content='')]},
-        ]
-        f_path = 'file.empty'
-        repo = backend.create_repo(commits=commits)
-        commit1 = repo.get_commit(commit_idx=0)
-        commit2 = repo.get_commit(commit_idx=1)
-
-        response = self.app.get(route_path(
-            'repo_compare',
-            repo_name=repo.repo_name,
-            source_ref_type='rev',
-            source_ref=commit1.raw_id,
-            target_ref_type='rev',
-            target_ref=commit2.raw_id,
-            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
-        ))
-
-        response.mustcontain('Expand 1 commit')
-        response.mustcontain('1 file changed')
-
-        response.mustcontain(
-            'r%s:%s...r%s:%s' % (
-            commit1.idx, commit1.short_id, commit2.idx, commit2.short_id))
-
-        response.mustcontain('<strong>{}</strong>'.format(f_path))
-
-    def test_diff_sidebyside_two_commits(self, app, backend):
+    def test_diff_sidebyside_single_commit(self, app, backend):
         commit_id_range = {
             'hg': {
                 'commits': ['25d7e49c18b159446cadfa506a5cf8ad1cb04067',
@@ -141,26 +79,164 @@ class TestSideBySideDiff(object):
             params=dict(target_repo=backend.repo_name, diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 1 commit')
         response.mustcontain(file_changes)
+        response.mustcontain('Expand 1 commit')
 
-    def test_diff_sidebyside_two_commits_single_file(self, app, backend):
+    def test_diff_sidebyside_two_commits(self, app, backend):
         commit_id_range = {
             'hg': {
-                'commits': ['25d7e49c18b159446cadfa506a5cf8ad1cb04067',
+                'commits': ['4fdd71e9427417b2e904e0464c634fdee85ec5a7',
                             '603d6c72c46d953420c89d36372f08d9f305f5dd'],
-                'changes': '1 file changed: 1 inserted, 1 deleted'
+                'changes': '32 files changed: 1165 inserted, 308 deleted'
             },
             'git': {
-                'commits': ['6fc9270775aaf5544c1deb014f4ddd60c952fcbb',
+                'commits': ['f5fbf9cfd5f1f1be146f6d3b38bcd791a7480c13',
                             '03fa803d7e9fb14daa9a3089e0d1494eda75d986'],
-                'changes': '1 file changed: 1 inserted, 1 deleted'
+                'changes': '32 files changed: 1165 inserted, 308 deleted'
             },
 
             'svn': {
-                'commits': ['336',
+                'commits': ['335',
                             '337'],
-                'changes': '1 file changed: 1 inserted, 1 deleted'
+                'changes': '32 files changed: 1179 inserted, 310 deleted'
+            },
+        }
+
+        commit_info = commit_id_range[backend.alias]
+        commit2, commit1 = commit_info['commits']
+        file_changes = commit_info['changes']
+
+        response = self.app.get(route_path(
+            'repo_compare',
+            repo_name=backend.repo_name,
+            source_ref_type='rev',
+            source_ref=commit2,
+            target_repo=backend.repo_name,
+            target_ref_type='rev',
+            target_ref=commit1,
+            params=dict(target_repo=backend.repo_name, diffmode='sidebyside')
+        ))
+
+        response.mustcontain(file_changes)
+        response.mustcontain('Expand 2 commits')
+
+    @pytest.mark.xfail(reason='GIT does not handle empty commit compare correct (missing 1 commit)')
+    def test_diff_side_by_side_from_0_commit(self, app, backend, backend_stub):
+        f_path = 'test_sidebyside_file.py'
+        commit1_content = 'content-25d7e49c18b159446c\n'
+        commit2_content = 'content-603d6c72c46d953420\n'
+        repo = backend.create_repo()
+
+        commit1 = commit_change(
+            repo.repo_name, filename=f_path, content=commit1_content,
+            message='A', vcs_type=backend.alias, parent=None, newfile=True)
+
+        commit2 = commit_change(
+            repo.repo_name, filename=f_path, content=commit2_content,
+            message='B, child of A', vcs_type=backend.alias, parent=commit1)
+
+        response = self.app.get(route_path(
+            'repo_compare',
+            repo_name=repo.repo_name,
+            source_ref_type='rev',
+            source_ref=EmptyCommit().raw_id,
+            target_ref_type='rev',
+            target_ref=commit2.raw_id,
+            params=dict(diffmode='sidebyside')
+        ))
+
+        response.mustcontain('Expand 2 commits')
+        response.mustcontain('123 file changed')
+
+        response.mustcontain(
+            'r%s:%s...r%s:%s' % (
+                commit1.idx, commit1.short_id, commit2.idx, commit2.short_id))
+
+        response.mustcontain('<strong>{}</strong>'.format(f_path))
+
+    @pytest.mark.xfail(reason='GIT does not handle empty commit compare correct (missing 1 commit)')
+    def test_diff_side_by_side_from_0_commit_with_file_filter(self, app, backend, backend_stub):
+        f_path = 'test_sidebyside_file.py'
+        commit1_content = 'content-25d7e49c18b159446c\n'
+        commit2_content = 'content-603d6c72c46d953420\n'
+        repo = backend.create_repo()
+
+        commit1 = commit_change(
+            repo.repo_name, filename=f_path, content=commit1_content,
+            message='A', vcs_type=backend.alias, parent=None, newfile=True)
+
+        commit2 = commit_change(
+            repo.repo_name, filename=f_path, content=commit2_content,
+            message='B, child of A', vcs_type=backend.alias, parent=commit1)
+
+        response = self.app.get(route_path(
+            'repo_compare',
+            repo_name=repo.repo_name,
+            source_ref_type='rev',
+            source_ref=EmptyCommit().raw_id,
+            target_ref_type='rev',
+            target_ref=commit2.raw_id,
+            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
+        ))
+
+        response.mustcontain('Expand 2 commits')
+        response.mustcontain('1 file changed')
+
+        response.mustcontain(
+            'r%s:%s...r%s:%s' % (
+                commit1.idx, commit1.short_id, commit2.idx, commit2.short_id))
+
+        response.mustcontain('<strong>{}</strong>'.format(f_path))
+
+    def test_diff_side_by_side_with_empty_file(self, app, backend, backend_stub):
+        commits = [
+            {'message': 'First commit'},
+            {'message': 'Second commit'},
+            {'message': 'Commit with binary',
+             'added': [nodes.FileNode('file.empty', content='')]},
+        ]
+        f_path = 'file.empty'
+        repo = backend.create_repo(commits=commits)
+        commit1 = repo.get_commit(commit_idx=0)
+        commit2 = repo.get_commit(commit_idx=1)
+        commit3 = repo.get_commit(commit_idx=2)
+
+        response = self.app.get(route_path(
+            'repo_compare',
+            repo_name=repo.repo_name,
+            source_ref_type='rev',
+            source_ref=commit1.raw_id,
+            target_ref_type='rev',
+            target_ref=commit3.raw_id,
+            params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
+        ))
+
+        response.mustcontain('Expand 2 commits')
+        response.mustcontain('1 file changed')
+
+        response.mustcontain(
+            'r%s:%s...r%s:%s' % (
+                commit2.idx, commit2.short_id, commit3.idx, commit3.short_id))
+
+        response.mustcontain('<strong>{}</strong>'.format(f_path))
+
+    def test_diff_sidebyside_two_commits_with_file_filter(self, app, backend):
+        commit_id_range = {
+            'hg': {
+                'commits': ['4fdd71e9427417b2e904e0464c634fdee85ec5a7',
+                            '603d6c72c46d953420c89d36372f08d9f305f5dd'],
+                'changes': '1 file changed: 3 inserted, 3 deleted'
+            },
+            'git': {
+                'commits': ['f5fbf9cfd5f1f1be146f6d3b38bcd791a7480c13',
+                            '03fa803d7e9fb14daa9a3089e0d1494eda75d986'],
+                'changes': '1 file changed: 3 inserted, 3 deleted'
+            },
+
+            'svn': {
+                'commits': ['335',
+                            '337'],
+                'changes': '1 file changed: 3 inserted, 3 deleted'
             },
         }
         f_path = 'docs/conf.py'
@@ -179,5 +255,5 @@ class TestSideBySideDiff(object):
             params=dict(f_path=f_path, target_repo=backend.repo_name, diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 1 commit')
+        response.mustcontain('Expand 2 commits')
         response.mustcontain(file_changes)

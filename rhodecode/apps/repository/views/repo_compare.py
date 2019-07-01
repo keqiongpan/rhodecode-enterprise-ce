@@ -214,29 +214,23 @@ class RepoCompareView(RepoAppView):
         pre_load = ["author", "branch", "date", "message"]
         c.ancestor = None
 
-        if c.file_path:
-            if source_commit == target_commit:
-                c.commit_ranges = []
-            else:
-                c.commit_ranges = [source_commit, target_commit]
-        else:
-            try:
-                c.commit_ranges = source_scm.compare(
-                    source_commit.raw_id, target_commit.raw_id,
-                    target_scm, merge, pre_load=pre_load)
-                if merge:
-                    c.ancestor = source_scm.get_common_ancestor(
-                        source_commit.raw_id, target_commit.raw_id, target_scm)
-            except RepositoryRequirementError:
-                msg = _('Could not compare repos with different '
-                        'large file settings')
-                log.error(msg)
-                if partial:
-                    return Response(msg)
-                h.flash(msg, category='error')
-                raise HTTPFound(
-                    h.route_path('repo_compare_select',
-                                 repo_name=self.db_repo_name))
+        try:
+            c.commit_ranges = source_scm.compare(
+                source_commit.raw_id, target_commit.raw_id,
+                target_scm, merge, pre_load=pre_load) or []
+            if merge:
+                c.ancestor = source_scm.get_common_ancestor(
+                    source_commit.raw_id, target_commit.raw_id, target_scm)
+        except RepositoryRequirementError:
+            msg = _('Could not compare repos with different '
+                    'large file settings')
+            log.error(msg)
+            if partial:
+                return Response(msg)
+            h.flash(msg, category='error')
+            raise HTTPFound(
+                h.route_path('repo_compare_select',
+                             repo_name=self.db_repo_name))
 
         c.statuses = self.db_repo.statuses(
             [x.raw_id for x in c.commit_ranges])

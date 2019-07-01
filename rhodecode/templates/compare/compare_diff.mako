@@ -37,12 +37,12 @@
                     <h4>
                         ${_('Compare Commits')}
                         % if c.file_path:
-                        ${_('for file')} <a href="#${'a_' + h.FID('',c.file_path)}">${c.file_path}</a>
+                        ${_('for file')} <a href="#${('a_' + h.FID('',c.file_path))}">${c.file_path}</a>
                         % endif
 
                         % if c.commit_ranges:
                         <code>
-                        r${c.source_commit.idx}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.idx}:${h.short_id(c.target_commit.raw_id)}
+                        r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}...r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
                         </code>
                         % endif
                     </h4>
