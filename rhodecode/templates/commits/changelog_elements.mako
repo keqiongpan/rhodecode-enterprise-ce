@@ -21,7 +21,7 @@
     <tr id="sha_${commit.raw_id}" class="changelogRow container ${'tablerow%s' % (cnt%2)}">
 
     <td class="td-checkbox">
-        ${h.checkbox(commit.raw_id,class_="commit-range", **{'data-commit-idx':commit.idx, 'data-commit-id': commit.raw_id})}
+        ${h.checkbox(commit.raw_id,class_="commit-range", **{'data-commit-idx':commit.idx, 'data-commit-id': commit.raw_id, 'data-short-id': commit.short_id})}
     </td>
     ##
     <td class="td-graphbox">

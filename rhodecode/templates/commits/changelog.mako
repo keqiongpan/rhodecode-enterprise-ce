@@ -177,11 +177,8 @@
                     var commitEnd = $(selectedCheckboxes[0]).data();
                     var revEnd = commitEnd.commitId;
 
-                    var lbl_start = 'r{0}:{1}'.format(commitStart.commitIdx, commitStart.commitId.substr(0,6));
-                    var lbl_end = 'r{0}:{1}'.format(commitEnd.commitIdx, commitEnd.commitId.substr(0,6));
-
-                    var lbl_start = '{0}'.format(commitStart.commitId.substr(0,6));
-                    var lbl_end = '{0}'.format(commitEnd.commitId.substr(0,6));
+                    var lbl_start = '{0}'.format(commitStart.commitIdx, commitStart.shortId);
+                    var lbl_end = '{0}'.format(commitEnd.commitIdx, commitEnd.shortId);
 
                     var url = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}', 'commit_id': revStart+'...'+revEnd});
                     var link = _gettext('Show commit range {0} ... {1}').format(lbl_start, lbl_end);
