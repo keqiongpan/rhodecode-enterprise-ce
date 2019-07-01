@@ -124,28 +124,44 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
     %endif
   </div>
 
-  %if not h.is_svn(c.rhodecode_repo):
-  <div class="fieldset">
-    <p><b>${_('Push new repo:')}</b></p>
-      <pre>
-${c.rhodecode_repo.alias} clone ${c.clone_repo_url}
-${c.rhodecode_repo.alias} add README # add first file
-${c.rhodecode_repo.alias} commit -m "Initial" # commit with message
-${c.rhodecode_repo.alias} push ${'origin master' if h.is_git(c.rhodecode_repo) else ''} # push changes back
+<div class="fieldset">
+<p><b>${_('Push new repo:')}</b></p>
+<pre>
+%if h.is_git(c.rhodecode_repo):
+git clone ${c.clone_repo_url}
+git add README # add first file
+git commit -m "Initial commit" # commit with message
+git remote add origin ${c.clone_repo_url}
+git push -u origin master # push changes back to default master branch
+%elif h.is_hg(c.rhodecode_repo):
+hg clone ${c.clone_repo_url}
+hg add README # add first file
+hg commit -m "Initial commit" # commit with message
+hg push ${c.clone_repo_url}
+%elif h.is_svn(c.rhodecode_repo):
+svn co ${c.clone_repo_url}
+svn add README # add first file
+svn commit -m "Initial commit"
+svn commit  # send changes back to the server
+%endif
 </pre>
-  </div>
+</div>
 
-  <div class="fieldset">
-    <p><b>${_('Existing repository?')}</b></p>
-      <pre>
-      %if h.is_git(c.rhodecode_repo):
+<div class="fieldset">
+<p><b>${_('Existing repository?')}</b></p>
+<pre>
+%if h.is_git(c.rhodecode_repo):
 git remote add origin ${c.clone_repo_url}
 git push -u origin master
-      %else:
+%elif h.is_hg(c.rhodecode_repo):
 hg push ${c.clone_repo_url}
-      %endif
+%elif h.is_svn(c.rhodecode_repo):
+svn co ${c.clone_repo_url}
+%endif
 </pre>
-  </div>
-  %endif
+
+</div>
+
+
 </div>
 %endif

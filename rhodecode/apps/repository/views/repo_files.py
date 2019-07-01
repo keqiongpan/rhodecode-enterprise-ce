@@ -106,7 +106,8 @@ class RepoFilesView(RepoAppView):
         _ = self.request.translate
 
         if not is_head:
-            message = _('You can only modify files with commit being a valid branch head.')
+            message = _('Cannot modify file. '
+                        'Given commit `{}` is not head of a branch.').format(commit_id)
             h.flash(message, category='warning')
 
             if json_mode:
@@ -214,6 +215,7 @@ class RepoFilesView(RepoAppView):
     def _is_valid_head(self, commit_id, repo):
         branch_name = sha_commit_id = ''
         is_head = False
+        log.debug('Checking if commit_id %s is a head.', commit_id)
 
         if h.is_svn(repo) and not repo.is_empty():
             # Note: Subversion only has one head.
