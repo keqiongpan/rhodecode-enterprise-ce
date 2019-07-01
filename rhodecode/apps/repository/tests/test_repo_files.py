@@ -243,7 +243,7 @@ class TestFilesViews(object):
                        repo_name=backend.repo_name,
                        commit_id=commit.raw_id, f_path='vcs/nodes.py'))
 
-        msgbox = """<div class="commit right-content">%s</div>"""
+        msgbox = """<div class="commit">%s</div>"""
         response.mustcontain(msgbox % (commit.message, ))
 
         assert_response = response.assert_response()
@@ -313,6 +313,7 @@ class TestFilesViews(object):
 
         expected_data = json.loads(
             fixture.load_resource('svn_node_history_branches.json'))
+
         assert expected_data == response.json
 
     def test_file_source_history_with_annotation(self, backend, xhr_header):
@@ -761,7 +762,7 @@ class TestModifyFilesWithWebInterface(object):
 
     @pytest.mark.xfail_backends("svn", reason="Depends on online editing")
     def test_add_file_into_repo_missing_content(self, backend, csrf_token):
-        repo = backend.create_repo()
+        backend.create_repo()
         filename = 'init.py'
         response = self.app.post(
             route_path('repo_files_create_file',
@@ -770,26 +771,25 @@ class TestModifyFilesWithWebInterface(object):
             params={
                 'content': "",
                 'filename': filename,
-                'location': "",
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(response,
-            'Successfully committed new file `{}`'.format(
-                os.path.join(filename)))
+        expected_msg = 'Successfully committed new file `{}`'.format(os.path.join(filename))
+        assert_session_flash(response, expected_msg)
 
     def test_add_file_into_repo_missing_filename(self, backend, csrf_token):
+        commit_id = backend.repo.get_commit().raw_id
         response = self.app.post(
             route_path('repo_files_create_file',
                        repo_name=backend.repo_name,
-                       commit_id='tip', f_path='/'),
+                       commit_id=commit_id, f_path='/'),
             params={
                 'content': "foo",
                 'csrf_token': csrf_token,
             },
             status=302)
 
-        assert_session_flash(response, 'No filename')
+        assert_session_flash(response, 'No filename specified')
 
     def test_add_file_into_repo_errors_and_no_commits(
             self, backend, csrf_token):
@@ -806,7 +806,7 @@ class TestModifyFilesWithWebInterface(object):
             },
             status=302)
 
-        assert_session_flash(response, 'No filename')
+        assert_session_flash(response, 'No filename specified')
 
         # Not allowed, redirect to the summary
         redirected = response.follow()
@@ -817,52 +817,51 @@ class TestModifyFilesWithWebInterface(object):
 
         assert redirected.request.path == summary_url
 
-    @pytest.mark.parametrize("location, filename", [
-        ('/abs', 'foo'),
-        ('../rel', 'foo'),
-        ('file/../foo', 'foo'),
+    @pytest.mark.parametrize("filename, clean_filename", [
+        ('/abs/foo', 'abs/foo'),
+        ('../rel/foo', 'rel/foo'),
+        ('file/../foo/foo', 'file/foo/foo'),
     ])
-    def test_add_file_into_repo_bad_filenames(
-            self, location, filename, backend, csrf_token):
-        response = self.app.post(
-            route_path('repo_files_create_file',
-                       repo_name=backend.repo_name,
-                       commit_id='tip', f_path='/'),
-            params={
-                'content': "foo",
-                'filename': filename,
-                'location': location,
-                'csrf_token': csrf_token,
-            },
-            status=302)
-
-        assert_session_flash(
-            response,
-            'The location specified must be a relative path and must not '
-            'contain .. in the path')
-
-    @pytest.mark.parametrize("cnt, location, filename", [
-        (1, '', 'foo.txt'),
-        (2, 'dir', 'foo.rst'),
-        (3, 'rel/dir', 'foo.bar'),
-    ])
-    def test_add_file_into_repo(self, cnt, location, filename, backend,
-                                csrf_token):
+    def test_add_file_into_repo_bad_filenames(self, filename, clean_filename, backend, csrf_token):
         repo = backend.create_repo()
+        commit_id = repo.get_commit().raw_id
+
         response = self.app.post(
             route_path('repo_files_create_file',
                        repo_name=repo.repo_name,
-                       commit_id='tip', f_path='/'),
+                       commit_id=commit_id, f_path='/'),
             params={
                 'content': "foo",
                 'filename': filename,
-                'location': location,
                 'csrf_token': csrf_token,
             },
             status=302)
-        assert_session_flash(response,
-            'Successfully committed new file `{}`'.format(
-                os.path.join(location, filename)))
+
+        expected_msg = 'Successfully committed new file `{}`'.format(clean_filename)
+        assert_session_flash(response, expected_msg)
+
+    @pytest.mark.parametrize("cnt, filename, content", [
+        (1, 'foo.txt', "Content"),
+        (2, 'dir/foo.rst', "Content"),
+        (3, 'dir/foo-second.rst', "Content"),
+        (4, 'rel/dir/foo.bar', "Content"),
+    ])
+    def test_add_file_into_empty_repo(self, cnt, filename, content, backend, csrf_token):
+        repo = backend.create_repo()
+        commit_id = repo.get_commit().raw_id
+        response = self.app.post(
+            route_path('repo_files_create_file',
+                       repo_name=repo.repo_name,
+                       commit_id=commit_id, f_path='/'),
+            params={
+                'content': content,
+                'filename': filename,
+                'csrf_token': csrf_token,
+            },
+            status=302)
+
+        expected_msg = 'Successfully committed new file `{}`'.format(filename)
+        assert_session_flash(response, expected_msg)
 
     def test_edit_file_view(self, backend):
         response = self.app.get(
@@ -884,8 +883,7 @@ class TestModifyFilesWithWebInterface(object):
                        f_path='vcs/nodes.py'),
             status=302)
         assert_session_flash(
-            response,
-            'You can only edit files with commit being a valid branch')
+            response, 'Cannot modify file. Given commit `tip` is not head of a branch.')
 
     def test_edit_file_view_commit_changes(self, backend, csrf_token):
         repo = backend.create_repo()
@@ -953,8 +951,7 @@ class TestModifyFilesWithWebInterface(object):
                        f_path='vcs/nodes.py'),
             status=302)
         assert_session_flash(
-            response,
-            'You can only delete files with commit being a valid branch')
+            response, 'Cannot modify file. Given commit `tip` is not head of a branch.')
 
     def test_delete_file_view_commit_changes(self, backend, csrf_token):
         repo = backend.create_repo()
@@ -992,7 +989,7 @@ class TestFilesViewOtherCases(object):
         repo_file_add_url = route_path(
             'repo_files_add_file',
             repo_name=repo.repo_name,
-            commit_id=0, f_path='') + '#edit'
+            commit_id=0, f_path='')
 
         assert_session_flash(
             response,
@@ -1009,7 +1006,7 @@ class TestFilesViewOtherCases(object):
         repo_file_add_url = route_path(
             'repo_files_add_file',
             repo_name=repo.repo_name,
-            commit_id=0, f_path='') + '#edit'
+            commit_id=0, f_path='')
 
         response = self.app.get(
             route_path('repo_files',

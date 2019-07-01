@@ -205,8 +205,7 @@ class RepoFilesView(RepoAppView):
             h.flash(_('No such commit exists for this repository'), category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            log.warning('Repository error while fetching '
-                        'filenode `%s`. Err:%s', path, e)
+            log.warning('Repository error while fetching filenode `%s`. Err:%s', path, e)
             h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()
 
@@ -215,13 +214,7 @@ class RepoFilesView(RepoAppView):
     def _is_valid_head(self, commit_id, repo):
         branch_name = sha_commit_id = ''
         is_head = False
-        log.debug('Checking if commit_id %s is a head.', commit_id)
-
-        if h.is_svn(repo) and not repo.is_empty():
-            # Note: Subversion only has one head.
-            if commit_id == repo.get_commit(commit_idx=-1).raw_id:
-                is_head = True
-                return branch_name, sha_commit_id, is_head
+        log.debug('Checking if commit_id `%s` is a head for %s.', commit_id, repo)
 
         for _branch_name, branch_commit_id in repo.branches.items():
             # simple case we pass in branch name, it's a HEAD
@@ -236,6 +229,12 @@ class RepoFilesView(RepoAppView):
                 branch_name = _branch_name
                 sha_commit_id = branch_commit_id
                 break
+
+        if h.is_svn(repo) and not repo.is_empty():
+            # Note: Subversion only has one head.
+            if commit_id == repo.get_commit(commit_idx=-1).raw_id:
+                is_head = True
+                return branch_name, sha_commit_id, is_head
 
         # checked branches, means we only need to try to get the branch/commit_sha
         if not repo.is_empty():
@@ -1286,8 +1285,7 @@ class RepoFilesView(RepoAppView):
         if self.rhodecode_vcs_repo.is_empty():
             # for empty repository we cannot check for current branch, we rely on
             # c.commit.branch instead
-            _branch_name = c.commit.branch
-            is_head = True
+            _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
                 self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
@@ -1328,8 +1326,7 @@ class RepoFilesView(RepoAppView):
         if self.rhodecode_vcs_repo.is_empty():
             # for empty repository we cannot check for current branch, we rely on
             # c.commit.branch instead
-            _branch_name = c.commit.branch
-            is_head = True
+            _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
                 self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
@@ -1425,8 +1422,7 @@ class RepoFilesView(RepoAppView):
         if self.rhodecode_vcs_repo.is_empty():
             # for empty repository we cannot check for current branch, we rely on
             # c.commit.branch instead
-            _branch_name = c.commit.branch
-            is_head = True
+            _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
                 self._is_valid_head(commit_id, self.rhodecode_vcs_repo)

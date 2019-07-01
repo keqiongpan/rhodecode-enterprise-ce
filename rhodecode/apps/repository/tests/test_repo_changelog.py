@@ -57,8 +57,7 @@ class TestChangelogController(TestController):
 
         first_idx = -1
         last_idx = -DEFAULT_CHANGELOG_SIZE
-        self.assert_commit_range_on_page(
-            response, first_idx, last_idx, backend)
+        self.assert_commit_range_on_page(response, first_idx, last_idx, backend)
 
     def test_changelog(self, backend):
         self.log_user()
@@ -157,7 +156,8 @@ class TestChangelogController(TestController):
             self, response, first_idx, last_idx, backend):
         input_template = (
             """<input class="commit-range" """ 
-            """data-commit-id="%(raw_id)s" data-commit-idx="%(idx)s" id="%(raw_id)s" """
+            """data-commit-id="%(raw_id)s" data-commit-idx="%(idx)s" """ 
+            """data-short-id="%(short_id)s" id="%(raw_id)s" """
             """name="%(raw_id)s" type="checkbox" value="1" />"""
         )
 
@@ -167,7 +167,8 @@ class TestChangelogController(TestController):
         first_commit_on_page = repo.get_commit(commit_idx=first_idx)
         response.mustcontain(
             input_template % {'raw_id': first_commit_on_page.raw_id,
-                              'idx': first_commit_on_page.idx})
+                              'idx': first_commit_on_page.idx,
+                              'short_id': first_commit_on_page.short_id})
 
         response.mustcontain(commit_span_template % (
             first_commit_on_page.idx, first_commit_on_page.short_id)
@@ -176,7 +177,8 @@ class TestChangelogController(TestController):
         last_commit_on_page = repo.get_commit(commit_idx=last_idx)
         response.mustcontain(
             input_template % {'raw_id': last_commit_on_page.raw_id,
-                              'idx': last_commit_on_page.idx})
+                              'idx': last_commit_on_page.idx,
+                              'short_id': last_commit_on_page.short_id})
         response.mustcontain(commit_span_template % (
             last_commit_on_page.idx, last_commit_on_page.short_id)
         )
