@@ -29,8 +29,7 @@
                         ${base.gravatar(c.user.email, 100)}
                         <p class="help-block">${_('Change the avatar at')} <a href="http://gravatar.com">gravatar.com</a>.</p>
                     %else:
-                        ${base.gravatar(c.user.email, 20)}
-                        ${_('Avatars are disabled')}
+                        ${base.gravatar(c.user.email, 100)}
                     %endif
                 </div>
             </div>

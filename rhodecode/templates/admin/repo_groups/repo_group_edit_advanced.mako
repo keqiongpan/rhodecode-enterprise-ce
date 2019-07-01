@@ -1,10 +1,16 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <%
+ source_repo_id = c.repo_group.changeset_cache.get('source_repo_id')
+
  elems = [
     (_('Repository Group ID'), c.repo_group.group_id, '', ''),
     (_('Owner'), lambda:base.gravatar_with_user(c.repo_group.user.email), '', ''),
     (_('Created on'), h.format_date(c.repo_group.created_on), '', ''),
+    (_('Updated on'), h.format_date(c.repo_group.updated_on), '', ''),
+    (_('Cached Commit date'), (c.repo_group.changeset_cache.get('date')), '', ''),
+    (_('Cached Commit repo_id'), (h.link_to_if(source_repo_id, source_repo_id, h.route_path('repo_summary', repo_name='_{}'.format(source_repo_id)))), '', ''),
+
     (_('Is Personal Group'), c.repo_group.personal or False, '', ''),
 
     (_('Total repositories'), c.repo_group.repositories_recursive_count, '', ''),
@@ -16,7 +22,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Group: %s') % c.repo_group.group_name}</h3>
+        <h3 class="panel-title">${_('Repository Group Advanced: {}').format(c.repo_group.name)}</h3>
     </div>
     <div class="panel-body">
         ${base.dt_info_panel(elems)}

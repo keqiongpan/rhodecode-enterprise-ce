@@ -8,25 +8,28 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))} &raquo; <span id="user_group_count">0</span>
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
+</%def>
+
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='user_groups')}
 </%def>
 
 <%def name="main()">
 <div class="box">
 
     <div class="title">
-        ${self.breadcrumbs()}
+        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+        <span id="user_group_count">0</span>
+
         <ul class="links">
-        %if h.HasPermissionAny('hg.admin', 'hg.usergroup.create.true')():
-          <li>
-            <a href="${h.route_path('user_groups_new')}" class="btn btn-small btn-success">${_(u'Add User Group')}</a>
-          </li>
+        %if c.can_create_user_group:
+            <li>
+              <a href="${h.route_path('user_groups_new')}" class="btn btn-small btn-success">${_(u'Add User Group')}</a>
+            </li>
         %endif
         </ul>
     </div>

@@ -8,9 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('My Notifications')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='my_account')}
@@ -19,7 +17,8 @@
 <%def name="main()">
 <div class="box">
   <div class="title">
-      ${self.breadcrumbs()}
+      ${_('My Notifications')}
+
       <div class="notifications_buttons">
       %if c.notifications:
           <button id='mark_all_read' class="btn btn-default" type="submit">

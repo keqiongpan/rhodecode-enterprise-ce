@@ -4,12 +4,12 @@
 <table class="rctable repo_summary table_disp">
     <tr>
 
-        <th class="status" colspan="2"></th>
+        <th class="status"></th>
         <th>${_('Commit')}</th>
         <th>${_('Commit message')}</th>
         <th>${_('Age')}</th>
         <th>${_('Author')}</th>
-        <th>${_('Refs')}</th>
+        <th colspan="2">${_('Refs')}</th>
     </tr>
 
 ## to speed up lookups cache some functions before the loop
@@ -35,13 +35,6 @@
                 </div>
             %else:
                 <div class="tooltip flag_status not_reviewed" title="${_('Commit status: Not Reviewed')}"></div>
-            %endif
-        </td>
-        <td class="td-comments">
-            %if c.comments.get(cs.raw_id,[]):
-            <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                <i class="icon-comment"></i> ${len(c.comments[cs.raw_id])}
-            </a>
             %endif
         </td>
         <td class="td-commit">
@@ -83,10 +76,20 @@
             ## branch
             %if cs.branch:
              <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % cs.branch)}">
-              <a href="${h.route_path('repo_changelog',repo_name=c.repo_name,_query=dict(branch=cs.branch))}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
+              <a href="${h.route_path('repo_commits',repo_name=c.repo_name,_query=dict(branch=cs.branch))}"><i class="icon-code-fork"></i>${h.shorter(cs.branch)}</a>
              </span>
             %endif
           </div>
+        </td>
+        <td class="td-comments">
+            <% cs_comments = c.comments.get(cs.raw_id,[]) %>
+            % if cs_comments:
+                <a title="${_('Commit has comments')}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % cs_comments[0].comment_id)}">
+                    <i class="icon-comment"></i> ${len(cs_comments)}
+                </a>
+            % else:
+                <i class="icon-comment"></i> ${len(cs_comments)}
+            % endif
         </td>
     </tr>
 %endfor
@@ -111,40 +114,54 @@ ${c.repo_commits.pager('$link_previous ~2~ $link_next')}
 %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
 <div class="quick_start">
   <div class="fieldset">
-    <div class="left-label">${_('Add or upload files directly via RhodeCode:')}</div>
-    <div class="right-content">
-      <div id="add_node_id" class="add_node">
-          <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='', _anchor='edit')}" class="btn btn-default">${_('Add New File')}</a>
-      </div>
+    <p><b>${_('Add or upload files directly via RhodeCode:')}</b></p>
+    <div class="pull-left">
+        <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='')}" class="btn btn-default">${_('Add New File')}</a>
+    </div>
+    <div class="pull-left">
+        <a href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=0, f_path='')}" class="btn btn-default">${_('Upload New File')}</a>
     </div>
     %endif
   </div>
 
-  %if not h.is_svn(c.rhodecode_repo):
-  <div class="fieldset">
-    <div class="left-label">${_('Push new repo:')}</div>
-    <div class="right-content">
-      <pre>
-${c.rhodecode_repo.alias} clone ${c.clone_repo_url}
-${c.rhodecode_repo.alias} add README # add first file
-${c.rhodecode_repo.alias} commit -m "Initial" # commit with message
-${c.rhodecode_repo.alias} push ${'origin master' if h.is_git(c.rhodecode_repo) else ''} # push changes back
-      </pre>
-    </div>
-  </div>
-  <div class="fieldset">
-    <div class="left-label">${_('Existing repository?')}</div>
-    <div class="right-content">
-      <pre>
-      %if h.is_git(c.rhodecode_repo):
+<div class="fieldset">
+<p><b>${_('Push new repo:')}</b></p>
+<pre>
+%if h.is_git(c.rhodecode_repo):
+git clone ${c.clone_repo_url}
+git add README # add first file
+git commit -m "Initial commit" # commit with message
+git remote add origin ${c.clone_repo_url}
+git push -u origin master # push changes back to default master branch
+%elif h.is_hg(c.rhodecode_repo):
+hg clone ${c.clone_repo_url}
+hg add README # add first file
+hg commit -m "Initial commit" # commit with message
+hg push ${c.clone_repo_url}
+%elif h.is_svn(c.rhodecode_repo):
+svn co ${c.clone_repo_url}
+svn add README # add first file
+svn commit -m "Initial commit"
+svn commit  # send changes back to the server
+%endif
+</pre>
+</div>
+
+<div class="fieldset">
+<p><b>${_('Existing repository?')}</b></p>
+<pre>
+%if h.is_git(c.rhodecode_repo):
 git remote add origin ${c.clone_repo_url}
 git push -u origin master
-      %else:
+%elif h.is_hg(c.rhodecode_repo):
 hg push ${c.clone_repo_url}
-      %endif
-      </pre>
-    </div>
-  </div>
-  %endif
+%elif h.is_svn(c.rhodecode_repo):
+svn co ${c.clone_repo_url}
+%endif
+</pre>
+
+</div>
+
+
 </div>
 %endif

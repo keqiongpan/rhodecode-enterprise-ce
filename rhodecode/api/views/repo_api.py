@@ -444,7 +444,7 @@ def get_repo_nodes(request, apiuser, repoid, revision, root_path,
         result: [
                     {
                       "binary": false,
-                      "content": "File line\nLine2\n",
+                      "content": "File line",
                       "extension": "md",
                       "lines": 2,
                       "md5": "059fa5d29b19c0657e384749480f6422",
@@ -529,6 +529,7 @@ def get_repo_file(request, apiuser, repoid, commit_id, file_path,
     :param cache: Use internal caches for fetching files. If disabled fetching
         files is slower but more memory efficient
     :type cache: Optional(bool)
+
     Example output:
 
     .. code-block:: bash

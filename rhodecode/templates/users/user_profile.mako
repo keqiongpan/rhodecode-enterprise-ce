@@ -3,55 +3,64 @@
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
         <h3 class="panel-title">${_('User Profile')}</h3>
-        %if h.HasPermissionAny('hg.admin')():
+        %if c.is_super_admin:
             ${h.link_to(_('Edit'), h.route_path('user_edit', user_id=c.user.user_id), class_='panel-edit')}
         %endif
     </div>
 
-    <div class="panel-body user-profile-content">
-        <div class="fieldset">
-            <div class="left-label">
+    <div class="panel-body user-profile-content fields">
+        <div class="field">
+            <div class="label">
                 ${_('Photo')}:
             </div>
-            <div class="right-content">
+            <div class="input">
+                <div class="text-as-placeholder">
                 %if c.visual.use_gravatar:
                     ${base.gravatar(c.user.email, 100)}
                 %else:
-                    ${base.gravatar(c.user.email, 20)}
-                    ${_('Avatars are disabled')}
+                    ${base.gravatar(c.user.email, 100)}
                 %endif
+                </div>
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('Username')}:
             </div>
-            <div class="right-content">
-                ${c.user.username}
+            <div class="input">
+                <div class="text-as-placeholder">
+                    ${c.user.username}
+                </div>
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('First name')}:
             </div>
-            <div class="right-content">
-                ${c.user.first_name}
+            <div class="input">
+                <div class="text-as-placeholder">
+                    ${c.user.first_name}
+                </div>
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('Last name')}:
             </div>
-            <div class="right-content">
-                ${c.user.last_name}
+            <div class="input">
+                <div class="text-as-placeholder">
+                    ${c.user.last_name}
+                </div>
             </div>
         </div>
-        <div class="fieldset">
-            <div class="left-label">
+        <div class="field">
+            <div class="label">
                 ${_('Email')}:
             </div>
-            <div class="right-content">
-                ${c.user.email or _('Missing email, please update your user email address.')}
+            <div class="input">
+                <div class="text-as-placeholder">
+                    ${(c.user.email or _('Missing email, please update your user email address.'))}
+                </div>
             </div>
         </div>
     </div>

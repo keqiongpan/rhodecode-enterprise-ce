@@ -13,9 +13,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-  ${_ungettext('%s commit','%s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -32,10 +30,6 @@
     </script>
 
     <div class="box">
-        <div class="title">
-            ${self.repo_page_title(c.rhodecode_db_repo)}
-        </div>
-
         <div class="summary changeset">
             <div class="summary-detail">
               <div class="summary-detail-header">
@@ -43,24 +37,24 @@
                     <h4>
                         ${_('Compare Commits')}
                         % if c.file_path:
-                        ${_('for file')} <a href="#${'a_' + h.FID('',c.file_path)}">${c.file_path}</a>
+                        ${_('for file')} <a href="#${('a_' + h.FID('',c.file_path))}">${c.file_path}</a>
                         % endif
 
                         % if c.commit_ranges:
                         <code>
-                        r${c.source_commit.idx}:${h.short_id(c.source_commit.raw_id)}...r${c.target_commit.idx}:${h.short_id(c.target_commit.raw_id)}
+                        r${c.commit_ranges[0].idx}:${h.short_id(c.commit_ranges[0].raw_id)}...r${c.commit_ranges[-1].idx}:${h.short_id(c.commit_ranges[-1].raw_id)}
                         </code>
                         % endif
                     </h4>
                   </span>
+
+                  <div class="clear-fix"></div>
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Target')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Target')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
                                 ## The hidden elements are replaced with a select2 widget
@@ -72,11 +66,9 @@
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Source')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Source')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
                                 ## The hidden elements are replaced with a select2 widget
@@ -88,17 +80,29 @@
               </div>
 
               <div class="fieldset">
-                <div class="left-label">
-                  ${_('Actions')}:
-                </div>
-                <div class="right-content">
-                    <div>
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Actions')}:</p>
+                    <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
-
                                 <div class="compare-buttons">
                                 % if c.compare_home:
                                   <a id="compare_revs" class="btn btn-primary"> ${_('Compare Commits')}</a>
+                                  %if c.rhodecode_db_repo.fork:
+
+                                       <a class="btn btn-default" title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
+                                          href="${h.route_path('repo_compare',
+                                                repo_name=c.rhodecode_db_repo.fork.repo_name,
+                                                source_ref_type=c.rhodecode_db_repo.landing_rev[0],
+                                                source_ref=c.rhodecode_db_repo.landing_rev[1],
+                                                target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
+                                                target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
+                                                _query=dict(merge=1))}"
+                                        >
+                                       ${_('Compare with origin')}
+                                       </a>
+
+                                  %endif
 
                                   <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Swap')}</a>
                                   <a class="btn disabled tooltip" disabled="disabled" title="${_('Action unavailable in current view')}">${_('Comment')}</a>
@@ -126,31 +130,31 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
               </div>
 
               ## commit status form
               <div class="fieldset" id="compare_changeset_status" style="display: none; margin-bottom: -80px;">
-                <div class="left-label">
-                  ${_('Commit status')}:
-                </div>
-                <div class="right-content">
-                    <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
-                    ## main comment form and it status
-                    <%
-                    def revs(_revs):
-                        form_inputs = []
-                        for cs in _revs:
-                            tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
-                            form_inputs.append(tmpl)
-                        return form_inputs
-                    %>
-                    <div>
-                        ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                <div class="left-label-summary">
+                    <p class="spacing">${_('Commit status')}:</p>
+                    <div class="right-label-summary">
+                        <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
+                        ## main comment form and it status
+                        <%
+                        def revs(_revs):
+                            form_inputs = []
+                            for cs in _revs:
+                                tmpl = '<input type="hidden" data-commit-id="%(cid)s" name="commit_ids" value="%(cid)s">' % {'cid': cs.raw_id}
+                                form_inputs.append(tmpl)
+                            return form_inputs
+                        %>
+                        <div>
+                            ${comment.comments(h.route_path('repo_commit_comment_create', repo_name=c.repo_name, commit_id='0'*16), None, is_compare=True, form_extras=revs(c.commit_ranges))}
+                        </div>
                     </div>
                 </div>
               </div>
-
+              <div class="clear-fix"></div>
             </div> <!-- end summary-detail -->
         </div> <!-- end summary -->
 
@@ -275,8 +279,6 @@
 
         ## table diff data
         <div class="table">
-
-
             % if not c.compare_home:
                 <div id="changeset_compare_view_content">
                     <div class="pull-left">

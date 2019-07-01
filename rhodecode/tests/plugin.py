@@ -631,7 +631,9 @@ class Backend(object):
         commits = commits or [
             {'message': 'Commit %s of %s' % (x, self.repo_name)}
             for x in range(number_of_commits)]
-        self._add_commits_to_repo(repo.scm_instance(), commits)
+        vcs_repo = repo.scm_instance()
+        vcs_repo.count()
+        self._add_commits_to_repo(vcs_repo, commits)
         if heads:
             self.pull_heads(repo, heads)
 
@@ -1224,7 +1226,7 @@ class UserUtility(object):
         return user_group
 
     def grant_user_permission(self, user_name, permission_name):
-        self._inherit_default_user_permissions(user_name, False)
+        self.inherit_default_user_permissions(user_name, False)
         self.user_permissions.append((user_name, permission_name))
 
     def grant_user_permission_to_repo_group(
@@ -1276,10 +1278,10 @@ class UserUtility(object):
         return permission
 
     def revoke_user_permission(self, user_name, permission_name):
-        self._inherit_default_user_permissions(user_name, True)
+        self.inherit_default_user_permissions(user_name, True)
         UserModel().revoke_perm(user_name, permission_name)
 
-    def _inherit_default_user_permissions(self, user_name, value):
+    def inherit_default_user_permissions(self, user_name, value):
         user = UserModel().get_by_username(user_name)
         user.inherit_default_permissions = value
         Session().add(user)
@@ -1884,3 +1886,17 @@ def repo_groups(request):
         fixture.destroy_repo_group(parent_group)
 
     return zombie_group, parent_group, child_group
+
+
+@pytest.fixture(scope="session")
+def tmp_path_factory(request):
+    """Return a :class:`_pytest.tmpdir.TempPathFactory` instance for the test session.
+    """
+
+    class TempPathFactory:
+
+        def mktemp(self, basename):
+            import tempfile
+            return tempfile.mktemp(basename)
+
+    return TempPathFactory()

@@ -6,7 +6,7 @@
       elif context['c'].repo_group:
         return "/admin/repo_groups/repo_group_edit.mako"
       else:
-        return "/admin/settings/settings.mako"
+        return "/admin/integrations/global.mako"
 %>
 <%inherit file="${inherit(context)}" />
 
@@ -28,12 +28,6 @@
     ${self.menu_items(active='repositories')}
   %else:
     ${self.menu_items(active='admin')}
-  %endif
-</%def>
-
-<%def name="menu_bar_subnav()">
-  %if c.repo:
-    ${self.repo_menu(active='options')}
   %endif
 </%def>
 

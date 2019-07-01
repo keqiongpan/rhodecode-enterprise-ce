@@ -33,7 +33,7 @@ table.dataTable {
     td {
         height: auto;
         max-width: 20%;
-        padding: .65em 1em .65em 0;
+        padding: .65em 0 .65em 1em;
         vertical-align: middle;
         border-bottom: @border-thickness solid @grey5;
         white-space: normal;
@@ -103,6 +103,11 @@ table.dataTable {
             }
         }
 
+        &.td-icon {
+            min-width: 20px;
+            width: 20px;
+        }
+
         &.td-hash {
             min-width: 80px;
             width: 200px;
@@ -111,6 +116,12 @@ table.dataTable {
                 text-decoration: line-through;
                 color: lighten(@grey2,25%);
             }
+        }
+
+        &.td-graphbox {
+            width: 100px;
+            max-width: 100px;
+            min-width: 100px;
         }
 
         &.td-time {
@@ -408,29 +419,11 @@ table.trending_language_tbl {
 
 .trending_language {
     position: relative;
-    width: 100%;
-    height: 19px;
     overflow: hidden;
-    background-color: @grey6;
+    color: @text-color;
+    width: 400px;
 
-    span, b{
-        position: absolute;
-        display: block;
-        height: 12px;
-        margin-bottom: 0px;
-        white-space: pre;
-        padding: floor(@basefontsize/4);
-        top: 0;
-        left: 0;
-    }
-
-    span{
-        color: @text-color;
-        z-index: 0;
-        min-width: 20px;
-    }
-
-    b {
+    .lang-bar {
         z-index: 1;
         overflow: hidden;
         background-color: @rcblue;
@@ -442,6 +435,9 @@ table.trending_language_tbl {
 
 // Changesets
 #changesets.rctable {
+    th {
+        padding: 0 1em 0.65em 0;
+    }
 
     // td must be fixed height for graph
     td {

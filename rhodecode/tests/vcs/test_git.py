@@ -41,60 +41,41 @@ from rhodecode.tests.vcs.conftest import BackendTestMixin
 pytestmark = pytest.mark.backends("git")
 
 
-def repo_path_generator():
-    """
-    Return a different path to be used for cloning repos.
-    """
-    i = 0
-    while True:
-        i += 1
-        yield '%s-%d' % (TEST_GIT_REPO_CLONE, i)
-
-
-REPO_PATH_GENERATOR = repo_path_generator()
-
-
-class TestGitRepository:
-
-    # pylint: disable=protected-access
-
-    def __check_for_existing_repo(self):
-        if os.path.exists(TEST_GIT_REPO_CLONE):
-            self.fail('Cannot test git clone repo as location %s already '
-                      'exists. You should manually remove it first.'
-                      % TEST_GIT_REPO_CLONE)
+class TestGitRepository(object):
 
     @pytest.fixture(autouse=True)
     def prepare(self, request, baseapp):
         self.repo = GitRepository(TEST_GIT_REPO, bare=True)
 
-    def get_clone_repo(self):
+    def get_clone_repo(self, tmp_path_factory):
         """
         Return a non bare clone of the base repo.
         """
-        clone_path = next(REPO_PATH_GENERATOR)
+        clone_path = tmp_path_factory.mktemp('clone-url')
         repo_clone = GitRepository(
             clone_path, create=True, src_url=self.repo.path, bare=False)
 
         return repo_clone
 
-    def get_empty_repo(self, bare=False):
+    def get_empty_repo(self, tmp_path_factory, bare=False):
         """
         Return a non bare empty repo.
         """
-        return GitRepository(next(REPO_PATH_GENERATOR), create=True, bare=bare)
+        clone_path = tmp_path_factory.mktemp('empty-repo')
+        return GitRepository(clone_path, create=True, bare=bare)
 
     def test_wrong_repo_path(self):
         wrong_repo_path = '/tmp/errorrepo_git'
         with pytest.raises(RepositoryError):
             GitRepository(wrong_repo_path)
 
-    def test_repo_clone(self):
-        self.__check_for_existing_repo()
+    def test_repo_clone(self, tmp_path_factory):
         repo = GitRepository(TEST_GIT_REPO)
+        clone_path = tmp_path_factory.mktemp('_') + '_' + TEST_GIT_REPO_CLONE
         repo_clone = GitRepository(
-            TEST_GIT_REPO_CLONE,
+            clone_path,
             src_url=TEST_GIT_REPO, create=True, do_workspace_checkout=True)
+
         assert len(repo.commit_ids) == len(repo_clone.commit_ids)
         # Checking hashes of commits should be enough
         for commit in repo.get_commits():
@@ -106,9 +87,10 @@ class TestGitRepository:
             GitRepository(
                 TEST_GIT_REPO_CLONE + '_wo_create', src_url=TEST_GIT_REPO)
 
-    def test_repo_clone_with_update(self):
+    def test_repo_clone_with_update(self, tmp_path_factory):
         repo = GitRepository(TEST_GIT_REPO)
-        clone_path = TEST_GIT_REPO_CLONE + '_with_update'
+        clone_path = tmp_path_factory.mktemp('_') + '_' + TEST_GIT_REPO_CLONE + '_update'
+
         repo_clone = GitRepository(
             clone_path,
             create=True, src_url=TEST_GIT_REPO, do_workspace_checkout=True)
@@ -118,9 +100,9 @@ class TestGitRepository:
         fpath = os.path.join(clone_path, 'MANIFEST.in')
         assert os.path.isfile(fpath)
 
-    def test_repo_clone_without_update(self):
+    def test_repo_clone_without_update(self, tmp_path_factory):
         repo = GitRepository(TEST_GIT_REPO)
-        clone_path = TEST_GIT_REPO_CLONE + '_without_update'
+        clone_path = tmp_path_factory.mktemp('_') + '_' + TEST_GIT_REPO_CLONE + '_without_update'
         repo_clone = GitRepository(
             clone_path,
             create=True, src_url=TEST_GIT_REPO, do_workspace_checkout=False)
@@ -131,9 +113,9 @@ class TestGitRepository:
         assert not repo_clone.bare
         assert not os.path.isfile(fpath)
 
-    def test_repo_clone_into_bare_repo(self):
+    def test_repo_clone_into_bare_repo(self, tmp_path_factory):
         repo = GitRepository(TEST_GIT_REPO)
-        clone_path = TEST_GIT_REPO_CLONE + '_bare.git'
+        clone_path = tmp_path_factory.mktemp('_') + '_' + TEST_GIT_REPO_CLONE + '_bare.git'
         repo_clone = GitRepository(
             clone_path, create=True, src_url=repo.path, bare=True)
         assert repo_clone.bare
@@ -275,8 +257,8 @@ TODO: To be written...
     def test_head(self):
         assert self.repo.head == self.repo.get_commit().raw_id
 
-    def test_checkout_with_create(self):
-        repo_clone = self.get_clone_repo()
+    def test_checkout_with_create(self, tmp_path_factory):
+        repo_clone = self.get_clone_repo(tmp_path_factory)
 
         new_branch = 'new_branch'
         assert repo_clone._current_branch() == 'master'
@@ -288,22 +270,22 @@ TODO: To be written...
         assert set(repo_clone.branches) == {'master', new_branch}
         assert repo_clone._current_branch() == new_branch
 
-    def test_checkout(self):
-        repo_clone = self.get_clone_repo()
+    def test_checkout(self, tmp_path_factory):
+        repo_clone = self.get_clone_repo(tmp_path_factory)
 
         repo_clone._checkout('new_branch', create=True)
         repo_clone._checkout('master')
 
         assert repo_clone._current_branch() == 'master'
 
-    def test_checkout_same_branch(self):
-        repo_clone = self.get_clone_repo()
+    def test_checkout_same_branch(self, tmp_path_factory):
+        repo_clone = self.get_clone_repo(tmp_path_factory)
 
         repo_clone._checkout('master')
         assert repo_clone._current_branch() == 'master'
 
-    def test_checkout_branch_already_exists(self):
-        repo_clone = self.get_clone_repo()
+    def test_checkout_branch_already_exists(self, tmp_path_factory):
+        repo_clone = self.get_clone_repo(tmp_path_factory)
 
         with pytest.raises(RepositoryError):
             repo_clone._checkout('master', create=True)
@@ -316,32 +298,32 @@ TODO: To be written...
         with pytest.raises(RepositoryError):
             self.repo._current_branch()
 
-    def test_current_branch_empty_repo(self):
-        repo = self.get_empty_repo()
+    def test_current_branch_empty_repo(self, tmp_path_factory):
+        repo = self.get_empty_repo(tmp_path_factory)
         assert repo._current_branch() is None
 
-    def test_local_clone(self):
-        clone_path = next(REPO_PATH_GENERATOR)
+    def test_local_clone(self, tmp_path_factory):
+        clone_path = tmp_path_factory.mktemp('test-local-clone')
         self.repo._local_clone(clone_path, 'master')
         repo_clone = GitRepository(clone_path)
 
         assert self.repo.commit_ids == repo_clone.commit_ids
 
-    def test_local_clone_with_specific_branch(self):
-        source_repo = self.get_clone_repo()
+    def test_local_clone_with_specific_branch(self, tmp_path_factory):
+        source_repo = self.get_clone_repo(tmp_path_factory)
 
         # Create a new branch in source repo
         new_branch_commit = source_repo.commit_ids[-3]
         source_repo._checkout(new_branch_commit)
         source_repo._checkout('new_branch', create=True)
 
-        clone_path = next(REPO_PATH_GENERATOR)
+        clone_path = tmp_path_factory.mktemp('git-clone-path-1')
         source_repo._local_clone(clone_path, 'new_branch')
         repo_clone = GitRepository(clone_path)
 
         assert source_repo.commit_ids[:-3 + 1] == repo_clone.commit_ids
 
-        clone_path = next(REPO_PATH_GENERATOR)
+        clone_path = tmp_path_factory.mktemp('git-clone-path-2')
         source_repo._local_clone(clone_path, 'master')
         repo_clone = GitRepository(clone_path)
 
@@ -351,9 +333,9 @@ TODO: To be written...
         with pytest.raises(RepositoryError):
             self.repo._local_clone(self.repo.path, 'master')
 
-    def test_local_fetch(self):
-        target_repo = self.get_empty_repo()
-        source_repo = self.get_clone_repo()
+    def test_local_fetch(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
+        source_repo = self.get_clone_repo(tmp_path_factory)
 
         # Create a new branch in source repo
         master_commit = source_repo.commit_ids[-1]
@@ -367,8 +349,8 @@ TODO: To be written...
         target_repo._local_fetch(source_repo.path, 'master')
         assert target_repo._last_fetch_heads() == [master_commit]
 
-    def test_local_fetch_from_bare_repo(self):
-        target_repo = self.get_empty_repo()
+    def test_local_fetch_from_bare_repo(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
         target_repo._local_fetch(self.repo.path, 'master')
 
         master_commit = self.repo.commit_ids[-1]
@@ -378,15 +360,15 @@ TODO: To be written...
         with pytest.raises(ValueError):
             self.repo._local_fetch(self.repo.path, 'master')
 
-    def test_local_fetch_branch_does_not_exist(self):
-        target_repo = self.get_empty_repo()
+    def test_local_fetch_branch_does_not_exist(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
 
         with pytest.raises(RepositoryError):
             target_repo._local_fetch(self.repo.path, 'new_branch')
 
-    def test_local_pull(self):
-        target_repo = self.get_empty_repo()
-        source_repo = self.get_clone_repo()
+    def test_local_pull(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
+        source_repo = self.get_clone_repo(tmp_path_factory)
 
         # Create a new branch in source repo
         master_commit = source_repo.commit_ids[-1]
@@ -406,9 +388,9 @@ TODO: To be written...
         with pytest.raises(RepositoryError):
             self.repo._local_pull(self.repo.path, 'master')
 
-    def test_local_merge(self):
-        target_repo = self.get_empty_repo()
-        source_repo = self.get_clone_repo()
+    def test_local_merge(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
+        source_repo = self.get_clone_repo(tmp_path_factory)
 
         # Create a new branch in source repo
         master_commit = source_repo.commit_ids[-1]
@@ -449,8 +431,8 @@ TODO: To be written...
         assert not os.path.exists(
             os.path.join(target_repo.path, '.git', 'MERGE_HEAD'))
 
-    def test_local_merge_into_empty_repo(self):
-        target_repo = self.get_empty_repo()
+    def test_local_merge_into_empty_repo(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
 
         # This is required as one cannot do a -ff-only merge in an empty repo.
         target_repo._local_fetch(self.repo.path, 'master')
@@ -464,8 +446,8 @@ TODO: To be written...
             self.repo._local_merge(
                 'merge_message', 'user name', 'user@name.com', None)
 
-    def test_local_push_non_bare(self):
-        target_repo = self.get_empty_repo()
+    def test_local_push_non_bare(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
 
         pushed_branch = 'pushed_branch'
         self.repo._local_push('master', target_repo.path, pushed_branch)
@@ -479,8 +461,8 @@ TODO: To be written...
         assert (target_repo.branches[pushed_branch] ==
                 self.repo.branches['master'])
 
-    def test_local_push_bare(self):
-        target_repo = self.get_empty_repo(bare=True)
+    def test_local_push_bare(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory, bare=True)
 
         pushed_branch = 'pushed_branch'
         self.repo._local_push('master', target_repo.path, pushed_branch)
@@ -494,8 +476,8 @@ TODO: To be written...
         assert (target_repo.branches[pushed_branch] ==
                 self.repo.branches['master'])
 
-    def test_local_push_non_bare_target_branch_is_checked_out(self):
-        target_repo = self.get_clone_repo()
+    def test_local_push_non_bare_target_branch_is_checked_out(self, tmp_path_factory):
+        target_repo = self.get_clone_repo(tmp_path_factory)
 
         pushed_branch = 'pushed_branch'
         # Create a new branch in source repo
@@ -515,8 +497,8 @@ TODO: To be written...
         with pytest.raises(RepositoryError):
             self.repo._local_push('master', target_repo.path, 'master')
 
-    def test_hooks_can_be_enabled_via_env_variable_for_local_push(self):
-        target_repo = self.get_empty_repo(bare=True)
+    def test_hooks_can_be_enabled_via_env_variable_for_local_push(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory, bare=True)
 
         with mock.patch.object(self.repo, 'run_git_command') as run_mock:
             self.repo._local_push(
@@ -540,8 +522,8 @@ TODO: To be written...
             f.write('\n'.join(script_lines))
         os.chmod(hook_path, 0o755)
 
-    def test_local_push_does_not_execute_hook(self):
-        target_repo = self.get_empty_repo()
+    def test_local_push_does_not_execute_hook(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory)
 
         pushed_branch = 'pushed_branch'
         self._add_failing_hook(target_repo.path, 'pre-receive')
@@ -556,8 +538,8 @@ TODO: To be written...
         assert (target_repo.branches[pushed_branch] ==
                 self.repo.branches['master'])
 
-    def test_local_push_executes_hook(self):
-        target_repo = self.get_empty_repo(bare=True)
+    def test_local_push_executes_hook(self, tmp_path_factory):
+        target_repo = self.get_empty_repo(tmp_path_factory, bare=True)
         self._add_failing_hook(target_repo.path, 'pre-receive', bare=True)
         with pytest.raises(RepositoryError):
             self.repo._local_push(
@@ -1087,27 +1069,32 @@ class TestGitSpecificWithRepo(BackendTestMixin):
             'base')
 
     def test_get_diff_runs_git_command_with_hashes(self):
+        comm1 = self.repo[0]
+        comm2 = self.repo[1]
         self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(self.repo[0], self.repo[1])
+        self.repo.get_diff(comm1, comm2)
+
         self.repo.run_git_command.assert_called_once_with(
             ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(0),
-             self.repo._get_commit_id(1)])
+             '--abbrev=40', comm1.raw_id, comm2.raw_id])
 
     def test_get_diff_runs_git_command_with_str_hashes(self):
+        comm2 = self.repo[1]
         self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(self.repo.EMPTY_COMMIT, self.repo[1])
+        self.repo.get_diff(self.repo.EMPTY_COMMIT, comm2)
         self.repo.run_git_command.assert_called_once_with(
             ['show', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(1)])
+             '--abbrev=40', comm2.raw_id])
 
     def test_get_diff_runs_git_command_with_path_if_its_given(self):
+        comm1 = self.repo[0]
+        comm2 = self.repo[1]
         self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(self.repo[0], self.repo[1], 'foo')
+        self.repo.get_diff(comm1, comm2, 'foo')
         self.repo.run_git_command.assert_called_once_with(
             ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._get_commit_id(0),
-             self.repo._get_commit_id(1), '--', 'foo'])
+             '--abbrev=40', self.repo._lookup_commit(0),
+             comm2.raw_id, '--', 'foo'])
 
 
 @pytest.mark.usefixtures("vcs_repository_support")

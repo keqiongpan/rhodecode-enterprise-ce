@@ -3,30 +3,33 @@
 // Used for headers and file detail summary screens.
 
 .summary {
-    float: left;
+    clear: both;
+    float: none;
     position: relative;
     width: 100%;
     margin: 0;
     padding: 0;
+    background: #FCFCFC;
+    border: 1px solid #EAEAEA;
+    border-radius: @border-radius;
+    margin-bottom: 20px;
 
     .summary-detail-header {
-        float: left;
         display: block;
         width: 100%;
-        margin-bottom: @textmargin;
+        margin-bottom: 10px;
         padding: 0 0 .5em 0;
         border-bottom: @border-thickness solid @border-default-color;
 
         .breadcrumbs {
-            float: left;
             display: inline;
             margin: 0;
             padding: 0;
         }
+
         h4 {
-            float: left;
             margin: 0 1em 0 0;
-            padding: 0;
+            padding: 10px 0 5px 20px;
             line-height: 1.2em;
             font-size: @basefontsize;
         }
@@ -42,11 +45,11 @@
     }
 
     .summary-detail {
-        float: left;
+        float: none;
         position: relative;
-        width: 73%;
-        margin: 0 3% @space 0;
-        padding: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0 0 20px 0;
 
         .file_diff_buttons {
             margin-top: @space;
@@ -62,18 +65,37 @@
             height: 30px;
             margin: 0;
             padding: 0;
+            width: 130px;
             font-weight: @text-semibold-weight;
             font-family: @text-semibold;
         }
+        .left-clone select {
+            width: 130px;
+            margin-right: 0;
+            background-color: @grey7;
+            border-color: @grey4;
+            color: #5C5C5C;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
 
         .right-clone {
-            float: right;
-            width: 83%;
+            float: left;
+            width: ~"calc(100% - 170px)";
+
+            .clipboard-action {
+                margin-left: -30px;
+            }
         }
 
         .clone_url_input {
-            width: ~"calc(100% - 35px)";
-            padding:  5px;
+            width: ~"calc(100% - 90px)";
+            padding: 6px 30px 6px 10px;
+            height: 14px;
+            box-shadow: 0 1px 1px 0 rgba(0,0,0,0.07);
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            margin-left: -1px;
         }
 
         &.directory {
@@ -123,18 +145,32 @@
         border: @border-thickness solid @border-default-color;
         .border-radius(@border-radius);
     }
+
+    .btn-collapse {
+        clear: both;
+        float: none;
+        background: #F7F7F7;
+        text-align: center;
+        color: #949494;
+        font-size: 11px;
+
+        &:hover {
+            background: #f1f1f1;
+            color: #2B2B2D;
+        }
+    }
 }
 
 // this is used outside of just the summary
 .fieldset, // similar to form fieldset
 .summary .sidebar-right-content { // these have to match
     clear: both;
-    float: left;
+    float: none;
     position: relative;
     display:block;
     width: 100%;
-    min-height: 1em;
-    margin-bottom: @textmargin;
+    min-height: 20px;
+    margin-bottom: 10px;
     padding: 0;
     line-height: 1.2em;
 
@@ -147,19 +183,28 @@
 }
 
 .summary .sidebar-right-content {
-    margin-bottom: @space;
+    margin-bottom: 0;
 
     .rc-user {
         min-width: 0;
+    }
+
+    li {
+        list-style: none;
+        line-height: normal;
+    }
+}
+
+.summary {
+    .fieldset {
+        margin-bottom: 0;
     }
 }
 
 .fieldset {
 
     .left-label { // similar to form legend
-        float: left;
         display: block;
-        width: 25%;
         margin: 0;
         padding: 0;
         font-weight: @text-semibold-weight;
@@ -167,16 +212,78 @@
     }
 
     .left-label-summary {
-        .left-label;
-        width: 150px;
+        padding-left: 20px;
+        margin-bottom: 5px;
+
+        p {
+            margin-bottom: 5px;
+            color: @grey1;
+            float: left;
+            width: 130px;
+
+            &.spacing {
+                margin-top: 10px;
+            }
+        }
+
+        .right-label-summary {
+            float: left;
+            margin-top: 7px;
+            width: ~"calc(100% - 160px)";
+        }
     }
-    
+
+    .left-label-summary-files {
+        padding-left: 45px;
+        margin-top: 5px;
+
+        p {
+            margin-bottom: 5px;
+            color: @grey1;
+            float: left;
+            width: 130px;
+
+            &.spacing {
+                margin-top: 10px;
+            }
+        }
+
+        .right-label-summary {
+            float: left;
+            margin-top: 7px;
+        }
+    }
+
+    .left-content {
+        width: ~"calc(60% - 20px)";
+        float: left;
+        margin: 15px 0 15px 20px;
+
+        .rc-user {
+            min-width: auto;
+            max-width: none;
+            min-height: auto;
+            padding-right: 5px;
+        }
+
+        .left-content-avatar {
+            width: 45px;
+            float: left;
+            margin-top: 8px;
+        }
+
+        .left-content-message {
+            float: left;
+            width: ~"calc(100% - 45px)";
+        }
+    }
+
     .right-content { // similar to form fields
         float: left;
         display: block;
-        width: 75%;
-        margin: 0 0 0 -15%;
-        padding: 0 0 0 15%;
+        width: ~"calc(40% - 20px)";
+        text-align: right;
+        margin: 15px 20px 15px 0;
 
         .truncate-wrap,
         .truncate {
@@ -187,10 +294,48 @@
         .commit-long {
             overflow-x: auto;
         }
+
+        .commit-info {
+            margin-top: 7px;
+        }
+
+        .summary-tag,
+        .summary-tagtag,
+        .summary-branchtag,
+        .summary-booktag,
+        .summary-metatag,
+        .summary-perm_tag {
+            background:transparent;
+            border: none;
+            box-shadow: none;
+            margin-left: 10px;
+            font-size: 13px;
+        }
+
+        .summary-tag span,
+        .summary-tag i,
+        .summary-tag a {
+            color: @grey1;
+        }
+
+    }
+    .commit {
+        color: @grey1;
+        margin-bottom: 5px;
+        white-space: pre;
     }
     .commit.truncate-wrap {
         overflow:hidden;
         text-overflow: ellipsis;
+    }
+    .commit-author {
+        color: @grey1;
+    }
+    .commit-date {
+        color: @grey4;
+    }
+    .fieldset-text-line {
+        line-height: 36px;
     }
 }
 
@@ -214,19 +359,46 @@
 
     .comments-show { display: inline; }
     .comments-hide { display: none; }
-    
+
     &.comments-visible {
         .comments-show { display: none; }
         .comments-hide { display: inline; }
     }
 }
-    
+
 // Quick Start section
+
+.empty-repo {
+    border: 1px solid #EAEAEA;
+    border-bottom: 0;
+    border-radius: @border-radius;
+    padding: 0 20px;
+}
+
+.empty-repo h3, .quick_start p {
+    margin-bottom: 10px;
+}
+
+.quick_start pre {
+    background: #FCFEFF;
+    border: 1px solid #CBDBEB;
+    box-shadow: @button-shadow;
+    padding: 10px 15px;
+    border-radius: 4px;
+    color: @grey2;
+}
+
+.clear-fix {
+    clear: both;
+}
+
 .quick_start {
-    float: left;
     display: block;
     position: relative;
-    width: 100%;
+    border: 1px solid #EAEAEA;
+    border-top: 0;
+    border-radius: @border-radius;
+    padding: 0 20px;
 
     // adds some space to make copy and paste easier
     .left-label,
@@ -234,6 +406,7 @@
         line-height: 1.6em;
     }
 }
+
 
 .submodule {
     .summary-detail {
@@ -250,23 +423,32 @@
     display: block;
     width: 100%;
     margin: 0;
-    padding: @space 0 10px 0;
-    border-top: @border-thickness solid @border-default-color; 
 
-    .stats {
-        float: left;
+    .file-filename {
+        float:left;
+        padding: 10px;
     }
-    .stats-filename {
-        font-size: 120%;
+
+    .file-stats {
+        padding: 10px;
+        float:right;
     }
+
+
     .stats-first-item {
         padding: 0px 0px 0px 3px;
+    }
+
+    .stats-info {
+        font-size: 11px;
+        color: @grey4;
     }
 
     .buttons {
         float: right;
         text-align: right;
         color: @grey4;
+        padding: 10px;
     }
 
     .file-container {
@@ -286,6 +468,25 @@
     .repo-size {
         margin-bottom: .5em;
     }
-    
+
 }
 
+.rctable.repo_summary {
+    border: 1px solid #eaeaea;
+    border-radius: 2px;
+    border-collapse: inherit;
+    border-bottom: 0;
+
+    th {
+        background: @grey7;
+        border-bottom: 0;
+    }
+
+    td {
+        border-color: #eaeaea;
+    }
+
+    td.td-status {
+        padding: 0 0 0 10px;
+    }
+}

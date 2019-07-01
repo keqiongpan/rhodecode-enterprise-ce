@@ -31,12 +31,12 @@ from pyramid.renderers import render
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.model.db import (
-    or_, joinedload, UserLog, UserFollowing, User, UserApiKeys)
+    or_, joinedload, Repository, UserLog, UserFollowing, User, UserApiKeys)
 from rhodecode.model.meta import Session
 import rhodecode.lib.helpers as h
 from rhodecode.lib.helpers import Page
 from rhodecode.lib.user_log_filter import user_log_filter
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
+from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, HasRepoPermissionAny
 from rhodecode.lib.utils2 import safe_int, AttributeDict, md5_safe
 from rhodecode.model.scm import ScmModel
 
@@ -153,7 +153,7 @@ class JournalView(BaseAppView):
             desc = action_extra()
             _url = h.route_url('home')
             if entry.repository is not None:
-                _url = h.route_url('repo_changelog',
+                _url = h.route_url('repo_commits',
                                    repo_name=entry.repository.repo_name)
 
             feed.add_item(
@@ -199,7 +199,7 @@ class JournalView(BaseAppView):
             desc = action_extra()
             _url = h.route_url('home')
             if entry.repository is not None:
-                _url = h.route_url('repo_changelog',
+                _url = h.route_url('repo_commits',
                                    repo_name=entry.repository.repo_name)
 
             feed.add_item(
@@ -297,18 +297,19 @@ class JournalView(BaseAppView):
         user_id = self.request.POST.get('follows_user_id')
         if user_id:
             try:
-                ScmModel().toggle_following_user(
-                    user_id, self._rhodecode_user.user_id)
+                ScmModel().toggle_following_user(user_id, self._rhodecode_user.user_id)
                 Session().commit()
                 return 'ok'
             except Exception:
                 raise HTTPBadRequest()
 
         repo_id = self.request.POST.get('follows_repo_id')
-        if repo_id:
+        repo = Repository.get_or_404(repo_id)
+        perm_set = ['repository.read', 'repository.write', 'repository.admin']
+        has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'RepoWatch check')
+        if repo and has_perm:
             try:
-                ScmModel().toggle_following_repo(
-                    repo_id, self._rhodecode_user.user_id)
+                ScmModel().toggle_following_repo(repo_id, self._rhodecode_user.user_id)
                 Session().commit()
                 return 'ok'
             except Exception:

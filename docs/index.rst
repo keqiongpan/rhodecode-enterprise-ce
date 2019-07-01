@@ -46,7 +46,7 @@ and commit files and |repos| while managing their security permissions.
    nix/default-env
    admin/system-admin
    admin/user-admin
-   admin/setting-repo-perms
+   admin/repo-admin
    admin/security-tips
    auth/auth
    issue-trackers/issue-trackers

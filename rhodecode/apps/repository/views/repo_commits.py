@@ -105,10 +105,9 @@ class RepoCommitsView(RepoAppView):
 
             c.commit_ranges = commits
             if not c.commit_ranges:
-                raise RepositoryError(
-                    'The commit range returned an empty result')
-        except CommitDoesNotExistError:
-            msg = _('No such commit exists for this repository')
+                raise RepositoryError('The commit range returned an empty result')
+        except CommitDoesNotExistError as e:
+            msg = _('No such commit exists. Org exception: `{}`').format(e)
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except Exception:

@@ -1,42 +1,38 @@
 <%namespace name="base" file="/base/base.mako"/>
 
-<div class="summary-detail-header">
-    <h4 class="item">
-        % if c.file_author:
-            ${_('Last Author')}
-        % else:
-            ${h.literal(_ungettext(u'File Author (%s)',u'File Authors (%s)',len(c.authors)) % ('<b>%s</b>' % len(c.authors))) }
-        % endif
-    </h4>
-    <a href="#" id="show_authors" class="action_link">${_('Show All')}</a>
-</div>
-
 % if c.authors:
-<ul class="sidebar-right-content">
-    % for email, user, commits in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):
-    <li class="file_author">
-        <div class="tooltip" title="${h.tooltip(h.author_string(email))}">
-          ${base.gravatar(email, 16)}
-          <div class="user">${h.link_to_user(user)}</div>
 
+<table class="sidebar-right-content">
+    % for email, user, commits in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):
+    <tr class="file_author tooltip" title="${h.tooltip(h.author_string(email))}">
+
+        <td>
+            % if not c.file_author:
+            ${base.gravatar(email, 16)}
+            % endif
+            <span class="user commit-author">${h.link_to_user(user)}</span>
             % if c.file_author:
-                <span>- ${h.age_component(c.file_last_commit.date)}</span>
+                <span class="commit-date">- ${h.age_component(c.file_last_commit.date)}</span>
+                <a href="#ShowAuthors" onclick="showAuthors(this, ${("1" if c.annotate else "0")}); return false" class="action_link"> - ${_('Load All Authors')}</a>
             % elif c.file_last_commit.author_email==email:
                 <span> (${_('last author')})</span>
             % endif
+        </td>
 
+        <td>
             % if not c.file_author:
-                <span>
+                <code>
                   % if commits == 1:
                     ${commits} ${_('Commit')}
                   % else:
                     ${commits} ${_('Commits')}
                   % endif
-                </span>
+                </code>
             % endif
+        </td>
+    </tr>
 
-        </div>
-    </li>
     % endfor
-</ul>
+</table>
 % endif
+

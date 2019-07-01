@@ -7,9 +7,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -22,63 +20,36 @@
 
 
 <%def name="main()">
-<div class="box">
-  <div class="title">
-      ${self.repo_page_title(c.rhodecode_db_repo)}
 
-      <ul class="links">
+<div class="box">
+    <div class="title">
+    <ul class="button-links">
+      <li class="btn ${('active' if c.active=='open' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
+      <li class="btn ${('active' if c.active=='my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
+      <li class="btn ${('active' if c.active=='awaiting' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
+      <li class="btn ${('active' if c.active=='awaiting_my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
+      <li class="btn ${('active' if c.active=='closed' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
+      <li class="btn ${('active' if c.active=='source' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
+    </ul>
+
+    <ul class="links">
+        % if c.rhodecode_user.username != h.DEFAULT_USER:
         <li>
-           %if c.rhodecode_user.username != h.DEFAULT_USER:
             <span>
                 <a id="open_new_pull_request" class="btn btn-small btn-success" href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">
                     ${_('Open new Pull Request')}
                 </a>
             </span>
-           %endif
         </li>
-      </ul>
+        % endif
+    </ul>
 
-    ${self.breadcrumbs()}
-  </div>
-
-  <div class="sidebar-col-wrapper">
-    ##main
-    <div class="sidebar">
-        <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='open' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
-          <li class="${'active' if c.active=='my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
-          <li class="${'active' if c.active=='awaiting' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
-          <li class="${'active' if c.active=='awaiting_my' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
-          <li class="${'active' if c.active=='closed' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
-          <li class="${'active' if c.active=='source' else ''}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
-        </ul>
     </div>
 
     <div class="main-content-full-width">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">
-              %if c.source:
-                  ${_('Pull Requests from %(repo_name)s repository') % {'repo_name': c.repo_name}}
-              %elif c.closed:
-                  ${_('Closed Pull Requests to repository %(repo_name)s') % {'repo_name': c.repo_name}}
-              %elif c.my:
-                  ${_('Pull Requests to %(repo_name)s repository opened by me') % {'repo_name': c.repo_name}}
-              %elif c.awaiting_review:
-                  ${_('Pull Requests to %(repo_name)s repository awaiting review') % {'repo_name': c.repo_name}}
-              %elif c.awaiting_my_review:
-                  ${_('Pull Requests to %(repo_name)s repository awaiting my review') % {'repo_name': c.repo_name}}
-              %else:
-                  ${_('Pull Requests to %(repo_name)s repository') % {'repo_name': c.repo_name}}
-              %endif
-          </h3>
-        </div>
-        <div class="panel-body panel-body-min-height">
-          <table id="pull_request_list_table" class="display"></table>
-        </div>
-      </div>
+        <table id="pull_request_list_table" class="display"></table>
     </div>
-  </div>
+
 </div>
 
 <script type="text/javascript">

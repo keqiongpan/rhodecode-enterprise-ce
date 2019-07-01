@@ -43,7 +43,7 @@
       %if c.repo:
         ${_('Current Integrations for Repository: {repo_name}').format(repo_name=c.repo.repo_name)}
       %elif c.repo_group:
-        ${_('Current Integrations for repository group: {repo_group_name}').format(repo_group_name=c.repo_group.group_name)}
+        ${_('Repository Group Integrations: {}').format(c.repo_group.group_name)}</h3>
       %else:
           ${_('Current Integrations')}
       %endif
@@ -107,11 +107,9 @@
   %for IntegrationType, integration in c.integrations_list:
         <tr id="integration_${integration.integration_id}">
           <td class="td-enabled">
-            %if integration.enabled:
-            <div class="flag_status approved pull-left"></div>
-            %else:
-            <div class="flag_status rejected pull-left"></div>
-            %endif
+            <div class="pull-left">
+                ${h.bool2icon(integration.enabled)}
+            </div>
           </td>
           <td class="td-description">
             ${integration.name}

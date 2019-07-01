@@ -59,7 +59,7 @@ from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
-    glob2re, StrictAttributeDict, cleaned_uri)
+    glob2re, StrictAttributeDict, cleaned_uri, datetime_to_time, OrderedDefaultDict)
 from rhodecode.lib.jsonalchemy import MutationObj, MutationList, JsonType, \
     JsonRaw
 from rhodecode.lib.ext_json import json
@@ -1678,10 +1678,11 @@ class Repository(Base, BaseModel):
         cascade="all, delete, delete-orphan")
     ui = relationship('RepoRhodeCodeUi', cascade="all")
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
-    integrations = relationship('Integration',
-                                cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
 
     scoped_tokens = relationship('UserApiKeys', cascade="all")
+
+    artifacts = relationship('FileStore', cascade="all")
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
@@ -1730,7 +1731,9 @@ class Repository(Base, BaseModel):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         dummy = EmptyCommit().__json__()
         if not self._changeset_cache:
-            return dummy
+            dummy['source_repo_id'] = self.repo_id
+            return json.loads(json.dumps(dummy))
+
         try:
             return json.loads(self._changeset_cache)
         except TypeError:
@@ -2183,6 +2186,20 @@ class Repository(Base, BaseModel):
         return make_lock, currently_locked, lock_info
 
     @property
+    def last_commit_cache_update_diff(self):
+        return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
+
+    @property
+    def last_commit_change(self):
+        from rhodecode.lib.vcs.utils.helpers import parse_datetime
+        empty_date = datetime.datetime.fromtimestamp(0)
+        date_latest = self.changeset_cache.get('date', empty_date)
+        try:
+            return parse_datetime(date_latest)
+        except Exception:
+            return empty_date
+
+    @property
     def last_db_change(self):
         return self.updated_on
 
@@ -2275,6 +2292,7 @@ class Repository(Base, BaseModel):
         """
         Update cache of last changeset for repository, keys should be::
 
+            source_repo_id
             short_id
             raw_id
             revision
@@ -2282,15 +2300,15 @@ class Repository(Base, BaseModel):
             message
             date
             author
+            updated_on
 
-        :param cs_cache:
         """
         from rhodecode.lib.vcs.backends.base import BaseChangeset
         if cs_cache is None:
             # use no-cache version here
             scm_repo = self.scm_instance(cache=False, config=config)
 
-            empty = not scm_repo or scm_repo.is_empty()
+            empty = scm_repo is None or scm_repo.is_empty()
             if not empty:
                 cs_cache = scm_repo.get_commit(
                     pre_load=["author", "date", "message", "parents"])
@@ -2310,18 +2328,28 @@ class Repository(Base, BaseModel):
         if is_outdated(cs_cache) or not self.changeset_cache:
             _default = datetime.datetime.utcnow()
             last_change = cs_cache.get('date') or _default
-            if self.updated_on and self.updated_on > last_change:
-                # we check if last update is newer than the new value
-                # if yes, we use the current timestamp instead. Imagine you get
-                # old commit pushed 1y ago, we'd set last update 1y to ago.
-                last_change = _default
-            log.debug('updated repo %s with new cs cache %s',
-                      self.repo_name, cs_cache)
-            self.updated_on = last_change
+            # we check if last update is newer than the new value
+            # if yes, we use the current timestamp instead. Imagine you get
+            # old commit pushed 1y ago, we'd set last update 1y to ago.
+            last_change_timestamp = datetime_to_time(last_change)
+            current_timestamp = datetime_to_time(last_change)
+            if last_change_timestamp > current_timestamp:
+                cs_cache['date'] = _default
+
+            cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
             Session().add(self)
             Session().commit()
+
+            log.debug('updated repo %s with new commit cache %s',
+                      self.repo_name, cs_cache)
         else:
+            cs_cache = self.changeset_cache
+            cs_cache['updated_on'] = time.time()
+            self.changeset_cache = cs_cache
+            Session().add(self)
+            Session().commit()
+
             log.debug('Skipping update_commit_cache for repo:`%s` '
                       'commit already with latest changes', self.repo_name)
 
@@ -2410,6 +2438,7 @@ class Repository(Base, BaseModel):
         # control over cache behaviour
         if cache is None and full_cache and not config:
             return self._get_instance_cached()
+        # cache here is sent to the "vcs server"
         return self._get_instance(cache=bool(cache), config=config)
 
     def _get_instance_cached(self):
@@ -2438,8 +2467,7 @@ class Repository(Base, BaseModel):
             else:
                 instance = get_instance_cached(*args)
 
-            log.debug(
-                'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
+            log.debug('Repo instance fetched in %.3fs', inv_context_manager.compute_time)
             return instance
 
     def _get_instance(self, cache=True, config=None):
@@ -2453,7 +2481,8 @@ class Repository(Base, BaseModel):
             with_wire=custom_wire,
             create=False,
             _vcs_alias=self.repo_type)
-
+        if repo is not None:
+            repo.count()  # cache rebuild
         return repo
 
     def __json__(self):
@@ -2489,6 +2518,8 @@ class RepoGroup(Base, BaseModel):
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
     personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
+    _changeset_cache = Column(
+        "changeset_cache", LargeBinary(), nullable=True)  # JSON data
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -2512,6 +2543,29 @@ class RepoGroup(Base, BaseModel):
     def group_name(self, value):
         self._group_name = value
         self.group_name_hash = self.hash_repo_group_name(value)
+
+    @hybrid_property
+    def changeset_cache(self):
+        from rhodecode.lib.vcs.backends.base import EmptyCommit
+        dummy = EmptyCommit().__json__()
+        if not self._changeset_cache:
+            dummy['source_repo_id'] = ''
+            return json.loads(json.dumps(dummy))
+
+        try:
+            return json.loads(self._changeset_cache)
+        except TypeError:
+            return dummy
+        except Exception:
+            log.error(traceback.format_exc())
+            return dummy
+
+    @changeset_cache.setter
+    def changeset_cache(self, val):
+        try:
+            self._changeset_cache = json.dumps(val)
+        except Exception:
+            log.error(traceback.format_exc())
 
     @validates('group_parent_id')
     def validate_group_parent_id(self, key, val):
@@ -2608,8 +2662,7 @@ class RepoGroup(Base, BaseModel):
         return q.all()
 
     @property
-    def parents(self):
-        parents_recursion_limit = 10
+    def parents(self, parents_recursion_limit = 10):
         groups = []
         if self.parent_group is None:
             return groups
@@ -2630,6 +2683,20 @@ class RepoGroup(Base, BaseModel):
 
             groups.insert(0, gr)
         return groups
+
+    @property
+    def last_commit_cache_update_diff(self):
+        return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
+
+    @property
+    def last_commit_change(self):
+        from rhodecode.lib.vcs.utils.helpers import parse_datetime
+        empty_date = datetime.datetime.fromtimestamp(0)
+        date_latest = self.changeset_cache.get('date', empty_date)
+        try:
+            return parse_datetime(date_latest)
+        except Exception:
+            return empty_date
 
     @property
     def last_db_change(self):
@@ -2670,7 +2737,7 @@ class RepoGroup(Base, BaseModel):
 
         return cnt + children_count(self)
 
-    def _recursive_objects(self, include_repos=True):
+    def _recursive_objects(self, include_repos=True, include_groups=True):
         all_ = []
 
         def _get_members(root_gr):
@@ -2680,11 +2747,16 @@ class RepoGroup(Base, BaseModel):
             childs = root_gr.children.all()
             if childs:
                 for gr in childs:
-                    all_.append(gr)
+                    if include_groups:
+                        all_.append(gr)
                     _get_members(gr)
 
+        root_group = []
+        if include_groups:
+            root_group = [self]
+
         _get_members(self)
-        return [self] + all_
+        return root_group + all_
 
     def recursive_groups_and_repos(self):
         """
@@ -2698,6 +2770,12 @@ class RepoGroup(Base, BaseModel):
         """
         return self._recursive_objects(include_repos=False)
 
+    def recursive_repos(self):
+        """
+        Returns all children repositories for this group
+        """
+        return self._recursive_objects(include_groups=False)
+
     def get_new_name(self, group_name):
         """
         returns new full group name based on parent and new name
@@ -2707,6 +2785,63 @@ class RepoGroup(Base, BaseModel):
         path_prefix = (self.parent_group.full_path_splitted if
                        self.parent_group else [])
         return RepoGroup.url_sep().join(path_prefix + [group_name])
+
+    def update_commit_cache(self, config=None):
+        """
+        Update cache of last changeset for newest repository inside this group, keys should be::
+
+            source_repo_id
+            short_id
+            raw_id
+            revision
+            parents
+            message
+            date
+            author
+
+        """
+        from rhodecode.lib.vcs.utils.helpers import parse_datetime
+
+        def repo_groups_and_repos():
+            all_entries = OrderedDefaultDict(list)
+
+            def _get_members(root_gr, pos=0):
+
+                for repo in root_gr.repositories:
+                    all_entries[root_gr].append(repo)
+
+                # fill in all parent positions
+                for parent_group in root_gr.parents:
+                    all_entries[parent_group].extend(all_entries[root_gr])
+
+                children_groups = root_gr.children.all()
+                if children_groups:
+                    for cnt, gr in enumerate(children_groups, 1):
+                        _get_members(gr, pos=pos+cnt)
+
+            _get_members(root_gr=self)
+            return all_entries
+
+        empty_date = datetime.datetime.fromtimestamp(0)
+        for repo_group, repos in repo_groups_and_repos().items():
+
+            latest_repo_cs_cache = {}
+            for repo in repos:
+                repo_cs_cache = repo.changeset_cache
+                date_latest = latest_repo_cs_cache.get('date', empty_date)
+                date_current = repo_cs_cache.get('date', empty_date)
+                current_timestamp = datetime_to_time(parse_datetime(date_latest))
+                if current_timestamp < datetime_to_time(parse_datetime(date_current)):
+                    latest_repo_cs_cache = repo_cs_cache
+                    latest_repo_cs_cache['source_repo_id'] = repo.repo_id
+
+            latest_repo_cs_cache['updated_on'] = time.time()
+            repo_group.changeset_cache = latest_repo_cs_cache
+            Session().add(repo_group)
+            Session().commit()
+
+            log.debug('updated repo group %s with new commit cache %s',
+                      repo_group.group_name, latest_repo_cs_cache)
 
     def permissions(self, with_admins=True, with_owner=True,
                     expand_from_user_groups=False):
@@ -4301,9 +4436,9 @@ class Gist(Base, BaseModel):
 
     def scm_instance(self, **kwargs):
         """
-        Get explicit Mercurial repository used
+        Get an instance of VCS Repository
+
         :param kwargs:
-        :return:
         """
         from rhodecode.model.gist import GistModel
         full_repo_path = os.path.join(self.base_path(), self.gist_access_id)
@@ -4953,8 +5088,8 @@ class FileStore(Base, BaseModel):
 
     @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
-               file_description='', enabled=True, check_acl=True,
-               user_id=None, scope_repo_id=None, scope_repo_group_id=None):
+               file_description='', enabled=True, check_acl=True, user_id=None,
+               scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
 
         store_entry = FileStore()
         store_entry.file_uid = file_uid
@@ -4968,6 +5103,7 @@ class FileStore(Base, BaseModel):
         store_entry.enabled = enabled
 
         store_entry.user_id = user_id
+        store_entry.scope_user_id = scope_user_id
         store_entry.scope_repo_id = scope_repo_id
         store_entry.scope_repo_group_id = scope_repo_group_id
         return store_entry

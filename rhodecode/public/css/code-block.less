@@ -404,12 +404,9 @@ div.codeblock {
 
     // TODO: johbo: Added interim to get rid of the margin around
     // Select2 widgets. This needs further cleanup.
-    margin-top: @padding;
-
     overflow: auto;
     padding: 0px;
-    border: @border-thickness solid @grey5;
-    background: @grey6;
+    border: @border-thickness solid @grey6;
     .border-radius(@border-radius);
 
     #remove_gist {
@@ -479,7 +476,7 @@ div.codeblock {
     }
 
     .code-body {
-        padding: @padding;
+        padding: 0.8em 1em;
         background-color: #ffffff;
         min-width: 100%;
         box-sizing: border-box;
@@ -492,6 +489,21 @@ div.codeblock {
             height: auto;
             width: 100%;
         }
+
+        .markdown-block {
+            padding: 1em 0;
+        }
+    }
+
+    .codeblock-header {
+        background: @grey7;
+        height: 36px;
+    }
+
+    .path {
+        border-bottom: 1px solid @grey6;
+        padding: .65em 1em;
+        height: 18px;
     }
 }
 

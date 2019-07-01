@@ -98,7 +98,7 @@ function setRCMouseBindings(repoName, repoLandingRev) {
         });
         Mousetrap.bind(['g c'], function(e) {
             window.location = pyroutes.url(
-                'repo_changelog', {'repo_name': repoName});
+                'repo_commits', {'repo_name': repoName});
         });
         Mousetrap.bind(['g F'], function(e) {
             window.location = pyroutes.url(

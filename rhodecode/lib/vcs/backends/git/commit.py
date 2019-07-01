@@ -234,8 +234,7 @@ class GitCommit(base.BaseCommit):
         path = self._fix_path(path)
         if self._get_kind(path) != NodeKind.FILE:
             raise CommitError(
-                "File does not exist for commit %s at  '%s'" %
-                (self.raw_id, path))
+                "File does not exist for commit %s at  '%s'" % (self.raw_id, path))
         return path
 
     def _get_file_nodes(self):
@@ -353,8 +352,7 @@ class GitCommit(base.BaseCommit):
     def get_nodes(self, path):
         if self._get_kind(path) != NodeKind.DIR:
             raise CommitError(
-                "Directory does not exist for commit %s at "
-                " '%s'" % (self.raw_id, path))
+                "Directory does not exist for commit %s at '%s'" % (self.raw_id, path))
         path = self._fix_path(path)
         id_, _ = self._get_id_for_path(path)
         tree_id = self._remote[id_]['id']

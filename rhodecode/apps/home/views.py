@@ -27,11 +27,12 @@ from pyramid.view import view_config
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator,
-    CSRFRequired)
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired)
+from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
     func, true, or_, case, in_filter_generator, Repository, RepoGroup, User, UserGroup)
 from rhodecode.model.repo import RepoModel
@@ -442,12 +443,14 @@ class HomeView(BaseAppView):
             def query_modifier():
                 qry = query
                 return {'q': qry, 'type': 'content'}
-            label = u'File search for `{}` in this repository.'.format(query)
+
+            label = u'File search for `{}`'.format(h.escape(query))
             file_qry = {
                 'id': -10,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo',
                 'url': h.route_path('search_repo',
                                     repo_name=repo_name,
                                     _query=query_modifier())
@@ -458,18 +461,19 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'commit'}
 
-            label = u'Commit search for `{}` in this repository.'.format(query)
+            label = u'Commit search for `{}`'.format(h.escape(query))
             commit_qry = {
                 'id': -20,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo',
                 'url': h.route_path('search_repo',
                                     repo_name=repo_name,
                                     _query=query_modifier())
                 }
 
-            if repo_context in ['commit', 'changelog']:
+            if repo_context in ['commit', 'commits']:
                 queries.extend([commit_qry, file_qry])
             elif repo_context in ['files', 'summary']:
                 queries.extend([file_qry, commit_qry])
@@ -482,12 +486,13 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'content'}
 
-            label = u'File search for `{}` in this repository group'.format(query)
+            label = u'File search for `{}`'.format(query)
             file_qry = {
                 'id': -30,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
                                     repo_group_name=repo_group_name,
                                     _query=query_modifier())
@@ -498,18 +503,19 @@ class HomeView(BaseAppView):
                 qry = query
                 return {'q': qry, 'type': 'commit'}
 
-            label = u'Commit search for `{}` in this repository group'.format(query)
+            label = u'Commit search for `{}`'.format(query)
             commit_qry = {
                 'id': -40,
                 'value': query,
                 'value_display': label,
                 'type': 'search',
+                'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
                                     repo_group_name=repo_group_name,
                                     _query=query_modifier())
                 }
 
-            if repo_context in ['commit', 'changelog']:
+            if repo_context in ['commit', 'commits']:
                 queries.extend([commit_qry, file_qry])
             elif repo_context in ['files', 'summary']:
                 queries.extend([file_qry, commit_qry])
@@ -524,6 +530,7 @@ class HomeView(BaseAppView):
                     'value': query,
                     'value_display': u'File search for: `{}`'.format(query),
                     'type': 'search',
+                    'subtype': 'global',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'content'})
                 })
@@ -533,6 +540,7 @@ class HomeView(BaseAppView):
                     'value': query,
                     'value_display': u'Commit search for: `{}`'.format(query),
                     'type': 'search',
+                    'subtype': 'global',
                     'url': h.route_path('search',
                                         _query={'q': query, 'type': 'commit'})
                 })
@@ -703,8 +711,11 @@ class HomeView(BaseAppView):
     def repo_group_main_page(self):
         c = self.load_default_context()
         c.repo_group = self.request.db_repo_group
-        repo_data, repo_group_data = self._get_groups_and_repos(
-            c.repo_group.group_id)
+        repo_data, repo_group_data = self._get_groups_and_repos(c.repo_group.group_id)
+
+        # update every 5 min
+        if self.request.db_repo_group.last_commit_cache_update_diff > 60 * 5:
+            self.request.db_repo_group.update_commit_cache()
 
         # json used to render the grids
         c.repos_data = json.dumps(repo_data)
@@ -733,6 +744,34 @@ class HomeView(BaseAppView):
     @LoginRequired()
     @CSRFRequired()
     @view_config(
+        route_name='file_preview', request_method='POST',
+        renderer='string', xhr=True)
+    def file_preview(self):
+        # Technically a CSRF token is not needed as no state changes with this
+        # call. However, as this is a POST is better to have it, so automated
+        # tools don't flag it as potential CSRF.
+        # Post is required because the payload could be bigger than the maximum
+        # allowed by GET.
+
+        text = self.request.POST.get('text')
+        file_path = self.request.POST.get('file_path')
+
+        renderer = h.renderer_from_filename(file_path)
+
+        if renderer:
+            return h.render(text, renderer=renderer, mentions=True)
+        else:
+            self.load_default_context()
+            _render = self.request.get_partial_renderer(
+                'rhodecode:templates/files/file_content.mako')
+
+            lines = filenode_as_lines_tokens(FileNode(file_path, text))
+
+            return _render('render_lines', lines)
+
+    @LoginRequired()
+    @CSRFRequired()
+    @view_config(
         route_name='store_user_session_value', request_method='POST',
         renderer='string', xhr=True)
     def store_user_session_attr(self):
@@ -743,4 +782,4 @@ class HomeView(BaseAppView):
         if existing_value != val:
             self.request.session[key] = val
 
-        return 'stored:{}'.format(key)
+        return 'stored:{}:{}'.format(key, val)

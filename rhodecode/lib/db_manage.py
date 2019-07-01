@@ -485,9 +485,6 @@ class DbManage(object):
             self.populate_default_permissions()
         return fixed
 
-    def update_repo_info(self):
-        RepoModel.update_repoinfo()
-
     def config_prompt(self, test_repo_path='', retries=3):
         defaults = self.cli_args
         _path = defaults.get('repos_location')

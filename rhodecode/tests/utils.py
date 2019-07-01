@@ -48,9 +48,9 @@ log = logging.getLogger(__name__)
 
 
 class CustomTestResponse(TestResponse):
+
     def _save_output(self, out):
-        f = tempfile.NamedTemporaryFile(
-            delete=False, prefix='rc-test-', suffix='.html')
+        f = tempfile.NamedTemporaryFile(delete=False, prefix='rc-test-', suffix='.html')
         f.write(out)
         return f.name
 
@@ -63,6 +63,7 @@ class CustomTestResponse(TestResponse):
 
             assert string in res
         """
+        print_body = kw.pop('print_body', False)
         if 'no' in kw:
             no = kw['no']
             del kw['no']
@@ -79,18 +80,20 @@ class CustomTestResponse(TestResponse):
         for s in strings:
             if not s in self:
                 print_stderr("Actual response (no %r):" % s)
-                print_stderr(str(self))
+                print_stderr("body output saved as `%s`" % f)
+                if print_body:
+                    print_stderr(str(self))
                 raise IndexError(
-                    "Body does not contain string %r, output saved as %s" % (
-                    s, f))
+                    "Body does not contain string %r, body output saved as %s" % (s, f))
 
         for no_s in no:
             if no_s in self:
                 print_stderr("Actual response (has %r)" % no_s)
-                print_stderr(str(self))
+                print_stderr("body output saved as `%s`" % f)
+                if print_body:
+                    print_stderr(str(self))
                 raise IndexError(
-                    "Body contains bad string %r, output saved as %s" % (
-                    no_s, f))
+                    "Body contains bad string %r, body output saved as %s" % (no_s, f))
 
     def assert_response(self):
         return AssertResponse(self)
@@ -99,8 +102,7 @@ class CustomTestResponse(TestResponse):
         """
         This returns the session from a response object.
         """
-
-        from pyramid_beaker import session_factory_from_settings
+        from rhodecode.lib.rc_beaker import session_factory_from_settings
         session = session_factory_from_settings(self.test_app._pyramid_settings)
         return session(self.request)
 

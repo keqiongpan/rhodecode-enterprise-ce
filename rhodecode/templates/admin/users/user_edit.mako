@@ -13,25 +13,26 @@
     &raquo;
     ${h.link_to(_('Users'),h.route_path('users'))}
     &raquo;
-    % if c.user.active:
-    ${c.user.username}
-    % else:
-    <strike title="${_('This user is set as disabled')}">${c.user.username}</strike>
-    % endif
-
 </%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='users')}
+</%def>
+
+
 <%def name="main()">
 <div class="box user_settings">
-    <div class="title">
-        ${self.breadcrumbs()}
+  % if not c.user.active:
+    <div class="alert alert-warning text-center">
+        <strong>${_('This user is set as disabled')}</strong>
     </div>
+  % endif
 
-    ##main
+  ##main
   <div class="sidebar-col-wrapper">
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">

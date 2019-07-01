@@ -92,7 +92,7 @@ def junk_form_data_detector(request):
 
 def sanity_check_factory(handler, registry):
     def sanity_check(request):
-        log.debug('Checking URL sanity')
+        log.debug('Checking current URL sanity for bad data')
         try:
             junk_encoding_detector(request)
             bad_url_data_detector(request)

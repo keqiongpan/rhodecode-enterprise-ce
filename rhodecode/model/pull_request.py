@@ -683,6 +683,7 @@ class PullRequestModel(BaseModel):
 
         # source repo
         source_repo = pull_request.source_repo.scm_instance()
+
         try:
             source_commit = source_repo.get_commit(commit_id=source_ref_name)
         except CommitDoesNotExistError:
@@ -696,6 +697,7 @@ class PullRequestModel(BaseModel):
 
         # target repo
         target_repo = pull_request.target_repo.scm_instance()
+
         try:
             target_commit = target_repo.get_commit(commit_id=target_ref_name)
         except CommitDoesNotExistError:
@@ -752,8 +754,8 @@ class PullRequestModel(BaseModel):
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)
 
-        ancestor = target_repo.get_common_ancestor(
-            target_commit.raw_id, source_commit.raw_id, source_repo)
+        ancestor = source_repo.get_common_ancestor(
+            source_commit.raw_id, target_commit.raw_id, target_repo)
 
         pull_request.source_ref = '%s:%s:%s' % (
             source_ref_type, source_ref_name, source_commit.raw_id)
@@ -1337,6 +1339,7 @@ class PullRequestModel(BaseModel):
             name_or_id = reference.name
         else:
             name_or_id = reference.commit_id
+
         refreshed_commit = vcs_repository.get_commit(name_or_id)
         refreshed_reference = Reference(
             reference.type, reference.name, refreshed_commit.raw_id)

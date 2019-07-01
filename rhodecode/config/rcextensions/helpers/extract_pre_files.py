@@ -34,12 +34,51 @@ from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.git.diff import GitDiff
 
 
-def get_hg_files(repo, refs):
+def get_svn_files(repo, vcs_repo, refs):
+    txn_id = refs[0]
+    files = []
+    stdout, stderr = vcs_repo.run_svn_command(
+        ['svnlook', 'changed', repo.repo_full_path, '--transaction', txn_id])
+
+    svn_op_to_rc_op = {
+        'A': 'A',
+        'U': 'M',
+        'D': 'D',
+    }
+
+    for entry in stdout.splitlines():
+        parsed_entry = {
+            'raw_diff': '',
+            'filename': '',
+            'chunks': [],
+            'ops': {},
+            'file_size': 0
+        }
+
+        op = entry[0]
+        path = entry[1:].strip()
+
+        rc_op = svn_op_to_rc_op.get(op) or '?'
+        parsed_entry['filename'] = path
+        parsed_entry['operation'] = rc_op
+
+        if rc_op in ['A', 'M']:
+            stdout, stderr = vcs_repo.run_svn_command(
+                ['svnlook', 'filesize', repo.repo_full_path, path, '--transaction', txn_id])
+            file_size = int(stdout.strip())
+            parsed_entry['file_size'] = file_size
+
+        files.append(parsed_entry)
+
+    return files
+
+
+def get_hg_files(repo, vcs_repo, refs):
     files = []
     return files
 
 
-def get_git_files(repo, refs):
+def get_git_files(repo, vcs_repo, refs):
     files = []
 
     for data in refs:
@@ -57,7 +96,7 @@ def get_git_files(repo, refs):
             'diff', old_rev, new_rev
         ]
 
-        stdout, stderr = repo.run_git_command(cmd, extra_env=git_env)
+        stdout, stderr = vcs_repo.run_git_command(cmd, extra_env=git_env)
         vcs_diff = GitDiff(stdout)
 
         diff_processor = diffs.DiffProcessor(vcs_diff, format='newdiff')
@@ -86,11 +125,14 @@ def run(*args, **kwargs):
     if vcs_type == 'git':
         for rev_data in kwargs['commit_ids']:
             new_environ = dict((k, v) for k, v in rev_data['git_env'])
-        files = get_git_files(vcs_repo, kwargs['commit_ids'])
+        files = get_git_files(repo, vcs_repo, kwargs['commit_ids'])
 
     if vcs_type == 'hg':
         for rev_data in kwargs['commit_ids']:
             new_environ = dict((k, v) for k, v in rev_data['hg_env'])
-        files = get_hg_files(vcs_repo, kwargs['commit_ids'])
+        files = get_hg_files(repo, vcs_repo, kwargs['commit_ids'])
+
+    if vcs_type == 'svn':
+        files = get_svn_files(repo, vcs_repo, kwargs['commit_ids'])
 
     return files

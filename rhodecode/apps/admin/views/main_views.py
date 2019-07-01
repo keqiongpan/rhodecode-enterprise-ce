@@ -20,12 +20,12 @@
 
 import logging
 
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
+from rhodecode.lib.auth import (LoginRequired, NotAnonymous)
 from rhodecode.model.db import PullRequest
 
 
@@ -33,14 +33,23 @@ log = logging.getLogger(__name__)
 
 
 class AdminMainView(BaseAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        return c
 
     @LoginRequired()
-    @HasPermissionAllDecorator('hg.admin')
+    @NotAnonymous()
     @view_config(
-        route_name='admin_home', request_method='GET')
+        route_name='admin_home', request_method='GET',
+        renderer='rhodecode:templates/admin/main.mako')
     def admin_main(self):
-        # redirect _admin to audit logs...
-        raise HTTPFound(h.route_path('admin_audit_logs'))
+        c = self.load_default_context()
+        c.active = 'admin'
+
+        if not (c.is_super_admin or c.is_delegated_admin):
+            raise HTTPNotFound()
+
+        return self._get_template_context(c)
 
     @LoginRequired()
     @view_config(route_name='pull_requests_global_0', request_method='GET')
@@ -49,8 +58,7 @@ class AdminMainView(BaseAppView):
     def pull_requests(self):
         """
         Global redirect for Pull Requests
-
-        :param pull_request_id: id of pull requests in the system
+        pull_request_id: id of pull requests in the system
         """
 
         pull_request = PullRequest.get_or_404(

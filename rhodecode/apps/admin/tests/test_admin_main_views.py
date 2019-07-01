@@ -46,10 +46,10 @@ def route_path(name, params=None, **kwargs):
 
 class TestAdminMainView(TestController):
 
-    def test_redirect_admin_home(self):
+    def test_access_admin_home(self):
         self.log_user()
-        response = self.app.get(route_path('admin_home'), status=302)
-        assert response.location.endswith('/audit_logs')
+        response = self.app.get(route_path('admin_home'), status=200)
+        response.mustcontain("Administration area")
 
     def test_redirect_pull_request_view(self, view):
         self.log_user()

@@ -46,6 +46,8 @@ var CommitsController = function () {
         self.$graphCanvas.html('');
 
         var edgeData = $("[data-graph]").data('graph') || this.$graphCanvas.data('graph') || [];
+        var prev_link = $('.load-more-commits').find('.prev-commits').get(0);
+        var next_link = $('.load-more-commits').find('.next-commits').get(0);
 
         // Determine max number of edges per row in graph
         var edgeCount = 1;
@@ -57,10 +59,20 @@ var CommitsController = function () {
             });
         });
 
+        if (prev_link && next_link) {
+            var graph_padding = -64;
+        }
+        else if (next_link) {
+            var graph_padding = -32;
+        } else {
+            var graph_padding = 0;
+        }
+
         var x_step = Math.min(10, Math.floor(86 / edgeCount));
+        var height = $('#changesets').find('.commits-range').height() + graph_padding;
         var graph_options = {
             width: 100,
-            height: $('#changesets').find('.commits-range').height(),
+            height: height,
             x_step: x_step,
             y_step: 42,
             dotRadius: 3.5,
@@ -85,11 +97,11 @@ var CommitsController = function () {
         this.$graphCanvas.commits(graph_options);
 
         this.setLabelText(edgeData);
-        if ($('.load-more-commits').find('.prev-commits').get(0)) {
-            var padding = 75;
 
-        } else {
-            var padding = 43;
+        var padding = 90;
+        if (prev_link) {
+            padding += 34;
+
         }
         $('#graph_nodes').css({'padding-top': padding});
     };
@@ -112,10 +124,10 @@ var CommitsController = function () {
         }
 
         if (urlData['commit_id'] && urlData['f_path']) {
-            return pyroutes.url('repo_changelog_elements_file', urlData);
+            return pyroutes.url('repo_commits_elements_file', urlData);
         }
         else {
-            return pyroutes.url('repo_changelog_elements', urlData);
+            return pyroutes.url('repo_commits_elements', urlData);
         }
 
     };

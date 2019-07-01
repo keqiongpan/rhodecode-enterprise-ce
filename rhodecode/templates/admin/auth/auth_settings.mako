@@ -8,29 +8,26 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${h.link_to(_('Admin'),h.route_path('admin_home'))}
-    &raquo;
-    ${_('Authentication Plugins')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='authentication')}
+</%def>
+
 <%def name="main()">
 
 <div class="box">
-  <div class="title">
-    ${self.breadcrumbs()}
-  </div>
 
   <div class='sidebar-col-wrapper'>
 
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           % for item in resource.get_root().get_nav_list():
-            <li ${'class=active' if item == resource else ''}>
+            <li ${('class=active' if item == resource else '')}>
               <a href="${request.resource_path(item, route_name='auth_home')}">${item.display_name}</a>
             </li>
           % endfor
@@ -66,10 +63,10 @@
                   <th>${_('Plugin ID')}</th>
                   <th>${_('Enabled')}</th>
                   %for plugin in available_plugins:
-                      <tr class="${'inactive' if (not plugin.is_active() and plugin.get_id() in enabled_plugins) else ''}">
+                      <tr class="${('inactive' if (not plugin.is_active() and plugin.get_id() in enabled_plugins) else '')}">
                           <td>
-                            <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${'btn-success' if plugin.get_id() in enabled_plugins else ''}">
-                              ${_('activated') if plugin.get_id() in enabled_plugins else _('not active')}
+                            <span plugin_id="${plugin.get_id()}" class="toggle-plugin btn ${('btn-success' if plugin.get_id() in enabled_plugins else '')}">
+                              ${(_('activated') if plugin.get_id() in enabled_plugins else _('not active'))}
                             </span>
                           </td>
                           <td>${plugin.get_display_name()}</td>

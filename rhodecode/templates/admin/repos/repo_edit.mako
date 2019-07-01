@@ -20,7 +20,7 @@
 </%def>
 
 <%def name="menu_bar_subnav()">
-    ${self.repo_menu(active='options')}
+    ${self.repo_menu(active='settings')}
 </%def>
 
 <%def name="main_content()">
@@ -34,10 +34,6 @@
 
 <%def name="main()">
 <div class="box">
-  <div class="title">
-      ${self.repo_page_title(c.rhodecode_db_repo)}
-
-  </div>
 
   <div class="sidebar-col-wrapper scw-small">
     <div class="sidebar">

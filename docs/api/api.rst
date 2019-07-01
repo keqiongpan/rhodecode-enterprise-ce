@@ -204,6 +204,7 @@ are not required in args.
    methods/pull-request-methods
    methods/repo-methods
    methods/repo-group-methods
+   methods/search-methods
    methods/server-methods
    methods/user-methods
    methods/user-group-methods

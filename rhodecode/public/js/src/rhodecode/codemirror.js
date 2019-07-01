@@ -204,7 +204,12 @@ var CodeMirrorCompleteAfter = function(cm, pred) {
 };
 
 var initCodeMirror = function(textAreadId, resetUrl, focus, options) {
-  var ta = $('#' + textAreadId).get(0);
+  if (textAreadId.substr(0,1) === "#"){
+    var ta = $(textAreadId).get(0);
+  }else {
+    var ta = $('#' + textAreadId).get(0);
+  }
+
   if (focus === undefined) {
       focus = true;
   }
@@ -641,18 +646,6 @@ var fillCodeMirrorOptions = function(targetSelect) {
     var opt = new Option(m.name, m.mime);
     $(opt).attr('mode', m.mode);
     modes_select.append(opt);
-  }
-};
-
-var CodeMirrorPreviewEnable = function(edit_mode) {
-  // in case it a preview enabled mode enable the button
-  if (['markdown', 'rst', 'gfm'].indexOf(edit_mode) !== -1) {
-    $('#render_preview').removeClass('hidden');
-  }
-  else {
-    if (!$('#render_preview').hasClass('hidden')) {
-      $('#render_preview').addClass('hidden');
-    }
   }
 };
 

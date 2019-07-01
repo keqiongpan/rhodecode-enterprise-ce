@@ -5,13 +5,13 @@ attrs==18.2.0
 billiard==3.5.0.3
 chameleon==2.24
 cffi==1.12.2
-ecdsa==0.13
+ecdsa==0.13.2
 hupper==1.6.1
 gnureadline==6.3.8
 jinja2==2.9.6
 jsonschema==2.6.0
-pathlib2==2.3.3
 pyramid-jinja2==2.7
+pluggy==0.11.0
 setproctitle==1.1.10
 scandir==1.10.0
 tempita==0.5.2

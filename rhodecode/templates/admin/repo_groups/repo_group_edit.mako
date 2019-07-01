@@ -13,7 +13,7 @@
 </%def>
 
 <%def name="menu_bar_subnav()">
-    ${self.repo_group_menu(active='options')}
+    ${self.repo_group_menu(active='settings')}
 </%def>
 
 <%def name="main_content()">
@@ -23,10 +23,6 @@
 <%def name="main()">
 
 <div class="box">
-  <div class="title">
-    ${self.repo_group_page_title(c.repo_group)}
-  </div>
-
   <div class="sidebar-col-wrapper">
     ##main
     <div class="sidebar">

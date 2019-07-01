@@ -1,5 +1,11 @@
-<div id="file-tree-wrapper" class="browser-body ${'full-load' if c.full_load else ''}">
-    <table class="code-browser rctable">
+<%
+    if request.GET.get('at'):
+        query={'at': request.GET.get('at')}
+    else:
+        query=None
+%>
+<div id="file-tree-wrapper" class="browser-body ${('full-load' if c.full_load else '')}">
+    <table class="code-browser rctable repo_summary">
         <thead>
             <tr>
                 <th>${_('Name')}</th>
@@ -11,19 +17,13 @@
         </thead>
 
         <tbody id="tbody">
-          %if c.file.parent:
-          <tr class="parity0">
-            <td class="td-componentname">
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.file.parent.path)}" class="pjax-link">
-                <i class="icon-directory"></i>..
-              </a>
+        <tr>
+            <td colspan="5">
+
+                ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'), limit_items=True)}
+
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          %endif
+        </tr>
           %for cnt,node in enumerate(c.file):
           <tr class="parity${cnt%2}">
             <td class="td-componentname">
@@ -38,8 +38,9 @@
                 % endif
               </span>
             % else:
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path))}" class="pjax-link">
-                <i class="${'icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir'}"></i>${node.name}
+
+              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path), _query=query)}">
+                <i class="${('icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir')}"></i>${node.name}
               </a>
             % endif
             </td>

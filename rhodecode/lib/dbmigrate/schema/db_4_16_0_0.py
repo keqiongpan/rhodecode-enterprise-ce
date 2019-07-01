@@ -2278,7 +2278,7 @@ class Repository(Base, BaseModel):
                 # if yes, we use the current timestamp instead. Imagine you get
                 # old commit pushed 1y ago, we'd set last update 1y to ago.
                 last_change = _default
-            log.debug('updated repo %s with new cs cache %s',
+            log.debug('updated repo %s with new commit cache %s',
                       self.repo_name, cs_cache)
             self.updated_on = last_change
             self.changeset_cache = cs_cache

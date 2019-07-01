@@ -72,6 +72,7 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(_renderer_type).search(commit)
             if readme_node:
+                log.debug('Found README node: %s', readme_node)
                 relative_urls = {
                     'raw': h.route_path(
                         'repo_file_raw', repo_name=_repo_name,
@@ -82,7 +83,8 @@ class RepoSummaryView(RepoAppView):
                 }
                 readme_data = self._render_readme_or_none(
                     commit, readme_node, relative_urls)
-                readme_filename = readme_node.path
+                readme_filename = readme_node.unicode_path
+
             return readme_data, readme_filename
 
         inv_context_manager = rc_cache.InvalidationContext(
@@ -202,6 +204,10 @@ class RepoSummaryView(RepoAppView):
         # Prepare the clone URL
         self._prepare_and_set_clone_url(c)
 
+        # update every 5 min
+        if self.db_repo.last_commit_cache_update_diff > 60 * 5:
+            self.db_repo.update_commit_cache()
+
         # If enabled, get statistics data
 
         c.show_stats = bool(self.db_repo.enable_statistics)
@@ -233,8 +239,6 @@ class RepoSummaryView(RepoAppView):
         c.enable_downloads = self.db_repo.enable_downloads
         c.repository_followers = scm_model.get_followers(self.db_repo)
         c.repository_forks = scm_model.get_forks(self.db_repo)
-        c.repository_is_user_following = scm_model.is_following_repo(
-            self.db_repo_name, self._rhodecode_user.user_id)
 
         # first interaction with the VCS instance after here...
         if c.repository_requirements_missing:
@@ -319,8 +323,7 @@ class RepoSummaryView(RepoAppView):
             (_("Tag"), repo.tags, 'tag'),
             (_("Bookmark"), repo.bookmarks, 'book'),
         ]
-        res = self._create_reference_data(
-            repo, self.db_repo_name, refs_to_create)
+        res = self._create_reference_data(repo, self.db_repo_name, refs_to_create)
         data = {
             'more': False,
             'results': res
@@ -367,8 +370,7 @@ class RepoSummaryView(RepoAppView):
                 })
         return result
 
-    def _create_reference_items(self, repo, full_repo_name, refs, ref_type,
-                                format_ref_id):
+    def _create_reference_items(self, repo, full_repo_name, refs, ref_type, format_ref_id):
         result = []
         is_svn = h.is_svn(repo)
         for ref_name, raw_id in refs.iteritems():
@@ -380,6 +382,7 @@ class RepoSummaryView(RepoAppView):
                 'raw_id': raw_id,
                 'type': ref_type,
                 'files_url': files_url,
+                'idx': 0,
             })
         return result
 

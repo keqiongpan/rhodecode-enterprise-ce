@@ -79,9 +79,17 @@ class TestInMemoryCommit(BackendTestMixin):
         self.commit()
         self.assert_succesful_commit(nodes)
 
-    @pytest.mark.skip_backends(
-        'svn', reason="Svn does not support commits on branches.")
-    def test_add_on_branch(self, nodes):
+    @pytest.mark.backends("hg")
+    def test_add_on_branch_hg(self, nodes):
+        for node in nodes:
+            self.imc.add(node)
+        self.commit(branch=u'stable')
+        self.assert_succesful_commit(nodes)
+
+    @pytest.mark.backends("git")
+    def test_add_on_branch_git(self, nodes):
+        self.repo._checkout('stable', create=True)
+
         for node in nodes:
             self.imc.add(node)
         self.commit(branch=u'stable')

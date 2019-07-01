@@ -199,6 +199,7 @@ class _GetError(object):
         if form_errors and field_name in form_errors:
             return literal(tmpl % form_errors.get(field_name))
 
+
 get_error = _GetError()
 
 
@@ -214,38 +215,45 @@ class _ToolTip(object):
         tooltip_title = escape(tooltip_title)
         tooltip_title = tooltip_title.replace('<', '&lt;').replace('>', '&gt;')
         return tooltip_title
+
+
 tooltip = _ToolTip()
 
+files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
 
-def files_breadcrumbs(repo_name, commit_id, file_path):
+
+def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
 
-    # TODO: johbo: Is this always a url like path, or is this operating
-    # system dependent?
+    route_qry = {'at': at_ref} if at_ref else None
+
+    # first segment is a `..` link to repo files
+    root_name = literal(u'<i class="icon-home"></i>')
+    url_segments = [
+        link_to(
+            root_name,
+            route_path(
+                'repo_files',
+                repo_name=repo_name,
+                commit_id=commit_id,
+                f_path='',
+                _query=route_qry),
+        )]
+
     path_segments = file_path.split('/')
-
-    repo_name_html = escape(repo_name)
-    if len(path_segments) == 1 and path_segments[0] == '':
-        url_segments = [repo_name_html]
-    else:
-        url_segments = [
-            link_to(
-                repo_name_html,
-                route_path(
-                    'repo_files',
-                    repo_name=repo_name,
-                    commit_id=commit_id,
-                    f_path=''),
-                class_='pjax-link')]
-
     last_cnt = len(path_segments) - 1
     for cnt, segment in enumerate(path_segments):
         if not segment:
             continue
         segment_html = escape(segment)
 
-        if cnt != last_cnt:
+        last_item = cnt == last_cnt
+
+        if last_item and linkify_last_item is False:
+            # plain version
+            url_segments.append(segment_html)
+        else:
             url_segments.append(
                 link_to(
                     segment_html,
@@ -253,12 +261,32 @@ def files_breadcrumbs(repo_name, commit_id, file_path):
                         'repo_files',
                         repo_name=repo_name,
                         commit_id=commit_id,
-                        f_path='/'.join(path_segments[:cnt + 1])),
-                    class_='pjax-link'))
-        else:
-            url_segments.append(segment_html)
+                        f_path='/'.join(path_segments[:cnt + 1]),
+                        _query=route_qry),
+                ))
 
-    return literal('/'.join(url_segments))
+    limited_url_segments = url_segments[:1] + ['...'] + url_segments[-5:]
+    if limit_items and len(limited_url_segments) < len(url_segments):
+        url_segments = limited_url_segments
+
+    full_path = file_path
+    icon = files_icon.format(escape(full_path))
+    if file_path == '':
+        return root_name
+    else:
+        return literal(' / '.join(url_segments) + icon)
+
+
+def files_url_data(request):
+    matchdict = request.matchdict
+
+    if 'f_path' not in matchdict:
+        matchdict['f_path'] = ''
+
+    if 'commit_id' not in matchdict:
+        matchdict['commit_id'] = 'tip'
+
+    return json.dumps(matchdict)
 
 
 def code_highlight(code, lexer, formatter, use_hl_filter=False):
@@ -1196,7 +1224,7 @@ class InitialsGravatar(object):
             </text>
         </svg>""".format(
             size=self.size,
-            f_size=self.size/1.85,  # scale the text inside the box nicely
+            f_size=self.size/2.05,  # scale the text inside the box nicely
             background=self.background,
             text_color=self.text_color,
             text=initials.upper(),
@@ -1486,10 +1514,12 @@ def breadcrumb_repo_link(repo):
     """
 
     path = [
-        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name))
+        link_to(group.name, route_path('repo_group_home', repo_group_name=group.group_name),
+                title='last change:{}'.format(format_date(group.last_commit_change)))
         for group in repo.groups_with_parents
     ] + [
-        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name))
+        link_to(repo.just_name, route_path('repo_summary', repo_name=repo.repo_name),
+                title='last change:{}'.format(format_date(repo.last_commit_change)))
     ]
 
     return literal(' &raquo; '.join(path))
@@ -1507,11 +1537,13 @@ def breadcrumb_repo_group_link(repo_group):
 
     path = [
         link_to(group.name,
-                route_path('repo_group_home', repo_group_name=group.group_name))
+                route_path('repo_group_home', repo_group_name=group.group_name),
+                title='last change:{}'.format(format_date(group.last_commit_change)))
         for group in repo_group.parents
     ] + [
         link_to(repo_group.name,
-                route_path('repo_group_home', repo_group_name=repo_group.group_name))
+                route_path('repo_group_home', repo_group_name=repo_group.group_name),
+                title='last change:{}'.format(format_date(repo_group.last_commit_change)))
     ]
 
     return literal(' &raquo; '.join(path))
@@ -1907,23 +1939,26 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
     select_html = select(name, selected, options, **attrs)
+
     select2 = """
         <script>
             $(document).ready(function() {
                   $('#%s').select2({
-                      containerCssClass: 'drop-menu',
+                      containerCssClass: 'drop-menu %s',
                       dropdownCssClass: 'drop-menu-dropdown',
                       dropdownAutoWidth: true%s
                   });
             });
         </script>
     """
+
     filter_option = """,
                         minimumResultsForSearch: -1
     """
     input_id = attrs.get('id') or name
+    extra_classes = ' '.join(attrs.pop('extra_classes', []))
     filter_enabled = "" if enable_filter else filter_option
-    select_script = literal(select2 % (input_id, filter_enabled))
+    select_script = literal(select2 % (input_id, extra_classes, filter_enabled))
 
     return literal(select_html+select_script)
 
@@ -1944,7 +1979,7 @@ def get_visual_attr(tmpl_context_var, attr_name):
 
 def get_last_path_part(file_node):
     if not file_node.path:
-        return u''
+        return u'/'
 
     path = safe_unicode(file_node.path.split('/')[-1])
     return u'../' + path
@@ -2033,7 +2068,8 @@ def reviewer_as_json(*args, **kwargs):
 def get_repo_view_type(request):
     route_name = request.matched_route.name
     route_to_view_type = {
-        'repo_changelog': 'changelog',
+        'repo_changelog': 'commits',
+        'repo_commits': 'commits',
         'repo_files': 'files',
         'repo_summary': 'summary',
         'repo_commit': 'commit'

@@ -26,12 +26,12 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='repositories')}
+</%def>
+
 <%def name="main()">
     <div class="box">
-        <!-- box / title -->
-        <div class="title">
-            ${self.breadcrumbs()}
-        </div>
         <%include file="repo_add_base.mako"/>
     </div>
 </%def>

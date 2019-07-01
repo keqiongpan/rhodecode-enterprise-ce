@@ -48,8 +48,8 @@
          </a>
       </li>
       <li>
-         <a title="${_('Changelog')}" href="${h.route_path('repo_changelog',repo_name=repo_name)}">
-         <span>${_('Changelog')}</span>
+         <a title="${_('Commits')}" href="${h.route_path('repo_commits',repo_name=repo_name)}">
+         <span>${_('Commits')}</span>
          </a>
       </li>
       <li>
@@ -205,7 +205,7 @@
 <%def name="repo_group_name(repo_group_name, children_groups=None)">
   <div>
     <a href="${h.route_path('repo_group_home', repo_group_name=repo_group_name)}">
-    <i class="icon-folder-close" title="${_('Repository group')}" style="font-size: 16px"></i>
+    <i class="icon-repo-group" title="${_('Repository group')}" style="font-size: 14px"></i>
       %if children_groups:
           ${h.literal(' &raquo; '.join(children_groups))}
       %else:
@@ -376,6 +376,30 @@
     ${base.gravatar_with_user(full_contact, 16)}
 </%def>
 
+
+## ARTIFACT RENDERERS
+
+<%def name="repo_artifact_uid(repo_name, file_uid)">
+    <code><a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">${file_uid}</a></code>
+</%def>
+
+<%def name="repo_artifact_uid_action(repo_name, file_uid)">
+    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
+</%def>
+
+<%def name="repo_artifact_actions(repo_name, file_store_id, file_uid)">
+##  <div class="grid_edit">
+##     <a href="#Edit" title="${_('Edit')}">${_('Edit')}</a>
+##  </div>
+% if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
+    <div class="grid_delete">
+    ${h.secure_form(h.route_path('repo_artifacts_delete', repo_name=repo_name, uid=file_store_id), request=request)}
+      ${h.submit('remove_',_('Delete'),id="remove_artifact_%s" % file_store_id, class_="btn btn-link btn-danger",
+      onclick="return confirm('"+_('Confirm to delete this artifact: %s') % file_uid+"');")}
+    ${h.end_form()}
+ </div>
+% endif
+</%def>
 
 <%def name="markup_form(form_id, form_text='', help_text=None)">
 

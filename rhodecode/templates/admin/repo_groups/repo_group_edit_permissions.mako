@@ -2,7 +2,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Group Permissions')}</h3>
+        <h3 class="panel-title">${_('Repository Group Permissions: {}').format(c.repo_group.name)}</h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_repo_group_perms_update', repo_group_name=c.repo_group.group_name), request=request)}
@@ -141,7 +141,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'group.admin', checked=_user_group.permission=='group.admin')}</td>
                     <td class="td-componentname">
                         <i class="icon-user-group"></i>
-                        %if h.HasPermissionAny('hg.admin')():
+                        %if c.is_super_admin:
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}
                          </a>

@@ -90,7 +90,7 @@ def includeme(config):
     # Files
     config.add_route(
         name='repo_archivefile',
-        pattern='/{repo_name:.*?[^/]}/archive/{fname}', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/archive/{fname:.*}', repo_route=True)
 
     config.add_route(
         name='repo_files_diff',
@@ -172,6 +172,10 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/add_file/{commit_id}/{f_path:.*}',
         repo_route=True)
     config.add_route(
+        name='repo_files_upload_file',
+        pattern='/{repo_name:.*?[^/]}/upload_file/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
         name='repo_files_create_file',
         pattern='/{repo_name:.*?[^/]}/create_file/{commit_id}/{f_path:.*}',
         repo_route=True)
@@ -189,19 +193,27 @@ def includeme(config):
         name='repo_stats',
         pattern='/{repo_name:.*?[^/]}/repo_stats/{commit_id}', repo_route=True)
 
-    # Changelog
+    # Commits
+    config.add_route(
+        name='repo_commits',
+        pattern='/{repo_name:.*?[^/]}/commits', repo_route=True)
+    config.add_route(
+        name='repo_commits_file',
+        pattern='/{repo_name:.*?[^/]}/commits/{commit_id}/{f_path:.*}', repo_route=True)
+    config.add_route(
+        name='repo_commits_elements',
+        pattern='/{repo_name:.*?[^/]}/commits_elements', repo_route=True)
+    config.add_route(
+        name='repo_commits_elements_file',
+        pattern='/{repo_name:.*?[^/]}/commits_elements/{commit_id}/{f_path:.*}', repo_route=True)
+
+    # Changelog (old deprecated name for commits page)
     config.add_route(
         name='repo_changelog',
         pattern='/{repo_name:.*?[^/]}/changelog', repo_route=True)
     config.add_route(
         name='repo_changelog_file',
         pattern='/{repo_name:.*?[^/]}/changelog/{commit_id}/{f_path:.*}', repo_route=True)
-    config.add_route(
-        name='repo_changelog_elements',
-        pattern='/{repo_name:.*?[^/]}/changelog_elements', repo_route=True)
-    config.add_route(
-        name='repo_changelog_elements_file',
-        pattern='/{repo_name:.*?[^/]}/changelog_elements/{commit_id}/{f_path:.*}', repo_route=True)
 
     # Compare
     config.add_route(
@@ -311,6 +323,11 @@ def includeme(config):
         name='pullrequest_comment_delete',
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment/{comment_id}/delete',
         repo_route=True, repo_accepted_types=['hg', 'git'])
+
+    # Artifacts, (EE feature)
+    config.add_route(
+        name='repo_artifacts_list',
+        pattern='/{repo_name:.*?[^/]}/artifacts', repo_route=True)
 
     # Settings
     config.add_route(

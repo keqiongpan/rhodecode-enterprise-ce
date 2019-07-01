@@ -26,14 +26,10 @@ def upgrade(migrate_engine):
     op = Operations(context)
 
     repo_group = db_4_16_0_2.RepoGroup.__table__
-    
+
     with op.batch_alter_table(repo_group.name) as batch_op:
         batch_op.alter_column("repo_group_name_hash", nullable=False)
 
 
 def downgrade(migrate_engine):
-    pass
-
-
-def _generate_repo_group_name_hashes(models, op, session):
     pass

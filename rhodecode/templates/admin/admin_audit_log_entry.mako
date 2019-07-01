@@ -9,20 +9,23 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Audit long entry')} ${c.audit_log_entry.entry_id}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='admin')}
 </%def>
+
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='audit_logs')}
+</%def>
+
 <%def name="main()">
 <div class="box">
-    <!-- box / title -->
+
     <div class="title">
-        ${self.breadcrumbs()}
+        ${_('Audit long entry')} ${c.audit_log_entry.entry_id}
     </div>
-    <!-- end box / title -->
+
     <div class="table">
         <div id="user_log">
             <table class="rctable audit-log">
