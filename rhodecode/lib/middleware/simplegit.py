@@ -142,7 +142,7 @@ class SimpleGit(simplevcs.SimpleVCS):
         return self.scm_app.create_git_wsgi_app(
             repo_path, repo_name, config)
 
-    def _create_config(self, extras, repo_name):
+    def _create_config(self, extras, repo_name, scheme='http'):
         extras['git_update_server_info'] = utils2.str2bool(
             rhodecode.CONFIG.get('git_update_server_info'))
 
@@ -152,4 +152,5 @@ class SimpleGit(simplevcs.SimpleVCS):
         extras['git_lfs_enabled'] = utils2.str2bool(
             config.get('vcs_git_lfs', 'enabled'))
         extras['git_lfs_store_path'] = custom_store or default_lfs_store()
+        extras['git_lfs_http_scheme'] = scheme
         return extras

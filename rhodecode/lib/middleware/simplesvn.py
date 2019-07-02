@@ -219,7 +219,7 @@ class SimpleSvn(simplevcs.SimpleVCS):
         conf = self.repo_vcs_config
         return str2bool(conf.get('vcs_svn_proxy', 'http_requests_enabled'))
 
-    def _create_config(self, extras, repo_name):
+    def _create_config(self, extras, repo_name, scheme='http'):
         conf = self.repo_vcs_config
         server_url = conf.get('vcs_svn_proxy', 'http_server_url')
         server_url = server_url or self.DEFAULT_HTTP_SERVER

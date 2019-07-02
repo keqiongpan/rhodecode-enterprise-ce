@@ -69,7 +69,7 @@ class StubVCSController(simplevcs.SimpleVCS):
             return self.stub_response_body
         return fake_app
 
-    def _create_config(self, extras, repo_name):
+    def _create_config(self, extras, repo_name, scheme='http'):
         return None
 
 

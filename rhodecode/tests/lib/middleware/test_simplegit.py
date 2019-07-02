@@ -121,7 +121,8 @@ def test_get_config(user_util, baseapp, request_stub):
     expected_config.update({
         'git_update_server_info': False,
         'git_lfs_enabled': False,
-        'git_lfs_store_path': git_config['git_lfs_store_path']
+        'git_lfs_store_path': git_config['git_lfs_store_path'],
+        'git_lfs_http_scheme': 'http'
     })
 
     assert git_config == expected_config

@@ -360,6 +360,13 @@ class SimpleVCS(object):
 
         return perm_result
 
+    def _get_http_scheme(self, environ):
+        try:
+            return environ['wsgi.url_scheme']
+        except Exception:
+            log.exception('Failed to read http scheme')
+            return 'http'
+
     def _check_ssl(self, environ, start_response):
         """
         Checks the SSL check flag and returns False if SSL is not present
@@ -597,7 +604,9 @@ class SimpleVCS(object):
             extras, environ, action, txn_id=txn_id)
         log.debug('HOOKS extras is %s', extras)
 
-        config = self._create_config(extras, self.acl_repo_name)
+        http_scheme = self._get_http_scheme(environ)
+
+        config = self._create_config(extras, self.acl_repo_name, scheme=http_scheme)
         app = self._create_wsgi_app(repo_path, self.url_repo_name, config)
         with callback_daemon:
             app.rc_extras = extras
@@ -643,7 +652,7 @@ class SimpleVCS(object):
         """Return the WSGI app that will finally handle the request."""
         raise NotImplementedError()
 
-    def _create_config(self, extras, repo_name):
+    def _create_config(self, extras, repo_name, scheme='http'):
         """Create a safe config representation."""
         raise NotImplementedError()
 

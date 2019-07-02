@@ -153,7 +153,7 @@ class SimpleHg(simplevcs.SimpleVCS):
     def _create_wsgi_app(self, repo_path, repo_name, config):
         return self.scm_app.create_hg_wsgi_app(repo_path, repo_name, config)
 
-    def _create_config(self, extras, repo_name):
+    def _create_config(self, extras, repo_name, scheme='http'):
         config = utils.make_db_config(repo=repo_name)
         config.set('rhodecode', 'RC_SCM_DATA', json.dumps(extras))
 
