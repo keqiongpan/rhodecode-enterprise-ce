@@ -104,6 +104,13 @@ var CommitsController = function () {
 
         }
         $('#graph_nodes').css({'padding-top': padding});
+
+        $.each($('.message.truncate'), function(idx, value) {
+            if(!(value.offsetWidth < value.scrollWidth)){
+                $(this).closest('td').siblings('.expand_commit').find('i').hide();
+            }
+        });
+
     };
 
     this.getChunkUrl = function (page, chunk, branch, commit_id, f_path) {
