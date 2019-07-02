@@ -37,7 +37,8 @@
 
 <%def name="menu_bar_subnav()">
     %if c.repo_name:
-        ${self.repo_menu(active='summary')}
+        <% active_entry = {'content':'files', 'path':'files', 'commit':'commits'}.get(c.search_type, 'summary')%>
+        ${self.repo_menu(active=active_entry)}
     %elif c.repo_group_name:
         ${self.repo_group_menu(active='home')}
     %endif
