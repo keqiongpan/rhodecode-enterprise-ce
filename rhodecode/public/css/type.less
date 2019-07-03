@@ -46,6 +46,13 @@ h6, .h6 { font-size: 1em;    font-weight: @text-bold-weight;     font-family: @t
 .breadcrumbs {
     font-size: @repo-title-fontsize;
     margin: 0;
+    width: ~"calc(100% - 180px)";
+    float: left;
+
+    h4 {
+        font-size: @basefontsize;
+        margin-bottom: 15px;
+    }
 }
 
 .breadcrumbs_light {
@@ -156,6 +163,19 @@ pre {
 
 // Emphasis & misc
 // -------------------------
+.discreet {
+  color: @grey4;
+  font-size: 85%;
+  font-weight: normal;
+
+  a {
+    color: @grey4;
+
+    &:hover {
+      color: @rcdarkblue;
+    }
+  }
+}
 
 small,
 .small {
@@ -231,7 +251,8 @@ mark,
     clear: both;
     float: left;
     width: 100%;
-    margin: @pagepadding/2 0 @pagepadding;
+    margin: @pagepadding/2 0 @pagepadding/4;
+    min-height: 25px;
 
     .breadcrumbs {
         float: left;
@@ -285,6 +306,11 @@ mark,
     }
 
     .title-content {
+
+      &.repo-title {
+        float: none
+      }
+
       float: left;
       margin: 0;
       padding: 0;

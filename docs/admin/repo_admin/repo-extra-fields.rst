@@ -29,7 +29,7 @@ To configure extra fields per repository, use the following steps:
    beside the |repo| to which you wish to add extra fields.
 2. On the |repo| settings page, select the :guilabel:`Extra fields` tab.
 
-.. image:: ../images/extra-repo-fields.png
+.. image:: ../../images/extra-repo-fields.png
 
 The most important is the `New field key` variable which under the value will
 be stored. It needs to be unique for each repository. The label and description

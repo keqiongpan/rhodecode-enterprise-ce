@@ -113,7 +113,7 @@ class RepoChangelogView(RepoAppView):
             h.flash('Branch {} is not found.'.format(h.escape(branch_name)),
                     category='warning')
             redirect_url = h.route_path(
-                'repo_changelog_file', repo_name=repo_name,
+                'repo_commits_file', repo_name=repo_name,
                 commit_id=branch_name, f_path=f_path or '')
             raise HTTPFound(redirect_url)
 
@@ -127,13 +127,13 @@ class RepoChangelogView(RepoAppView):
             if f_path:
                 # changelog for file
                 return h.route_path(
-                    'repo_changelog_file',
+                    'repo_commits_file',
                     repo_name=c.rhodecode_db_repo.repo_name,
                     commit_id=commit_id, f_path=f_path,
                     _query=query_params)
             else:
                 return h.route_path(
-                    'repo_changelog',
+                    'repo_commits',
                     repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
 
         c.total_cs = len(collection)
@@ -171,11 +171,18 @@ class RepoChangelogView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
+        route_name='repo_commits', request_method='GET',
+        renderer='rhodecode:templates/commits/changelog.mako')
+    @view_config(
+        route_name='repo_commits_file', request_method='GET',
+        renderer='rhodecode:templates/commits/changelog.mako')
+    # old routes for backward compat
+    @view_config(
         route_name='repo_changelog', request_method='GET',
-        renderer='rhodecode:templates/changelog/changelog.mako')
+        renderer='rhodecode:templates/commits/changelog.mako')
     @view_config(
         route_name='repo_changelog_file', request_method='GET',
-        renderer='rhodecode:templates/changelog/changelog.mako')
+        renderer='rhodecode:templates/commits/changelog.mako')
     def repo_changelog(self):
         c = self.load_default_context()
 
@@ -224,7 +231,7 @@ class RepoChangelogView(RepoAppView):
                     except RepositoryError as e:
                         h.flash(safe_str(e), category='warning')
                         redirect_url = h.route_path(
-                            'repo_changelog', repo_name=self.db_repo_name)
+                            'repo_commits', repo_name=self.db_repo_name)
                         raise HTTPFound(redirect_url)
                 collection = list(reversed(collection))
             else:
@@ -246,14 +253,14 @@ class RepoChangelogView(RepoAppView):
             log.exception(safe_str(e))
             h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPFound(
-                h.route_path('repo_changelog', repo_name=self.db_repo_name))
+                h.route_path('repo_commits', repo_name=self.db_repo_name))
 
         if partial_xhr or self.request.environ.get('HTTP_X_PJAX'):
             # case when loading dynamic file history in file view
             # loading from ajax, we don't want the first result, it's popped
             # in the code above
             html = render(
-                'rhodecode:templates/changelog/changelog_file_history.mako',
+                'rhodecode:templates/commits/changelog_file_history.mako',
                 self._get_template_context(c), self.request)
             return Response(html)
 
@@ -271,14 +278,14 @@ class RepoChangelogView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
-        route_name='repo_changelog_elements', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/changelog/changelog_elements.mako',
+        route_name='repo_commits_elements', request_method=('GET', 'POST'),
+        renderer='rhodecode:templates/commits/changelog_elements.mako',
         xhr=True)
     @view_config(
-        route_name='repo_changelog_elements_file', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/changelog/changelog_elements.mako',
+        route_name='repo_commits_elements_file', request_method=('GET', 'POST'),
+        renderer='rhodecode:templates/commits/changelog_elements.mako',
         xhr=True)
-    def repo_changelog_elements(self):
+    def repo_commits_elements(self):
         c = self.load_default_context()
         commit_id = self.request.matchdict.get('commit_id')
         f_path = self._get_f_path(self.request.matchdict)
@@ -312,7 +319,7 @@ class RepoChangelogView(RepoAppView):
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
                 raise HTTPFound(
-                    h.route_path('repo_changelog', repo_name=self.db_repo_name))
+                    h.route_path('repo_commits', repo_name=self.db_repo_name))
 
             collection = base_commit.get_path_history(
                 f_path, limit=hist_limit, pre_load=pre_load)

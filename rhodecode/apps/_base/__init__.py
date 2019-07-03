@@ -168,6 +168,28 @@ class BaseAppView(object):
             from rhodecode.lib.base import attach_context_attributes
             attach_context_attributes(c, self.request, self.request.user.user_id)
 
+        c.is_super_admin = c.auth_user.is_admin
+
+        c.can_create_repo = c.is_super_admin
+        c.can_create_repo_group = c.is_super_admin
+        c.can_create_user_group = c.is_super_admin
+
+        c.is_delegated_admin = False
+
+        if not c.auth_user.is_default and not c.is_super_admin:
+            c.can_create_repo = h.HasPermissionAny('hg.create.repository')(
+                user=self.request.user)
+            repositories = c.auth_user.repositories_admin or c.can_create_repo
+
+            c.can_create_repo_group = h.HasPermissionAny('hg.repogroup.create.true')(
+                user=self.request.user)
+            repository_groups = c.auth_user.repository_groups_admin or c.can_create_repo_group
+
+            c.can_create_user_group = h.HasPermissionAny('hg.usergroup.create.true')(
+                user=self.request.user)
+            user_groups = c.auth_user.user_groups_admin or c.can_create_user_group
+            # delegated admin can create, or manage some objects
+            c.is_delegated_admin = repositories or repository_groups or user_groups
         return c
 
     def _get_template_context(self, tmpl_args, **kwargs):
@@ -215,12 +237,17 @@ class RepoAppView(BaseAppView):
         c.rhodecode_db_repo = self.db_repo
         c.repo_name = self.db_repo_name
         c.repository_pull_requests = self.db_repo_pull_requests
+        c.repository_is_user_following = ScmModel().is_following_repo(
+            self.db_repo_name, self._rhodecode_user.user_id)
         self.path_filter = PathFilter(None)
 
         c.repository_requirements_missing = {}
         try:
             self.rhodecode_vcs_repo = self.db_repo.scm_instance()
-            if self.rhodecode_vcs_repo:
+            # NOTE(marcink):
+            # comparison to None since if it's an object __bool__ is expensive to
+            # calculate
+            if self.rhodecode_vcs_repo is not None:
                 path_perms = self.rhodecode_vcs_repo.get_path_permissions(
                     c.auth_user.username)
                 self.path_filter = PathFilter(path_perms)

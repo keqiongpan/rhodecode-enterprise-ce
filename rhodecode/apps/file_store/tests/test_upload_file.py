@@ -21,6 +21,7 @@ import os
 import pytest
 
 from rhodecode.lib.ext_json import json
+from rhodecode.model.db import Session, FileStore
 from rhodecode.tests import TestController
 from rhodecode.apps.file_store import utils, config_keys
 
@@ -46,9 +47,12 @@ class TestFileStoreViews(TestController):
         ('abcde-0.exe', "1234567", True),
         ('abcde-0.jpg', "xxxxx", False),
     ])
-    def test_get_files_from_store(self, fid, content, exists, tmpdir):
-        self.log_user()
+    def test_get_files_from_store(self, fid, content, exists, tmpdir, user_util):
+        user = self.log_user()
+        user_id = user['user_id']
+        repo_id = user_util.create_repo().repo_id
         store_path = self.app._pyramid_settings[config_keys.store_path]
+        store_uid = fid
 
         if exists:
             status = 200
@@ -58,17 +62,28 @@ class TestFileStoreViews(TestController):
                 f.write(content)
 
             with open(filesystem_file, 'rb') as f:
-                fid, metadata = store.save_file(f, fid, extra_metadata={'filename': fid})
+                store_uid, metadata = store.save_file(f, fid, extra_metadata={'filename': fid})
+
+            entry = FileStore.create(
+                file_uid=store_uid, filename=metadata["filename"],
+                file_hash=metadata["sha256"], file_size=metadata["size"],
+                file_display_name='file_display_name',
+                file_description='repo artifact `{}`'.format(metadata["filename"]),
+                check_acl=True, user_id=user_id,
+                scope_repo_id=repo_id
+            )
+            Session().add(entry)
+            Session().commit()
 
         else:
             status = 404
 
-        response = self.app.get(route_path('download_file', fid=fid), status=status)
+        response = self.app.get(route_path('download_file', fid=store_uid), status=status)
 
         if exists:
             assert response.text == content
-            file_store_path = os.path.dirname(store.resolve_name(fid, store_path)[1])
-            metadata_file = os.path.join(file_store_path, fid + '.meta')
+            file_store_path = os.path.dirname(store.resolve_name(store_uid, store_path)[1])
+            metadata_file = os.path.join(file_store_path, store_uid + '.meta')
             assert os.path.exists(metadata_file)
             with open(metadata_file, 'rb') as f:
                 json_data = json.loads(f.read())

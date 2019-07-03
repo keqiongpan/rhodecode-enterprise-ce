@@ -97,6 +97,8 @@ class RepoGroupModel(BaseModel):
         return string.Template(template).safe_substitute(
             username=user.username,
             user_id=user.user_id,
+            first_name=user.first_name,
+            last_name=user.last_name,
         )
 
     def create_personal_repo_group(self, user, commit_early=True):
@@ -307,6 +309,10 @@ class RepoGroupModel(BaseModel):
             # trigger the post hook
             from rhodecode.lib.hooks_base import log_create_repository_group
             repo_group = RepoGroup.get_by_group_name(group_name)
+
+            # update repo group commit caches initially
+            repo_group.update_commit_cache()
+
             log_create_repository_group(
                 created_by=user.username, **repo_group.get_dict())
 
@@ -684,6 +690,13 @@ class RepoGroupModel(BaseModel):
                 'revoked permission from usergroup: {} on repogroup: {}'.format(
                     group_name, repo_group), namespace='security.repogroup')
 
+    @classmethod
+    def update_commit_cache(cls, repo_groups=None):
+        if not repo_groups:
+            repo_groups = RepoGroup.getAll()
+        for repo_group in repo_groups:
+            repo_group.update_commit_cache()
+
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
@@ -705,6 +718,11 @@ class RepoGroupModel(BaseModel):
                     (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
             return _render("last_change", last_change)
 
+        def last_rev(repo_name, cs_cache):
+            return _render('revision', repo_name, cs_cache.get('revision'),
+                           cs_cache.get('raw_id'), cs_cache.get('author'),
+                           cs_cache.get('message'), cs_cache.get('date'))
+
         def desc(desc, personal):
             return _render(
                 'repo_group_desc', desc, personal, c.visual.stylify_metatags)
@@ -721,13 +739,19 @@ class RepoGroupModel(BaseModel):
 
         repo_group_data = []
         for group in repo_group_list:
+            cs_cache = group.changeset_cache
+            last_repo_name = cs_cache.get('source_repo_name')
 
             row = {
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "last_change": last_change(group.last_db_change),
-                "last_change_raw": datetime_to_time(group.last_db_change),
+                "last_change": last_change(group.last_commit_change),
+                "last_change_raw": datetime_to_time(group.last_commit_change),
+
+                "last_changeset": "",
+                "last_changeset_raw": "",
+
                 "desc": desc(group.description_safe, group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.user.username)

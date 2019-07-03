@@ -30,7 +30,7 @@ from rhodecode.apps.file_store.exceptions import (
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
-from rhodecode.lib.auth import (CSRFRequired, NotAnonymous)
+from rhodecode.lib.auth import (CSRFRequired, NotAnonymous, HasRepoPermissionAny, HasRepoGroupPermissionAny)
 from rhodecode.model.db import Session, FileStore
 
 log = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class FileStoreView(BaseAppView):
                               'user_id': self._rhodecode_user.user_id,
                               'ip': self._rhodecode_user.ip_addr}}
         try:
-            store_fid, metadata = self.storage.save_file(
+            store_uid, metadata = self.storage.save_file(
                 file_obj.file, filename, extra_metadata=metadata)
         except FileNotAllowedException:
             return {'store_fid': None,
@@ -82,7 +82,7 @@ class FileStoreView(BaseAppView):
 
         try:
             entry = FileStore.create(
-                file_uid=store_fid, filename=metadata["filename"],
+                file_uid=store_uid, filename=metadata["filename"],
                 file_hash=metadata["sha256"], file_size=metadata["size"],
                 file_description='upload attachment',
                 check_acl=False, user_id=self._rhodecode_user.user_id
@@ -96,8 +96,8 @@ class FileStoreView(BaseAppView):
                     'access_path': None,
                     'error': 'File {} failed to store in DB.'.format(filename)}
 
-        return {'store_fid': store_fid,
-                'access_path': h.route_path('download_file', fid=store_fid)}
+        return {'store_fid': store_uid,
+                'access_path': h.route_path('download_file', fid=store_uid)}
 
     @view_config(route_name='download_file')
     def download_file(self):
@@ -108,6 +108,35 @@ class FileStoreView(BaseAppView):
         if not self.storage.exists(file_uid):
             log.debug('File with FID:%s not found in the store', file_uid)
             raise HTTPNotFound()
+
+        db_obj = FileStore().query().filter(FileStore.file_uid == file_uid).scalar()
+        if not db_obj:
+            raise HTTPNotFound()
+
+        # private upload for user
+        if db_obj.check_acl and db_obj.scope_user_id:
+            user = db_obj.user
+            if self._rhodecode_db_user.user_id != user.user_id:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
+
+        # scoped to repository permissions
+        if db_obj.check_acl and db_obj.scope_repo_id:
+            repo = db_obj.repo
+            perm_set = ['repository.read', 'repository.write', 'repository.admin']
+            has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'FileStore check')
+            if not has_perm:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
+
+        # scoped to repository group permissions
+        if db_obj.check_acl and db_obj.scope_repo_group_id:
+            repo_group = db_obj.repo_group
+            perm_set = ['group.read', 'group.write', 'group.admin']
+            has_perm = HasRepoGroupPermissionAny(*perm_set)(repo_group.group_name, 'FileStore check')
+            if not has_perm:
+                log.warning('Access to file store object forbidden')
+                raise HTTPNotFound()
 
         FileStore.bump_access_counter(file_uid)
 

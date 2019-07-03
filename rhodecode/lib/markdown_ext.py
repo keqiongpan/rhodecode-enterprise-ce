@@ -20,7 +20,55 @@
 
 import markdown
 
-from mdx_gfm import GithubFlavoredMarkdownExtension  # pragma: no cover
+from markdown.extensions import Extension
+from markdown.extensions.fenced_code import FencedCodeExtension
+from markdown.extensions.smart_strong import SmartEmphasisExtension
+from markdown.extensions.tables import TableExtension
+from markdown.extensions.nl2br import Nl2BrExtension
+
+import gfm
+
+
+class GithubFlavoredMarkdownExtension(Extension):
+    """
+    An extension that is as compatible as possible with GitHub-flavored
+    Markdown (GFM).
+
+    This extension aims to be compatible with the variant of GFM that GitHub
+    uses for Markdown-formatted gists and files (including READMEs). This
+    variant seems to have all the extensions described in the `GFM
+    documentation`_, except:
+
+    - Newlines in paragraphs are not transformed into ``br`` tags.
+    - Intra-GitHub links to commits, repositories, and issues are not
+      supported.
+
+    If you need support for features specific to GitHub comments and issues,
+    please use :class:`mdx_gfm.GithubFlavoredMarkdownExtension`.
+
+    .. _GFM documentation: https://guides.github.com/features/mastering-markdown/
+    """
+
+    def extendMarkdown(self, md, md_globals):
+        # Built-in extensions
+        FencedCodeExtension().extendMarkdown(md, md_globals)
+        SmartEmphasisExtension().extendMarkdown(md, md_globals)
+        TableExtension().extendMarkdown(md, md_globals)
+
+        # Custom extensions
+        gfm.AutolinkExtension().extendMarkdown(md, md_globals)
+        gfm.AutomailExtension().extendMarkdown(md, md_globals)
+        gfm.HiddenHiliteExtension([
+            ('guess_lang', 'False'),
+            ('css_class', 'highlight')
+        ]).extendMarkdown(md, md_globals)
+        gfm.SemiSaneListExtension().extendMarkdown(md, md_globals)
+        gfm.SpacedLinkExtension().extendMarkdown(md, md_globals)
+        gfm.StrikethroughExtension().extendMarkdown(md, md_globals)
+        gfm.TaskListExtension([
+            ('list_attrs', {'class': 'checkbox'})
+        ]).extendMarkdown(md, md_globals)
+        Nl2BrExtension().extendMarkdown(md, md_globals)
 
 
 # Global Vars

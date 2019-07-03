@@ -22,6 +22,7 @@ import pytest
 
 from rhodecode.lib.encrypt import (
     AESCipher, SignatureVerificationError, InvalidDecryptedValue)
+from rhodecode.lib.encrypt2 import (Encryptor, InvalidToken)
 
 
 class TestEncryptModule(object):
@@ -74,3 +75,59 @@ class TestEncryptModule(object):
         assert isinstance(AESCipher(
             'differentsecret', hmac=True, strict_verification=False
         ).decrypt(enc), InvalidDecryptedValue)
+
+
+class TestEncryptModule2(object):
+
+    @pytest.mark.parametrize(
+        "key, text",
+        [
+            ('a', 'short'),
+            ('a'*64, 'too long(trimmed to 32)'),
+            ('a'*32, 'just enough'),
+            ('ąćęćę', 'non asci'),
+            ('$asa$asa', 'special $ used'),
+        ]
+    )
+    def test_encryption(self, key, text):
+        enc = Encryptor(key).encrypt(text)
+        assert Encryptor(key).decrypt(enc) == text
+
+    def test_encryption_with_bad_key(self):
+        key = 'secretstring'
+        text = 'ihatemysql'
+        enc = Encryptor(key).encrypt(text)
+
+        assert Encryptor('differentsecret').decrypt(enc) == ''
+
+    def test_encryption_with_bad_key_raises(self):
+        key = 'secretstring'
+        text = 'ihatemysql'
+        enc = Encryptor(key).encrypt(text)
+
+        with pytest.raises(InvalidToken) as e:
+            Encryptor('differentsecret').decrypt(enc, safe=False)
+
+        assert 'InvalidToken' in str(e)
+
+    def test_encryption_with_bad_format_data(self):
+        key = 'secret'
+        text = 'ihatemysql'
+        enc = Encryptor(key).encrypt(text)
+        enc = '$xyz' + enc[3:]
+
+        with pytest.raises(ValueError) as e:
+            Encryptor(key).decrypt(enc, safe=False)
+
+        assert 'Encrypted Data has invalid format' in str(e)
+
+    def test_encryption_with_bad_data(self):
+        key = 'secret'
+        text = 'ihatemysql'
+        enc = Encryptor(key).encrypt(text)
+        enc = enc[:-5]
+
+        with pytest.raises(InvalidToken) as e:
+            Encryptor(key).decrypt(enc, safe=False)
+
+        assert 'InvalidToken' in str(e)

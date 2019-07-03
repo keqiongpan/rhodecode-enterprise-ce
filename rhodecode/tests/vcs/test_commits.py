@@ -35,7 +35,7 @@ from rhodecode.tests import get_new_dir
 from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
-class TestBaseChangeset:
+class TestBaseChangeset(object):
 
     def test_is_deprecated(self):
         from rhodecode.lib.vcs.backends.base import BaseChangeset
@@ -159,8 +159,7 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
             parents=[initial],
             branch=DEFAULT_BRANCH,)
 
-        default_branch_commits = self.repo.get_commits(
-            branch_name=DEFAULT_BRANCH)
+        default_branch_commits = self.repo.get_commits(branch_name=DEFAULT_BRANCH)
         assert docs_branch_commit1 not in list(default_branch_commits)
         assert docs_branch_commit2 not in list(default_branch_commits)
 
@@ -176,6 +175,10 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
         commits = repo.get_commits(branch_name='trunk')
         commit_indexes = [c.idx for c in commits]
         assert commit_indexes == [1, 2, 3, 7, 12, 15]
+
+    def test_get_commit_by_index(self):
+        for idx in [1, 2, 3, 4]:
+            assert idx == self.repo.get_commit(commit_idx=idx).idx
 
     def test_get_commit_by_branch(self):
         for branch, commit_id in self.repo.branches.iteritems():

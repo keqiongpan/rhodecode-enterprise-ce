@@ -57,7 +57,7 @@ you can add a message to be displayed using the following steps:
 3. Select :guilabel:`Save`, and you will see the message once your page
    refreshes.
 
-.. image:: ../images/server-wide-announcement.png
+.. image:: ../../images/server-wide-announcement.png
    :alt: Server Wide Announcement
 
 .. _md-rst:
@@ -207,7 +207,7 @@ do this, use the following steps.
    Instance "enterprise-2" successfully stopped.
    Instance "enterprise-2" successfully started.
 
-.. image:: ../images/language.png
+.. image:: ../../images/language.png
 
 .. _set-repo-pub:
 
@@ -239,3 +239,26 @@ following URL: ``{instance-URL}/_admin/ping``.
 
 .. _Markdown: http://daringfireball.net/projects/markdown/
 .. _reStructured Text: http://docutils.sourceforge.net/docs/index.html
+
+
+Unarchiving a repository
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Archive operation for the repository is similar as delete. Archive keeps the data for future references
+but makes the repository read-only. After archiving the repository it shouldn't be modified in any way.
+This is why repository settings are disabled for an archived repository.
+
+If there's a need for unarchiving a repository for some reasons, the interactive
+ishell interface should be used.
+
+.. code-block:: bash
+
+  # Open iShell from the terminal
+  $ rccontrol ishell enterprise-1/community-1
+
+.. code-block:: python
+
+  # Set repository as un-archived
+  In [1]: repo = Repository.get_by_repo_name('SOME_REPO_NAME')
+  In [2]: repo.archived = False
+  In [3]: Session().add(repo);Session().commit()

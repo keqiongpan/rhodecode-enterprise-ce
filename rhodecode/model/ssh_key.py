@@ -24,9 +24,14 @@ import traceback
 import sshpubkeys
 import sshpubkeys.exceptions
 
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization as crypto_serialization
+from cryptography.hazmat.backends import default_backend as crypto_default_backend
+
 from rhodecode.model import BaseModel
 from rhodecode.model.db import UserSshKeys
 from rhodecode.model.meta import Session
+
 
 log = logging.getLogger(__name__)
 
@@ -62,16 +67,24 @@ class SshKeyModel(BaseModel):
             raise
 
     def generate_keypair(self, comment=None):
-        from Crypto.PublicKey import RSA
 
-        key = RSA.generate(2048)
-        private = key.exportKey('PEM')
+        key = rsa.generate_private_key(
+            backend=crypto_default_backend(),
+            public_exponent=65537,
+            key_size=2048
+        )
+        private_key = key.private_bytes(
+            crypto_serialization.Encoding.PEM,
+            crypto_serialization.PrivateFormat.PKCS8,
+            crypto_serialization.NoEncryption())
+        public_key = key.public_key().public_bytes(
+            crypto_serialization.Encoding.OpenSSH,
+            crypto_serialization.PublicFormat.OpenSSH
+        )
 
-        pubkey = key.publickey()
-        public = pubkey.exportKey('OpenSSH')
         if comment:
-            public = public + " " + comment
-        return private, public
+            public_key = public_key + " " + comment
+        return private_key, public_key
 
     def create(self, user, fingerprint, key_data, description):
         """

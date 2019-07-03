@@ -1,3 +1,4 @@
+.. _repo-admin-set:
 .. _permissions-info-add-group-ref:
 
 Repository Administration
@@ -18,9 +19,10 @@ settings for your needs:
 
 .. toctree::
 
-    repo-perm-steps
-    repo-extra-fields
-    repo-hooks
-    repo-issue-tracker
-    repo-vcs
-
+    repo_admin/repo-perm-steps
+    repo_admin/repo-extra-fields
+    repo_admin/repo-hooks
+    repo_admin/repo-issue-tracker
+    repo_admin/repo-vcs
+    repo_admin/restore-deleted-repositories
+    repo_admin/repo-admin-tasks

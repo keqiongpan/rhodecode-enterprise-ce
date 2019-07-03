@@ -501,8 +501,8 @@ class TestCreateOrUpdateUi(object):
 
     def test_update(self, repo_stub, settings_util):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
-
-        largefiles, phases, evolve = model.HG_SETTINGS
+        # care about only 3 first settings
+        largefiles, phases, evolve = model.HG_SETTINGS[:3]
 
         section = 'test-section'
         key = 'test-key'
@@ -531,10 +531,11 @@ class TestCreateOrUpdateRepoHgSettings(object):
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.create_or_update_repo_hg_settings(self.FORM_DATA)
         expected_calls = [
-            mock.call(model.repo_settings, 'extensions', 'largefiles',
-                      active=False, value=''),
-            mock.call(model.repo_settings, 'extensions', 'evolve',
-                      active=False, value=''),
+            mock.call(model.repo_settings, 'extensions', 'largefiles', active=False, value=''),
+            mock.call(model.repo_settings, 'extensions', 'evolve', active=False, value=''),
+            mock.call(model.repo_settings, 'experimental', 'evolution', active=False, value=''),
+            mock.call(model.repo_settings, 'experimental', 'evolution.exchange', active=False, value='no'),
+            mock.call(model.repo_settings, 'extensions', 'topic', active=False, value=''),
             mock.call(model.repo_settings, 'phases', 'publish', value='False'),
         ]
         assert expected_calls == create_mock.call_args_list
@@ -589,17 +590,16 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.create_or_update_global_hg_settings(self.FORM_DATA)
         expected_calls = [
-            mock.call(model.global_settings, 'extensions', 'largefiles',
-                      active=False, value=''),
-            mock.call(model.global_settings, 'largefiles', 'usercache',
-                      value='/example/largefiles-store'),
-            mock.call(model.global_settings, 'phases', 'publish',
-                      value='False'),
-            mock.call(model.global_settings, 'extensions', 'hgsubversion',
-                      active=False),
-            mock.call(model.global_settings, 'extensions', 'evolve',
-                      active=False, value='')
+            mock.call(model.global_settings, 'extensions', 'largefiles', active=False, value=''),
+            mock.call(model.global_settings, 'largefiles', 'usercache', value='/example/largefiles-store'),
+            mock.call(model.global_settings, 'phases', 'publish', value='False'),
+            mock.call(model.global_settings, 'extensions', 'hgsubversion', active=False),
+            mock.call(model.global_settings, 'extensions', 'evolve', active=False, value=''),
+            mock.call(model.global_settings, 'experimental', 'evolution', active=False, value=''),
+            mock.call(model.global_settings, 'experimental', 'evolution.exchange', active=False, value='no'),
+            mock.call(model.global_settings, 'extensions', 'topic', active=False, value=''),
         ]
+
         assert expected_calls == create_mock.call_args_list
 
     @pytest.mark.parametrize('field_to_remove', FORM_DATA.keys())
@@ -625,10 +625,8 @@ class TestCreateOrUpdateGlobalGitSettings(object):
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.create_or_update_global_git_settings(self.FORM_DATA)
         expected_calls = [
-            mock.call(model.global_settings, 'vcs_git_lfs', 'enabled',
-                      active=False, value=False),
-            mock.call(model.global_settings, 'vcs_git_lfs', 'store_location',
-                      value='/example/lfs-store'),
+            mock.call(model.global_settings, 'vcs_git_lfs', 'enabled', active=False, value=False),
+            mock.call(model.global_settings, 'vcs_git_lfs', 'store_location', value='/example/lfs-store'),
         ]
         assert expected_calls == create_mock.call_args_list
 

@@ -18,11 +18,12 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='defaults')}
+</%def>
+
 <%def name="main()">
 <div class="box">
-    <div class="title">
-        ${self.breadcrumbs()}
-    </div>
 
     ##main
     <div class="sidebar-col-wrapper">

@@ -97,7 +97,7 @@ class TestArchives(BackendTestMixin):
         metafile = out.read('.archival.txt')
 
         raw_id = self.tip.raw_id
-        assert 'rev:%s' % raw_id in metafile
+        assert 'commit_id:%s' % raw_id in metafile
 
         for x in range(5):
             node_path = '%d/file_%d.txt' % (x, x)

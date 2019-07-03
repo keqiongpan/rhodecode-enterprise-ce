@@ -2,10 +2,10 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-  ${_('Authentication Settings')}
-  %if c.rhodecode_name:
+    ${_('Authentication Settings')}
+    %if c.rhodecode_name:
     &middot; ${h.branding(c.rhodecode_name)}}
-  %endif
+    %endif
 </%def>
 
 <%def name="breadcrumbs_links()">
@@ -17,22 +17,23 @@
 </%def>
 
 <%def name="menu_bar_nav()">
-  ${self.menu_items(active='admin')}
+    ${self.menu_items(active='admin')}
+</%def>
+
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='authentication')}
 </%def>
 
 <%def name="main()">
+
   <div class="box">
-    <div class="title">
-      ${self.breadcrumbs()}
-    </div>
+
     <div class='sidebar-col-wrapper'>
 
-      ## TODO: This is repeated in the auth root template and should be merged
-      ##       into a single solution.
       <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           % for item in resource.get_root().get_nav_list():
-            <li ${'class=active' if item == resource else ''}>
+            <li ${('class=active' if item == resource else '')}>
               <a href="${request.resource_path(item, route_name='auth_home')}">${item.display_name}</a>
             </li>
           % endfor

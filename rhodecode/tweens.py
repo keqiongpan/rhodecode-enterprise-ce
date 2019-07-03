@@ -92,6 +92,7 @@ def junk_form_data_detector(request):
 
 def sanity_check_factory(handler, registry):
     def sanity_check(request):
+        log.debug('Checking current URL sanity for bad data')
         try:
             junk_encoding_detector(request)
             bad_url_data_detector(request)
@@ -113,5 +114,5 @@ def includeme(config):
                           'pyramid.events.NewRequest')
     config.add_subscriber('rhodecode.subscribers.add_request_user_context',
                           'pyramid.events.ContextFound')
-    config.add_tween('rhodecode.tweens.sanity_check_factory')
     config.add_tween('rhodecode.tweens.vcs_detection_tween_factory')
+    config.add_tween('rhodecode.tweens.sanity_check_factory')

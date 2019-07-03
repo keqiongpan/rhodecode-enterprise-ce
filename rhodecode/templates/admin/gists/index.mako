@@ -3,9 +3,9 @@
 
 <%def name="title()">
     %if c.show_private:
-        ${_('Private Gists for user %s') % c.rhodecode_user.username}
+        ${_('Private Gists for user {}').format(c.rhodecode_user.username)}
     %elif c.show_public:
-        ${_('Public Gists for user %s') % c.rhodecode_user.username}
+        ${_('Public Gists for user {}').format(c.rhodecode_user.username)}
     %else:
         ${_('Public Gists')}
     %endif
@@ -14,64 +14,59 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-    %if c.show_private and not c.show_public:
-        ${_('Private Gists for user %s') % c.rhodecode_user.username}
-    %elif c.show_public and not c.show_private:
-        ${_('Public Gists for user %s') % c.rhodecode_user.username}
-    %elif c.show_public and c.show_private:
-        ${_('All Gists for user %s') % c.rhodecode_user.username}
-    %else:
-        ${_('All Public Gists')}
-    %endif
-    -  <span id="gists_count">0</span>
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='gists')}
 </%def>
 
-
-
 <%def name="main()">
+
 <div class="box">
-  <div class="title">
-      ${self.breadcrumbs(class_="breadcrumbs block-left")}
-      %if c.rhodecode_user.username != h.DEFAULT_USER:
-      <ul class="links block-right">
-        <li>
-           <a href="${h.route_path('gists_new')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
-        </li>
-      </ul>
+    <div class="title">
+
+    <ul class="button-links">
+      % if c.is_super_admin:
+        <li class="btn ${('active' if c.active=='all' else '')}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
       %endif
-  </div>
+      <li class="btn ${('active' if c.active=='public' else '')}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>
+      %if c.rhodecode_user.username != h.DEFAULT_USER:
+        <li class="btn ${('active' if c.active=='my_all' else '')}"><a href="${h.route_path('gists_show', _query={'public':1, 'private': 1})}">${_('My gists')}</a></li>
+        <li class="btn ${('active' if c.active=='my_private' else '')}"><a href="${h.route_path('gists_show', _query={'private': 1})}">${_('My private')}</a></li>
+        <li class="btn ${('active' if c.active=='my_public' else '')}"><a href="${h.route_path('gists_show', _query={'public': 1})}">${_('My public')}</a></li>
+      %endif
+    </ul>
 
+    % if c.rhodecode_user.username != h.DEFAULT_USER:
+        <div class="pull-right">
+            <a class="btn btn-primary" href="${h.route_path('gists_new')}" >
+                ${_(u'Create New Gist')}
+            </a>
+        </div>
+    % endif
 
-  <div class="sidebar-col-wrapper scw-small">
-    ##main
-    <div class="sidebar">
-        <ul class="nav nav-pills nav-stacked">
-          % if h.HasPermissionAll('hg.admin')('access admin gists page'):
-            <li class="${'active' if c.active=='all' else ''}"><a href="${h.route_path('gists_show', _query={'all': 1})}">${_('All gists')}</a></li>
-          %endif
-          <li class="${'active' if c.active=='public' else ''}"><a href="${h.route_path('gists_show')}">${_('All public')}</a></li>
-          %if c.rhodecode_user.username != h.DEFAULT_USER:
-            <li class="${'active' if c.active=='my_all' else ''}"><a href="${h.route_path('gists_show', _query={'public':1, 'private': 1})}">${_('My gists')}</a></li>
-            <li class="${'active' if c.active=='my_private' else ''}"><a href="${h.route_path('gists_show', _query={'private': 1})}">${_('My private')}</a></li>
-            <li class="${'active' if c.active=='my_public' else ''}"><a href="${h.route_path('gists_show', _query={'public': 1})}">${_('My public')}</a></li>
-          %endif
+    <div class="grid-quick-filter">
+        <ul class="grid-filter-box">
+            <li class="grid-filter-box-icon">
+                <i class="icon-search"></i>
+            </li>
+            <li class="grid-filter-box-input">
+                <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+            </li>
         </ul>
     </div>
 
-    <div class="main-content">
+  </div>
+
+    <div class="main-content-full-width">
         <div id="repos_list_wrap">
             <table id="gist_list_table" class="display"></table>
         </div>
     </div>
-  </div>
+
 </div>
-<script>
+
+<script type="text/javascript">
 $(document).ready(function() {
 
     var get_datatable_count = function(){

@@ -80,7 +80,7 @@ def trigger_log_create_pull_request_hook(username, repo_name, repo_alias,
     extras = _get_rc_scm_extras(username, repo_name, repo_alias,
                                 'create_pull_request')
     events.trigger(events.PullRequestCreateEvent(pull_request))
-    extras.update(pull_request.get_api_data())
+    extras.update(pull_request.get_api_data(with_merge_state=False))
     hooks_base.log_create_pull_request(**extras)
 
 

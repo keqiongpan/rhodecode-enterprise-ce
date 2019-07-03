@@ -528,7 +528,19 @@
                 if ($.isFunction(serviceUrl)) {
                     serviceUrl = serviceUrl.call(that.element, query);
                 }
-                cacheKey = serviceUrl + '?' + $.param(params || {});
+
+                var callParams = {};
+                //make an evaluated copy of params
+                $.each(params, function(index, value) {
+                    if($.isFunction(value)){
+                        callParams[index] = value();
+                    }
+                    else {
+                        callParams[index] = value;
+                    }
+                });
+
+                cacheKey = serviceUrl + '?' + $.param(callParams);
                 response = that.cachedResponse[cacheKey];
             }
 
@@ -536,7 +548,7 @@
                 that.suggestions = response.suggestions;
                 that.suggest();
             } else if (!that.isBadQuery(query)) {
-                if (options.onSearchStart.call(that.element, options.params) === false) {
+                if (options.onSearchStart.call(that.element, params) === false) {
                     return;
                 }
                 if (that.currentRequest) {

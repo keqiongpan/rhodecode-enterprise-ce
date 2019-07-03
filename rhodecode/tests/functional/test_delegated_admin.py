@@ -30,10 +30,13 @@ def route_path(name, params=None, **kwargs):
 
     base_url = {
         'home': '/',
+        'admin_home': ADMIN_PREFIX,
         'repos':
             ADMIN_PREFIX + '/repos',
         'repo_groups':
             ADMIN_PREFIX + '/repo_groups',
+        'repo_groups_data':
+            ADMIN_PREFIX + '/repo_groups_data',
         'user_groups':
             ADMIN_PREFIX + '/user_groups',
         'user_groups_data':
@@ -50,32 +53,27 @@ fixture = Fixture()
 
 class TestAdminDelegatedUser(TestController):
 
-    def test_regular_user_cannot_see_admin_interfaces(
-            self, user_util, xhr_header):
+    def test_regular_user_cannot_see_admin_interfaces(self, user_util, xhr_header):
         user = user_util.create_user(password='qweqwe')
+        user_util.inherit_default_user_permissions(user.username, False)
+
         self.log_user(user.username, 'qweqwe')
 
-        # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(route_path('home'))
-
-        assert_response = response.assert_response()
-
-        assert_response.no_element_exists('li.local-admin-repos')
-        assert_response.no_element_exists('li.local-admin-repo-groups')
-        assert_response.no_element_exists('li.local-admin-user-groups')
+        # user doesn't have any access to resources so main admin page should 404
+        self.app.get(route_path('admin_home'), status=404)
 
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('data: []')
 
-        response = self.app.get(route_path('repo_groups'), status=200)
-        response.mustcontain('data: []')
+        response = self.app.get(route_path('repo_groups_data'),
+                                status=200, extra_environ=xhr_header)
+        assert response.json['data'] == []
 
         response = self.app.get(route_path('user_groups_data'),
                                 status=200, extra_environ=xhr_header)
         assert response.json['data'] == []
 
-    def test_regular_user_can_see_admin_interfaces_if_owner(
-            self, user_util, xhr_header):
+    def test_regular_user_can_see_admin_interfaces_if_owner(self, user_util, xhr_header):
         user = user_util.create_user(password='qweqwe')
         username = user.username
 
@@ -89,20 +87,21 @@ class TestAdminDelegatedUser(TestController):
         user_group_name = user_group.users_group_name
 
         self.log_user(username, 'qweqwe')
-        # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(route_path('home'))
+
+        response = self.app.get(route_path('admin_home'))
 
         assert_response = response.assert_response()
 
-        assert_response.one_element_exists('li.local-admin-repos')
-        assert_response.one_element_exists('li.local-admin-repo-groups')
-        assert_response.one_element_exists('li.local-admin-user-groups')
+        assert_response.element_contains('td.delegated-admin-repos', '1')
+        assert_response.element_contains('td.delegated-admin-repo-groups', '1')
+        assert_response.element_contains('td.delegated-admin-user-groups', '1')
 
         # admin interfaces have visible elements
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(route_path('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups_data'),
+                                extra_environ=xhr_header, status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
@@ -132,19 +131,20 @@ class TestAdminDelegatedUser(TestController):
 
         self.log_user(username, 'qweqwe')
         # check if in home view, such user doesn't see the "admin" menus
-        response = self.app.get(route_path('home'))
+        response = self.app.get(route_path('admin_home'))
 
         assert_response = response.assert_response()
 
-        assert_response.one_element_exists('li.local-admin-repos')
-        assert_response.one_element_exists('li.local-admin-repo-groups')
-        assert_response.one_element_exists('li.local-admin-user-groups')
+        assert_response.element_contains('td.delegated-admin-repos', '1')
+        assert_response.element_contains('td.delegated-admin-repo-groups', '1')
+        assert_response.element_contains('td.delegated-admin-user-groups', '1')
 
         # admin interfaces have visible elements
         response = self.app.get(route_path('repos'), status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_name))
 
-        response = self.app.get(route_path('repo_groups'), status=200)
+        response = self.app.get(route_path('repo_groups_data'),
+                                extra_environ=xhr_header, status=200)
         response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),

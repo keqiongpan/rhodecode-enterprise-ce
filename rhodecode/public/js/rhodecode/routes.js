@@ -131,6 +131,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_new', '/_admin/repos/new', []);
     pyroutes.register('repo_create', '/_admin/repos/create', []);
     pyroutes.register('repo_groups', '/_admin/repo_groups', []);
+    pyroutes.register('repo_groups_data', '/_admin/repo_groups_data', []);
     pyroutes.register('repo_group_new', '/_admin/repo_group/new', []);
     pyroutes.register('repo_group_create', '/_admin/repo_group/create', []);
     pyroutes.register('channelstream_connect', '/_admin/channelstream/connect', []);
@@ -148,6 +149,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_group_list_data', '/_repo_groups', []);
     pyroutes.register('goto_switcher_data', '/_goto_data', []);
     pyroutes.register('markup_preview', '/_markup_preview', []);
+    pyroutes.register('file_preview', '/_file_preview', []);
     pyroutes.register('store_user_session_value', '/_store_session_attr', []);
     pyroutes.register('journal', '/_admin/journal', []);
     pyroutes.register('journal_rss', '/_admin/journal/rss', []);
@@ -195,14 +197,17 @@ function registerRCRoutes() {
     pyroutes.register('repo_files_edit_file', '/%(repo_name)s/edit_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_update_file', '/%(repo_name)s/update_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_add_file', '/%(repo_name)s/add_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
+    pyroutes.register('repo_files_upload_file', '/%(repo_name)s/upload_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_create_file', '/%(repo_name)s/create_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_refs_data', '/%(repo_name)s/refs-data', ['repo_name']);
     pyroutes.register('repo_refs_changelog_data', '/%(repo_name)s/refs-data-changelog', ['repo_name']);
     pyroutes.register('repo_stats', '/%(repo_name)s/repo_stats/%(commit_id)s', ['repo_name', 'commit_id']);
+    pyroutes.register('repo_commits', '/%(repo_name)s/commits', ['repo_name']);
+    pyroutes.register('repo_commits_file', '/%(repo_name)s/commits/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
+    pyroutes.register('repo_commits_elements', '/%(repo_name)s/commits_elements', ['repo_name']);
+    pyroutes.register('repo_commits_elements_file', '/%(repo_name)s/commits_elements/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_changelog', '/%(repo_name)s/changelog', ['repo_name']);
     pyroutes.register('repo_changelog_file', '/%(repo_name)s/changelog/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
-    pyroutes.register('repo_changelog_elements', '/%(repo_name)s/changelog_elements', ['repo_name']);
-    pyroutes.register('repo_changelog_elements_file', '/%(repo_name)s/changelog_elements/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_compare_select', '/%(repo_name)s/compare', ['repo_name']);
     pyroutes.register('repo_compare', '/%(repo_name)s/compare/%(source_ref_type)s@%(source_ref)s...%(target_ref_type)s@%(target_ref)s', ['repo_name', 'source_ref_type', 'source_ref', 'target_ref_type', 'target_ref']);
     pyroutes.register('tags_home', '/%(repo_name)s/tags', ['repo_name']);
@@ -356,6 +361,12 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_external_identity', '/_admin/my_account/external-identity', []);
     pyroutes.register('my_account_external_identity_delete', '/_admin/my_account/external-identity/delete', []);
+    pyroutes.register('repo_artifacts_list', '/%(repo_name)s/artifacts', ['repo_name']);
+    pyroutes.register('repo_artifacts_data', '/%(repo_name)s/artifacts_data', ['repo_name']);
+    pyroutes.register('repo_artifacts_new', '/%(repo_name)s/artifacts/new', ['repo_name']);
+    pyroutes.register('repo_artifacts_get', '/%(repo_name)s/artifacts/download/%(uid)s', ['repo_name', 'uid']);
+    pyroutes.register('repo_artifacts_store', '/%(repo_name)s/artifacts/store', ['repo_name']);
+    pyroutes.register('repo_artifacts_delete', '/%(repo_name)s/artifacts/delete/%(uid)s', ['repo_name', 'uid']);
     pyroutes.register('repo_automation', '/%(repo_name)s/settings/automation', ['repo_name']);
     pyroutes.register('repo_automation_update', '/%(repo_name)s/settings/automation/%(entry_id)s/update', ['repo_name', 'entry_id']);
     pyroutes.register('edit_repo_remote_push', '/%(repo_name)s/settings/remote/push', ['repo_name']);

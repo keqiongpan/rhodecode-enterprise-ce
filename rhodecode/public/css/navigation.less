@@ -2,10 +2,21 @@
 // For use in RhodeCode applications;
 // see style guide documentation for guidelines.
 
+// TOP MAIN DARK NAVIGATION
+
+.header .main_nav.horizontal-list {
+    float: right;
+    color: @grey4;
+        > li {
+            a {
+                color: @grey4;
+                }
+            }
+}
+
 // HEADER NAVIGATION
 
 .horizontal-list {
-    float: right;
     display: block;
     margin: 0;
     padding: 0;
@@ -18,6 +29,7 @@
     li {
         line-height: 1em;
         list-style-type: none;
+        margin: 0 20px 0 0;
 
         a {
             padding: 0 .5em;
@@ -55,12 +67,6 @@
             .user {
                 padding-bottom: 10px;
             }
-
-            &.open {
-                .user {
-                    border-bottom: 5px solid @rcblue;
-                }
-            }
         }
 
         &:before { content: none; }
@@ -78,10 +84,6 @@
             &> a {
                 border-bottom: none;
             }
-        }
-
-        &.active {
-            border-bottom: 5px solid @rcblue;
         }
 
         &.open {
@@ -118,14 +120,12 @@
         > a,
         &.has_select2 a {
             display: block;
-            padding: 10px 0 2px;
+            padding: 10px 0;
         }
 
         .menulabel {
-            padding: 0 .5em;
             line-height: 1em;
             // for this specifically we do not use a variable
-            border-right: 1px solid @grey4;
         }
 
         .pr_notifications {
@@ -141,7 +141,7 @@
         &.open,
         &.active {
             a {
-                color: @grey1;
+                color: @rcblue;
             }
         }
     }
@@ -154,6 +154,14 @@
     .select2-container,
     .menulink.childs {
         position: relative;
+    }
+
+    .menulink {
+        &.disabled {
+        color: @grey3;
+        cursor: default;
+        opacity: 0.5;
+        }
     }
 
     #quick_login {
@@ -281,16 +289,19 @@
 }
 
 .navigation li:last-child .submenu {
-    right: -20px;
-    left: auto;
+    right: auto;
+    left: 0;
+    border: 1px solid @grey5;
+    background: @white;
+    box-shadow: @dropdown-shadow;
 }
 
 .submenu {
     position: absolute;
     top: 100%;
     left: 0;
-    min-width: 150px;
-    margin: 6px 0 0;
+    min-width: 180px;
+    margin: 2px 0 0;
     padding: 0;
     text-align: left;
     font-family: @text-light;
@@ -303,7 +314,7 @@
         padding: 0 .5em;
         line-height: 1em;
         color: @grey3;
-        background-color: @grey6;
+        background-color: @white;
         list-style-type: none;
 
         a {
@@ -324,7 +335,7 @@
             z-index: 30;
         }
         &:hover {
-            background-color: @grey5;
+            background-color: @grey7;
             -webkit-transition: background .3s;
                -moz-transition: background .3s;
                  -o-transition: background .3s;
@@ -501,10 +512,10 @@
 
 #context-bar {
     display: block;
-    margin: 0 auto;
+    margin: 0 auto 20px 0;
     padding: 0 @header-padding;
-    background-color: @grey6;
-    border-bottom: @border-thickness solid @grey5;
+    background-color: @grey7;
+    border-bottom: 1px solid @grey5;
 
     .clear {
         clear: both;
@@ -513,19 +524,22 @@
 
 ul#context-pages {
     li {
-        line-height: 1em;
         list-style-type: none;
 
         a {
-            color: @grey3;
+            color: @grey2;
+
+            &:hover {
+                color: @grey1;
+            }
         }
 
         &.active {
             // special case, non-variable color
-            border-bottom: 4px solid @nav-grey;
+            border-bottom: 2px solid @rcblue;
 
             a {
-                color: @grey1;
+                color: @rcblue;
             }
         }
     }
@@ -534,8 +548,9 @@ ul#context-pages {
 // PAGINATION
 
 .pagination {
-    border: @border-thickness solid @rcblue;
-    color: @rcblue;
+    border: @border-thickness solid @grey5;
+    color: @grey2;
+    box-shadow: @button-shadow;
 
     .current {
         color: @grey4;
@@ -552,33 +567,44 @@ ul#context-pages {
 .dataTables_paginate, .pagination-wh {
     text-align: left;
     display: inline-block;
-    border-left: 1px solid @rcblue;
+    border-left: 1px solid @grey5;
     float: none;
     overflow: hidden;
+    box-shadow: @button-shadow;
 
     .paginate_button, .pager_curpage,
     .pager_link, .pg-previous, .pg-next, .pager_dotdot {
         display: inline-block;
         padding: @menupadding/4 @menupadding;
-        border: 1px solid @rcblue;
+        border: 1px solid @grey5;
         border-left: 0;
-        color: @rcblue;
+        color: @grey2;
         cursor: pointer;
         float: left;
+
+        &:hover {
+            color: @rcdarkblue;
+        }
     }
 
-    .pager_curpage, .pager_dotdot,
-    .paginate_button.current, .paginate_button.disabled,
+    .paginate_button.disabled,
     .disabled {
         color: @grey3;
         cursor: default;
+        opacity: 0.5;
+    }
+
+    .paginate_button.current, .pager_curpage {
+        background: @rcblue;
+        border-color: @rcblue;
+        color: @white;
     }
 
     .ellipsis {
         display: inline-block;
         text-align: left;
         padding: @menupadding/4 @menupadding;
-        border: 1px solid @rcblue;
+        border: 1px solid @grey5;
         border-left: 0;
         float: left;
     }
@@ -594,14 +620,6 @@ ul#context-pages {
     padding-right: @sidebarpadding;
     font-family: @text-regular;
     color: @grey1;
-
-    &#graph_nodes {
-        clear:both;
-        width: auto;
-        margin-left: -100px;
-        padding: 0;
-        border: none;
-    }
 
     .nav-pills {
         margin: 0;
@@ -631,19 +649,56 @@ ul#context-pages {
 
 .main_filter_help_box {
     padding: 7px 7px;
-    border-top: 1px solid @grey4;
-    border-right: 1px solid @grey4;
-    border-bottom: 1px solid @grey4;
     display: inline-block;
     vertical-align: top;
     background: inherit;
     position: absolute;
-    right: 8px;
+    right: 0;
     top: 9px;
 }
 
 .main_filter_input_box {
     display: inline-block;
+
+    .searchItems {
+        display:flex;
+        background: @black;
+        padding: 0px;
+        border-radius: 3px;
+        border: 1px solid @black;
+
+        a {
+            border: none !important;
+        }
+    }
+
+    .searchTag {
+        line-height: 28px;
+        padding: 0 5px;
+
+        .tag {
+            color: @grey5;
+            border-color: @grey2;
+            background: @grey1;
+        }
+    }
+
+    .searchTagFilter {
+        background-color: @black !important;
+        margin-right: 0;
+    }
+
+    .searchTagHelp {
+        background-color: @grey1 !important;
+        margin: 0;
+    }
+    .searchTagHelp:hover {
+        background-color: @grey1 !important;
+    }
+    .searchTagInput {
+        background-color: @grey1 !important;
+        margin-right: 0;
+    }
 }
 
 .main_filter_box {
@@ -651,31 +706,33 @@ ul#context-pages {
 }
 
 #main_filter_help {
-    background: @grey3;
+    background: @grey1;
     border: 1px solid black;
     position: absolute;
     white-space: pre;
     z-index: 9999;
     color: @nav-grey;
-    margin: 1px 7px;
     padding: 0 10px;
 }
 
-.main_filter_input {
-    padding: 5px;
-    min-width: 260px;
-    color: @nav-grey;
-    background: @grey3;
-    min-height: 18px;
+input {
 
+    &.main_filter_input {
+        padding: 5px 10px;
+        min-width: 340px;
+        color: @grey7;
+        background: @black;
+        min-height: 18px;
+        border: 0;
 
-    &:active {
-      color: @grey2 !important;
-      background: white !important;
-    }
-    &:focus {
-      color: @grey2 !important;
-      background: white !important;
+        &:active {
+          color: @grey2 !important;
+          background: white !important;
+        }
+        &:focus {
+          color: @grey2 !important;
+          background: white !important;
+        }
     }
 }
 

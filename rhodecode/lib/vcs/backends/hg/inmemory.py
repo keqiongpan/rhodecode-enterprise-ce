@@ -30,8 +30,7 @@ from rhodecode.lib.vcs.exceptions import RepositoryError
 
 class MercurialInMemoryCommit(BaseInMemoryCommit):
 
-    def commit(self, message, author, parents=None, branch=None, date=None,
-               **kwargs):
+    def commit(self, message, author, parents=None, branch=None, date=None, **kwargs):
         """
         Performs in-memory commit (doesn't check workdir in any way) and
         returns newly created `MercurialCommit`. Updates repository's
@@ -83,15 +82,14 @@ class MercurialInMemoryCommit(BaseInMemoryCommit):
 
         date, tz = date_to_timestamp_plus_offset(date)
 
-        new_id = self.repository._remote.commitctx(
+        commit_id = self.repository._remote.commitctx(
             message=message, parents=parent_ids,
             commit_time=date, commit_timezone=tz, user=author,
             files=self.get_paths(), extra=kwargs, removed=removed,
             updated=updated)
+        self.repository.append_commit_id(commit_id)
 
-        self.repository.commit_ids.append(new_id)
-        self.repository._rebuild_cache(self.repository.commit_ids)
         self.repository.branches = self.repository._get_branches()
-        tip = self.repository.get_commit()
+        tip = self.repository.get_commit(commit_id)
         self.reset()
         return tip

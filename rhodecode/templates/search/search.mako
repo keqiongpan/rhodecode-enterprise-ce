@@ -37,9 +37,10 @@
 
 <%def name="menu_bar_subnav()">
     %if c.repo_name:
-        ${self.repo_menu(active='search')}
+        <% active_entry = {'content':'files', 'path':'files', 'commit':'commits'}.get(c.search_type, 'summary')%>
+        ${self.repo_menu(active=active_entry)}
     %elif c.repo_group_name:
-        ${self.repo_group_menu(active='search')}
+        ${self.repo_group_menu(active='home')}
     %endif
 </%def>
 
@@ -56,22 +57,16 @@
 </%def>
 
 <%def name="repo_group_icon()">
-    <i class="icon-folder-close"></i>
+    <i class="icon-repo-group"></i>
 </%def>
 
 <%def name="main()">
 <div class="box">
     %if c.repo_name:
         <!-- box / title -->
-        <div class="title">
-            ${self.repo_page_title(c.rhodecode_db_repo)}
-        </div>
         ${h.form(h.route_path('search_repo',repo_name=c.repo_name),method='get')}
     %elif c.repo_group_name:
         <!-- box / title -->
-        <div class="title">
-            ${self.repo_group_page_title(c.repo_group)}
-        </div>
         ${h.form(h.route_path('search_repo_group',repo_group_name=c.repo_group_name),method='get')}
     %else:
         <!-- box / title -->

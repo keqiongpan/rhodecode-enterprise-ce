@@ -33,6 +33,8 @@ import collections
 import warnings
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
+
 from pyramid import compat
 
 from rhodecode.translation import lazy_ugettext
@@ -53,6 +55,7 @@ log = logging.getLogger(__name__)
 
 FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
+EMPTY_COMMIT_ID = '0' * 40
 
 Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
 
@@ -161,7 +164,7 @@ class MergeResponse(object):
             u'This pull request cannot be merged because the source contains '
             u'more branches than the target.'),
         MergeFailureReason.HG_TARGET_HAS_MULTIPLE_HEADS: lazy_ugettext(
-            u'This pull request cannot be merged because the target '
+            u'This pull request cannot be merged because the target `{target_ref.name}` '
             u'has multiple heads: `{heads}`.'),
         MergeFailureReason.TARGET_IS_LOCKED: lazy_ugettext(
             u'This pull request cannot be merged because the target repository is '
@@ -261,6 +264,7 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
+    _commit_ids_ver = 0
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -308,6 +312,9 @@ class BaseRepository(object):
     @LazyProperty
     def _remote(self):
         raise NotImplementedError
+
+    def _heads(self, branch=None):
+        return []
 
     @LazyProperty
     def EMPTY_COMMIT(self):
@@ -380,7 +387,7 @@ class BaseRepository(object):
         return commit.size
 
     def is_empty(self):
-        return not bool(self.commit_ids)
+        return self._remote.is_empty()
 
     @staticmethod
     def check_url(url, config):
@@ -400,6 +407,15 @@ class BaseRepository(object):
     # ==========================================================================
     # COMMITS
     # ==========================================================================
+
+    @CachedProperty('_commit_ids_ver')
+    def commit_ids(self):
+        raise NotImplementedError
+
+    def append_commit_id(self, commit_id):
+        if commit_id not in self.commit_ids:
+            self._rebuild_cache(self.commit_ids + [commit_id])
+            self._commit_ids_ver = time.time()
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
@@ -1091,12 +1107,12 @@ class BaseCommit(object):
         """
         return None
 
-    def archive_repo(self, file_path, kind='tgz', subrepos=None,
-                     prefix=None, write_metadata=False, mtime=None):
+    def archive_repo(self, archive_dest_path, kind='tgz', subrepos=None,
+                     prefix=None, write_metadata=False, mtime=None, archive_at_path='/'):
         """
         Creates an archive containing the contents of the repository.
 
-        :param file_path: path to the file which to create the archive.
+        :param archive_dest_path: path to the file which to create the archive.
         :param kind: one of following: ``"tbz2"``, ``"tgz"``, ``"zip"``.
         :param prefix: name of root directory in archive.
             Default is repository name and commit's short_id joined with dash:
@@ -1104,10 +1120,11 @@ class BaseCommit(object):
         :param write_metadata: write a metadata file into archive.
         :param mtime: custom modification time for archive creation, defaults
             to time.time() if not given.
+        :param archive_at_path: pack files at this path (default '/')
 
         :raise VCSError: If prefix has a problem.
         """
-        allowed_kinds = settings.ARCHIVE_SPECS.keys()
+        allowed_kinds = [x[0] for x in settings.ARCHIVE_SPECS]
         if kind not in allowed_kinds:
             raise ImproperArchiveTypeError(
                 'Archive kind (%s) not supported use one of %s' %
@@ -1115,11 +1132,11 @@ class BaseCommit(object):
 
         prefix = self._validate_archive_prefix(prefix)
 
-        mtime = mtime or time.mktime(self.date.timetuple())
+        mtime = mtime is not None or time.mktime(self.date.timetuple())
 
         file_info = []
         cur_rev = self.repository.get_commit(commit_id=self.raw_id)
-        for _r, _d, files in cur_rev.walk('/'):
+        for _r, _d, files in cur_rev.walk(archive_at_path):
             for f in files:
                 f_path = os.path.join(prefix, f.path)
                 file_info.append(
@@ -1128,15 +1145,15 @@ class BaseCommit(object):
         if write_metadata:
             metadata = [
                 ('repo_name', self.repository.name),
-                ('rev', self.raw_id),
-                ('create_time', mtime),
+                ('commit_id', self.raw_id),
+                ('mtime', mtime),
                 ('branch', self.branch),
                 ('tags', ','.join(self.tags)),
             ]
             meta = ["%s:%s" % (f_name, value) for f_name, value in metadata]
             file_info.append(('.archival.txt', 0o644, False, '\n'.join(meta)))
 
-        connection.Hg.archive_repo(file_path, mtime, file_info, kind)
+        connection.Hg.archive_repo(archive_dest_path, mtime, file_info, kind)
 
     def _validate_archive_prefix(self, prefix):
         if prefix is None:
@@ -1505,9 +1522,7 @@ class BaseInMemoryCommit(object):
                 "Cannot remove node at %s from "
                 "following parents: %s" % (not_removed, parents))
 
-    def commit(
-            self, message, author, parents=None, branch=None, date=None,
-            **kwargs):
+    def commit(self, message, author, parents=None, branch=None, date=None, **kwargs):
         """
         Performs in-memory commit (doesn't check workdir in any way) and
         returns newly created :class:`BaseCommit`. Updates repository's
@@ -1555,7 +1570,7 @@ class EmptyCommit(BaseCommit):
     """
 
     def __init__(
-            self, commit_id='0' * 40, repo=None, alias=None, idx=-1,
+            self, commit_id=EMPTY_COMMIT_ID, repo=None, alias=None, idx=-1,
             message='', author='', date=None):
         self._empty_commit_id = commit_id
         # TODO: johbo: Solve idx parameter, default value does not make
@@ -1615,7 +1630,7 @@ class EmptyChangeset(EmptyCommit):
             "Use EmptyCommit instead of EmptyChangeset", DeprecationWarning)
         return super(EmptyCommit, cls).__new__(cls, *args, **kwargs)
 
-    def __init__(self, cs='0' * 40, repo=None, requested_revision=None,
+    def __init__(self, cs=EMPTY_COMMIT_ID, repo=None, requested_revision=None,
                  alias=None, revision=-1, message='', author='', date=None):
         if requested_revision is not None:
             warnings.warn(

@@ -360,7 +360,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 'repository.read', 'repository.write', 'repository.admin'])
 
         repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin)
+            repo_list=repo_list, admin=admin, short_name=False)
         # json used to render the grid
         return json.dumps(repos_data)
 
@@ -423,7 +423,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         default_redirect_url = ''
 
         # save repo
-        if entry.get('bookmark_repo'):
+        if entry.get('bookmark_repo') and safe_int(entry.get('bookmark_repo')):
             repo = Repository.get(entry['bookmark_repo'])
             perm_check = HasRepoPermissionAny(
                 'repository.read', 'repository.write', 'repository.admin')
@@ -432,7 +432,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 should_save = True
                 default_redirect_url = '${repo_url}'
         # save repo group
-        elif entry.get('bookmark_repo_group'):
+        elif entry.get('bookmark_repo_group') and safe_int(entry.get('bookmark_repo_group')):
             repo_group = RepoGroup.get(entry['bookmark_repo_group'])
             perm_check = HasRepoGroupPermissionAny(
                 'group.read', 'group.write', 'group.admin')
@@ -496,6 +496,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         if not user_bookmark:
             raise HTTPFound(redirect_url)
 
+        # repository set
         if user_bookmark.repository:
             repo_name = user_bookmark.repository.repo_name
             base_redirect_url = h.route_path(
@@ -506,7 +507,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
                     .safe_substitute({'repo_url': base_redirect_url})
             else:
                 redirect_url = base_redirect_url
-
+        # repository group set
         elif user_bookmark.repository_group:
             repo_group_name = user_bookmark.repository_group.group_name
             base_redirect_url = h.route_path(
@@ -517,9 +518,11 @@ class MyAccountView(BaseAppView, DataGridAppView):
                     .safe_substitute({'repo_group_url': base_redirect_url})
             else:
                 redirect_url = base_redirect_url
-
+        # custom URL set
         elif user_bookmark.redirect_url:
-            redirect_url = user_bookmark.redirect_url
+            server_url = h.route_url('home').rstrip('/')
+            redirect_url = string.Template(user_bookmark.redirect_url) \
+                .safe_substitute({'server_url': server_url})
 
         log.debug('Redirecting bookmark %s to %s', user_bookmark, redirect_url)
         raise HTTPFound(redirect_url)

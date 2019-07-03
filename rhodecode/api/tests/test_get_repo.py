@@ -44,6 +44,7 @@ class TestGetRepo(object):
             self, apikey_attr, expect_secrets, cache_param, backend,
             user_util):
         repo = backend.create_repo()
+        repo_id = repo.repo_id
         usr = UserModel().get_by_username(TEST_USER_ADMIN_LOGIN)
         group = user_util.create_user_group(members=[usr])
         user_util.grant_user_group_permission_to_repo(
@@ -64,6 +65,8 @@ class TestGetRepo(object):
         permissions = expected_permissions(repo)
 
         followers = []
+
+        repo = RepoModel().get(repo_id)
         for user in repo.followers:
             followers.append(user.user.get_api_data(
                 include_secrets=expect_secrets))
@@ -84,6 +87,7 @@ class TestGetRepo(object):
         # TODO: Depending on which tests are running before this one, we
         # start with a different number of permissions in the database.
         repo = RepoModel().get_by_repo_name(backend.repo_name)
+        repo_id = repo.repo_id
         permission_count = len(repo.repo_to_perm)
 
         RepoModel().grant_user_permission(repo=backend.repo_name,
@@ -102,6 +106,8 @@ class TestGetRepo(object):
         permissions = expected_permissions(repo)
 
         followers = []
+
+        repo = RepoModel().get(repo_id)
         for user in repo.followers:
             followers.append(user.user.get_api_data())
 

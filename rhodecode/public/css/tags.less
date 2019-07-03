@@ -13,21 +13,29 @@
     font-size: (-1 + @basefontsize); //fit in tables
     line-height: .9em;
     border: none;
+    box-shadow: @button-shadow;
     .border-radius(@border-radius);
     font-family: @text-regular;
     background-image: none;
     color: @grey4;
-    .border ( @border-thickness-tags, @grey4 );
+    .border ( @border-thickness-tags, @grey5 );
     white-space: nowrap;
     a {
         color: inherit;
-        text-decoration: underline;
+
+        &:hover {
+            color: @grey2;
+        }
 
         i,
         [class^="icon-"]:before,
         [class*=" icon-"]:before {
             text-decoration: none;
         }
+    }
+
+    &:hover {
+        border-color: @grey4;
     }
 }
 

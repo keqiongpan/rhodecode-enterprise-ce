@@ -94,6 +94,7 @@ class TestCompareView(object):
         origin_repo = origin.scm_instance(cache=False)
         origin_repo.config.clear_section('hooks')
         origin_repo.pull(fork.repo_full_path, commit_ids=[commit3.raw_id])
+        origin_repo = origin.scm_instance(cache=False)  # cache rebuild
 
         # Verify test fixture setup
         # This does not work for git
@@ -162,8 +163,7 @@ class TestCompareView(object):
         compare_page.target_source_are_disabled()
 
     @pytest.mark.xfail_backends("svn", reason="Depends on branch support")
-    def test_compare_forks_on_branch_extra_commits_origin_has_incomming(
-            self, backend):
+    def test_compare_forks_on_branch_extra_commits_origin_has_incomming(self, backend):
         repo1 = backend.create_repo()
 
         # commit something !

@@ -81,7 +81,7 @@
             </div>
         %endif
             <button class="btn btn-default" type="submit" ${'disabled="disabled"' if c.personal_repo_group else ''}>
-                <i class="icon-folder-close"></i>
+                <i class="icon-repo-group"></i>
                 ${_('Create personal repository group')}
             </button>
         ${h.end_form()}

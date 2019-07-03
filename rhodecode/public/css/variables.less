@@ -8,13 +8,15 @@
 @rchighlightblue: lighten(@rcblue, 35%);
 
 // Secondary Colors (greyscale)
-@grey1: #202020;		//midnight
-@grey2: #323232;		//charcoal
-@grey3: #666666;		//tungsten
-@grey4: #979797;		//light grey
+@black: #000;
+@white: #fff;
+@grey1: #2B2B2D;		//midnight
+@grey2: #5C5C5C;		//charcoal
+@grey3: #7E7F7F;		//tungsten
+@grey4: #949494;		//light grey
 @grey5: #dbd9da;		//greyish
 @grey6: #eeeeee;		//silver
-@grey7: #f9f9f9;		//light silver
+@grey7: #F5F5F5;		//light silver
 
 // special for navigation
 @nav-grey: #CDCCCD;
@@ -102,7 +104,7 @@
 
 // FORMS (new)
 @border-thickness-inputs: 1px;
-@input-padding: @button-padding; //needs to match button padding
+@input-padding: .6em; //needs to match button padding
 // TODO: johbo: Needed for working computation of paddings around labels etc.
 // Expected to be replaced once we are done with the form refactoring.
 @input-padding-px: 12px;
@@ -128,10 +130,14 @@
 @fields-input-l: 720px;
 
 // BUTTONS
-@button-padding: .9em;
+@button-padding: .7em;
+@button-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.07);
+
+// DROPDOWNS
+@dropdown-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.07);
 
 // DEFAULT WIDTHS
-@wrapper-maxwidth: 1200px;
+@wrapper-maxwidth: 1600px;
 @sidebar-width: 145px;
 @sidebar-all-width: @sidebar-width + 2 * @sidebarpadding;
 @sidebar-small-width: 100px;

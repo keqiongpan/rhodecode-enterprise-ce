@@ -35,6 +35,7 @@
         "<%= dirs.js.node_modules %>/moment/min/moment.min.js",
         "<%= dirs.js.node_modules %>/clipboard/dist/clipboard.min.js",
         "<%= dirs.js.node_modules %>/favico.js/favico-0.3.10.min.js",
+        "<%= dirs.js.node_modules %>/dropzone/dist/dropzone.js",
         "<%= dirs.js.node_modules %>/sticky-sidebar/dist/sticky-sidebar.min.js",
         "<%= dirs.js.node_modules %>/sticky-sidebar/dist/jquery.sticky-sidebar.min.js",
         "<%= dirs.js.node_modules %>/waypoints/lib/noframework.waypoints.min.js",
@@ -107,7 +108,8 @@
       },
       "files": {
         "<%= dirs.css.dest %>/style.css": "<%= dirs.css.src %>/main.less",
-        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less"
+        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less",
+        "<%= dirs.css.dest %>/style-ipython.css": "<%= dirs.css.src %>/ipython.less"
       }
     },
     "production": {
@@ -118,7 +120,8 @@
       },
       "files": {
         "<%= dirs.css.dest %>/style.css": "<%= dirs.css.src %>/main.less",
-        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less"
+        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less",
+        "<%= dirs.css.dest %>/style-ipython.css": "<%= dirs.css.src %>/ipython.less"
       }
     },
     "components": {

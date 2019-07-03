@@ -192,14 +192,14 @@ class RepoModel(BaseModel):
         return repo_log
 
     @classmethod
-    def update_repoinfo(cls, repositories=None):
+    def update_commit_cache(cls, repositories=None):
         if not repositories:
             repositories = Repository.getAll()
         for repo in repositories:
             repo.update_commit_cache()
 
     def get_repos_as_dict(self, repo_list=None, admin=False,
-                          super_user_actions=False):
+                          super_user_actions=False, short_name=None):
         _render = get_current_request().get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
@@ -208,8 +208,12 @@ class RepoModel(BaseModel):
             return _render('quick_menu', repo_name)
 
         def repo_lnk(name, rtype, rstate, private, archived, fork_of):
+            if short_name is not None:
+                short_name_var = short_name
+            else:
+                short_name_var = not admin
             return _render('repo_name', name, rtype, rstate, private, archived, fork_of,
-                           short_name=not admin, admin=False)
+                           short_name=short_name_var, admin=False)
 
         def last_change(last_change):
             if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
@@ -250,8 +254,8 @@ class RepoModel(BaseModel):
                                  repo.private, repo.archived, repo.fork),
                 "name_raw": repo.repo_name.lower(),
 
-                "last_change": last_change(repo.last_db_change),
-                "last_change_raw": datetime_to_time(repo.last_db_change),
+                "last_change": last_change(repo.last_commit_change),
+                "last_change_raw": datetime_to_time(repo.last_commit_change),
 
                 "last_changeset": last_rev(repo.repo_name, cs_cache),
                 "last_changeset_raw": cs_cache.get('revision'),

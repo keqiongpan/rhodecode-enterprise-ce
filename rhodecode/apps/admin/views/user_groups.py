@@ -39,7 +39,7 @@ from rhodecode.model.forms import UserGroupForm
 from rhodecode.model.permission import PermissionModel
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.db import (
-    or_, count, User, UserGroup, UserGroupMember)
+    or_, count, User, UserGroup, UserGroupMember, in_filter_generator)
 from rhodecode.model.meta import Session
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.db import true
@@ -107,11 +107,17 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                 allowed_ids.append(user_group.users_group_id)
 
         user_groups_data_total_count = UserGroup.query()\
-            .filter(UserGroup.users_group_id.in_(allowed_ids))\
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(UserGroup.users_group_id, allowed_ids)
+            ))\
             .count()
 
         user_groups_data_total_inactive_count = UserGroup.query()\
-            .filter(UserGroup.users_group_id.in_(allowed_ids))\
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(UserGroup.users_group_id, allowed_ids)
+            ))\
             .filter(UserGroup.users_group_active != true()).count()
 
         member_count = count(UserGroupMember.user_id)
@@ -123,11 +129,14 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
             UserGroup.group_data,
             User,
             member_count.label('member_count')
-        ) \
-        .filter(UserGroup.users_group_id.in_(allowed_ids)) \
-        .outerjoin(UserGroupMember) \
-        .join(User, User.user_id == UserGroup.user_id) \
-        .group_by(UserGroup, User)
+            ) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(UserGroup.users_group_id, allowed_ids)
+            )) \
+            .outerjoin(UserGroupMember) \
+            .join(User, User.user_id == UserGroup.user_id) \
+            .group_by(UserGroup, User)
 
         base_q_inactive = base_q.filter(UserGroup.users_group_active != true())
 
@@ -141,14 +150,16 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         user_groups_data_total_filtered_count = base_q.count()
         user_groups_data_total_filtered_inactive_count = base_q_inactive.count()
 
+        sort_defined = False
         if order_by == 'members_total':
             sort_col = member_count
+            sort_defined = True
         elif order_by == 'user_username':
             sort_col = User.username
         else:
             sort_col = getattr(UserGroup, order_by, None)
 
-        if isinstance(sort_col, count) or sort_col:
+        if sort_defined or sort_col:
             if order_dir == 'asc':
                 sort_col = sort_col.asc()
             else:
@@ -162,7 +173,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
 
         user_groups_data = []
         for user_gr in auth_user_group_list:
-            user_groups_data.append({
+            row = {
                 "users_group_name": user_group_name(user_gr.users_group_name),
                 "name_raw": h.escape(user_gr.users_group_name),
                 "description": h.escape(user_gr.user_group_description),
@@ -175,7 +186,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                 "owner": user_profile(user_gr.User.username),
                 "action": user_group_actions(
                     user_gr.users_group_id, user_gr.users_group_name)
-            })
+            }
+            user_groups_data.append(row)
 
         data = ({
             'draw': draw,

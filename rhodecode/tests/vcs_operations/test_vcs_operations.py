@@ -54,6 +54,20 @@ class TestVCSOperations(object):
             'hg clone', clone_url, tmpdir.strpath)
         _check_proper_clone(stdout, stderr, 'hg')
 
+    def test_clone_hg_repo_by_admin_pull_protocol(self, rc_web_server, tmpdir):
+        clone_url = rc_web_server.repo_clone_url(HG_REPO)
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone --pull', clone_url, tmpdir.strpath)
+        _check_proper_clone(stdout, stderr, 'hg')
+
+    def test_clone_hg_repo_by_admin_pull_stream_protocol(self, rc_web_server, tmpdir):
+        clone_url = rc_web_server.repo_clone_url(HG_REPO)
+        stdout, stderr = Command('/tmp').execute(
+            'hg clone --pull --stream', clone_url, tmpdir.strpath)
+        assert 'files to transfer,' in stdout
+        assert 'transferred 1.' in stdout
+        assert '114 files updated,' in stdout
+
     def test_clone_git_repo_by_admin(self, rc_web_server, tmpdir):
         clone_url = rc_web_server.repo_clone_url(GIT_REPO)
         cmd = Command('/tmp')

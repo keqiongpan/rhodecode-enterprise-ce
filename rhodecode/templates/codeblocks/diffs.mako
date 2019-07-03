@@ -959,7 +959,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                         text: _gettext('Toggle Wide Mode diff'),
                         action: function () {
                             updateSticky();
-                            Rhodecode.comments.toggleWideMode(this);
+                            var wide = Rhodecode.comments.toggleWideMode(this);
+                            storeUserSessionAttr('rc_user_session_attr.wide_diff_mode', wide);
                             return null;
                         },
                         url: null,
@@ -1001,6 +1002,11 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
                 ]
             };
+
+            // get stored diff mode and pre-enable it
+            if (templateContext.session_attrs.wide_diff_mode === "true") {
+                Rhodecode.comments.toggleWideMode(null);
+            }
 
             $("#diff_menu").select2({
                 minimumResultsForSearch: -1,

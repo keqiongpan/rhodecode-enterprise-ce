@@ -28,8 +28,8 @@ def _pre_push_hook(*args, **kwargs):
     [{u'hg_env|git_env': ...,
       u'multiple_heads': [],
       u'name': u'default',
-      u'new_rev': u'd0befe0692e722e01d5677f27a104631cf798b69',
-      u'old_rev': u'd0befe0692e722e01d5677f27a104631cf798b69',
+      u'new_rev': u'd0b2ae0692e722e01d5677f27a104631cf798b69',
+      u'old_rev': u'd0b1ae0692e722e01d5677f27a104631cf798b69',
       u'ref': u'',
       u'total_commits': 2,
       u'type': u'branch'}]
@@ -47,13 +47,17 @@ def _pre_push_hook(*args, **kwargs):
     forbid_files = repo_extra_fields.get('forbid_files_glob', {}).get('field_value')
     forbid_files = aslist(forbid_files)
 
+    # forbid_files = ['*']  # example pattern
+
     # optionally get bytes limit for a single file, e.g 1024 for 1KB
     forbid_size_over = repo_extra_fields.get('forbid_size_over', {}).get('field_value')
     forbid_size_over = int(forbid_size_over or 0)
 
+    # forbid_size_over = 1024  # example 1024
+
     def validate_file_name_and_size(file_data, forbidden_files=None, size_limit=None):
         """
-        This function validates commited files against some sort of rules.
+        This function validates comited files against some sort of rules.
         It should return a valid boolean, and a reason for failure
 
         file_data =[
@@ -87,7 +91,10 @@ def _pre_push_hook(*args, **kwargs):
 
         # validate A(dded) files and size
         if size_limit and operation == 'A':
-            size = len(file_data['raw_diff'])
+            if 'file_size' in file_data:
+                size = file_data['file_size']
+            else:
+                size = len(file_data['raw_diff'])
 
             reason = 'File {} size of {} bytes exceeds limit {}'.format(
                 file_name, format_byte_size_binary(size),

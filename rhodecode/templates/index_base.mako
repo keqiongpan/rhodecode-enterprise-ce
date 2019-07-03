@@ -12,32 +12,15 @@
    <div class="box">
         <!-- box / title -->
         <div class="title">
-            % if c.repo_group:
-            ${self.repo_group_page_title(c.repo_group)}
-            ## context actions
-            <div>
-            <ul class="links icon-only-links block-right">
-                <li></li>
-            </ul>
-            </div>
-            % endif
-
             %if c.rhodecode_user.username != h.DEFAULT_USER:
               <div class="block-right">
-                <%
-                    is_admin = h.HasPermissionAny('hg.admin')('can create repos index page')
-                    create_repo = h.HasPermissionAny('hg.create.repository')('can create repository index page')
-                    create_repo_group = h.HasPermissionAny('hg.repogroup.create.true')('can create repository groups index page')
-                    create_user_group = h.HasPermissionAny('hg.usergroup.create.true')('can create user groups index page')
-                %>
-
                 %if not c.repo_group:
                     ## no repository group context here
-                    %if is_admin or create_repo:
+                    %if c.is_super_admin or c.can_create_repo:
                         <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
                     %endif
 
-                    %if is_admin or create_repo_group:
+                    %if c.is_super_admin or c.can_create_repo_group:
                         <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
                     %endif
                 %endif
@@ -79,13 +62,16 @@
           order: [[ 0, "asc" ]],
           columns: [
              { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname" },
+                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
              { data: {"_": "last_change",
                       "sort": "last_change_raw",
                       "type": Number}, title: "${_('Last Change')}", className: "td-time" },
+             { data: {"_": "last_changeset",
+                      "sort": "last_changeset_raw",
+                      "type": Number}, title: "", className: "td-hash" },
              { data: {"_": "owner",
                       "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
           ],
@@ -109,7 +95,7 @@
           pageLength: ${c.visual.dashboard_items},
           columns: [
              { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-componentname" },
+                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
              { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
              { data: {"_": "desc",
                       "sort": "desc"}, title: "${_('Description')}", className: "td-description" },

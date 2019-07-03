@@ -46,7 +46,7 @@ and commit files and |repos| while managing their security permissions.
    nix/default-env
    admin/system-admin
    admin/user-admin
-   admin/setting-repo-perms
+   admin/repo-admin
    admin/security-tips
    auth/auth
    issue-trackers/issue-trackers
@@ -64,19 +64,19 @@ and commit files and |repos| while managing their security permissions.
 
 .. toctree::
    :maxdepth: 1
+   :caption: User Documentation
+
+   usage/basic-usage
+   tutorials/tutorials
+
+.. toctree::
+   :maxdepth: 1
    :caption: Developer Documentation
 
    api/api
    tools/rhodecode-tools
    extensions/extensions-hooks
    contributing/contributing
-
-.. toctree::
-   :maxdepth: 1
-   :caption: User Documentation
-
-   usage/basic-usage
-   tutorials/tutorials
 
 .. toctree::
    :maxdepth: 1

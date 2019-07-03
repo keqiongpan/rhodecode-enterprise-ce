@@ -61,9 +61,9 @@
                 </div>
                 <div class="input">
                     ${h.text('new_ip')} ${h.text('description', placeholder=_('Description...'))}
-                    <span class="help-block">${_('Enter comma separated list of ip addresses like 127.0.0.1,\n'
-                     'or use a ip address with a mask 127.0.0.1/24, to create a network range.\n'
-                     'To specify multiple address range use 127.0.0.1-127.0.0.10 syntax')}</span>
+                    <span class="help-block pre-formatting">${_('Enter comma separated list of ip addresses like 10.0.0.1,10.0.0.2.\n'
+                     'Use a ip address with a mask 127.0.0.1/24, to create a network match pattern.\n'
+                     'To specify multiple entries on an address range use 127.0.0.1-127.0.0.10 syntax')}</span>
                 </div>
              </div>
             <div class="buttons">

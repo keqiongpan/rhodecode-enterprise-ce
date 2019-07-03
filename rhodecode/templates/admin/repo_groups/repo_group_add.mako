@@ -20,13 +20,12 @@
     ${self.menu_items(active='admin')}
 </%def>
 
+<%def name="menu_bar_subnav()">
+    ${self.admin_menu(active='repository_groups')}
+</%def>
+
 <%def name="main()">
 <div class="box">
-    <!-- box / title -->
-    <div class="title">
-        ${self.breadcrumbs()}
-    </div>
-    <!-- end box / title -->
     ${h.secure_form(h.route_path('repo_group_create'), request=request)}
     <div class="form">
         <!-- fields -->

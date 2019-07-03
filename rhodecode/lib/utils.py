@@ -371,7 +371,8 @@ def config_data_from_db(clear_session=True, repo=None):
             config.append((
                 safe_str(setting.section), safe_str(setting.key), False))
     log.debug(
-        'settings ui from db: %s',
+        'settings ui from db@repo[%s]: %s',
+        repo,
         ','.join(map(lambda s: '[{}] {}={}'.format(*s), ui_data)))
     if clear_session:
         meta.Session.remove()

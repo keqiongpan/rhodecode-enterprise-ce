@@ -350,11 +350,11 @@ class TestCreateReferenceData(object):
             {
                 'children': [
                     {
-                        'id': 'a', 'raw_id': 'a_id', 'text': 'a', 'type': 't1',
+                        'id': 'a', 'idx': 0, 'raw_id': 'a_id', 'text': 'a', 'type': 't1',
                         'files_url': expected_files_url + 'a/?at=a',
                     },
                     {
-                        'id': 'b', 'raw_id': 'b_id', 'text': 'b', 'type': 't1',
+                        'id': 'b', 'idx': 0, 'raw_id': 'b_id', 'text': 'b', 'type': 't1',
                         'files_url': expected_files_url + 'b/?at=b',
                     }
                 ],
@@ -363,7 +363,7 @@ class TestCreateReferenceData(object):
             {
                 'children': [
                     {
-                        'id': 'c', 'raw_id': 'c_id', 'text': 'c', 'type': 't2',
+                        'id': 'c', 'idx': 0, 'raw_id': 'c_id', 'text': 'c', 'type': 't2',
                         'files_url': expected_files_url + 'c/?at=c',
                     }
                 ],
@@ -385,12 +385,12 @@ class TestCreateReferenceData(object):
             {
                 'children': [
                     {
-                        'id': 'a@a_id', 'raw_id': 'a_id',
+                        'id': 'a@a_id', 'idx': 0, 'raw_id': 'a_id',
                         'text': 'a', 'type': 't1',
                         'files_url': expected_files_url + 'a_id/a?at=a',
                     },
                     {
-                        'id': 'b@b_id', 'raw_id': 'b_id',
+                        'id': 'b@b_id', 'idx': 0, 'raw_id': 'b_id',
                         'text': 'b', 'type': 't1',
                         'files_url': expected_files_url + 'b_id/b?at=b',
                     }
@@ -400,7 +400,7 @@ class TestCreateReferenceData(object):
             {
                 'children': [
                     {
-                        'id': 'c@c_id', 'raw_id': 'c_id',
+                        'id': 'c@c_id', 'idx': 0, 'raw_id': 'c_id',
                         'text': 'c', 'type': 't2',
                         'files_url': expected_files_url + 'c_id/c?at=c',
                     }
@@ -516,6 +516,7 @@ class TestReferenceItems(object):
                 'text': ref_name,
                 'id': self._format_function(ref_name, ref_id),
                 'raw_id': ref_id,
+                'idx': 0,
                 'type': self.ref_type,
                 'files_url': self.fake_url
             }

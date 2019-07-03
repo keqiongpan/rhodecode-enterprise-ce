@@ -30,8 +30,7 @@ from rhodecode.lib.vcs.backends import base
 
 class SubversionInMemoryCommit(base.BaseInMemoryCommit):
 
-    def commit(self, message, author, parents=None, branch=None, date=None,
-               **kwargs):
+    def commit(self, message, author, parents=None, branch=None, date=None, **kwargs):
         if branch not in (None, self.repository.DEFAULT_BRANCH_NAME):
             raise NotImplementedError("Branches are not yet supported")
 
@@ -74,8 +73,7 @@ class SubversionInMemoryCommit(base.BaseInMemoryCommit):
         # we should not add the commit_id, if it is already evaluated, it
         # will not be evaluated again.
         commit_id = str(svn_rev)
-        if commit_id not in self.repository.commit_ids:
-            self.repository.commit_ids.append(commit_id)
+        self.repository.append_commit_id(commit_id)
         tip = self.repository.get_commit()
         self.reset()
         return tip

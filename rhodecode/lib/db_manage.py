@@ -375,6 +375,27 @@ class DbManage(object):
         hgevolve.ui_active = False
         self.sa.add(hgevolve)
 
+        hgevolve = RhodeCodeUi()
+        hgevolve.ui_section = 'experimental'
+        hgevolve.ui_key = 'evolution'
+        hgevolve.ui_value = ''
+        hgevolve.ui_active = False
+        self.sa.add(hgevolve)
+
+        hgevolve = RhodeCodeUi()
+        hgevolve.ui_section = 'experimental'
+        hgevolve.ui_key = 'evolution.exchange'
+        hgevolve.ui_value = ''
+        hgevolve.ui_active = False
+        self.sa.add(hgevolve)
+
+        hgevolve = RhodeCodeUi()
+        hgevolve.ui_section = 'extensions'
+        hgevolve.ui_key = 'topic'
+        hgevolve.ui_value = ''
+        hgevolve.ui_active = False
+        self.sa.add(hgevolve)
+
         # enable hggit disabled by default
         hggit = RhodeCodeUi()
         hggit.ui_section = 'extensions'
@@ -463,9 +484,6 @@ class DbManage(object):
             fixed = True
             self.populate_default_permissions()
         return fixed
-
-    def update_repo_info(self):
-        RepoModel.update_repoinfo()
 
     def config_prompt(self, test_repo_path='', retries=3):
         defaults = self.cli_args

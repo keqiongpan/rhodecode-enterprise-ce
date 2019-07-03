@@ -1868,7 +1868,7 @@ class Repository(Base, BaseModel):
         if is_outdated(cs_cache) or not self.changeset_cache:
             _default = datetime.datetime.fromtimestamp(0)
             last_change = cs_cache.get('date') or _default
-            log.debug('updated repo %s with new cs cache %s',
+            log.debug('updated repo %s with new commit cache %s',
                       self.repo_name, cs_cache)
             self.updated_on = last_change
             self.changeset_cache = cs_cache

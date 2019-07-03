@@ -42,7 +42,7 @@ To do this, use the following steps:
     ## restarted, could prevent memory leaks
     max_requests = 1000
     max_requests_jitter = 30
-    ## amount of time a worker can spend with handling a request before it
+    ## amount of time a worker can spend with handling a request tuning-change-lfs-dir.before it
     ## gets killed and restarted. Set to 6hrs
     timeout = 21600
 

@@ -13,11 +13,12 @@ permissions applied to it; |perm|.
 
 .. toctree::
 
-    public-access
-    default-user-perms
-    adding-anonymous-user
-    adding-new-user
-    setting-default-permissions
-    setting-usergroup-permissions
+    user_admin/public-access
+    user_admin/default-user-perms
+    user_admin/adding-anonymous-user
+    user_admin/adding-new-user
+    user_admin/setting-default-permissions
+    user_admin/setting-usergroup-permissions
+    user_admin/user-admin-tasks
 
 .. |perm| replace:: **None**, **Read**, **Write**, or **Admin**

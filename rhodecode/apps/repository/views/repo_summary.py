@@ -72,6 +72,7 @@ class RepoSummaryView(RepoAppView):
                 log.debug("Searching for a README file.")
                 readme_node = ReadmeFinder(_renderer_type).search(commit)
             if readme_node:
+                log.debug('Found README node: %s', readme_node)
                 relative_urls = {
                     'raw': h.route_path(
                         'repo_file_raw', repo_name=_repo_name,
@@ -82,7 +83,8 @@ class RepoSummaryView(RepoAppView):
                 }
                 readme_data = self._render_readme_or_none(
                     commit, readme_node, relative_urls)
-                readme_filename = readme_node.path
+                readme_filename = readme_node.unicode_path
+
             return readme_data, readme_filename
 
         inv_context_manager = rc_cache.InvalidationContext(
@@ -152,6 +154,26 @@ class RepoSummaryView(RepoAppView):
         c.comments = self.db_repo.get_comments(page_ids)
         c.statuses = self.db_repo.statuses(page_ids)
 
+    def _prepare_and_set_clone_url(self, c):
+        username = ''
+        if self._rhodecode_user.username != User.DEFAULT_USER:
+            username = safe_str(self._rhodecode_user.username)
+
+        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
+        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
+
+        if '{repo}' in _def_clone_uri:
+            _def_clone_uri_id = _def_clone_uri.replace('{repo}', '_{repoid}')
+        elif '{repoid}' in _def_clone_uri:
+            _def_clone_uri_id = _def_clone_uri.replace('_{repoid}', '{repo}')
+
+        c.clone_repo_url = self.db_repo.clone_url(
+            user=username, uri_tmpl=_def_clone_uri)
+        c.clone_repo_url_id = self.db_repo.clone_url(
+            user=username, uri_tmpl=_def_clone_uri_id)
+        c.clone_repo_url_ssh = self.db_repo.clone_url(
+            uri_tmpl=_def_clone_uri_ssh, ssh=True)
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -160,6 +182,7 @@ class RepoSummaryView(RepoAppView):
         renderer='rhodecode:templates/summary/summary_commits.mako')
     def summary_commits(self):
         c = self.load_default_context()
+        self._prepare_and_set_clone_url(c)
         self._load_commits_context(c)
         return self._get_template_context(c)
 
@@ -179,26 +202,11 @@ class RepoSummaryView(RepoAppView):
         c = self.load_default_context()
 
         # Prepare the clone URL
-        username = ''
-        if self._rhodecode_user.username != User.DEFAULT_USER:
-            username = safe_str(self._rhodecode_user.username)
+        self._prepare_and_set_clone_url(c)
 
-        _def_clone_uri = _def_clone_uri_id = c.clone_uri_tmpl
-        _def_clone_uri_ssh = c.clone_uri_ssh_tmpl
-
-        if '{repo}' in _def_clone_uri:
-            _def_clone_uri_id = _def_clone_uri.replace(
-                '{repo}', '_{repoid}')
-        elif '{repoid}' in _def_clone_uri:
-            _def_clone_uri_id = _def_clone_uri.replace(
-                '_{repoid}', '{repo}')
-
-        c.clone_repo_url = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri)
-        c.clone_repo_url_id = self.db_repo.clone_url(
-            user=username, uri_tmpl=_def_clone_uri_id)
-        c.clone_repo_url_ssh = self.db_repo.clone_url(
-            uri_tmpl=_def_clone_uri_ssh, ssh=True)
+        # update every 5 min
+        if self.db_repo.last_commit_cache_update_diff > 60 * 5:
+            self.db_repo.update_commit_cache()
 
         # If enabled, get statistics data
 
@@ -231,8 +239,6 @@ class RepoSummaryView(RepoAppView):
         c.enable_downloads = self.db_repo.enable_downloads
         c.repository_followers = scm_model.get_followers(self.db_repo)
         c.repository_forks = scm_model.get_forks(self.db_repo)
-        c.repository_is_user_following = scm_model.is_following_repo(
-            self.db_repo_name, self._rhodecode_user.user_id)
 
         # first interaction with the VCS instance after here...
         if c.repository_requirements_missing:
@@ -317,8 +323,7 @@ class RepoSummaryView(RepoAppView):
             (_("Tag"), repo.tags, 'tag'),
             (_("Bookmark"), repo.bookmarks, 'book'),
         ]
-        res = self._create_reference_data(
-            repo, self.db_repo_name, refs_to_create)
+        res = self._create_reference_data(repo, self.db_repo_name, refs_to_create)
         data = {
             'more': False,
             'results': res
@@ -365,8 +370,7 @@ class RepoSummaryView(RepoAppView):
                 })
         return result
 
-    def _create_reference_items(self, repo, full_repo_name, refs, ref_type,
-                                format_ref_id):
+    def _create_reference_items(self, repo, full_repo_name, refs, ref_type, format_ref_id):
         result = []
         is_svn = h.is_svn(repo)
         for ref_name, raw_id in refs.iteritems():
@@ -378,6 +382,7 @@ class RepoSummaryView(RepoAppView):
                 'raw_id': raw_id,
                 'type': ref_type,
                 'files_url': files_url,
+                'idx': 0,
             })
         return result
 

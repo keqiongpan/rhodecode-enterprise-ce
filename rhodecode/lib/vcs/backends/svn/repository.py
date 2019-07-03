@@ -27,6 +27,7 @@ import os
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
+from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import date_astimestamp
@@ -75,6 +76,9 @@ class SubversionRepository(base.BaseRepository):
 
         self._init_repo(create, src_url)
 
+        # dependent that trigger re-computation of  commit_ids
+        self._commit_ids_ver = 0
+
     @LazyProperty
     def _remote(self):
         return connection.Svn(self.path, self.config)
@@ -93,10 +97,30 @@ class SubversionRepository(base.BaseRepository):
         else:
             self._check_path()
 
-    @LazyProperty
+    @CachedProperty('_commit_ids_ver')
     def commit_ids(self):
         head = self._remote.lookup(None)
         return [str(r) for r in xrange(1, head + 1)]
+
+    def _rebuild_cache(self, commit_ids):
+        pass
+
+    def run_svn_command(self, cmd, **opts):
+        """
+        Runs given ``cmd`` as svn command and returns tuple
+        (stdout, stderr).
+
+        :param cmd: full svn command to be executed
+        :param opts: env options to pass into Subprocess command
+        """
+        if not isinstance(cmd, list):
+            raise ValueError('cmd must be a list, got %s instead' % type(cmd))
+
+        skip_stderr_log = opts.pop('skip_stderr_log', False)
+        out, err = self._remote.run_svn_command(cmd, **opts)
+        if err and not skip_stderr_log:
+            log.debug('Stderr output of svn command "%s":\n%s', cmd, err)
+        return out, err
 
     @LazyProperty
     def branches(self):
@@ -260,7 +284,7 @@ class SubversionRepository(base.BaseRepository):
             try:
                 commit_id = self.commit_ids[commit_idx]
             except IndexError:
-                raise CommitDoesNotExistError
+                raise CommitDoesNotExistError('No commit with idx: {}'.format(commit_idx))
 
         commit_id = self._sanitize_commit_id(commit_id)
         commit = SubversionCommit(repository=self, commit_id=commit_id)

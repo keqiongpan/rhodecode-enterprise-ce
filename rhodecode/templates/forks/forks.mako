@@ -8,9 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Forks')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='repositories')}
@@ -23,7 +21,7 @@
 <%def name="main()">
 <div class="box">
     <div class="title">
-        ${self.repo_page_title(c.rhodecode_db_repo)}
+
         <ul class="links">
             <li>
                 <a class="btn btn-small btn-success" href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">

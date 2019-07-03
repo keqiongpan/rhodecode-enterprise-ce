@@ -46,6 +46,7 @@ class TestVCSOperationsSpecial(object):
         cmd.execute('git clone', clone_url)
 
         repo = GitRepository(os.path.join(tmpdir.strpath, empty_repo.repo_name))
+        repo._checkout('test', create=True)
         repo.in_memory_commit.add(FileNode('file', content=''))
         repo.in_memory_commit.commit(
             message='Commit on branch test',

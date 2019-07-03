@@ -70,10 +70,13 @@ class TestMercurialRemoteRepoInvalidation(object):
             tags[name] = raw_id
 
         repo = backend_hg.repo.scm_instance()
+
         with patch.object(repo, '_remote') as remote:
+            repo.tags = tags
             remote.lookup.return_value = ('commit-id', 'commit-idx')
             remote.tags.return_value = tags
             remote._get_tags.return_value = tags
+            remote.is_empty.return_value = False
             remote.tag.side_effect = add_tag
 
             # Invoke method.

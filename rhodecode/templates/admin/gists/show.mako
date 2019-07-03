@@ -48,7 +48,7 @@
                         </code>
                     </div>
                     <div class="stats">
-                       %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
+                       %if c.is_super_admin or c.gist.gist_owner == c.rhodecode_user.user_id:
                         <div class="remove_gist">
                             ${h.secure_form(h.route_path('gist_delete', gist_id=c.gist.gist_access_id), request=request)}
                                 ${h.submit('remove_gist', _('Delete'),class_="btn btn-mini btn-danger",onclick="return confirm('"+_('Confirm to delete this Gist')+"');")}
@@ -59,7 +59,7 @@
                           ## only owner should see that
                           <a href="#copySource" onclick="return false;" class="btn btn-mini icon-clipboard clipboard-action" data-clipboard-text="${c.files[0].content}">${_('Copy content')}</a>
 
-                          %if h.HasPermissionAny('hg.admin')() or c.gist.gist_owner == c.rhodecode_user.user_id:
+                          %if c.is_super_admin or c.gist.gist_owner == c.rhodecode_user.user_id:
                             ${h.link_to(_('Edit'), h.route_path('gist_edit', gist_id=c.gist.gist_access_id), class_="btn btn-mini")}
                           %endif
                           ${h.link_to(_('Show as Raw'), h.route_path('gist_show_formatted', gist_id=c.gist.gist_access_id, revision='tip', format='raw'), class_="btn btn-mini")}

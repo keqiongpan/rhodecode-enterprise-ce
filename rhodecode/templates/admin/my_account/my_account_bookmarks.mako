@@ -23,8 +23,11 @@
                         <label class="btn-link btn-danger">${_('Clear')}:</label>
                         ${h.checkbox('remove', value=True)}
                     </div>
-         </div>
+                </div>
             </div>
+            <p class="help-block help-block-inline" >
+                ${_('Server URL is available as ${server_url} variable. E.g. Redirect url: ${server_url}/_admin/exception_tracker')}
+            </p>
 
             <div class="label">
                 <label for="redirect_url">${_('Redirect URL')}:</label>

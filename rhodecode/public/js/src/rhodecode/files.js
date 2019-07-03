@@ -19,234 +19,254 @@
 /**
  * Search file list
  */
-// global reference to file-node filter
-var _NODEFILTER = {};
 
-var fileBrowserListeners = function(node_list_url, url_base){
-  var n_filter = $('#node_filter').get(0);
+var NodeFilter = {};
 
-  _NODEFILTER.filterTimeout = null;
-  var nodes = null;
+var fileBrowserListeners = function (node_list_url, url_base) {
+    var $filterInput = $('#node_filter');
+    var n_filter = $filterInput.get(0);
 
-  _NODEFILTER.fetchNodes = function(callback) {
-    $.ajax({url: node_list_url, headers: {'X-PARTIAL-XHR': true}})
-      .done(function(data){
-        nodes = data.nodes;
-        if (callback) {
-          callback();
+    NodeFilter.filterTimeout = null;
+    var nodes = null;
+
+    NodeFilter.focus = function () {
+        $filterInput.focus()
+    };
+
+    NodeFilter.fetchNodes = function (callback) {
+        $.ajax(
+            {url: node_list_url, headers: {'X-PARTIAL-XHR': true}})
+            .done(function (data) {
+                nodes = data.nodes;
+                if (callback) {
+                    callback();
+                }
+            })
+            .fail(function (data) {
+                console.log('failed to load');
+            });
+    };
+
+    NodeFilter.initFilter = function (e) {
+        if ($filterInput.hasClass('loading')) {
+            return
         }
-      })
-      .fail(function(data){
-        console.log('failed to load');
-      });
-  };
 
-  _NODEFILTER.fetchNodesCallback = function() {
-    $('#node_filter_box_loading').hide();
-    $('#node_filter_box').removeClass('hidden').show();
-    n_filter.focus();
-    if ($('#node_filter').hasClass('init')){
-      n_filter.value = '';
-      $('#node_filter').removeClass('init');
-    }
-  };
-
-  _NODEFILTER.initFilter = function(){
-    $('#node_filter_box_loading').removeClass('hidden').show();
-    $('#search_activate_id').hide();
-    $('#search_deactivate_id').removeClass('hidden').show();
-    $('#add_node_id').hide();
-    _NODEFILTER.fetchNodes(_NODEFILTER.fetchNodesCallback);
-  };
-
-  _NODEFILTER.resetFilter = function(){
-    $('#node_filter_box_loading').hide();
-    $('#node_filter_box').hide();
-    $('#search_activate_id').show();
-    $('#search_deactivate_id').hide();
-    $('#add_node_id').show();
-    $('#tbody').show();
-    $('#tbody_filtered').hide();
-    $('#node_filter').val('');
-  };
-
-  _NODEFILTER.fuzzy_match = function(filepath, query) {
-    var highlight = [];
-    var order = 0;
-    for (var i = 0; i < query.length; i++) {
-      var match_position = filepath.indexOf(query[i]);
-      if (match_position !== -1) {
-        var prev_match_position = highlight[highlight.length-1];
-        if (prev_match_position === undefined) {
-          highlight.push(match_position);
-        } else {
-          var current_match_position = prev_match_position + match_position + 1;
-          highlight.push(current_match_position);
-          order = order + current_match_position - prev_match_position;
+        // in case we are already loaded, do nothing
+        if (!$filterInput.hasClass('init')) {
+            return NodeFilter.handleKey(e);
         }
-        filepath = filepath.substring(match_position+1);
-      } else {
-        return false;
-      }
-    }
-    return {'order': order,
-            'highlight': highlight};
-  };
+        var iconLoading = 'icon-spin animate-spin';
+        var iconSearch = 'icon-search';
+        $('.files-filter-box-path i').removeClass(iconSearch).addClass(iconLoading);
+        $filterInput.addClass('loading');
 
-  _NODEFILTER.sortPredicate = function(a, b) {
-    if (a.order < b.order) return -1;
-    if (a.order > b.order) return 1;
-    if (a.filepath < b.filepath) return -1;
-    if (a.filepath > b.filepath) return 1;
-    return 0;
-  };
+        var callback = function (org) {
+            return function () {
+                if ($filterInput.hasClass('init')) {
+                    $filterInput.removeClass('init');
+                    $filterInput.removeClass('loading');
+                }
+                $('.files-filter-box-path i').removeClass(iconLoading).addClass(iconSearch);
 
-  _NODEFILTER.updateFilter = function(elem, e) {
-    return function(){
-      // Reset timeout
-      _NODEFILTER.filterTimeout = null;
-      var query = elem.value.toLowerCase();
-      var match = [];
-      var matches_max = 20;
-      if (query !== ""){
-        var results = [];
-        for(var k=0;k<nodes.length;k++){
-          var result = _NODEFILTER.fuzzy_match(
-              nodes[k].name.toLowerCase(), query);
-          if (result) {
-            result.type = nodes[k].type;
-            result.filepath = nodes[k].name;
-            results.push(result);
-          }
-        }
-        results = results.sort(_NODEFILTER.sortPredicate);
-        var limit = matches_max;
-        if (results.length < matches_max) {
-          limit = results.length;
-        }
-        for (var i=0; i<limit; i++){
-          if(query && results.length > 0){
-            var n = results[i].filepath;
-            var t = results[i].type;
-            var n_hl = n.split("");
-            var pos = results[i].highlight;
-            for (var j = 0; j < pos.length; j++) {
-                n_hl[pos[j]] = "<em>" + n_hl[pos[j]] + "</em>";
+                // auto re-filter if we filled in the input
+                if (n_filter.value !== "") {
+                    NodeFilter.updateFilter(n_filter, e)()
+                }
+
             }
-            n_hl = n_hl.join("");
-            var new_url = url_base.replace('__FPATH__',n);
-
-            var typeObj = {
-              dir: 'icon-directory browser-dir',
-              file: 'icon-file-text browser-file'
-            };
-
-            var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
-            match.push('<tr class="browser-result"><td><a class="pjax-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url,typeIcon, n_hl));
-          }
-        }
-        if(results.length > limit){
-          var truncated_count = results.length - matches_max;
-          if (truncated_count === 1) {
-            match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated result')));
-          } else {
-            match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated results')));
-          }
-        }
-      }
-      if (query !== ""){
-        $('#tbody').hide();
-        $('#tbody_filtered').show();
-
-        if (match.length === 0){
-          match.push('<tr><td>{0}</td><td colspan="5"></td></tr>'.format(_gettext('No matching files')));
-        }
-        $('#tbody_filtered').html(match.join(""));
-      }
-      else{
-        $('#tbody').show();
-        $('#tbody_filtered').hide();
-      }
+        };
+        // load node data
+        NodeFilter.fetchNodes(callback());
 
     };
-  };
 
-  var scrollDown = function(element){
-    var elementBottom = element.offset().top + $(element).outerHeight();
-    var windowBottom = window.innerHeight + $(window).scrollTop();
-    if (elementBottom > windowBottom) {
-      var offset = elementBottom - window.innerHeight;
-      $('html,body').scrollTop(offset);
-      return false;
-    }
-    return true;
-  };
+    NodeFilter.resetFilter = function () {
+        $('#tbody').show();
+        $('#tbody_filtered').hide();
+        $filterInput.val('');
+    };
 
-  var scrollUp = function(element){
-    if (element.offset().top < $(window).scrollTop()) {
-      $('html,body').scrollTop(element.offset().top);
-      return false;
-    }
-    return true;
-  };
+    NodeFilter.handleKey = function (e) {
+        var scrollDown = function (element) {
+            var elementBottom = element.offset().top + $(element).outerHeight();
+            var windowBottom = window.innerHeight + $(window).scrollTop();
+            if (elementBottom > windowBottom) {
+                var offset = elementBottom - window.innerHeight;
+                $('html,body').scrollTop(offset);
+                return false;
+            }
+            return true;
+        };
 
-  $('#filter_activate').click(function() {
-    _NODEFILTER.initFilter();
-  });
+        var scrollUp = function (element) {
+            if (element.offset().top < $(window).scrollTop()) {
+                $('html,body').scrollTop(element.offset().top);
+                return false;
+            }
+            return true;
+        };
+        var $hlElem = $('.browser-highlight');
 
-  $('#filter_deactivate').click(function() {
-    _NODEFILTER.resetFilter();
-  });
+        if (e.keyCode === 40) { // Down
+            if ($hlElem.length === 0) {
+                $('.browser-result').first().addClass('browser-highlight');
+            } else {
+                var next = $hlElem.next();
+                if (next.length !== 0) {
+                    $hlElem.removeClass('browser-highlight');
+                    next.addClass('browser-highlight');
+                }
+            }
 
-  $(n_filter).click(function() {
-    if ($('#node_filter').hasClass('init')){
-      n_filter.value = '';
-      $('#node_filter').removeClass('init');
-    }
-  });
-
-  $(n_filter).keydown(function(e) {
-    if (e.keyCode === 40){ // Down
-      if ($('.browser-highlight').length === 0){
-        $('.browser-result').first().addClass('browser-highlight');
-      } else {
-        var next = $('.browser-highlight').next();
-        if (next.length !== 0) {
-          $('.browser-highlight').removeClass('browser-highlight');
-          next.addClass('browser-highlight');
+            if ($hlElem.get(0) !== undefined){
+                scrollDown($hlElem);
+            }
         }
-      }
-      scrollDown($('.browser-highlight'));
-    }
-    if (e.keyCode === 38){ // Up
-      e.preventDefault();
-      if ($('.browser-highlight').length !== 0){
-        var next = $('.browser-highlight').prev();
-        if (next.length !== 0) {
-          $('.browser-highlight').removeClass('browser-highlight');
-          next.addClass('browser-highlight');
+        if (e.keyCode === 38) { // Up
+            e.preventDefault();
+            if ($hlElem.length !== 0) {
+                var next = $hlElem.prev();
+                if (next.length !== 0) {
+                    $('.browser-highlight').removeClass('browser-highlight');
+                    next.addClass('browser-highlight');
+                }
+            }
+
+            if ($hlElem.get(0) !== undefined){
+                scrollUp($hlElem);
+            }
+
         }
-      }
-      scrollUp($('.browser-highlight'));
-    }
-    if (e.keyCode === 13){ // Enter
-      if ($('.browser-highlight').length !== 0){
-        var url = $('.browser-highlight').find('.pjax-link').attr('href');
-        $.pjax({url: url, container: '#pjax-container', timeout: pjaxTimeout});
-      }
-    }
-    if (e.keyCode === 27){ // Esc
-      _NODEFILTER.resetFilter();
-      $('html,body').scrollTop(0);
-    }
-  });
-  var capture_keys = [40, 38, 39, 37, 13, 27];
-  $(n_filter).keyup(function(e) {
-    if ($.inArray(e.keyCode, capture_keys) === -1){
-      clearTimeout(_NODEFILTER.filterTimeout);
-      _NODEFILTER.filterTimeout = setTimeout(_NODEFILTER.updateFilter(n_filter, e),200);
-    }
-  });
+        if (e.keyCode === 13) { // Enter
+            if ($('.browser-highlight').length !== 0) {
+                var url = $('.browser-highlight').find('.match-link').attr('href');
+                window.location = url;
+            }
+        }
+        if (e.keyCode === 27) { // Esc
+            NodeFilter.resetFilter();
+            $('html,body').scrollTop(0);
+        }
+
+        var capture_keys = [
+            40, // ArrowDown
+            38, // ArrowUp
+            39, // ArrowRight
+            37, // ArrowLeft
+            13, // Enter
+            27  // Esc
+        ];
+
+        if ($.inArray(e.keyCode, capture_keys) === -1) {
+            clearTimeout(NodeFilter.filterTimeout);
+            NodeFilter.filterTimeout = setTimeout(NodeFilter.updateFilter(n_filter, e), 200);
+        }
+
+    };
+
+    NodeFilter.fuzzy_match = function (filepath, query) {
+        var highlight = [];
+        var order = 0;
+        for (var i = 0; i < query.length; i++) {
+            var match_position = filepath.indexOf(query[i]);
+            if (match_position !== -1) {
+                var prev_match_position = highlight[highlight.length - 1];
+                if (prev_match_position === undefined) {
+                    highlight.push(match_position);
+                } else {
+                    var current_match_position = prev_match_position + match_position + 1;
+                    highlight.push(current_match_position);
+                    order = order + current_match_position - prev_match_position;
+                }
+                filepath = filepath.substring(match_position + 1);
+            } else {
+                return false;
+            }
+        }
+        return {
+            'order': order,
+            'highlight': highlight
+        };
+    };
+
+    NodeFilter.sortPredicate = function (a, b) {
+        if (a.order < b.order) return -1;
+        if (a.order > b.order) return 1;
+        if (a.filepath < b.filepath) return -1;
+        if (a.filepath > b.filepath) return 1;
+        return 0;
+    };
+
+    NodeFilter.updateFilter = function (elem, e) {
+        return function () {
+            // Reset timeout
+            NodeFilter.filterTimeout = null;
+            var query = elem.value.toLowerCase();
+            var match = [];
+            var matches_max = 20;
+            if (query !== "") {
+                var results = [];
+                for (var k = 0; k < nodes.length; k++) {
+                    var result = NodeFilter.fuzzy_match(
+                            nodes[k].name.toLowerCase(), query);
+                    if (result) {
+                        result.type = nodes[k].type;
+                        result.filepath = nodes[k].name;
+                        results.push(result);
+                    }
+                }
+                results = results.sort(NodeFilter.sortPredicate);
+                var limit = matches_max;
+                if (results.length < matches_max) {
+                    limit = results.length;
+                }
+                for (var i = 0; i < limit; i++) {
+                    if (query && results.length > 0) {
+                        var n = results[i].filepath;
+                        var t = results[i].type;
+                        var n_hl = n.split("");
+                        var pos = results[i].highlight;
+                        for (var j = 0; j < pos.length; j++) {
+                            n_hl[pos[j]] = "<em>" + n_hl[pos[j]] + "</em>";
+                        }
+                        n_hl = n_hl.join("");
+                        var new_url = url_base.replace('__FPATH__', n);
+
+                        var typeObj = {
+                            dir: 'icon-directory browser-dir',
+                            file: 'icon-file-text browser-file'
+                        };
+
+                        var typeIcon = '<i class="{0}"></i>'.format(typeObj[t]);
+                        match.push('<tr class="browser-result"><td><a class="match-link" href="{0}">{1}{2}</a></td><td colspan="5"></td></tr>'.format(new_url, typeIcon, n_hl));
+                    }
+                }
+                if (results.length > limit) {
+                    var truncated_count = results.length - matches_max;
+                    if (truncated_count === 1) {
+                        match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated result')));
+                    } else {
+                        match.push('<tr><td>{0} {1}</td><td colspan="5"></td></tr>'.format(truncated_count, _gettext('truncated results')));
+                    }
+                }
+            }
+            if (query !== "") {
+                $('#tbody').hide();
+                $('#tbody_filtered').show();
+
+                if (match.length === 0) {
+                    match.push('<tr><td>{0}</td><td colspan="5"></td></tr>'.format(_gettext('No matching files')));
+                }
+                $('#tbody_filtered').html(match.join(""));
+            } else {
+                $('#tbody').show();
+                $('#tbody_filtered').hide();
+            }
+
+        };
+    };
+
 };
 
 var getIdentNode = function(n){
@@ -308,3 +328,190 @@ var getSelectionLink = function(e) {
     }
   }
 };
+
+var getFileState = function() {
+    // relies on a global set filesUrlData
+    var f_path = filesUrlData['f_path'];
+    var commit_id = filesUrlData['commit_id'];
+
+    var url_params = {
+        repo_name: templateContext.repo_name,
+        commit_id: commit_id,
+        f_path:'__FPATH__'
+    };
+    if (atRef !== '') {
+        url_params['at'] = atRef
+    }
+
+    var _url_base = pyroutes.url('repo_files', url_params);
+    var _node_list_url = pyroutes.url('repo_files_nodelist',
+            {repo_name: templateContext.repo_name,
+             commit_id: commit_id, f_path: f_path});
+
+    return {
+        f_path: f_path,
+        commit_id: commit_id,
+        node_list_url: _node_list_url,
+        url_base: _url_base
+    };
+};
+
+var getFilesMetadata = function() {
+    // relies on metadataRequest global state
+    if (metadataRequest && metadataRequest.readyState != 4) {
+        metadataRequest.abort();
+    }
+
+    if ($('#file-tree-wrapper').hasClass('full-load')) {
+        // in case our HTML wrapper has full-load class we don't
+        // trigger the async load of metadata
+        return false;
+    }
+
+    var state = getFileState();
+    var url_data = {
+        'repo_name': templateContext.repo_name,
+        'commit_id': state.commit_id,
+        'f_path': state.f_path
+    };
+
+    var url = pyroutes.url('repo_nodetree_full', url_data);
+
+    metadataRequest = $.ajax({url: url});
+
+    metadataRequest.done(function(data) {
+        $('#file-tree').html(data);
+        timeagoActivate();
+    });
+    metadataRequest.fail(function (data, textStatus, errorThrown) {
+        if (data.status != 0) {
+            alert("Error while fetching metadata.\nError code {0} ({1}).Please consider reloading the page".format(data.status,data.statusText));
+        }
+    });
+};
+
+// show more authors
+var showAuthors = function(elem, annotate) {
+    var state = getFileState('callbacks');
+
+    var url = pyroutes.url('repo_file_authors',
+                {'repo_name': templateContext.repo_name,
+                 'commit_id': state.commit_id, 'f_path': state.f_path});
+
+    $.pjax({
+        url: url,
+        data: 'annotate={0}'.format(annotate),
+        container: '#file_authors',
+        push: false,
+        timeout: 5000
+    }).complete(function(){
+        $(elem).hide();
+        $('#file_authors_title').html(_gettext('All Authors'))
+    })
+};
+
+
+(function (mod) {
+
+    if (typeof exports == "object" && typeof module == "object") {
+        // CommonJS
+        module.exports = mod();
+    } else {
+        // Plain browser env
+        (this || window).FileEditor = mod();
+    }
+
+})(function () {
+    "use strict";
+
+    function FileEditor(textAreaElement, options) {
+        if (!(this instanceof FileEditor)) {
+            return new FileEditor(textAreaElement, options);
+        }
+        // bind the element instance to our Form
+        var te = $(textAreaElement).get(0);
+        if (te !== undefined) {
+            te.FileEditor = this;
+        }
+
+        this.modes_select = '#set_mode';
+        this.filename_selector = '#filename';
+        this.commit_btn_selector = '#commit_btn';
+        this.line_wrap_selector = '#line_wrap';
+        this.editor_preview_selector = '#editor_preview';
+
+        if (te !== undefined) {
+            this.cm = initCodeMirror(textAreaElement, null, false);
+        }
+
+        // FUNCTIONS and helpers
+        var self = this;
+
+        this.submitHandler = function() {
+            $(self.commit_btn_selector).on('click', function(e) {
+
+                var filename = $(self.filename_selector).val();
+                if (filename === "") {
+                    alert("Missing filename");
+                    e.preventDefault();
+                }
+
+                var button = $(this);
+                if (button.hasClass('clicked')) {
+                    button.attr('disabled', true);
+                } else {
+                    button.addClass('clicked');
+                }
+            });
+        };
+        this.submitHandler();
+
+        // on select line wraps change the editor
+        this.lineWrapHandler = function () {
+            $(self.line_wrap_selector).on('change', function (e) {
+                var selected = e.currentTarget;
+                var line_wraps = {'on': true, 'off': false}[selected.value];
+                setCodeMirrorLineWrap(self.cm, line_wraps)
+            });
+        };
+        this.lineWrapHandler();
+
+
+        this.showPreview = function () {
+
+            var _text = self.cm.getValue();
+            var _file_path = $(self.filename_selector).val();
+            if (_text && _file_path) {
+                $('.show-preview').addClass('active');
+                $('.show-editor').removeClass('active');
+
+                $(self.editor_preview_selector).show();
+                $(self.cm.getWrapperElement()).hide();
+
+
+                var post_data = {'text': _text, 'file_path': _file_path, 'csrf_token': CSRF_TOKEN};
+                $(self.editor_preview_selector).html(_gettext('Loading ...'));
+
+                var url = pyroutes.url('file_preview');
+
+                ajaxPOST(url, post_data, function (o) {
+                    $(self.editor_preview_selector).html(o);
+                })
+            }
+
+        };
+
+        this.showEditor = function () {
+            $(self.editor_preview_selector).hide();
+            $('.show-editor').addClass('active');
+            $('.show-preview').removeClass('active');
+
+            $(self.cm.getWrapperElement()).show();
+        };
+
+
+    }
+
+    return FileEditor;
+});
+
