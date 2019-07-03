@@ -500,38 +500,38 @@ class MarkupRenderer(object):
             (body, resources) = html_exporter.from_notebook_node(notebook)
             header = '<!-- ## IPYTHON NOTEBOOK RENDERING ## -->'
             js = MakoTemplate(r'''
-            <!-- Load mathjax -->
-                <!-- MathJax configuration -->
-                <script type="text/x-mathjax-config">
-                MathJax.Hub.Config({
-                    jax: ["input/TeX","output/HTML-CSS", "output/PreviewHTML"],
-                    extensions: ["tex2jax.js","MathMenu.js","MathZoom.js", "fast-preview.js", "AssistiveMML.js", "[Contrib]/a11y/accessibility-menu.js"],
-                    TeX: {
-                        extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
-                    },
-                    tex2jax: {
-                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-                        processEscapes: true,
-                        processEnvironments: true
-                    },
-                    // Center justify equations in code and markdown cells. Elsewhere
-                    // we use CSS to left justify single line equations in code cells.
-                    displayAlign: 'center',
-                    "HTML-CSS": {
-                        styles: {'.MathJax_Display': {"margin": 0}},
-                        linebreaks: { automatic: true },
-                        availableFonts: ["STIX", "TeX"]
-                    },
-                    showMathMenu: false
-                });
-                </script>
-                <!-- End of mathjax configuration -->
-                <script src="${h.asset('js/src/math_jax/MathJax.js')}"></script>
+            <!-- MathJax configuration -->
+            <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+                jax: ["input/TeX","output/HTML-CSS", "output/PreviewHTML"],
+                extensions: ["tex2jax.js","MathMenu.js","MathZoom.js", "fast-preview.js", "AssistiveMML.js", "[Contrib]/a11y/accessibility-menu.js"],
+                TeX: {
+                    extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+                },
+                tex2jax: {
+                    inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                    displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                    processEscapes: true,
+                    processEnvironments: true
+                },
+                // Center justify equations in code and markdown cells. Elsewhere
+                // we use CSS to left justify single line equations in code cells.
+                displayAlign: 'center',
+                "HTML-CSS": {
+                    styles: {'.MathJax_Display': {"margin": 0}},
+                    linebreaks: { automatic: true },
+                    availableFonts: ["STIX", "TeX"]
+                },
+                showMathMenu: false
+            });
+            </script>
+            <!-- End of MathJax configuration -->
+            <script src="${h.asset('js/src/math_jax/MathJax.js')}"></script>
             ''').render(h=helpers)
 
-            css = '<style>{}</style>'.format(
-                ''.join(_sanitize_resources(resources['inlining']['css'])))
+            css = MakoTemplate(r'''
+            <link rel="stylesheet" type="text/css" href="${h.asset('css/style-ipython.css', ver=ver)}" media="screen"/>
+            ''').render(h=helpers, ver='ver1')
 
             body = '\n'.join([header, css, js, body])
             return body, resources

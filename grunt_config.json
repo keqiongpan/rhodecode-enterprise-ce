@@ -108,7 +108,8 @@
       },
       "files": {
         "<%= dirs.css.dest %>/style.css": "<%= dirs.css.src %>/main.less",
-        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less"
+        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less",
+        "<%= dirs.css.dest %>/style-ipython.css": "<%= dirs.css.src %>/ipython.less"
       }
     },
     "production": {
@@ -119,7 +120,8 @@
       },
       "files": {
         "<%= dirs.css.dest %>/style.css": "<%= dirs.css.src %>/main.less",
-        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less"
+        "<%= dirs.css.dest %>/style-polymer.css": "<%= dirs.css.src %>/polymer.less",
+        "<%= dirs.css.dest %>/style-ipython.css": "<%= dirs.css.src %>/ipython.less"
       }
     },
     "components": {
