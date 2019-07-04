@@ -86,7 +86,7 @@
                               </td>
                               <td class="">
                                 <div class="usergroup_member_remove action_button" onclick="removeUserGroupMember(${user.user_id}, true)" style="visibility: visible;">
-                                    <i class="icon-remove-sign"></i>
+                                    <i class="icon-remove"></i>
                                 </div>
                               </td>
                             </tr>
@@ -155,7 +155,7 @@
                           '</td>'+
                           '<td class="td-author-new-entry">'+
                             '<div class="usergroup_member_remove action_button" onclick="removeUserGroupMember({5}, true)" style="visibility: visible;">'+
-                                '<i class="icon-remove-sign"></i>'+
+                                '<i class="icon-remove"></i>'+
                             '</div>'+
                           '</td>'+
                         '</tr>').format(gravatar, userLink, username,

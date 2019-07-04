@@ -17,7 +17,7 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete all exceptions')}');">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
                 % if c.type_filter:
                     ${_('Delete All `{}`').format(c.type_filter)}
                 % else:

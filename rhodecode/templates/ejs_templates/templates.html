@@ -104,12 +104,12 @@ var CG = new ColorGenerator();
 
       <% if (mandatory) { %>
             <div class="reviewer_member_mandatory_remove" style="visibility: <%= edit_visibility %>;">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
             </div>
       <% } else { %>
         <% if (allowed_to_update) { %>
           <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
-              <i class="icon-remove-sign" ></i>
+              <i class="icon-remove" ></i>
           </div>
         <% } %>
       <% } %>

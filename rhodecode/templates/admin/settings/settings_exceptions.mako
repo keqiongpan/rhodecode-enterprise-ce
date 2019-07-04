@@ -27,7 +27,7 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this exception')}');">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
                 ${_('Delete This Exception')}
             </button>
         </div>

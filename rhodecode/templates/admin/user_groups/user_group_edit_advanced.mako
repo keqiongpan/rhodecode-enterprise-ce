@@ -77,7 +77,7 @@
             ${h.hidden('force', 1)}
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete user group `%(ugroup)s` with all permission assignments') % {'ugroup': c.user_group.users_group_name}}');">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
                 ${_('Delete This User Group')}
             </button>
         ${h.end_form()}

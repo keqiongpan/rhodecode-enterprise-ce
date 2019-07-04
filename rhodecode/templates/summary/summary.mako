@@ -90,7 +90,7 @@ $(document).ready(function(){
         var fname = e.added.raw_id + ext;
         var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
-        $('#archive_link').html('<i class="icon-archive"></i> {0}{1}'.format(escapeHtml(e.added.text), ext));
+        $('#archive_link').html('{0}{1}'.format(escapeHtml(e.added.text), ext));
 
         // set new url to button,
         $('#archive_link').attr('href', href)

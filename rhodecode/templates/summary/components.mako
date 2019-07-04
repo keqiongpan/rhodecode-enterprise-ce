@@ -186,7 +186,7 @@
                 % else:
                     <span class="enabled">
                         <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
-                            <i class="icon-archive"></i> tip.zip
+                            tip.zip
                             ## replaced by some JS on select
                         </a>
                     </span>
