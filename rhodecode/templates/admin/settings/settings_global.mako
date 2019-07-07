@@ -108,8 +108,8 @@ ${h.secure_form(h.route_path('admin_settings_global_update'), request=request)}
         <div style="padding: 10px 0px"></div>
         <div class="textarea text-area">
             ${h.textarea('rhodecode_pre_code',cols=23,rows=5,class_="medium")}
-            <span class="help-block">${_('Custom js/css code added at the end of the <header/> tag.')}
-                         ${_('Use <script/> or <css/> tags to define custom styling or scripting')}</span>
+            <span class="help-block">${_('Custom js/css code added at the end of the <head/> tag.')}
+                         ${_('Use <script/> or <style/> tags to define custom scripting or styling.')}</span>
         </div>
     </div>
 </div>
@@ -131,7 +131,7 @@ ${h.secure_form(h.route_path('admin_settings_global_update'), request=request)}
         <div class="textarea text-area">
             ${h.textarea('rhodecode_post_code',cols=23,rows=5, class_="medium")}
             <span class="help-block">${_('Custom js/css code added at the end of the <body> tag.')}
-                        ${_('Use <script> or <css> tags to define custom styling or scripting')}</span>
+                        ${_('Use <script> or <style> tags to define custom scripting or styling.')}</span>
         </div>
     </div>
 </div>
