@@ -239,6 +239,7 @@ function registerRCRoutes() {
     pyroutes.register('edit_repo_advanced_hooks', '/%(repo_name)s/settings/advanced/hooks', ['repo_name']);
     pyroutes.register('edit_repo_caches', '/%(repo_name)s/settings/caches', ['repo_name']);
     pyroutes.register('edit_repo_perms', '/%(repo_name)s/settings/permissions', ['repo_name']);
+    pyroutes.register('edit_repo_perms_set_private', '/%(repo_name)s/settings/permissions/set_private', ['repo_name']);
     pyroutes.register('edit_repo_maintenance', '/%(repo_name)s/settings/maintenance', ['repo_name']);
     pyroutes.register('edit_repo_maintenance_execute', '/%(repo_name)s/settings/maintenance/execute', ['repo_name']);
     pyroutes.register('edit_repo_fields', '/%(repo_name)s/settings/fields', ['repo_name']);

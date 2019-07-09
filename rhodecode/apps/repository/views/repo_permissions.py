@@ -105,3 +105,30 @@ class RepoSettingsPermissionsView(RepoAppView):
 
         raise HTTPFound(
             h.route_path('edit_repo_perms', repo_name=self.db_repo_name))
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='edit_repo_perms_set_private', request_method='POST',
+        renderer='json_ext')
+    def edit_permissions_set_private_repo(self):
+        _ = self.request.translate
+        self.load_default_context()
+
+        try:
+            RepoModel().update(
+                self.db_repo, **{'repo_private': True, 'repo_name': self.db_repo_name})
+            Session().commit()
+
+            h.flash(_('Repository `{}` private mode set successfully').format(self.db_repo_name),
+                    category='success')
+        except Exception:
+            log.exception("Exception during update of repository")
+            h.flash(_('Error occurred during update of repository {}').format(
+                self.db_repo_name), category='error')
+
+        return {
+            'redirect_url': h.route_path('edit_repo_perms', repo_name=self.db_repo_name),
+            'private': True
+        }

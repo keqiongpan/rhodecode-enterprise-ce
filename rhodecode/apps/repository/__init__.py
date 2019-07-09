@@ -369,6 +369,10 @@ def includeme(config):
         name='edit_repo_perms',
         pattern='/{repo_name:.*?[^/]}/settings/permissions', repo_route=True)
 
+    config.add_route(
+        name='edit_repo_perms_set_private',
+        pattern='/{repo_name:.*?[^/]}/settings/permissions/set_private', repo_route=True)
+
     # Permissions Branch (EE feature)
     config.add_route(
         name='edit_repo_perms_branch',
