@@ -392,7 +392,7 @@ def is_url_reachable(url):
     try:
         urllib2.urlopen(url)
     except urllib2.URLError:
-        log.exception('URL Reach error')
+        log.exception('URL `{}` reach error'.format(url))
         return False
     return True
 
