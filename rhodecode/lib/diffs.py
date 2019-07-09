@@ -26,6 +26,7 @@ Set of diffing helpers, previously part of vcs
 import os
 import re
 import bz2
+import time
 
 import collections
 import difflib
@@ -1186,10 +1187,12 @@ def load_cached_diff(cached_diff_file):
         return default_struct
 
     data = None
+    start = time.time()
     try:
         with bz2.BZ2File(cached_diff_file, 'rb') as f:
             data = pickle.load(f)
-        log.debug('Loaded diff cache from %s', cached_diff_file)
+        load_time = time.time() - start
+        log.debug('Loaded diff cache from %s in %.3fs', cached_diff_file, load_time)
     except Exception:
         log.warn('Failed to read diff cache file', exc_info=True)
 
