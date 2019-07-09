@@ -1841,6 +1841,10 @@ class Repository(Base, BaseModel):
         return q.all()
 
     @property
+    def repo_uid(self):
+        return '_{}'.format(self.repo_id)
+
+    @property
     def forks(self):
         """
         Return forks of this repo

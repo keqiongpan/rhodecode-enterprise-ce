@@ -485,13 +485,21 @@ def includeme(config):
         name='edit_repo_audit_logs',
         pattern='/{repo_name:.*?[^/]}/settings/audit_logs', repo_route=True)
 
-    # ATOM/RSS Feed
+    # ATOM/RSS Feed, shouldn't contain slashes for outlook compatibility
     config.add_route(
         name='rss_feed_home',
-        pattern='/{repo_name:.*?[^/]}/feed/rss', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/feed-rss', repo_route=True)
 
     config.add_route(
         name='atom_feed_home',
+        pattern='/{repo_name:.*?[^/]}/feed-atom', repo_route=True)
+
+    config.add_route(
+        name='rss_feed_home_old',
+        pattern='/{repo_name:.*?[^/]}/feed/rss', repo_route=True)
+
+    config.add_route(
+        name='atom_feed_home_old',
         pattern='/{repo_name:.*?[^/]}/feed/atom', repo_route=True)
 
     # NOTE(marcink): needs to be at the end for catch-all

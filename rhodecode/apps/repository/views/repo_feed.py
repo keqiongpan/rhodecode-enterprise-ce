@@ -40,8 +40,6 @@ log = logging.getLogger(__name__)
 class RepoFeedView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         self._load_defaults()
         return c
 
@@ -117,6 +115,9 @@ class RepoFeedView(RepoAppView):
     @view_config(
         route_name='atom_feed_home', request_method='GET',
         renderer=None)
+    @view_config(
+        route_name='atom_feed_home_old', request_method='GET',
+        renderer=None)
     def atom(self):
         """
         Produce an atom-1.0 feed via feedgenerator module
@@ -180,6 +181,9 @@ class RepoFeedView(RepoAppView):
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
         route_name='rss_feed_home', request_method='GET',
+        renderer=None)
+    @view_config(
+        route_name='rss_feed_home_old', request_method='GET',
         renderer=None)
     def rss(self):
         """

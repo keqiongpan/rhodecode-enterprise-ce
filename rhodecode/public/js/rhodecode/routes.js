@@ -263,8 +263,10 @@ function registerRCRoutes() {
     pyroutes.register('strip_check', '/%(repo_name)s/settings/strip_check', ['repo_name']);
     pyroutes.register('strip_execute', '/%(repo_name)s/settings/strip_execute', ['repo_name']);
     pyroutes.register('edit_repo_audit_logs', '/%(repo_name)s/settings/audit_logs', ['repo_name']);
-    pyroutes.register('rss_feed_home', '/%(repo_name)s/feed/rss', ['repo_name']);
-    pyroutes.register('atom_feed_home', '/%(repo_name)s/feed/atom', ['repo_name']);
+    pyroutes.register('rss_feed_home', '/%(repo_name)s/feed-rss', ['repo_name']);
+    pyroutes.register('atom_feed_home', '/%(repo_name)s/feed-atom', ['repo_name']);
+    pyroutes.register('rss_feed_home_old', '/%(repo_name)s/feed/rss', ['repo_name']);
+    pyroutes.register('atom_feed_home_old', '/%(repo_name)s/feed/atom', ['repo_name']);
     pyroutes.register('repo_summary', '/%(repo_name)s', ['repo_name']);
     pyroutes.register('repo_summary_slash', '/%(repo_name)s/', ['repo_name']);
     pyroutes.register('edit_repo_group', '/%(repo_group_name)s/_edit', ['repo_group_name']);
