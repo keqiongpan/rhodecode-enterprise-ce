@@ -19,51 +19,55 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import timeit
+import logging
+import click
 
-server = "localhost:5000"
+log = logging.getLogger(__name__)
 
-pages = [
-    "cpython",
-    "cpython/annotate/74236c8bf064188516b32bf95016971227ec72a9/Makefile.pre.in",
-    "cpython/changelog",
-    "cpython/changeset/e0f681f4ade3af52915d5f32daac97ada580d71a",
-    "cpython/compare/tag@v3.4.1rc1...tag@v3.4.1?target_repo=cpython",
-    "cpython/files/tip/",
-    "cpython/files/74236c8bf064188516b32bf95016971227ec72a9/Grammar",
-    "",
-    "git",
-    "git/annotate/6c4ab27f2378ce67940b4496365043119d7ffff2/gitk-git/.gitignore",
-    "git/changelog",
-    "git/changeset/d299e9e550c1bf8640907fdba1f03cc585ee71df",
-    "git/compare/rev@1200...rev@1300?target_repo=git",
-    "git/files/tip/",
-    "git/files/6c4ab27f2378ce67940b4496365043119d7ffff2/.gitignore"
-]
 
-svn_pages = [
-    "svn-apache",
-    "svn-apache/annotate/672129/cocoon/trunk/README.txt",
-    "svn-apache/changelog",
-    "svn-apache/changeset/1164362",
-    "svn-apache/compare/rev@1164350...rev@1164360?target_repo=svn-apache",
-    "svn-apache/compare/rev@1164300...rev@1164360?target_repo=svn-apache",
-    "svn-apache/files/tip/",
-    "svn-apache/files/1164363/cocoon/trunk/README.txt",
-]
+@click.command()
+@click.option('--server', help='Server url to connect to. e.g http://rc.local.com', required=True)
+@click.option('--pages', help='load pages to visit from a file', required=True, type=click.File())
+@click.option('--repeat', help='number of times to repeat', default=10, type=int)
+def main(server, repeat, pages):
 
-# Uncomment to check also svn performance
-# pages = pages + svn_pages
+    print("Repeating each URL %d times\n" % repeat)
+    pages = pages.readlines()
 
-repeat = 10
+    for page_url in pages:
 
-print("Repeating each URL x%d\n" % repeat)
-for page in pages:
-    url = "http://%s/%s" % (server, page)
-    print(url)
+        url = "%s/%s" % (server, page_url.strip())
+        print(url)
 
-    stmt = "urllib2.urlopen('%s', timeout=120)" % url
-    t = timeit.Timer(stmt=stmt, setup="import urllib2")
+        stmt = "requests.get('%s', timeout=120)" % url
+        t = timeit.Timer(stmt=stmt, setup="import requests")
 
-    result = t.repeat(repeat=repeat, number=1)
-    print("\t%.3f (min) - %.3f (max) - %.3f (avg)\n" %
-          (min(result), max(result), sum(result)/len(result)))
+        result = t.repeat(repeat=repeat, number=1)
+        print("  %.3f (min) - %.3f (max) - %.3f (avg)\n" %
+              (min(result), max(result), sum(result) / len(result)))
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

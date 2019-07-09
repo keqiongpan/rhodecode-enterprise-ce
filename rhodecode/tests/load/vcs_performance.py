@@ -108,12 +108,12 @@ class Repository(object):
         self.name = name
         self.path = os.path.join(base_path, name)
         self.api = api
+        self.url = None
 
     def create(self):
         self._create_filesystem_repo(self.path)
         try:
-            self.url = self.api.create_repo(
-                self.name, self.TYPE, 'Performance tests')
+            self.url = self.api.create_repo(self.name, self.TYPE, 'Performance tests')
         except ApiError as e:
             log.error('api: {}'.format(e))
 
@@ -127,7 +127,7 @@ class Repository(object):
     def create_commits(self, number, file_size):
         for i in xrange(number):
             file_name = self.FILE_NAME_TEMPLATE.format(i)
-            log.debug("Create commit {}".format(file_name))
+            log.debug("Create commit[{}] {}".format(self.name, file_name))
             self._create_file(file_name, file_size)
             self._create_commit(file_name)
 
@@ -258,8 +258,8 @@ class Benchmark(object):
         for operation in operations:
             for type_ in repos:
                 times = self._measure(repos[type_], *operation)
-                print("Mean {} {} time: {:.3f} sec.".format(
-                    type_, operation[0], mean(times)))
+                print("Mean[of {}] {:5s} {:5s} time: {:.3f} sec.".format(
+                    len(times), type_, operation[0], mean(times)))
 
     def cleanup(self):
         log.info("Cleaning up...")
@@ -295,6 +295,7 @@ class Benchmark(object):
         handler = logging.StreamHandler()
         log.addHandler(handler)
         log.setLevel(log_level)
+
 
 if __name__ == '__main__':
     config = Config()
