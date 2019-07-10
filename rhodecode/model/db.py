@@ -4115,7 +4115,7 @@ class PullRequest(Base, _PullRequestBase):
             def pull_request_version_id(self):
                 return getattr(pull_request_obj, 'pull_request_version_id', None)
 
-        attrs = StrictAttributeDict(pull_request_obj.get_api_data())
+        attrs = StrictAttributeDict(pull_request_obj.get_api_data(with_merge_state=False))
 
         attrs.author = StrictAttributeDict(
             pull_request_obj.author.get_api_data())
