@@ -1158,6 +1158,7 @@ def _cleanup_cache_file(cached_diff_file):
 
 
 def cache_diff(cached_diff_file, diff, commits):
+    mode = 'plain' if 'mode:plain' in cached_diff_file else ''
 
     struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1165,16 +1166,23 @@ def cache_diff(cached_diff_file, diff, commits):
         'commits': commits
     }
 
+    start = time.time()
     try:
-        with bz2.BZ2File(cached_diff_file, 'wb') as f:
-            pickle.dump(struct, f)
-        log.debug('Saved diff cache under %s', cached_diff_file)
+        if mode == 'plain':
+            with open(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
+        else:
+            with bz2.BZ2File(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
     except Exception:
         log.warn('Failed to save cache', exc_info=True)
         _cleanup_cache_file(cached_diff_file)
 
+    log.debug('Saved diff cache under %s in %.3fs', cached_diff_file, time.time() - start)
+
 
 def load_cached_diff(cached_diff_file):
+    mode = 'plain' if 'mode:plain' in cached_diff_file else ''
 
     default_struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1184,15 +1192,19 @@ def load_cached_diff(cached_diff_file):
 
     has_cache = os.path.isfile(cached_diff_file)
     if not has_cache:
+        log.debug('Reading diff cache file failed', cached_diff_file)
         return default_struct
 
     data = None
+
     start = time.time()
     try:
-        with bz2.BZ2File(cached_diff_file, 'rb') as f:
-            data = pickle.load(f)
-        load_time = time.time() - start
-        log.debug('Loaded diff cache from %s in %.3fs', cached_diff_file, load_time)
+        if mode == 'plain':
+            with open(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
+        else:
+            with bz2.BZ2File(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
     except Exception:
         log.warn('Failed to read diff cache file', exc_info=True)
 
@@ -1208,6 +1220,8 @@ def load_cached_diff(cached_diff_file):
         # purge cache
         _cleanup_cache_file(cached_diff_file)
         return default_struct
+
+    log.debug('Loaded diff cache from %s in %.3fs', cached_diff_file, time.time() - start)
 
     return data
 
