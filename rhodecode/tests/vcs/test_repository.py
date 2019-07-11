@@ -279,7 +279,7 @@ class TestRepositoryMerge(object):
         imc.add(FileNode('file_x', content=self.source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         self.target_commit = self.target_repo.get_commit()
         self.source_commit = self.source_repo.get_commit()
         # This only works for Git and Mercurial

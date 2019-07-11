@@ -871,6 +871,7 @@ class TestPullrequestsView(object):
             {'message': 'new-feature', 'branch': branch_name},
         ]
         repo = backend_git.create_repo(commits)
+        repo_name = repo.repo_name
         commit_ids = backend_git.commit_ids
 
         pull_request = PullRequest()
@@ -888,13 +889,15 @@ class TestPullrequestsView(object):
         Session().add(pull_request)
         Session().commit()
 
+        pull_request_id = pull_request.pull_request_id
+
         vcs = repo.scm_instance()
         vcs.remove_ref('refs/heads/{}'.format(branch_name))
 
         response = self.app.get(route_path(
             'pullrequest_show',
-            repo_name=repo.repo_name,
-            pull_request_id=pull_request.pull_request_id))
+            repo_name=repo_name,
+            pull_request_id=pull_request_id))
 
         assert response.status_int == 200
 

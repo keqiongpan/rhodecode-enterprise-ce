@@ -834,7 +834,7 @@ class VcsBackend(object):
         imc.add(FileNode(filename, content=content))
         imc.commit(
             message=u'Automatic commit from vcsbackend fixture',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
 
     def ensure_file(self, filename, content='Test content\n'):
         assert self._cleanup_repos, "Avoid writing into vcs_test repos"
@@ -869,7 +869,7 @@ def _add_commits_to_repo(vcs_repo, commits):
 
         commit = imc.commit(
             message=message,
-            author=unicode(commit.get('author', 'Automatic')),
+            author=unicode(commit.get('author', 'Automatic <automatic@rhodecode.com>')),
             date=commit.get('date'),
             branch=commit.get('branch'),
             parents=parents)

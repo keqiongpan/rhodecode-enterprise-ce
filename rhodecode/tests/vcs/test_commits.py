@@ -76,7 +76,7 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
                      content='Documentation\n'))
         foobar_tip = self.imc.commit(
             message=u'New branch: foobar',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             branch='foobar',
         )
         assert 'foobar' in self.repo.branches
@@ -92,7 +92,7 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
                      content='Documentation\n'))
         foobar_tip = self.imc.commit(
             message=u'New branch: foobar',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             branch='foobar',
             parents=[tip],
         )
@@ -100,14 +100,14 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
                         content='Documentation\nand more...\n'))
         newtip = self.imc.commit(
             message=u'At default branch',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             branch=foobar_tip.branch,
             parents=[foobar_tip],
         )
 
         newest_tip = self.imc.commit(
             message=u'Merged with %s' % foobar_tip.raw_id,
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             branch=self.backend_class.DEFAULT_BRANCH_NAME,
             parents=[newtip, foobar_tip],
         )
@@ -134,28 +134,28 @@ class TestCommitsInNonEmptyRepo(BackendTestMixin):
         self.imc.add(FileNode('readme.txt', content='Document\n'))
         initial = self.imc.commit(
             message=u'Initial commit',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             parents=[org_tip],
             branch=DEFAULT_BRANCH,)
 
         self.imc.add(FileNode('newdoc.txt', content='foobar\n'))
         docs_branch_commit1 = self.imc.commit(
             message=u'New branch: docs',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             parents=[initial],
             branch=TEST_BRANCH,)
 
         self.imc.add(FileNode('newdoc2.txt', content='foobar2\n'))
         docs_branch_commit2 = self.imc.commit(
             message=u'New branch: docs2',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             parents=[docs_branch_commit1],
             branch=TEST_BRANCH,)
 
         self.imc.add(FileNode('newfile', content='hello world\n'))
         self.imc.commit(
             message=u'Back in default branch',
-            author=u'joe',
+            author=u'joe <joe@rhodecode.com>',
             parents=[initial],
             branch=DEFAULT_BRANCH,)
 

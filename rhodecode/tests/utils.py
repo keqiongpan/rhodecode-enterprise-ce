@@ -425,13 +425,13 @@ def commit_change(
             message=message,
             nodes=nodes,
             parent_commit=_commit,
-            author=TEST_USER_ADMIN_LOGIN,
+            author='{} <admin@rhodecode.com>'.format(TEST_USER_ADMIN_LOGIN),
         )
     else:
         commit = ScmModel().commit_change(
             repo=repo.scm_instance(), repo_name=repo.repo_name,
             commit=parent, user=TEST_USER_ADMIN_LOGIN,
-            author=TEST_USER_ADMIN_LOGIN,
+            author='{} <admin@rhodecode.com>'.format(TEST_USER_ADMIN_LOGIN),
             message=message,
             content=content,
             f_path=filename

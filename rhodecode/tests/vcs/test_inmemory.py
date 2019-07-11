@@ -116,7 +116,7 @@ class TestInMemoryCommit(BackendTestMixin):
     def commit(self, branch=None):
         self.old_commit_count = len(self.repo.commit_ids)
         self.commit_message = u'Test commit with unicode: żółwik'
-        self.commit_author = unicode(self.__class__)
+        self.commit_author = u'{} <foo@email.com>'.format(self.__class__.__name__)
         self.commit = self.imc.commit(
             message=self.commit_message, author=self.commit_author,
             branch=branch)
@@ -127,7 +127,7 @@ class TestInMemoryCommit(BackendTestMixin):
             FileNode('foo/README.txt', content='readme!'),
         ]
         self.imc.add(*to_add)
-        commit = self.imc.commit(u'Initial', u'joe.doe@example.com')
+        commit = self.imc.commit(u'Initial', u'joe doe <joe.doe@example.com>')
         assert isinstance(commit.get_node('foo'), DirNode)
         assert isinstance(commit.get_node('foo/bar'), DirNode)
         self.assert_nodes_in_commit(commit, to_add)
@@ -141,7 +141,7 @@ class TestInMemoryCommit(BackendTestMixin):
             FileNode('foobar/barbaz', content='foo'),
         ]
         self.imc.add(*to_add)
-        commit = self.imc.commit(u'Another', u'joe.doe@example.com')
+        commit = self.imc.commit(u'Another', u'joe doe <joe.doe@example.com>')
         self.assert_nodes_in_commit(commit, to_add)
 
     def test_add_raise_already_added(self):
@@ -153,20 +153,20 @@ class TestInMemoryCommit(BackendTestMixin):
     def test_check_integrity_raise_already_exist(self):
         node = FileNode('foobar', content='baz')
         self.imc.add(node)
-        self.imc.commit(message=u'Added foobar', author=unicode(self))
+        self.imc.commit(message=u'Added foobar', author=u'{} <foo@bar.com>'.format(self))
         self.imc.add(node)
         with pytest.raises(NodeAlreadyExistsError):
-            self.imc.commit(message='new message', author=str(self))
+            self.imc.commit(message='new message', author=u'{} <foo@bar.com>'.format(self))
 
     def test_change(self):
         self.imc.add(FileNode('foo/bar/baz', content='foo'))
         self.imc.add(FileNode('foo/fbar', content='foobar'))
-        tip = self.imc.commit(u'Initial', u'joe.doe@example.com')
+        tip = self.imc.commit(u'Initial', u'joe doe <joe.doe@example.com>')
 
         # Change node's content
         node = FileNode('foo/bar/baz', content='My **changed** content')
         self.imc.change(node)
-        self.imc.commit(u'Changed %s' % node.path, u'joe.doe@example.com')
+        self.imc.commit(u'Changed %s' % node.path, u'joe doe <joe.doe@example.com>')
 
         newtip = self.repo.get_commit()
         assert tip != newtip
@@ -181,19 +181,19 @@ class TestInMemoryCommit(BackendTestMixin):
         for node in to_add:
             self.imc.add(node)
 
-        tip = self.imc.commit(u'Initial', u'joe.doe@example.com')
+        tip = self.imc.commit(u'Initial', u'joe doe <joe.doe@example.com>')
 
         # Change node's content
         node = FileNode('żółwik/zwierzątko', content='My **changed** content')
         self.imc.change(node)
         self.imc.commit(u'Changed %s' % safe_unicode(node.path),
-                        u'joe.doe@example.com')
+                        author=u'joe doe <joe.doe@example.com>')
 
         node_uni = FileNode(
             u'żółwik/zwierzątko_uni', content=u'My **changed** content')
         self.imc.change(node_uni)
         self.imc.commit(u'Changed %s' % safe_unicode(node_uni.path),
-                        u'joe.doe@example.com')
+                        author=u'joe doe <joe.doe@example.com>')
 
         newtip = self.repo.get_commit()
         assert tip != newtip
@@ -209,18 +209,16 @@ class TestInMemoryCommit(BackendTestMixin):
     def test_check_integrity_change_raise_node_does_not_exist(self):
         node = FileNode('foobar', content='baz')
         self.imc.add(node)
-        self.imc.commit(message=u'Added foobar', author=unicode(self))
+        self.imc.commit(message=u'Added foobar', author=u'{} <foo@bar.com>'.format(self))
         node = FileNode('not-foobar', content='')
         self.imc.change(node)
         with pytest.raises(NodeDoesNotExistError):
-            self.imc.commit(
-                message='Changed not existing node',
-                author=str(self))
+            self.imc.commit(message='Changed not existing node', author=u'{} <foo@bar.com>'.format(self))
 
     def test_change_raise_node_already_changed(self):
         node = FileNode('foobar', content='baz')
         self.imc.add(node)
-        self.imc.commit(message=u'Added foobar', author=unicode(self))
+        self.imc.commit(message=u'Added foobar', author=u'{} <foo@bar.com>'.format(self))
         node = FileNode('foobar', content='more baz')
         self.imc.change(node)
         with pytest.raises(NodeAlreadyChangedError):
@@ -234,12 +232,12 @@ class TestInMemoryCommit(BackendTestMixin):
         with pytest.raises(NodeNotChangedError):
             self.imc.commit(
                 message=u'Trying to mark node as changed without touching it',
-                author=unicode(self))
+                author=u'{} <foo@bar.com>'.format(self))
 
     def test_change_raise_node_already_removed(self):
         node = FileNode('foobar', content='baz')
         self.imc.add(node)
-        self.imc.commit(message=u'Added foobar', author=unicode(self))
+        self.imc.commit(message=u'Added foobar', author=u'{} <foo@bar.com>'.format(self))
         self.imc.remove(FileNode('foobar'))
         with pytest.raises(NodeAlreadyRemovedError):
             self.imc.change(node)
@@ -252,7 +250,7 @@ class TestInMemoryCommit(BackendTestMixin):
         assert node.content == tip.get_node(node.path).content
         self.imc.remove(node)
         self.imc.commit(
-            message=u'Removed %s' % node.path, author=unicode(self))
+            message=u'Removed %s' % node.path, author=u'{} <foo@bar.com>'.format(self))
 
         newtip = self.repo.get_commit()
         assert tip != newtip
@@ -263,10 +261,10 @@ class TestInMemoryCommit(BackendTestMixin):
     def test_remove_last_file_from_directory(self):
         node = FileNode('omg/qwe/foo/bar', content='foobar')
         self.imc.add(node)
-        self.imc.commit(u'added', u'joe doe')
+        self.imc.commit(u'added', author=u'joe doe <joe@doe.com>')
 
         self.imc.remove(node)
-        tip = self.imc.commit(u'removed', u'joe doe')
+        tip = self.imc.commit(u'removed', u'joe doe <joe@doe.com>')
         with pytest.raises(NodeDoesNotExistError):
             tip.get_node('omg/qwe/foo/bar')
 
@@ -275,7 +273,7 @@ class TestInMemoryCommit(BackendTestMixin):
         with pytest.raises(NodeDoesNotExistError):
             self.imc.commit(
                 message='Trying to remove node at empty repository',
-                author=str(self))
+                author=u'{} <foo@bar.com>'.format(self))
 
     def test_check_integrity_remove_raise_node_does_not_exist(self, nodes):
         self.test_add(nodes)  # Performs first commit
@@ -285,7 +283,7 @@ class TestInMemoryCommit(BackendTestMixin):
         with pytest.raises(NodeDoesNotExistError):
             self.imc.commit(
                 message=u'Trying to remove not existing node',
-                author=unicode(self))
+                author=u'{} <foo@bar.com>'.format(self))
 
     def test_remove_raise_node_already_removed(self, nodes):
         self.test_add(nodes)  # Performs first commit
@@ -318,7 +316,7 @@ class TestInMemoryCommit(BackendTestMixin):
             content = 'foobar\n' * x
             node = FileNode(fname, content=content)
             self.imc.add(node)
-            commit = self.imc.commit(u"Commit no. %s" % (x + 1), author=u'vcs')
+            commit = self.imc.commit(u"Commit no. %s" % (x + 1), author=u'vcs <foo@bar.com>')
             assert last != commit
             last = commit
 
@@ -335,7 +333,7 @@ class TestInMemoryCommit(BackendTestMixin):
         date = datetime.datetime(1985, 1, 30, 1, 45)
         commit = self.imc.commit(
             u"Committed at time when I was born ;-)",
-            author=u'lb', date=date)
+            author=u'{} <foo@bar.com>'.format(self), date=date)
 
         assert commit.date == local_dt_to_utc(date)
 

@@ -586,7 +586,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
         default_branch = target_repo.DEFAULT_BRANCH_NAME
@@ -630,7 +630,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
         default_branch = target_repo.DEFAULT_BRANCH_NAME
@@ -669,7 +669,7 @@ TODO: To be written...
         commits = list(target_repo.get_commits())
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic', parents=commits[0:1])
+            author=u'Automatic <automatic@rhodecode.com>', parents=commits[0:1])
 
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
@@ -702,7 +702,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
 
