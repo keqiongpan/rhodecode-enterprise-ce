@@ -279,8 +279,7 @@ class MercurialCommit(base.BaseCommit):
 
         if self._get_kind(path) != NodeKind.DIR:
             raise CommitError(
-                "Directory does not exist for idx %s at '%s'" %
-                (self.idx, path))
+                "Directory does not exist for idx %s at '%s'" % (self.raw_id, path))
         path = self._fix_path(path)
 
         filenodes = [

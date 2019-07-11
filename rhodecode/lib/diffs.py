@@ -1192,7 +1192,7 @@ def load_cached_diff(cached_diff_file):
 
     has_cache = os.path.isfile(cached_diff_file)
     if not has_cache:
-        log.debug('Reading diff cache file failed', cached_diff_file)
+        log.debug('Reading diff cache file failed %s', cached_diff_file)
         return default_struct
 
     data = None
