@@ -217,7 +217,7 @@
         ## Context Actions
         <div class="pull-right">
             %if c.rhodecode_user.username != h.DEFAULT_USER:
-                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_uid, _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
 
                 <a href="#WatchRepo" onclick="toggleFollowingRepo(this, templateContext.repo_id); return false" title="${_('Watch this Repository and actions on it in your personalized journal')}" class="btn btn-sm ${('watching' if c.repository_is_user_following else '')}">
                     % if c.repository_is_user_following:
@@ -228,7 +228,7 @@
 
                 </a>
             %else:
-                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_name)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+                <a href="${h.route_path('atom_feed_home', repo_name=c.rhodecode_db_repo.repo_uid)}" title="${_('RSS Feed')}" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
             %endif
         </div>
 

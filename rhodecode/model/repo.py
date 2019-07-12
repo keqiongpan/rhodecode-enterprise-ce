@@ -374,8 +374,7 @@ class RepoModel(BaseModel):
                 )
 
             # handle extra fields
-            for field in filter(lambda k: k.startswith(RepositoryField.PREFIX),
-                                kwargs):
+            for field in filter(lambda k: k.startswith(RepositoryField.PREFIX), kwargs):
                 k = RepositoryField.un_prefix_key(field)
                 ex_field = RepositoryField.get_by_key_name(
                     key=k, repo=cur_repo)

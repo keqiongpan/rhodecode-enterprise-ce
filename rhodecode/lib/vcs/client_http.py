@@ -147,7 +147,7 @@ class RemoteRepo(object):
 
     def _call_with_logging(self, name, *args, **kwargs):
         context_uid = self._wire.get('context')
-        log.debug('Calling %s@%s with args:%r. wire_context: %s',
+        log.debug('Calling %s@%s with args:%.10240r. wire_context: %s',
                   self.url, name, args, context_uid)
         return RemoteRepo._call(self, name, *args, **kwargs)
 

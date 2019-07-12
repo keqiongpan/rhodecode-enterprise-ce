@@ -161,7 +161,7 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
                 ${_('Archive this repository')}
             </button>
         </div>
@@ -217,7 +217,7 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
-                <i class="icon-remove-sign"></i>
+                <i class="icon-remove"></i>
                 ${_('Delete this repository')}
             </button>
         </div>

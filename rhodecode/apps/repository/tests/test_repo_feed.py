@@ -27,8 +27,10 @@ def route_path(name, params=None, **kwargs):
     import urllib
 
     base_url = {
-        'rss_feed_home': '/{repo_name}/feed/rss',
-        'atom_feed_home': '/{repo_name}/feed/atom',
+        'rss_feed_home': '/{repo_name}/feed-rss',
+        'atom_feed_home': '/{repo_name}/feed-atom',
+        'rss_feed_home_old': '/{repo_name}/feed/rss',
+        'atom_feed_home_old': '/{repo_name}/feed/atom',
     }[name].format(**kwargs)
 
     if params:
@@ -67,6 +69,42 @@ class TestFeedView(TestController):
         response = self.app.get(
             route_path(
                 '{}_feed_home'.format(feed_type),
+                repo_name=backend.repo_name,
+                params=dict(auth_token=auth_token)),
+            status=200)
+
+        assert response.content_type == content_type
+
+    @pytest.mark.parametrize("feed_type, content_type", [
+        ('rss', "application/rss+xml"),
+        ('atom', "application/atom+xml")
+    ])
+    def test_feed_with_auth_token_by_uid(
+            self, backend, user_admin, feed_type, content_type):
+        auth_token = user_admin.feed_token
+        assert auth_token != ''
+
+        response = self.app.get(
+            route_path(
+                '{}_feed_home'.format(feed_type),
+                repo_name='_{}'.format(backend.repo.repo_id),
+                params=dict(auth_token=auth_token)),
+            status=200)
+
+        assert response.content_type == content_type
+
+    @pytest.mark.parametrize("feed_type, content_type", [
+        ('rss', "application/rss+xml"),
+        ('atom', "application/atom+xml")
+    ])
+    def test_feed_old_urls_with_auth_token(
+            self, backend, user_admin, feed_type, content_type):
+        auth_token = user_admin.feed_token
+        assert auth_token != ''
+
+        response = self.app.get(
+            route_path(
+                '{}_feed_home_old'.format(feed_type),
                 repo_name=backend.repo_name,
                 params=dict(auth_token=auth_token)),
             status=200)

@@ -57,7 +57,7 @@
                     % if not c.form['repo_clone_uri'].error:
                     <div id="clone_uri_hidden" class='text-as-placeholder'>
                         <span id="clone_uri_hidden_value">${c.rhodecode_db_repo.clone_uri_hidden}</span>
-                        <span class="link" id="edit_clone_uri"><i class="icon-edit"></i>${_('edit')}</span>
+                        <span class="link" id="edit_clone_uri">${_('edit')}</span>
                     </div>
                     % endif
 
@@ -99,7 +99,7 @@
                     % if not c.form['repo_push_uri'].error:
                     <div id="push_uri_hidden" class='text-as-placeholder'>
                         <span id="push_uri_hidden_value">${c.rhodecode_db_repo.push_uri_hidden}</span>
-                        <span class="link" id="edit_push_uri"><i class="icon-edit"></i>${_('edit')}</span>
+                        <span class="link" id="edit_push_uri">${_('edit')}</span>
                     </div>
                     % endif
 

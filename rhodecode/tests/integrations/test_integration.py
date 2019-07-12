@@ -128,7 +128,7 @@ def integration_repos(request, StubIntegrationType, stub_integration_settings):
             'root_repo': root_repo,
             'other_repo': other_repo,
             'parent_repo': parent_repo,
-                'child_repo': child_repo,
+            'child_repo': child_repo,
         }
     }
 
@@ -151,9 +151,9 @@ def test_enabled_integration_repo_scopes(integration_repos):
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['other_repo'],
         integrations['other_group'],
         integrations['other_group_recursive'],
+        integrations['other_repo'],
     ]
 
     triggered_integrations = IntegrationModel().get_for_event(
@@ -161,9 +161,9 @@ def test_enabled_integration_repo_scopes(integration_repos):
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['parent_repo'],
         integrations['parent_group'],
         integrations['parent_group_recursive'],
+        integrations['parent_repo'],
     ]
 
     triggered_integrations = IntegrationModel().get_for_event(
@@ -171,10 +171,10 @@ def test_enabled_integration_repo_scopes(integration_repos):
 
     assert triggered_integrations == [
         integrations['global'],
-        integrations['child_repo'],
-        integrations['parent_group_recursive'],
         integrations['child_group'],
+        integrations['parent_group_recursive'],
         integrations['child_group_recursive'],
+        integrations['child_repo'],
     ]
 
 

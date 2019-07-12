@@ -41,6 +41,7 @@ syntax: regexp
 ^result$
 ^rhodecode/public/css/style.css$
 ^rhodecode/public/css/style-polymer.css$
+^rhodecode/public/css/style-ipython.css$
 ^rhodecode/public/js/rhodecode-components.html$
 ^rhodecode/public/js/rhodecode-components.js$
 ^rhodecode/public/js/scripts.js$

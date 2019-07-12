@@ -11,7 +11,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             <div class="input">
                 ${h.text('repo_name', class_="medium")}
                 <div class="info-block">
-                    <a id="remote_clone_toggle" href="#"><i class="icon-download-alt"></i> ${_('Import Existing Repository ?')}</a>
+                    <a id="remote_clone_toggle" href="#">${_('Import Existing Repository ?')}</a>
                 </div>
                 %if not c.rhodecode_user.is_admin:
                     ${h.hidden('user_created',True)}

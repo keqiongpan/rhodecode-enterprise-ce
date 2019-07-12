@@ -107,7 +107,10 @@ var CommitsController = function () {
 
         $.each($('.message.truncate'), function(idx, value) {
             if(!(value.offsetWidth < value.scrollWidth)){
-                $(this).closest('td').siblings('.expand_commit').find('i').hide();
+                var expandTd = $(this).closest('td').siblings('.expand_commit');
+                expandTd.find('i').hide();
+                expandTd.removeAttr('title');
+                expandTd.removeClass('expand_commit');
             }
         });
 

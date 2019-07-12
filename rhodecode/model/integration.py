@@ -33,7 +33,7 @@ from rhodecode import events
 from rhodecode.integrations.types.base import EEIntegration
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
-from rhodecode.model.db import Integration, Repository, RepoGroup, true, false
+from rhodecode.model.db import Integration, Repository, RepoGroup, true, false, case
 from rhodecode.integrations import integration_type_registry
 
 log = logging.getLogger(__name__)
@@ -155,6 +155,7 @@ class IntegrationModel(BaseModel):
         """
         Get integrations that match an event
         """
+        # base query
         query = self.sa.query(
             Integration
         ).filter(
@@ -164,7 +165,7 @@ class IntegrationModel(BaseModel):
         global_integrations_filter = and_(
             Integration.repo_id == None,
             Integration.repo_group_id == None,
-            Integration.child_repos_only == False,
+            Integration.child_repos_only == false(),
         )
 
         if isinstance(event, events.RepoEvent):
@@ -177,42 +178,61 @@ class IntegrationModel(BaseModel):
             clauses = [
                 global_integrations_filter,
             ]
+            cases = [
+                (global_integrations_filter, 1),
+                (root_repos_integrations_filter, 2),
+            ]
 
-            # repo integrations
-            if event.repo.repo_id:  # pre create events dont have a repo_id yet
-                clauses.append(
-                    Integration.repo_id == event.repo.repo_id
-                )
-
+            # repo group integrations
             if event.repo.group:
-                clauses.append(
-                    and_(
-                        Integration.repo_group_id == event.repo.group.group_id,
-                        Integration.child_repos_only == true()
-                    )
+                # repo group with only root level repos
+                group_child_repos_filter = and_(
+                    Integration.repo_group_id == event.repo.group.group_id,
+                    Integration.child_repos_only == true()
                 )
+
+                clauses.append(group_child_repos_filter)
+                cases.append(
+                    (group_child_repos_filter, 3),
+                )
+
                 # repo group cascade to kids
-                clauses.append(
-                    and_(
-                        Integration.repo_group_id.in_(
-                            [group.group_id for group in
-                             event.repo.groups_with_parents]
-                        ),
-                        Integration.child_repos_only == false()
-                    )
+                group_recursive_repos_filter = and_(
+                    Integration.repo_group_id.in_(
+                        [group.group_id for group in event.repo.groups_with_parents]
+                    ),
+                    Integration.child_repos_only == false()
+                )
+                clauses.append(group_recursive_repos_filter)
+                cases.append(
+                    (group_recursive_repos_filter, 4),
                 )
 
             if not event.repo.group:  # root repo
                 clauses.append(root_repos_integrations_filter)
 
+            # repo integrations
+            if event.repo.repo_id:  # pre create events dont have a repo_id yet
+                specific_repo_filter = Integration.repo_id == event.repo.repo_id
+                clauses.append(specific_repo_filter)
+                cases.append(
+                    (specific_repo_filter, 5),
+                )
+
+            order_by_criterion = case(cases)
+
             query = query.filter(or_(*clauses))
+            query = query.order_by(order_by_criterion)
 
             if cache:
                 cache_key = "get_enabled_repo_integrations_%i" % event.repo.repo_id
                 query = query.options(
                     FromCache("sql_cache_short", cache_key))
         else:  # only global integrations
+            order_by_criterion = Integration.integration_id
+
             query = query.filter(global_integrations_filter)
+            query = query.order_by(order_by_criterion)
             if cache:
                 query = query.options(
                     FromCache("sql_cache_short", "get_enabled_global_integrations"))

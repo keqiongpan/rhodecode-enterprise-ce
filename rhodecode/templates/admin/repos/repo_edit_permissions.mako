@@ -105,6 +105,10 @@
                                   member="${_user.user_id}" member_type="user">
                             ${_('Remove')}
                             </span>
+                          %elif _user.username == h.DEFAULT_USER:
+                            <span class="tooltip btn btn-link btn-default" onclick="enablePrivateRepo(); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators.')}">
+                            ${_('set private mode')}
+                            </span>
                           %endif
                         </td>
                         <td class="quick_repo_menu">
@@ -199,4 +203,20 @@
         markRevokePermInput($(this), 'repository');
     });
     quick_repo_menu();
+
+    var enablePrivateRepo = function () {
+        var postData = {
+            'csrf_token': CSRF_TOKEN
+        };
+
+        var success = function(o) {
+            var defaultUrl = pyroutes.url('edit_repo_perms', {"repo_name": templateContext.repo_name});
+            window.location = o.redirect_url || defaultUrl;
+        };
+
+        ajaxPOST(
+            pyroutes.url('edit_repo_perms_set_private', {"repo_name": templateContext.repo_name}),
+            postData,
+            success);
+    }
 </script>

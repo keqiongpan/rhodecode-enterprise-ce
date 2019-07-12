@@ -165,7 +165,8 @@
   <div>
     <div class="grid_edit">
       <a href="${h.route_path('edit_repo',repo_name=repo_name)}" title="${_('Edit')}">
-        <i class="icon-pencil"></i>Edit</a>
+        Edit
+      </a>
     </div>
     <div class="grid_delete">
       ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), request=request)}
@@ -252,7 +253,8 @@
 <%def name="user_actions(user_id, username)">
  <div class="grid_edit">
    <a href="${h.route_path('user_edit',user_id=user_id)}" title="${_('Edit')}">
-     <i class="icon-pencil"></i>${_('Edit')}</a>
+     ${_('Edit')}
+   </a>
  </div>
  <div class="grid_delete">
   ${h.secure_form(h.route_path('user_delete', user_id=user_id), request=request)}
