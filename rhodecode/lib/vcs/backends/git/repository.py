@@ -25,15 +25,14 @@ GIT repository module
 import logging
 import os
 import re
-import time
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
     utcdate_fromtimestamp, makedate, date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
+from rhodecode.lib.utils2 import CachedProperty
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
@@ -71,9 +70,6 @@ class GitRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
-        # dependent that trigger re-computation of  commit_ids
-        self._commit_ids_ver = 0
-
     @LazyProperty
     def _remote(self):
         return connection.Git(self.path, self.config, with_wire=self.with_wire)
@@ -86,7 +82,7 @@ class GitRepository(BaseRepository):
     def head(self):
         return self._remote.head()
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -190,12 +186,16 @@ class GitRepository(BaseRepository):
         except OSError as err:
             raise RepositoryError(err)
 
-    def _get_all_commit_ids(self, filters=None):
+    def _get_all_commit_ids(self):
+        return self._remote.get_all_commit_ids()
+
+    def _get_commit_ids(self, filters=None):
         # we must check if this repo is not empty, since later command
         # fails if it is. And it's cheaper to ask than throw the subprocess
         # errors
 
         head = self._remote.head(show_exc=False)
+
         if not head:
             return []
 
@@ -208,7 +208,7 @@ class GitRepository(BaseRepository):
             if filters.get('until'):
                 extra_filter.append('--until=%s' % (filters['until']))
             if filters.get('branch_name'):
-                rev_filter = ['--tags']
+                rev_filter = []
                 extra_filter.append(filters['branch_name'])
         rev_filter.extend(extra_filter)
 
@@ -233,6 +233,8 @@ class GitRepository(BaseRepository):
 
         if commit_id_or_idx in (None, '', 'tip', 'HEAD', 'head', -1):
             return self.commit_ids[-1]
+        commit_missing_err = "Commit {} does not exist for `{}`".format(
+            *map(safe_str, [commit_id_or_idx, self.name]))
 
         is_bstr = isinstance(commit_id_or_idx, (str, unicode))
         if ((is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12)
@@ -240,30 +242,15 @@ class GitRepository(BaseRepository):
             try:
                 commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
             except Exception:
-                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
-                raise CommitDoesNotExistError(msg)
+                raise CommitDoesNotExistError(commit_missing_err)
 
         elif is_bstr:
-            # check full path ref, eg. refs/heads/master
-            ref_id = self._refs.get(commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            # check branch name
-            branch_ids = self.branches.values()
-            ref_id = self._refs.get('refs/heads/%s' % commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            # check tag name
-            ref_id = self._refs.get('refs/tags/%s' % commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            if (not SHA_PATTERN.match(commit_id_or_idx) or
-                    commit_id_or_idx not in self.commit_ids):
-                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
-                raise CommitDoesNotExistError(msg)
+            # Need to call remote to translate id for tagging scenario
+            try:
+                remote_data = self._remote.get_object(commit_id_or_idx)
+                commit_id_or_idx = remote_data["commit_id"]
+            except (CommitDoesNotExistError,):
+                raise CommitDoesNotExistError(commit_missing_err)
 
         # Ensure we return full id
         if not SHA_PATTERN.match(str(commit_id_or_idx)):
@@ -327,32 +314,31 @@ class GitRepository(BaseRepository):
     def _get_branches(self):
         return self._get_refs_entries(prefix='refs/heads/', strip_prefix=True)
 
-    @LazyProperty
+    @CachedProperty
     def branches(self):
         return self._get_branches()
 
-    @LazyProperty
+    @CachedProperty
     def branches_closed(self):
         return {}
 
-    @LazyProperty
+    @CachedProperty
     def bookmarks(self):
         return {}
 
-    @LazyProperty
+    @CachedProperty
     def branches_all(self):
         all_branches = {}
         all_branches.update(self.branches)
         all_branches.update(self.branches_closed)
         return all_branches
 
-    @LazyProperty
+    @CachedProperty
     def tags(self):
         return self._get_tags()
 
     def _get_tags(self):
-        return self._get_refs_entries(
-            prefix='refs/tags/', strip_prefix=True, reverse=True)
+        return self._get_refs_entries(prefix='refs/tags/', strip_prefix=True, reverse=True)
 
     def tag(self, name, user, commit_id=None, message=None, date=None,
             **kwargs):
@@ -368,15 +354,17 @@ class GitRepository(BaseRepository):
 
         :raises TagAlreadyExistError: if tag with same name already exists
         """
+        print self._refs
         if name in self.tags:
             raise TagAlreadyExistError("Tag %s already exists" % name)
         commit = self.get_commit(commit_id=commit_id)
-        message = message or "Added tag %s for commit %s" % (
-            name, commit.raw_id)
-        self._remote.set_refs('refs/tags/%s' % name, commit._commit['id'])
+        message = message or "Added tag %s for commit %s" % (name, commit.raw_id)
 
-        self._refs = self._get_refs()
-        self.tags = self._get_tags()
+        self._remote.set_refs('refs/tags/%s' % name, commit.raw_id)
+
+        self._invalidate_prop_cache('tags')
+        self._invalidate_prop_cache('_refs')
+
         return commit
 
     def remove_tag(self, name, user, message=None, date=None):
@@ -392,19 +380,15 @@ class GitRepository(BaseRepository):
         """
         if name not in self.tags:
             raise TagDoesNotExistError("Tag %s does not exist" % name)
-        tagpath = vcspath.join(
-            self._remote.get_refs_path(), 'refs', 'tags', name)
-        try:
-            os.remove(tagpath)
-            self._refs = self._get_refs()
-            self.tags = self._get_tags()
-        except OSError as e:
-            raise RepositoryError(e.strerror)
+
+        self._remote.tag_remove(name)
+        self._invalidate_prop_cache('tags')
+        self._invalidate_prop_cache('_refs')
 
     def _get_refs(self):
         return self._remote.get_refs()
 
-    @LazyProperty
+    @CachedProperty
     def _refs(self):
         return self._get_refs()
 
@@ -455,18 +439,13 @@ class GitRepository(BaseRepository):
         else:
             commit_id = "tip"
 
-        commit_id = self._lookup_commit(commit_id)
-        remote_idx = None
         if translate_tag:
-            # Need to call remote to translate id for tagging scenario
-            remote_data = self._remote.get_object(commit_id)
-            commit_id = remote_data["commit_id"]
-            remote_idx = remote_data["idx"]
+            commit_id = self._lookup_commit(commit_id)
 
         try:
             idx = self._commit_ids[commit_id]
         except KeyError:
-            idx = remote_idx or 0
+            idx = -1
 
         return GitCommit(self, commit_id, idx, pre_load=pre_load)
 
@@ -539,14 +518,8 @@ class GitRepository(BaseRepository):
                 'start': start_pos,
                 'end': end_pos,
             }
-            commit_ids = self._get_all_commit_ids(filters=revfilters)
+            commit_ids = self._get_commit_ids(filters=revfilters)
 
-            # pure python stuff, it's slow due to walker walking whole repo
-            # def get_revs(walker):
-            #     for walker_entry in walker:
-            #         yield walker_entry.commit.id
-            # revfilters = {}
-            # commit_ids = list(reversed(list(get_revs(self._repo.get_walker(**revfilters)))))
         else:
             commit_ids = self.commit_ids
 
@@ -613,8 +586,11 @@ class GitRepository(BaseRepository):
         commit = commit.parents[0]
         self._remote.set_refs('refs/heads/%s' % branch_name, commit.raw_id)
 
-        self._commit_ids_ver = time.time()
-        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        # clear cached properties
+        self._invalidate_prop_cache('commit_ids')
+        self._invalidate_prop_cache('_refs')
+        self._invalidate_prop_cache('branches')
+
         return len(self.commit_ids)
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
@@ -697,9 +673,11 @@ class GitRepository(BaseRepository):
 
     def set_refs(self, ref_name, commit_id):
         self._remote.set_refs(ref_name, commit_id)
+        self._invalidate_prop_cache('_refs')
 
     def remove_ref(self, ref_name):
         self._remote.remove_ref(ref_name)
+        self._invalidate_prop_cache('_refs')
 
     def _update_server_info(self):
         """
@@ -743,6 +721,12 @@ class GitRepository(BaseRepository):
             cmd.append('-b')
         cmd.append(branch_name)
         self.run_git_command(cmd, fail_on_stderr=False)
+
+    def _create_branch(self, branch_name, commit_id):
+        """
+        creates a branch in a GIT repo
+        """
+        self._remote.create_branch(branch_name, commit_id)
 
     def _identify(self):
         """

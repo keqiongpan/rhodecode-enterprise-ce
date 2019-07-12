@@ -46,6 +46,7 @@ class TestGitRepository(object):
     @pytest.fixture(autouse=True)
     def prepare(self, request, baseapp):
         self.repo = GitRepository(TEST_GIT_REPO, bare=True)
+        self.repo.count()
 
     def get_clone_repo(self, tmp_path_factory):
         """
@@ -1242,7 +1243,7 @@ class TestGetSubmoduleUrl(object):
         commit = GitCommit(repository=repository, raw_id='abcdef12', idx=1)
         submodule_url = 'https://code.rhodecode.com/dulwich'
         get_id_patch = mock.patch.object(
-            commit, '_get_id_for_path', return_value=(1, 'link'))
+            commit, '_get_tree_id_for_path', return_value=(1, 'link'))
         get_submodule_patch = mock.patch.object(
             commit, '_get_submodule_url', return_value=submodule_url)
 
@@ -1262,7 +1263,7 @@ class TestGetSubmoduleUrl(object):
         commit = GitCommit(repository=repository, raw_id='abcdef12', idx=1)
         submodule_url = 'https://code.rhodecode.com/dulwich'
         get_id_patch = mock.patch.object(
-            commit, '_get_id_for_path', return_value=(1, 'tree'))
+            commit, '_get_tree_id_for_path', return_value=(1, 'tree'))
         get_submodule_patch = mock.patch.object(
             commit, '_get_submodule_url', return_value=submodule_url)
 

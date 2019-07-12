@@ -299,10 +299,11 @@ class MercurialCommit(base.BaseCommit):
                 loc = vals[0]
                 commit = vals[1]
                 dirnodes.append(SubModuleNode(k, url=loc, commit=commit, alias=alias))
+
         nodes = dirnodes + filenodes
-        # cache nodes
         for node in nodes:
-            self.nodes[node.path] = node
+            if node.path not in self.nodes:
+                self.nodes[node.path] = node
         nodes.sort()
 
         return nodes

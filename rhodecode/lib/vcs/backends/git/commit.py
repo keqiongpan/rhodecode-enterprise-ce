@@ -46,12 +46,6 @@ class GitCommit(base.BaseCommit):
     """
     Represents state of the repository at single commit id.
     """
-    _author_property = 'author'
-    _committer_property = 'committer'
-    _date_property = 'commit_time'
-    _date_tz_property = 'commit_timezone'
-    _message_property = 'message'
-    _parents_property = 'parents'
 
     _filter_pre_load = [
         # done through a more complex tree walk on parents
@@ -124,23 +118,19 @@ class GitCommit(base.BaseCommit):
 
     @LazyProperty
     def message(self):
-        return safe_unicode(
-            self._remote.commit_attribute(self.id, self._message_property))
+        return safe_unicode(self._remote.message(self.id))
 
     @LazyProperty
     def committer(self):
-        return safe_unicode(
-            self._remote.commit_attribute(self.id, self._committer_property))
+        return safe_unicode(self._remote.author(self.id))
 
     @LazyProperty
     def author(self):
-        return safe_unicode(
-            self._remote.commit_attribute(self.id, self._author_property))
+        return safe_unicode(self._remote.author(self.id))
 
     @LazyProperty
     def date(self):
-        unix_ts, tz = self._remote.get_object_attrs(
-            self.raw_id, self._date_property, self._date_tz_property)
+        unix_ts, tz = self._remote.date(self.raw_id)
         return utcdate_fromtimestamp(unix_ts, tz)
 
     @LazyProperty
@@ -158,13 +148,23 @@ class GitCommit(base.BaseCommit):
         return tags
 
     @LazyProperty
-    def branch(self):
+    def commit_branches(self):
+        branches = []
         for name, commit_id in self.repository.branches.iteritems():
             if commit_id == self.raw_id:
-                return safe_unicode(name)
+                branches.append(name)
+        return branches
+
+    @LazyProperty
+    def branch(self):
+        # actually commit can have multiple branches
+        branches = self.commit_branches
+        if branches:
+            return branches[0]
+
         return None
 
-    def _get_id_for_path(self, path):
+    def _get_tree_id_for_path(self, path):
         path = safe_str(path)
         if path in self._paths:
             return self._paths[path]
@@ -177,56 +177,26 @@ class GitCommit(base.BaseCommit):
             self._paths[''] = data
             return data
 
-        parts = path.split('/')
-        dirs, name = parts[:-1], parts[-1]
-        cur_dir = ''
+        tree_id, tree_type, tree_mode = \
+            self._remote.tree_and_type_for_path(self.raw_id, path)
+        if tree_id is None:
+            raise self.no_node_at_path(path)
 
-        # initially extract things from root dir
-        tree_items = self._remote.tree_items(tree_id)
-        self._process_tree_items(tree_items, cur_dir)
-
-        for dir in dirs:
-            if cur_dir:
-                cur_dir = '/'.join((cur_dir, dir))
-            else:
-                cur_dir = dir
-            dir_id = None
-            for item, stat_, id_, type_ in tree_items:
-                if item == dir:
-                    dir_id = id_
-                    break
-            if dir_id:
-                if type_ != "tree":
-                    raise CommitError('%s is not a directory' % cur_dir)
-                # update tree
-                tree_items = self._remote.tree_items(dir_id)
-            else:
-                raise CommitError('%s have not been found' % cur_dir)
-
-            # cache all items from the given traversed tree
-            self._process_tree_items(tree_items, cur_dir)
+        self._paths[path] = [tree_id, tree_type]
+        self._stat_modes[path] = tree_mode
 
         if path not in self._paths:
             raise self.no_node_at_path(path)
 
         return self._paths[path]
 
-    def _process_tree_items(self, items, cur_dir):
-        for item, stat_, id_, type_ in items:
-            if cur_dir:
-                name = '/'.join((cur_dir, item))
-            else:
-                name = item
-            self._paths[name] = [id_, type_]
-            self._stat_modes[name] = stat_
-
     def _get_kind(self, path):
-        path_id, type_ = self._get_id_for_path(path)
+        tree_id, type_ = self._get_tree_id_for_path(path)
         if type_ == 'blob':
             return NodeKind.FILE
         elif type_ == 'tree':
             return NodeKind.DIR
-        elif type == 'link':
+        elif type_ == 'link':
             return NodeKind.SUBMODULE
         return None
 
@@ -245,8 +215,7 @@ class GitCommit(base.BaseCommit):
         """
         Returns list of parent commits.
         """
-        parent_ids = self._remote.commit_attribute(
-            self.id, self._parents_property)
+        parent_ids = self._remote.parents(self.id)
         return self._make_commits(parent_ids)
 
     @LazyProperty
@@ -266,11 +235,11 @@ class GitCommit(base.BaseCommit):
                 child_ids.extend(found_ids)
         return self._make_commits(child_ids)
 
-    def _make_commits(self, commit_ids, pre_load=None):
-        return [
-            self.repository.get_commit(commit_id=commit_id, pre_load=pre_load,
-                                       translate_tag=False)
-            for commit_id in commit_ids]
+    def _make_commits(self, commit_ids):
+        def commit_maker(_commit_id):
+            return self.repository.get_commit(commit_id=commit_id)
+
+        return [commit_maker(commit_id) for commit_id in commit_ids]
 
     def get_file_mode(self, path):
         """
@@ -278,7 +247,7 @@ class GitCommit(base.BaseCommit):
         """
         path = safe_str(path)
         # ensure path is traversed
-        self._get_id_for_path(path)
+        self._get_tree_id_for_path(path)
         return self._stat_modes[path]
 
     def is_link(self, path):
@@ -288,15 +257,15 @@ class GitCommit(base.BaseCommit):
         """
         Returns content of the file at given `path`.
         """
-        id_, _ = self._get_id_for_path(path)
-        return self._remote.blob_as_pretty_string(id_)
+        tree_id, _ = self._get_tree_id_for_path(path)
+        return self._remote.blob_as_pretty_string(tree_id)
 
     def get_file_size(self, path):
         """
         Returns size of the file at given `path`.
         """
-        id_, _ = self._get_id_for_path(path)
-        return self._remote.blob_raw_length(id_)
+        tree_id, _ = self._get_tree_id_for_path(path)
+        return self._remote.blob_raw_length(tree_id)
 
     def get_path_history(self, path, limit=None, pre_load=None):
         """
@@ -350,20 +319,23 @@ class GitCommit(base.BaseCommit):
                 line)
 
     def get_nodes(self, path):
+
         if self._get_kind(path) != NodeKind.DIR:
             raise CommitError(
                 "Directory does not exist for commit %s at '%s'" % (self.raw_id, path))
         path = self._fix_path(path)
-        id_, _ = self._get_id_for_path(path)
-        tree_id = self._remote[id_]['id']
+
+        tree_id, _ = self._get_tree_id_for_path(path)
+
         dirnodes = []
         filenodes = []
-        alias = self.repository.alias
+
+        # extracted tree ID gives us our files...
         for name, stat_, id_, type_ in self._remote.tree_items(tree_id):
             if type_ == 'link':
                 url = self._get_submodule_url('/'.join((path, name)))
                 dirnodes.append(SubModuleNode(
-                    name, url=url, commit=id_, alias=alias))
+                    name, url=url, commit=id_, alias=self.repository.alias))
                 continue
 
             if path != '':
@@ -394,7 +366,7 @@ class GitCommit(base.BaseCommit):
         path = self._fix_path(path)
         if path not in self.nodes:
             try:
-                id_, type_ = self._get_id_for_path(path)
+                tree_id, type_ = self._get_tree_id_for_path(path)
             except CommitError:
                 raise NodeDoesNotExistError(
                     "Cannot find one of parents' directories for a given "
@@ -402,7 +374,7 @@ class GitCommit(base.BaseCommit):
 
             if type_ == 'link':
                 url = self._get_submodule_url(path)
-                node = SubModuleNode(path, url=url, commit=id_,
+                node = SubModuleNode(path, url=url, commit=tree_id,
                                      alias=self.repository.alias)
             elif type_ == 'tree':
                 if path == '':
@@ -411,16 +383,18 @@ class GitCommit(base.BaseCommit):
                     node = DirNode(path, commit=self)
             elif type_ == 'blob':
                 node = FileNode(path, commit=self, pre_load=pre_load)
+                self._stat_modes[path] = node.mode
             else:
                 raise self.no_node_at_path(path)
 
             # cache node
             self.nodes[path] = node
+
         return self.nodes[path]
 
     def get_largefile_node(self, path):
-        id_, _ = self._get_id_for_path(path)
-        pointer_spec = self._remote.is_large_file(id_)
+        tree_id, _ = self._get_tree_id_for_path(path)
+        pointer_spec = self._remote.is_large_file(tree_id)
 
         if pointer_spec:
             # content of that file regular FileNode is the hash of largefile

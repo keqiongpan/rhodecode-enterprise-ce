@@ -24,16 +24,15 @@ HG repository module
 import os
 import logging
 import binascii
-import time
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
     date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate)
 from rhodecode.lib.utils import safe_unicode, safe_str
+from rhodecode.lib.utils2 import CachedProperty
 from rhodecode.lib.vcs import connection, exceptions
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
@@ -87,14 +86,11 @@ class MercurialRepository(BaseRepository):
         # caches
         self._commit_ids = {}
 
-        # dependent that trigger re-computation of  commit_ids
-        self._commit_ids_ver = 0
-
     @LazyProperty
     def _remote(self):
         return connection.Hg(self.path, self.config, with_wire=self.with_wire)
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -108,15 +104,15 @@ class MercurialRepository(BaseRepository):
         self._commit_ids = dict((commit_id, index)
                                 for index, commit_id in enumerate(commit_ids))
 
-    @LazyProperty
+    @CachedProperty
     def branches(self):
         return self._get_branches()
 
-    @LazyProperty
+    @CachedProperty
     def branches_closed(self):
         return self._get_branches(active=False, closed=True)
 
-    @LazyProperty
+    @CachedProperty
     def branches_all(self):
         all_branches = {}
         all_branches.update(self.branches)
@@ -143,7 +139,7 @@ class MercurialRepository(BaseRepository):
 
         return OrderedDict(sorted(_branches, key=get_name, reverse=False))
 
-    @LazyProperty
+    @CachedProperty
     def tags(self):
         """
         Gets tags for this repository
@@ -276,8 +272,9 @@ class MercurialRepository(BaseRepository):
         self._remote.strip(commit_id, update=False, backup="none")
 
         self._remote.invalidate_vcs_cache()
-        self._commit_ids_ver = time.time()
-        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        # clear cache
+        self._invalidate_prop_cache('commit_ids')
+
         return len(self.commit_ids)
 
     def verify(self):

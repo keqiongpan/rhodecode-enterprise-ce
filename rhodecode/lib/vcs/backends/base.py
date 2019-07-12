@@ -33,12 +33,12 @@ import collections
 import warnings
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from pyramid import compat
 
+import rhodecode
 from rhodecode.translation import lazy_ugettext
-from rhodecode.lib.utils2 import safe_str, safe_unicode
+from rhodecode.lib.utils2 import safe_str, safe_unicode, CachedProperty
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.utils import author_name, author_email
 from rhodecode.lib.vcs.conf import settings
@@ -264,7 +264,9 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
-    _commit_ids_ver = 0
+
+    _is_empty = None
+    _commit_ids = {}
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -386,8 +388,23 @@ class BaseRepository(object):
         commit = self.get_commit(commit_id)
         return commit.size
 
+    def _check_for_empty(self):
+        no_commits = len(self._commit_ids) == 0
+        if no_commits:
+            # check on remote to be sure
+            return self._remote.is_empty()
+        else:
+            return False
+
     def is_empty(self):
-        return self._remote.is_empty()
+        if rhodecode.is_test:
+            return self._check_for_empty()
+
+        if self._is_empty is None:
+            # cache empty for production, but not tests
+            self._is_empty = self._check_for_empty()
+
+        return self._is_empty
 
     @staticmethod
     def check_url(url, config):
@@ -408,14 +425,15 @@ class BaseRepository(object):
     # COMMITS
     # ==========================================================================
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         raise NotImplementedError
 
     def append_commit_id(self, commit_id):
         if commit_id not in self.commit_ids:
             self._rebuild_cache(self.commit_ids + [commit_id])
-            self._commit_ids_ver = time.time()
+            # clear cache
+            self._invalidate_prop_cache('commit_ids')
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """

@@ -88,8 +88,6 @@ class TestInMemoryCommit(BackendTestMixin):
 
     @pytest.mark.backends("git")
     def test_add_on_branch_git(self, nodes):
-        self.repo._checkout('stable', create=True)
-
         for node in nodes:
             self.imc.add(node)
         self.commit(branch=u'stable')

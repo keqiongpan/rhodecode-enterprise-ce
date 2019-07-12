@@ -35,6 +35,7 @@ import urllib
 import urlobject
 import uuid
 import getpass
+from functools import update_wrapper, partial
 
 import pygments.lexers
 import sqlalchemy
@@ -1027,3 +1028,43 @@ def parse_byte_string(size_str):
     _parts = match.groups()
     num, type_ = _parts
     return long(num) * {'mb': 1024*1024, 'kb': 1024}[type_.lower()]
+
+
+class CachedProperty(object):
+    """
+    Lazy Attributes. With option to invalidate the cache by running a method
+
+    class Foo():
+
+        @CachedProperty
+        def heavy_func():
+            return 'super-calculation'
+
+    foo = Foo()
+    foo.heavy_func() # first computions
+    foo.heavy_func() # fetch from cache
+    foo._invalidate_prop_cache('heavy_func')
+    # at this point calling foo.heavy_func() will be re-computed
+    """
+
+    def __init__(self, func, func_name=None):
+
+        if func_name is None:
+            func_name = func.__name__
+        self.data = (func, func_name)
+        update_wrapper(self, func)
+
+    def __get__(self, inst, class_):
+        if inst is None:
+            return self
+
+        func, func_name = self.data
+        value = func(inst)
+        inst.__dict__[func_name] = value
+        if '_invalidate_prop_cache' not in inst.__dict__:
+            inst.__dict__['_invalidate_prop_cache'] = partial(
+                self._invalidate_prop_cache, inst)
+        return value
+
+    def _invalidate_prop_cache(self, inst, name):
+        inst.__dict__.pop(name, None)
