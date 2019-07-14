@@ -17,6 +17,7 @@ test:
 test-clean:
 	rm -rf coverage.xml htmlcov junit.xml pylint.log result
 	find . -type d -name "__pycache__" -prune -exec rm -rf '{}' ';'
+	find . -type f \( -iname '.coverage.*' \) -exec rm '{}' ';'
 
 test-only:
 	PYTHONHASHSEED=random \
