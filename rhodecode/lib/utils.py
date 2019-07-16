@@ -634,10 +634,12 @@ def load_rcextensions(root_path):
 
     path = os.path.join(root_path)
     sys.path.append(path)
+
     try:
         rcextensions = __import__('rcextensions')
     except ImportError:
-        log.warn('Unable to load rcextensions from %s', path)
+        if os.path.isdir(os.path.join(path, 'rcextensions')):
+            log.warn('Unable to load rcextensions from %s', path)
         rcextensions = None
 
     if rcextensions:
