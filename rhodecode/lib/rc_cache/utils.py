@@ -195,16 +195,18 @@ def clear_cache_namespace(cache_region, cache_namespace_uid):
 
 
 class ActiveRegionCache(object):
-    def __init__(self, context):
+    def __init__(self, context, cache_data):
         self.context = context
+        self.cache_data = cache_data
 
     def should_invalidate(self):
         return False
 
 
 class FreshRegionCache(object):
-    def __init__(self, context):
+    def __init__(self, context, cache_data):
         self.context = context
+        self.cache_data = cache_data
 
     def should_invalidate(self):
         return True
@@ -267,7 +269,7 @@ class InvalidationContext(object):
             self.thread_id = threading.current_thread().ident
 
         self.cache_key = compute_key_from_params(uid)
-        self.cache_key = 'proc:{}_thread:{}_{}'.format(
+        self.cache_key = 'proc:{}|thread:{}|params:{}'.format(
             self.proc_id, self.thread_id, self.cache_key)
         self.compute_time = 0
 
@@ -284,21 +286,23 @@ class InvalidationContext(object):
         Test if current object is valid, and return CacheRegion function
         that does invalidation and calculation
         """
+        log.debug('Entering cache invalidation check context: %s', self.invalidation_namespace)
         # register or get a new key based on uid
         self.cache_obj = self.get_or_create_cache_obj(uid=self.uid)
+        cache_data = self.cache_obj.get_dict()
         self._start_time = time.time()
         if self.cache_obj.cache_active:
             # means our cache obj is existing and marked as it's
             # cache is not outdated, we return ActiveRegionCache
             self.skip_cache_active_change = True
 
-            return ActiveRegionCache(context=self)
+            return ActiveRegionCache(context=self, cache_data=cache_data)
 
-            # the key is either not existing or set to False, we return
+        # the key is either not existing or set to False, we return
         # the real invalidator which re-computes value. We additionally set
         # the flag to actually update the Database objects
         self.skip_cache_active_change = False
-        return FreshRegionCache(context=self)
+        return FreshRegionCache(context=self, cache_data=cache_data)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # save compute time

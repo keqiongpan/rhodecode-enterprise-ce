@@ -3974,7 +3974,7 @@ class PullRequest(Base, _PullRequestBase):
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
             self.target_repo.repo_id, workspace_id)
         if os.path.isdir(shadow_repository_path):
-            return vcs_obj._get_shadow_instance(shadow_repository_path)
+            return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):

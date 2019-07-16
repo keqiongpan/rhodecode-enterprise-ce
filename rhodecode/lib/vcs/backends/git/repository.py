@@ -63,7 +63,7 @@ class GitRepository(BaseRepository):
 
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
-        self.with_wire = with_wire
+        self.with_wire = with_wire or {"cache": False}  # default should not use cache
 
         self._init_repo(create, src_url, do_workspace_checkout, bare)
 
@@ -72,7 +72,8 @@ class GitRepository(BaseRepository):
 
     @LazyProperty
     def _remote(self):
-        return connection.Git(self.path, self.config, with_wire=self.with_wire)
+        repo_id = self.path
+        return connection.Git(self.path, repo_id, self.config, with_wire=self.with_wire)
 
     @LazyProperty
     def bare(self):
@@ -354,7 +355,6 @@ class GitRepository(BaseRepository):
 
         :raises TagAlreadyExistError: if tag with same name already exists
         """
-        print self._refs
         if name in self.tags:
             raise TagAlreadyExistError("Tag %s already exists" % name)
         commit = self.get_commit(commit_id=commit_id)
@@ -804,8 +804,8 @@ class GitRepository(BaseRepository):
 
         return heads
 
-    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
-        return GitRepository(shadow_repository_path)
+    def get_shadow_instance(self, shadow_repository_path, enable_hooks=False, cache=False):
+        return GitRepository(shadow_repository_path, with_wire={"cache": cache})
 
     def _local_pull(self, repository_path, branch_name, ff_only=True):
         """
@@ -913,8 +913,8 @@ class GitRepository(BaseRepository):
         if not os.path.exists(shadow_repository_path):
             self._local_clone(
                 shadow_repository_path, target_ref.name, source_ref.name)
-            log.debug(
-                'Prepared shadow repository in %s', shadow_repository_path)
+            log.debug('Prepared %s shadow repository in %s',
+                      self.alias, shadow_repository_path)
 
         return shadow_repository_path
 
@@ -934,7 +934,7 @@ class GitRepository(BaseRepository):
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
 
         # checkout source, if it's different. Otherwise we could not
         # fetch proper commits for merge testing
@@ -952,7 +952,7 @@ class GitRepository(BaseRepository):
 
         # Need to reload repo to invalidate the cache, or otherwise we cannot
         # retrieve the last target commit.
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
         if target_ref.commit_id != shadow_repo.branches[target_ref.name]:
             log.warning('Shadow Target ref %s commit mismatch %s vs %s',
                         target_ref, target_ref.commit_id,
@@ -984,9 +984,9 @@ class GitRepository(BaseRepository):
                                      [source_ref.commit_id])
             merge_possible = True
 
-            # Need to reload repo to invalidate the cache, or otherwise we
+            # Need to invalidate the cache, or otherwise we
             # cannot retrieve the merge commit.
-            shadow_repo = GitRepository(shadow_repository_path)
+            shadow_repo = shadow_repo.get_shadow_instance(shadow_repository_path)
             merge_commit_id = shadow_repo.branches[pr_branch]
 
             # Set a reference pointing to the merge commit. This reference may

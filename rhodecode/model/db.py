@@ -29,6 +29,7 @@ import string
 import hashlib
 import logging
 import datetime
+import uuid
 import warnings
 import ipaddress
 import functools
@@ -2437,11 +2438,18 @@ class Repository(Base, BaseModel):
         # for repo2dbmapper
         config = kwargs.pop('config', None)
         cache = kwargs.pop('cache', None)
-        full_cache = str2bool(rhodecode.CONFIG.get('vcs_full_cache'))
+        vcs_full_cache = kwargs.pop('vcs_full_cache', None)
+        if vcs_full_cache is not None:
+            # allows override global config
+            full_cache = vcs_full_cache
+        else:
+            full_cache = str2bool(rhodecode.CONFIG.get('vcs_full_cache'))
         # if cache is NOT defined use default global, else we have a full
         # control over cache behaviour
         if cache is None and full_cache and not config:
+            log.debug('Initializing pure cached instance for %s', self.repo_path)
             return self._get_instance_cached()
+
         # cache here is sent to the "vcs server"
         return self._get_instance(cache=bool(cache), config=config)
 
@@ -2454,8 +2462,8 @@ class Repository(Base, BaseModel):
         region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def get_instance_cached(repo_id, context_id):
-            return self._get_instance()
+        def get_instance_cached(repo_id, context_id, _cache_state_uid):
+            return self._get_instance(repo_state_uid=_cache_state_uid)
 
         # we must use thread scoped cache here,
         # because each thread of gevent needs it's own not shared connection and cache
@@ -2464,7 +2472,9 @@ class Repository(Base, BaseModel):
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace,
             thread_scoped=True)
         with inv_context_manager as invalidation_context:
-            args = (self.repo_id, inv_context_manager.cache_key)
+            cache_state_uid = invalidation_context.cache_data['cache_state_uid']
+            args = (self.repo_id, inv_context_manager.cache_key, cache_state_uid)
+
             # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
                 instance = get_instance_cached.refresh(*args)
@@ -2474,10 +2484,13 @@ class Repository(Base, BaseModel):
             log.debug('Repo instance fetched in %.3fs', inv_context_manager.compute_time)
             return instance
 
-    def _get_instance(self, cache=True, config=None):
+    def _get_instance(self, cache=True, config=None, repo_state_uid=None):
+        log.debug('Initializing %s instance `%s` with cache flag set to: %s',
+                  self.repo_type, self.repo_path, cache)
         config = config or self._config
         custom_wire = {
-            'cache': cache  # controls the vcs.remote cache
+            'cache': cache,  # controls the vcs.remote cache
+            'repo_state_uid': repo_state_uid
         }
         repo = get_vcs_instance(
             repo_path=safe_str(self.repo_full_path),
@@ -3497,12 +3510,15 @@ class CacheKey(Base, BaseModel):
     cache_id = Column("cache_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     cache_key = Column("cache_key", String(255), nullable=True, unique=None, default=None)
     cache_args = Column("cache_args", String(255), nullable=True, unique=None, default=None)
+    cache_state_uid = Column("cache_state_uid", String(255), nullable=True, unique=None, default=None)
     cache_active = Column("cache_active", Boolean(), nullable=True, unique=None, default=False)
 
-    def __init__(self, cache_key, cache_args=''):
+    def __init__(self, cache_key, cache_args='', cache_state_uid=None):
         self.cache_key = cache_key
         self.cache_args = cache_args
         self.cache_active = False
+        # first key should be same for all entries, since all workers should share it
+        self.cache_state_uid = cache_state_uid or self.generate_new_state_uid(based_on=cache_args)
 
     def __unicode__(self):
         return u"<%s('%s:%s[%s]')>" % (
@@ -3531,6 +3547,13 @@ class CacheKey(Base, BaseModel):
         return self._cache_key_partition()[2]
 
     @classmethod
+    def generate_new_state_uid(cls, based_on=None):
+        if based_on:
+            return str(uuid.uuid5(uuid.NAMESPACE_URL, safe_str(based_on)))
+        else:
+            return str(uuid.uuid4())
+
+    @classmethod
     def delete_all_cache(cls):
         """
         Delete all cache keys from database.
@@ -3553,7 +3576,8 @@ class CacheKey(Base, BaseModel):
                 log.debug('cache objects deleted for cache args %s',
                           safe_str(cache_uid))
             else:
-                qry.update({"cache_active": False})
+                qry.update({"cache_active": False,
+                            "cache_state_uid": cls.generate_new_state_uid()})
                 log.debug('cache objects marked as invalid for cache args %s',
                           safe_str(cache_uid))
 
@@ -4166,7 +4190,7 @@ class PullRequest(Base, _PullRequestBase):
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
             self.target_repo.repo_id, workspace_id)
         if os.path.isdir(shadow_repository_path):
-            return vcs_obj._get_shadow_instance(shadow_repository_path)
+            return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):

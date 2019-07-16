@@ -236,7 +236,7 @@ class MercurialCommit(base.BaseCommit):
         Returns content of the file at given ``path``.
         """
         path = self._get_filectx(path)
-        return self._remote.fctx_data(self.idx, path)
+        return self._remote.fctx_node_data(self.idx, path)
 
     def get_file_size(self, path):
         """

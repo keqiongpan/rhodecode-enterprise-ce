@@ -49,7 +49,7 @@ def test_scm_instance_config(backend):
             mocks['_get_instance_cached'].assert_called()
 
 
-def test__get_instance_config(backend):
+def test_get_instance_config(backend):
     repo = backend.create_repo()
     vcs_class = Mock()
     with patch.multiple('rhodecode.lib.vcs.backends',
@@ -61,13 +61,13 @@ def test__get_instance_config(backend):
             repo._get_instance()
             vcs_class.assert_called_with(
                 repo_path=repo.repo_full_path, config=config_mock,
-                create=False, with_wire={'cache': True})
+                create=False, with_wire={'cache': True, 'repo_state_uid': None})
 
         new_config = {'override': 'old_config'}
         repo._get_instance(config=new_config)
         vcs_class.assert_called_with(
             repo_path=repo.repo_full_path, config=new_config, create=False,
-            with_wire={'cache': True})
+            with_wire={'cache': True, 'repo_state_uid': None})
 
 
 def test_mark_for_invalidation_config(backend):

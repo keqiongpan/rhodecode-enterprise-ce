@@ -751,15 +751,15 @@ class TestGetShadowInstance(object):
         return repo
 
     def test_passes_config(self, repo):
-        shadow = repo._get_shadow_instance(repo.path)
+        shadow = repo.get_shadow_instance(repo.path)
         assert shadow.config == repo.config.copy()
 
     def test_disables_hooks(self, repo):
-        shadow = repo._get_shadow_instance(repo.path)
+        shadow = repo.get_shadow_instance(repo.path)
         shadow.config.clear_section.assert_called_once_with('hooks')
 
     def test_allows_to_keep_hooks(self, repo):
-        shadow = repo._get_shadow_instance(repo.path, enable_hooks=True)
+        shadow = repo.get_shadow_instance(repo.path, enable_hooks=True)
         assert not shadow.config.clear_section.called
 
 

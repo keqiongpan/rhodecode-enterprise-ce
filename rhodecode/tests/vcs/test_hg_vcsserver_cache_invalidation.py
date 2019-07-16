@@ -108,7 +108,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         workspace_id = pr._workspace_id(pull_request)
         shadow_repository_path = target_vcs._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
-        shadow_repo = target_vcs._get_shadow_instance(shadow_repository_path)
+        shadow_repo = target_vcs.get_shadow_instance(shadow_repository_path, cache=True)
 
         # This will populate the cache of the mercurial repository object
         # inside of the VCSServer.
@@ -127,32 +127,38 @@ class TestMercurialRemoteRepoInvalidation(object):
         from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 
         pull_request = pr_util.create_pull_request()
+
         target_vcs = pull_request.target_repo.scm_instance()
         source_vcs = pull_request.source_repo.scm_instance()
-        shadow_repo, source_ref, target_ref = self._prepare_shadow_repo(
-            pull_request)
+        shadow_repo, source_ref, target_ref = self._prepare_shadow_repo(pull_request)
+
+        initial_cache_uid = shadow_repo._remote._wire['context']
+        initial_commit_ids = shadow_repo._remote.get_all_commit_ids('visible')
 
         # Pull from target and source references but without invalidation of
-        # RemoteRepo objects and without VCSServer caching of mercurial
-        # repository objects.
+        # RemoteRepo objects and without VCSServer caching of mercurial repository objects.
         with patch.object(shadow_repo._remote, 'invalidate_vcs_cache'):
             # NOTE: Do not use patch.dict() to disable the cache because it
             # restores the WHOLE dict and not only the patched keys.
             shadow_repo._remote._wire['cache'] = False
             shadow_repo._local_pull(target_vcs.path, target_ref)
             shadow_repo._local_pull(source_vcs.path, source_ref)
-            shadow_repo._remote._wire.pop('cache')
+            shadow_repo._remote._wire['cache'] = True
 
         # Try to lookup the target_ref in shadow repo. This should work because
+        # test_repo_maker_uses_session_for_instance_methods
         # the shadow repo is a clone of the target and always contains all off
         # it's commits in the initial cache.
         shadow_repo.get_commit(target_ref.commit_id)
 
-        # If we try to lookup the source_ref it should fail because the shadow
+        # we ensure that call context has not changed, this is what
+        # `invalidate_vcs_cache` does
+        assert initial_cache_uid == shadow_repo._remote._wire['context']
+
+        # If we try to lookup all commits.
         # repo commit cache doesn't get invalidated. (Due to patched
         # invalidation and caching above).
-        with pytest.raises(CommitDoesNotExistError):
-            shadow_repo.get_commit(source_ref.commit_id)
+        assert initial_commit_ids == shadow_repo._remote.get_all_commit_ids('visible')
 
     @pytest.mark.backends('hg')
     def test_commit_does_not_exist_error_does_not_happen(self, pr_util, app):
@@ -166,8 +172,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         pull_request = pr_util.create_pull_request()
         target_vcs = pull_request.target_repo.scm_instance()
         source_vcs = pull_request.source_repo.scm_instance()
-        shadow_repo, source_ref, target_ref = self._prepare_shadow_repo(
-            pull_request)
+        shadow_repo, source_ref, target_ref = self._prepare_shadow_repo(pull_request)
 
         # Pull from target and source references without without VCSServer
         # caching of mercurial repository objects but with active invalidation
@@ -177,7 +182,7 @@ class TestMercurialRemoteRepoInvalidation(object):
         shadow_repo._remote._wire['cache'] = False
         shadow_repo._local_pull(target_vcs.path, target_ref)
         shadow_repo._local_pull(source_vcs.path, source_ref)
-        shadow_repo._remote._wire.pop('cache')
+        shadow_repo._remote._wire['cache'] = True
 
         # Try to lookup the target and source references in shadow repo. This
         # should work because the RemoteRepo object gets invalidated during the

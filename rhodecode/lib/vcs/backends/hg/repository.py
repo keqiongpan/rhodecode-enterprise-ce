@@ -79,7 +79,7 @@ class MercurialRepository(BaseRepository):
         # special requirements
         self.config = config if config else self.get_default_config(
             default=[('extensions', 'largefiles', '1')])
-        self.with_wire = with_wire
+        self.with_wire = with_wire or {"cache": False}  # default should not use cache
 
         self._init_repo(create, src_url, do_workspace_checkout)
 
@@ -88,7 +88,8 @@ class MercurialRepository(BaseRepository):
 
     @LazyProperty
     def _remote(self):
-        return connection.Hg(self.path, self.config, with_wire=self.with_wire)
+        repo_id = self.path
+        return connection.Hg(self.path, repo_id, self.config, with_wire=self.with_wire)
 
     @CachedProperty
     def commit_ids(self):
@@ -185,7 +186,7 @@ class MercurialRepository(BaseRepository):
         self._remote.invalidate_vcs_cache()
 
         # Reinitialize tags
-        self.tags = self._get_tags()
+        self._invalidate_prop_cache('tags')
         tag_id = self.tags[name]
 
         return self.get_commit(commit_id=tag_id)
@@ -212,7 +213,7 @@ class MercurialRepository(BaseRepository):
 
         self._remote.tag(name, nullid, message, local, user, date, tz)
         self._remote.invalidate_vcs_cache()
-        self.tags = self._get_tags()
+        self._invalidate_prop_cache('tags')
 
     @LazyProperty
     def bookmarks(self):
@@ -359,7 +360,6 @@ class MercurialRepository(BaseRepository):
 
         if create:
             os.makedirs(self.path, mode=0o755)
-
         self._remote.localrepository(create)
 
     @LazyProperty
@@ -738,7 +738,7 @@ class MercurialRepository(BaseRepository):
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
 
         log.debug('Pulling in target reference %s', target_ref)
         self._validate_pull_reference(target_ref)
@@ -818,7 +818,7 @@ class MercurialRepository(BaseRepository):
                     shadow_repo.bookmark(
                         target_ref.name, revision=merge_commit_id)
                 try:
-                    shadow_repo_with_hooks = self._get_shadow_instance(
+                    shadow_repo_with_hooks = self.get_shadow_instance(
                         shadow_repository_path,
                         enable_hooks=True)
                     # This is the actual merge action, we push from shadow
@@ -854,11 +854,11 @@ class MercurialRepository(BaseRepository):
             merge_possible, merge_succeeded, merge_ref, merge_failure_reason,
             metadata=metadata)
 
-    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
+    def get_shadow_instance(self, shadow_repository_path, enable_hooks=False, cache=False):
         config = self.config.copy()
         if not enable_hooks:
             config.clear_section('hooks')
-        return MercurialRepository(shadow_repository_path, config)
+        return MercurialRepository(shadow_repository_path, config, with_wire={"cache": cache})
 
     def _validate_pull_reference(self, reference):
         if not (reference.name in self.bookmarks or

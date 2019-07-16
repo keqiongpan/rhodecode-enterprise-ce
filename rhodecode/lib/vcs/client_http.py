@@ -25,6 +25,7 @@ Client for the VCSServer implemented based on HTTP.
 import copy
 import logging
 import threading
+import time
 import urllib2
 import urlparse
 import uuid
@@ -38,7 +39,6 @@ from requests.packages.urllib3.util.retry import Retry
 import rhodecode
 from rhodecode.lib.system_info import get_cert_path
 from rhodecode.lib.vcs import exceptions, CurlSession
-
 
 log = logging.getLogger(__name__)
 
@@ -54,16 +54,14 @@ EXCEPTIONS_MAP = {
 class RepoMaker(object):
 
     def __init__(self, server_and_port, backend_endpoint, backend_type, session_factory):
-        self.url = urlparse.urljoin(
-            'http://%s' % server_and_port, backend_endpoint)
+        self.url = urlparse.urljoin('http://%s' % server_and_port, backend_endpoint)
         self._session_factory = session_factory
         self.backend_type = backend_type
 
-    def __call__(self, path, config, with_wire=None):
-        log.debug('RepoMaker call on %s', path)
-        return RemoteRepo(
-            path, config, self.url, self._session_factory(),
-            with_wire=with_wire)
+    def __call__(self, path, repo_id, config, with_wire=None):
+        log.debug('%s RepoMaker call on %s', self.backend_type.upper(), path)
+        return RemoteRepo(path, repo_id, config, self.url, self._session_factory(),
+                          with_wire=with_wire)
 
     def __getattr__(self, name):
         def f(*args, **kwargs):
@@ -84,8 +82,7 @@ class RepoMaker(object):
 
 class ServiceConnection(object):
     def __init__(self, server_and_port, backend_endpoint, session_factory):
-        self.url = urlparse.urljoin(
-            'http://%s' % server_and_port, backend_endpoint)
+        self.url = urlparse.urljoin('http://%s' % server_and_port, backend_endpoint)
         self._session_factory = session_factory
 
     def __getattr__(self, name):
@@ -107,21 +104,27 @@ class ServiceConnection(object):
 
 class RemoteRepo(object):
 
-    def __init__(self, path, config, url, session, with_wire=None):
+    def __init__(self, path, repo_id, config, url, session, with_wire=None):
         self.url = url
         self._session = session
+        with_wire = with_wire or {}
+
+        repo_state_uid = with_wire.get('repo_state_uid') or 'state'
         self._wire = {
-            "path": path,
+            "path": path,  # repo path
+            "repo_id": repo_id,
             "config": config,
-            "context": self._create_vcs_cache_context(),
+            "repo_state_uid": repo_state_uid,
+            "context": self._create_vcs_cache_context(path, repo_state_uid)
         }
+
         if with_wire:
             self._wire.update(with_wire)
 
-        # johbo: Trading complexity for performance. Avoiding the call to
+        # NOTE(johbo): Trading complexity for performance. Avoiding the call to
         # log.debug brings a few percent gain even if is is not active.
         if log.isEnabledFor(logging.DEBUG):
-            self._call = self._call_with_logging
+            self._call_with_logging = True
 
         self.cert_dir = get_cert_path(rhodecode.CONFIG.get('__file__'))
 
@@ -136,30 +139,35 @@ class RemoteRepo(object):
         # config object is being changed for hooking scenarios
         wire = copy.deepcopy(self._wire)
         wire["config"] = wire["config"].serialize()
-
         wire["config"].append(('vcs', 'ssl_dir', self.cert_dir))
+
         payload = {
             'id': str(uuid.uuid4()),
             'method': name,
             'params': {'wire': wire, 'args': args, 'kwargs': kwargs}
         }
-        return _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
 
-    def _call_with_logging(self, name, *args, **kwargs):
-        context_uid = self._wire.get('context')
-        log.debug('Calling %s@%s with args:%.10240r. wire_context: %s',
-                  self.url, name, args, context_uid)
-        return RemoteRepo._call(self, name, *args, **kwargs)
+        if self._call_with_logging:
+            start = time.time()
+            context_uid = wire.get('context')
+            log.debug('Calling %s@%s with args:%.10240r. wire_context: %s',
+                      self.url, name, args, context_uid)
+        result = _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
+        if self._call_with_logging:
+            log.debug('Call %s@%s took: %.3fs. wire_context: %s',
+                      self.url, name, time.time()-start, context_uid)
+        return result
 
     def __getitem__(self, key):
         return self.revision(key)
 
-    def _create_vcs_cache_context(self):
+    def _create_vcs_cache_context(self, *args):
         """
         Creates a unique string which is passed to the VCSServer on every
         remote call. It is used as cache key in the VCSServer.
         """
-        return str(uuid.uuid4())
+        hash_key = '-'.join(map(str, args))
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, hash_key))
 
     def invalidate_vcs_cache(self):
         """
@@ -167,7 +175,7 @@ class RemoteRepo(object):
         call to a remote method. It forces the VCSServer to create a fresh
         repository instance on the next call to a remote method.
         """
-        self._wire['context'] = self._create_vcs_cache_context()
+        self._wire['context'] = str(uuid.uuid4())
 
 
 class RemoteObject(object):
@@ -254,8 +262,7 @@ class VcsHttpProxy(object):
         retries = Retry(total=5, connect=None, read=None, redirect=None)
 
         adapter = requests.adapters.HTTPAdapter(max_retries=retries)
-        self.base_url = urlparse.urljoin(
-            'http://%s' % server_and_port, backend_endpoint)
+        self.base_url = urlparse.urljoin('http://%s' % server_and_port, backend_endpoint)
         self.session = requests.Session()
         self.session.mount('http://', adapter)
 

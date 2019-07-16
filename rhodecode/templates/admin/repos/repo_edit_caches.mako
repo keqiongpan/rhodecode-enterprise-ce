@@ -37,12 +37,14 @@
            <table class="rctable edit_cache">
            <tr>
             <th>${_('Key')}</th>
+            <th>${_('State UID')}</th>
             <th>${_('Namespace')}</th>
             <th>${_('Active')}</th>
             </tr>
           %for cache in c.rhodecode_db_repo.cache_keys:
               <tr>
                 <td class="td-prefix"><code>${cache.cache_key}</code></td>
+                <td class="td-cachekey"><code>${cache.cache_state_uid}</code></td>
                 <td class="td-cachekey"><code>${cache.cache_args}</code></td>
                 <td class="td-active">${h.bool2icon(cache.cache_active)}</td>
               </tr>

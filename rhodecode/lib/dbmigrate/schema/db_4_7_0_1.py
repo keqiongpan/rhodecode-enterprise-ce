@@ -3344,7 +3344,7 @@ class PullRequest(Base, _PullRequestBase):
         vcs_obj = self.target_repo.scm_instance()
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
             workspace_id)
-        return vcs_obj._get_shadow_instance(shadow_repository_path)
+        return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):

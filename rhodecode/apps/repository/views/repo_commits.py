@@ -57,9 +57,6 @@ def _update_with_GET(params, request):
         params[k] += request.GET.getall(k)
 
 
-
-
-
 class RepoCommitsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context(include_app_defaults=True)
@@ -93,6 +90,8 @@ class RepoCommitsView(RepoAppView):
         try:
             pre_load = ['affected_files', 'author', 'branch', 'date',
                         'message', 'parents']
+            if self.rhodecode_vcs_repo.alias == 'hg':
+                pre_load += ['hidden', 'obsolete', 'phase']
 
             if len(commit_range) == 2:
                 commits = self.rhodecode_vcs_repo.get_commits(

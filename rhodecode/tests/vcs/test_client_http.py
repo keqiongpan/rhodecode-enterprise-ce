@@ -107,7 +107,7 @@ def test_repo_maker_uses_session_for_instance_methods(
         stub_session_factory, config):
     repo_maker = client_http.RepoMaker(
         'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_factory)
-    repo = repo_maker('stub_path', config)
+    repo = repo_maker('stub_path', 'stub_repo_id', config)
     repo.example_call()
     stub_session_factory().post.assert_called_with(
         'http://server_and_port/endpoint', data=mock.ANY)
@@ -127,7 +127,7 @@ def test_repo_maker_uses_session_that_throws_error(
         stub_session_failing_factory, config):
     repo_maker = client_http.RepoMaker(
         'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_failing_factory)
-    repo = repo_maker('stub_path', config)
+    repo = repo_maker('stub_path', 'stub_repo_id', config)
 
     with pytest.raises(exceptions.HttpVCSCommunicationError):
         repo.example_call()
