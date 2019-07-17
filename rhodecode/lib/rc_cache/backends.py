@@ -22,8 +22,10 @@ import time
 import errno
 import logging
 
+import msgpack
 import gevent
 
+from dogpile.cache.api import CachedValue
 from dogpile.cache.backends import memory as memory_backend
 from dogpile.cache.backends import file as file_backend
 from dogpile.cache.backends import redis as redis_backend
@@ -39,6 +41,7 @@ log = logging.getLogger(__name__)
 
 
 class LRUMemoryBackend(memory_backend.MemoryBackend):
+    key_prefix = 'lru_mem_backend'
     pickle_values = False
 
     def __init__(self, arguments):
@@ -63,7 +66,8 @@ class LRUMemoryBackend(memory_backend.MemoryBackend):
             self.delete(key)
 
 
-class Serializer(object):
+class PickleSerializer(object):
+
     def _dumps(self, value, safe=False):
         try:
             return compat.pickle.dumps(value)
@@ -76,6 +80,32 @@ class Serializer(object):
     def _loads(self, value, safe=True):
         try:
             return compat.pickle.loads(value)
+        except Exception:
+            if safe:
+                return NO_VALUE
+            else:
+                raise
+
+
+class MsgPackSerializer(object):
+
+    def _dumps(self, value, safe=False):
+        try:
+            return msgpack.packb(value)
+        except Exception:
+            if safe:
+                return NO_VALUE
+            else:
+                raise
+
+    def _loads(self, value, safe=True):
+        """
+        pickle maintained the `CachedValue` wrapper of the tuple
+        msgpack does not, so it must be added back in.
+       """
+        try:
+            value = msgpack.unpackb(value, use_list=False)
+            return CachedValue(*value)
         except Exception:
             if safe:
                 return NO_VALUE
@@ -123,13 +153,16 @@ class CustomLockFactory(FileLock):
         return fcntl
 
 
-class FileNamespaceBackend(Serializer, file_backend.DBMBackend):
+class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
+    key_prefix = 'file_backend'
 
     def __init__(self, arguments):
         arguments['lock_factory'] = CustomLockFactory
         super(FileNamespaceBackend, self).__init__(arguments)
 
     def list_keys(self, prefix=''):
+        prefix = '{}:{}'.format(self.key_prefix, prefix)
+
         def cond(v):
             if not prefix:
                 return True
@@ -169,10 +202,9 @@ class FileNamespaceBackend(Serializer, file_backend.DBMBackend):
                 dbm[key] = self._dumps(value)
 
 
-class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
+class BaseRedisBackend(redis_backend.RedisBackend):
     def list_keys(self, prefix=''):
-        if prefix:
-            prefix = prefix + '*'
+        prefix = '{}:{}*'.format(self.key_prefix, prefix)
         return self.client.keys(prefix)
 
     def get_store(self):
@@ -184,6 +216,15 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
             return NO_VALUE
         return self._loads(value)
 
+    def get_multi(self, keys):
+        if not keys:
+            return []
+        values = self.client.mget(keys)
+        loads = self._loads
+        return [
+            loads(v) if v is not None else NO_VALUE
+            for v in values]
+
     def set(self, key, value):
         if self.redis_expiration_time:
             self.client.setex(key, self.redis_expiration_time,
@@ -192,8 +233,9 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
             self.client.set(key, self._dumps(value))
 
     def set_multi(self, mapping):
+        dumps = self._dumps
         mapping = dict(
-            (k, self._dumps(v))
+            (k, dumps(v))
             for k, v in mapping.items()
         )
 
@@ -213,3 +255,13 @@ class RedisPickleBackend(Serializer, redis_backend.RedisBackend):
             return self.client.lock(lock_key, self.lock_timeout, self.lock_sleep)
         else:
             return None
+
+
+class RedisPickleBackend(PickleSerializer, BaseRedisBackend):
+    key_prefix = 'redis_pickle_backend'
+    pass
+
+
+class RedisMsgPackBackend(MsgPackSerializer, BaseRedisBackend):
+    key_prefix = 'redis_msgpack_backend'
+    pass

@@ -67,7 +67,7 @@ class TestCaches(object):
     def test_cache_keygen(self, example_input, example_namespace):
         def func_wrapped():
             return 1
-        func = rc_cache.utils.key_generator(example_namespace, func_wrapped)
+        func = rc_cache.utils.key_generator(None, example_namespace, func_wrapped)
         key = func(*example_input)
         assert key
 

@@ -134,13 +134,23 @@ def compute_key_from_params(*args):
     return sha1("_".join(map(safe_str, args)))
 
 
-def key_generator(namespace, fn):
+def backend_key_generator(backend):
+    """
+    Special wrapper that also sends over the backend to the key generator
+    """
+    def wrapper(namespace, fn):
+        return key_generator(backend, namespace, fn)
+    return wrapper
+
+
+def key_generator(backend, namespace, fn):
     fname = fn.__name__
 
     def generate_key(*args):
-        namespace_pref = namespace or 'default'
+        backend_prefix = getattr(backend, 'key_prefix', None) or 'backend_prefix'
+        namespace_pref = namespace or 'default_namespace'
         arg_key = compute_key_from_params(*args)
-        final_key = "{}:{}_{}".format(namespace_pref, fname, arg_key)
+        final_key = "{}:{}:{}_{}".format(backend_prefix, namespace_pref, fname, arg_key)
 
         return final_key
 
@@ -167,7 +177,8 @@ def get_or_create_region(region_name, region_namespace=None):
         if not os.path.isdir(cache_dir):
             os.makedirs(cache_dir)
         new_region = make_region(
-            name=region_uid_name, function_key_generator=key_generator
+            name=region_uid_name,
+            function_key_generator=backend_key_generator(region_obj.actual_backend)
         )
         namespace_filename = os.path.join(
             cache_dir, "{}.cache.dbm".format(region_namespace))
@@ -179,7 +190,7 @@ def get_or_create_region(region_name, region_namespace=None):
         )
 
         # create and save in region caches
-        log.debug('configuring new region: %s',region_uid_name)
+        log.debug('configuring new region: %s', region_uid_name)
         region_obj = region_meta.dogpile_cache_regions[region_namespace] = new_region
 
     return region_obj
