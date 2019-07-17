@@ -45,7 +45,7 @@ class RequestWrapperTween(object):
             end = time.time()
             total = end - start
             log.info(
-                'IP: %s %s Request to %s time: %.3fs [%s]',
+                'IP: %s %s Request to %s time: %.4fs [%s]',
                 get_ip_addr(request.environ), request.environ.get('REQUEST_METHOD'),
                 safe_str(get_access_path(request.environ)), total,
                 get_user_agent(request. environ)

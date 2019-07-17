@@ -251,7 +251,7 @@ class InvalidationContext(object):
                 result = heavy_compute(*args)
 
             compute_time = inv_context_manager.compute_time
-            log.debug('result computed in %.3fs', compute_time)
+            log.debug('result computed in %.4fs', compute_time)
 
         # To send global invalidation signal, simply run
         CacheKey.set_invalidate(invalidation_namespace)
@@ -289,7 +289,8 @@ class InvalidationContext(object):
         log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
         invalidation_namespace = invalidation_namespace or self.invalidation_namespace
         if not cache_obj:
-            cache_obj = CacheKey(self.cache_key, cache_args=invalidation_namespace)
+            new_cache_args = invalidation_namespace
+            cache_obj = CacheKey(self.cache_key, cache_args=new_cache_args)
         return cache_obj
 
     def __enter__(self):

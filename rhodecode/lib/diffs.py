@@ -1178,7 +1178,7 @@ def cache_diff(cached_diff_file, diff, commits):
         log.warn('Failed to save cache', exc_info=True)
         _cleanup_cache_file(cached_diff_file)
 
-    log.debug('Saved diff cache under %s in %.3fs', cached_diff_file, time.time() - start)
+    log.debug('Saved diff cache under %s in %.4fs', cached_diff_file, time.time() - start)
 
 
 def load_cached_diff(cached_diff_file):
@@ -1221,7 +1221,7 @@ def load_cached_diff(cached_diff_file):
         _cleanup_cache_file(cached_diff_file)
         return default_struct
 
-    log.debug('Loaded diff cache from %s in %.3fs', cached_diff_file, time.time() - start)
+    log.debug('Loaded diff cache from %s in %.4fs', cached_diff_file, time.time() - start)
 
     return data
 

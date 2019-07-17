@@ -98,7 +98,7 @@ class RepoSummaryView(RepoAppView):
                 instance = generate_repo_readme(*args)
 
             log.debug(
-                'Repo readme generated and computed in %.3fs',
+                'Repo readme generated and computed in %.4fs',
                 inv_context_manager.compute_time)
             return instance
 

@@ -43,7 +43,7 @@ def main(server, repeat, pages):
         t = timeit.Timer(stmt=stmt, setup="import requests")
 
         result = t.repeat(repeat=repeat, number=1)
-        print("  %.3f (min) - %.3f (max) - %.3f (avg)\n" %
+        print("  %.4f (min) - %.4f (max) - %.4f (avg)\n" %
               (min(result), max(result), sum(result) / len(result)))
 
 

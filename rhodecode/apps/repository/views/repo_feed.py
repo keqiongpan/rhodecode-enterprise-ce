@@ -169,7 +169,7 @@ class RepoFeedView(RepoAppView):
             else:
                 mime_type, feed = generate_atom_feed(*args)
 
-            log.debug('Repo ATOM feed computed in %.3fs',
+            log.debug('Repo ATOM feed computed in %.4fs',
                       inv_context_manager.compute_time)
 
         response = Response(feed)
@@ -235,7 +235,7 @@ class RepoFeedView(RepoAppView):
             else:
                 mime_type, feed = generate_rss_feed(*args)
             log.debug(
-                'Repo RSS feed computed in %.3fs', inv_context_manager.compute_time)
+                'Repo RSS feed computed in %.4fs', inv_context_manager.compute_time)
 
         response = Response(feed)
         response.content_type = mime_type

@@ -154,7 +154,7 @@ class RemoteRepo(object):
                       self.url, name, args, context_uid)
         result = _remote_call(self.url, payload, EXCEPTIONS_MAP, self._session)
         if self._call_with_logging:
-            log.debug('Call %s@%s took: %.3fs. wire_context: %s',
+            log.debug('Call %s@%s took: %.4fs. wire_context: %s',
                       self.url, name, time.time()-start, context_uid)
         return result
 

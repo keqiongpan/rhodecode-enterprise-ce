@@ -1233,7 +1233,7 @@ class AuthUser(object):
         for k in result:
             result_repr.append((k, len(result[k])))
         total = time.time() - start
-        log.debug('PERMISSION tree for user %s computed in %.3fs: %s',
+        log.debug('PERMISSION tree for user %s computed in %.4fs: %s',
                   user, total, result_repr)
 
         return result

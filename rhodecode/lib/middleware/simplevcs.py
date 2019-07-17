@@ -354,7 +354,7 @@ class SimpleVCS(object):
             'vcs_permissions', plugin_id, action, user.user_id, repo_name, ip_addr)
 
         auth_time = time.time() - start
-        log.debug('Permissions for plugin `%s` completed in %.3fs, '
+        log.debug('Permissions for plugin `%s` completed in %.4fs, '
                   'expiration time of fetched cache %.1fs.',
                   plugin_id, auth_time, cache_ttl)
 

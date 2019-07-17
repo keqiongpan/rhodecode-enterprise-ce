@@ -130,7 +130,7 @@ def pre_request(worker, req):
 def post_request(worker, req, environ, resp):
     total_time = time.time() - worker.start_time
     worker.log.debug(
-        "GNCRN POST WORKER [cnt:%s]: %s %s resp: %s, Load Time: %.3fs",
+        "GNCRN POST WORKER [cnt:%s]: %s %s resp: %s, Load Time: %.4fs",
         worker.nr, req.method, req.path, resp.status_code, total_time)
 
 

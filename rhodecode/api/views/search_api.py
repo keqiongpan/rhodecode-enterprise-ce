@@ -101,7 +101,7 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
             searcher.cleanup()
 
         if not search_result['error']:
-            data['execution_time'] = '%s results (%.3f seconds)' % (
+            data['execution_time'] = '%s results (%.4f seconds)' % (
                 search_result['count'],
                 search_result['runtime'])
         else:

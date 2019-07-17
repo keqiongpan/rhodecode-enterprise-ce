@@ -88,7 +88,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
         search_tags = searcher.extract_search_tags(search_query)
 
         if not search_result['error']:
-            execution_time = '%s results (%.3f seconds)' % (
+            execution_time = '%s results (%.4f seconds)' % (
                 search_result['count'],
                 search_result['runtime'])
         elif not errors:

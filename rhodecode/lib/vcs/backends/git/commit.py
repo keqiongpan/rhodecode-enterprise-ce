@@ -158,7 +158,8 @@ class GitCommit(base.BaseCommit):
 
     @LazyProperty
     def branch(self):
-        branches = safe_unicode(self._remote.branch(self.raw_id))
+        branches = self._remote.branch(self.raw_id)
+
         if branches:
             # actually commit can have multiple branches in git
             return safe_unicode(branches[0])

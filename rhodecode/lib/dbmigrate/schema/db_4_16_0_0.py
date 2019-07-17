@@ -2402,7 +2402,7 @@ class Repository(Base, BaseModel):
                 instance = get_instance_cached(*args)
 
             log.debug(
-                'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
+                'Repo instance fetched in %.4fs', inv_context_manager.compute_time)
             return instance
 
     def _get_instance(self, cache=True, config=None):
