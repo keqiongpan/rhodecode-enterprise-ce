@@ -274,13 +274,16 @@
                       else if(data.results.length === 2){
                           $('#child_link').addClass('disabled');
                           $('#child_link').addClass('double');
+
                           var _html = '';
-                          _html +='<a title="__title__" href="__url__">__rev__</a> '
+                          _html +='<a title="__title__" href="__url__"><span class="tag branchtag"><i class="icon-code-fork"></i>__branch__</span> __rev__</a> '
+                                  .replace('__branch__', data.results[0].branch)
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
                                   .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[0].raw_id}));
                           _html +=' | ';
-                          _html +='<a title="__title__" href="__url__">__rev__</a> '
+                          _html +='<a title="__title__" href="__url__"><span class="tag branchtag"><i class="icon-code-fork"></i>__branch__</span> __rev__</a> '
+                                  .replace('__branch__', data.results[1].branch)
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)
                                   .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[1].raw_id}));
@@ -310,13 +313,16 @@
                       else if(data.results.length === 2){
                           $('#parent_link').addClass('disabled');
                           $('#parent_link').addClass('double');
+
                           var _html = '';
-                          _html +='<a title="__title__" href="__url__">Parent __rev__</a>'
+                          _html +='<a title="__title__" href="__url__"><span class="tag branchtag"><i class="icon-code-fork"></i>__branch__</span> __rev__</a>'
+                                  .replace('__branch__', data.results[0].branch)
                                   .replace('__rev__','r{0}:{1}'.format(data.results[0].revision, data.results[0].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[0].message)
                                   .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[0].raw_id}));
                           _html +=' | ';
-                          _html +='<a title="__title__" href="__url__">Parent __rev__</a>'
+                          _html +='<a title="__title__" href="__url__"><span class="tag branchtag"><i class="icon-code-fork"></i>__branch__</span> __rev__</a>'
+                                  .replace('__branch__', data.results[1].branch)
                                   .replace('__rev__','r{0}:{1}'.format(data.results[1].revision, data.results[1].raw_id.substr(0,6)))
                                   .replace('__title__', data.results[1].message)
                                   .replace('__url__', pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}','commit_id': data.results[1].raw_id}));
