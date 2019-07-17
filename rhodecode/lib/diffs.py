@@ -26,6 +26,7 @@ Set of diffing helpers, previously part of vcs
 import os
 import re
 import bz2
+import gzip
 import time
 
 import collections
@@ -1157,8 +1158,17 @@ def _cleanup_cache_file(cached_diff_file):
         log.exception('Failed to cleanup path %s', cached_diff_file)
 
 
+def _get_compression_mode(cached_diff_file):
+    mode = 'bz2'
+    if 'mode:plain' in cached_diff_file:
+        mode = 'plain'
+    elif 'mode:gzip' in cached_diff_file:
+        mode = 'gzip'
+    return mode
+
+
 def cache_diff(cached_diff_file, diff, commits):
-    mode = 'plain' if 'mode:plain' in cached_diff_file else ''
+    compression_mode = _get_compression_mode(cached_diff_file)
 
     struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1168,8 +1178,11 @@ def cache_diff(cached_diff_file, diff, commits):
 
     start = time.time()
     try:
-        if mode == 'plain':
+        if compression_mode == 'plain':
             with open(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
+        elif compression_mode == 'gzip':
+            with gzip.GzipFile(cached_diff_file, 'wb') as f:
                 pickle.dump(struct, f)
         else:
             with bz2.BZ2File(cached_diff_file, 'wb') as f:
@@ -1182,7 +1195,7 @@ def cache_diff(cached_diff_file, diff, commits):
 
 
 def load_cached_diff(cached_diff_file):
-    mode = 'plain' if 'mode:plain' in cached_diff_file else ''
+    compression_mode = _get_compression_mode(cached_diff_file)
 
     default_struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1199,8 +1212,11 @@ def load_cached_diff(cached_diff_file):
 
     start = time.time()
     try:
-        if mode == 'plain':
+        if compression_mode == 'plain':
             with open(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
+        elif compression_mode == 'gzip':
+            with gzip.GzipFile(cached_diff_file, 'rb') as f:
                 data = pickle.load(f)
         else:
             with bz2.BZ2File(cached_diff_file, 'rb') as f:
@@ -1245,6 +1261,7 @@ def diff_cache_exist(cache_storage, *args):
     """
     Based on all generated arguments check and return a cache path
     """
+    args = list(args) + ['mode:gzip']
     cache_key = generate_diff_cache_key(*args)
     cache_file_path = os.path.join(cache_storage, cache_key)
     # prevent path traversal attacks using some param that have e.g '../../'
