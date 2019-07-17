@@ -50,8 +50,6 @@ class GitCommit(base.BaseCommit):
     _filter_pre_load = [
         # done through a more complex tree walk on parents
         "affected_files",
-        # based on repository cached property
-        "branch",
         # done through subprocess not remote call
         "children",
         # done through a more complex tree walk on parents
@@ -82,6 +80,7 @@ class GitCommit(base.BaseCommit):
         self._submodules = None
 
     def _set_bulk_properties(self, pre_load):
+
         if not pre_load:
             return
         pre_load = [entry for entry in pre_load
@@ -98,6 +97,8 @@ class GitCommit(base.BaseCommit):
                 value = utcdate_fromtimestamp(*value)
             elif attr == "parents":
                 value = self._make_commits(value)
+            elif attr == "branch":
+                value = value[0] if value else None
             self.__dict__[attr] = value
 
     @LazyProperty
@@ -157,12 +158,10 @@ class GitCommit(base.BaseCommit):
 
     @LazyProperty
     def branch(self):
-        # actually commit can have multiple branches
-        branches = self.commit_branches
+        branches = safe_unicode(self._remote.branch(self.raw_id))
         if branches:
-            return branches[0]
-
-        return None
+            # actually commit can have multiple branches in git
+            return safe_unicode(branches[0])
 
     def _get_tree_id_for_path(self, path):
         path = safe_str(path)

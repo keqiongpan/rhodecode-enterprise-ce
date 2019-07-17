@@ -749,7 +749,7 @@ class PullRequestModel(BaseModel):
 
         # re-compute commit ids
         old_commit_ids = pull_request.revisions
-        pre_load = ["author", "branch", "date", "message"]
+        pre_load = ["author", "date", "message", "branch"]
         commit_ranges = target_repo.compare(
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)

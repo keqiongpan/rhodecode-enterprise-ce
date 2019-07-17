@@ -458,7 +458,7 @@ class BaseReferencesView(RepoAppView):
 
     def load_refs_context(self, ref_items, partials_template):
         _render = self.request.get_partial_renderer(partials_template)
-        pre_load = ["author", "date", "message"]
+        pre_load = ["author", "date", "message", "parents"]
 
         is_svn = h.is_svn(self.rhodecode_vcs_repo)
         is_hg = h.is_hg(self.rhodecode_vcs_repo)

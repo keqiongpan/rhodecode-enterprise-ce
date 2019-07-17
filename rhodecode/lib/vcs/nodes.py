@@ -432,7 +432,7 @@ class FileNode(Node):
     @LazyProperty
     def last_commit(self):
         if self.commit:
-            pre_load = ["author", "date", "message"]
+            pre_load = ["author", "date", "message", "parents"]
             return self.commit.get_path_commit(self.path, pre_load=pre_load)
         raise NodeError(
             "Cannot retrieve last commit of the file without "
@@ -548,7 +548,7 @@ class FileNode(Node):
         """
         if self.commit is None:
             raise NodeError('Unable to get commit for this FileNode')
-        pre_load = ["author", "date", "message"]
+        pre_load = ["author", "date", "message", "parents"]
         return self.commit.get_file_annotate(self.path, pre_load=pre_load)
 
     @LazyProperty
@@ -756,7 +756,7 @@ class DirNode(Node):
     @LazyProperty
     def last_commit(self):
         if self.commit:
-            pre_load = ["author", "date", "message"]
+            pre_load = ["author", "date", "message", "parents"]
             return self.commit.get_path_commit(self.path, pre_load=pre_load)
         raise NodeError(
             "Cannot retrieve last commit of the file without "

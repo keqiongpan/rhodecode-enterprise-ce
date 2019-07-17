@@ -211,7 +211,7 @@ class RepoCompareView(RepoAppView):
         c.source_ref_type = source_ref_type
         c.target_ref_type = target_ref_type
 
-        pre_load = ["author", "branch", "date", "message"]
+        pre_load = ["author", "date", "message", "branch"]
         c.ancestor = None
 
         try:

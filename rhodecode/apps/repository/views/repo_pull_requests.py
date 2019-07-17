@@ -687,7 +687,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         commit_cache = collections.OrderedDict()
         missing_requirements = False
         try:
-            pre_load = ["author", "branch", "date", "message", "parents"]
+            pre_load = ["author", "date", "message", "branch", "parents"]
             show_revs = pull_request_at_ver.revisions
             for rev in show_revs:
                 comm = commits_source_repo.get_commit(
