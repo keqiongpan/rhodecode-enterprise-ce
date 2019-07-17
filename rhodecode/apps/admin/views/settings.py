@@ -445,7 +445,7 @@ class AdminSettingsView(BaseAppView):
     def settings_issuetracker(self):
         c = self.load_default_context()
         c.active = 'issuetracker'
-        defaults = SettingsModel().get_all_settings()
+        defaults = c.rc_config
 
         entry_key = 'rhodecode_issuetracker_pat_'
 

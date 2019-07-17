@@ -289,7 +289,7 @@ def attach_context_attributes(context, request, user_id=None):
     config = request.registry.settings
 
     rc_config = SettingsModel().get_all_settings(cache=True)
-
+    context.rc_config = rc_config
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
     # unique secret + version does not leak the version but keep consistency

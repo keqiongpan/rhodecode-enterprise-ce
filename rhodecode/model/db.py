@@ -2246,8 +2246,12 @@ class Repository(Base, BaseModel):
             del override['ssh']
 
         # we didn't override our tmpl from **overrides
+        request = get_current_request()
         if not uri_tmpl:
-            rc_config = SettingsModel().get_all_settings(cache=True)
+            if hasattr(request, 'call_context') and hasattr(request.call_context, 'rc_config'):
+                rc_config = request.call_context.rc_config
+            else:
+                rc_config = SettingsModel().get_all_settings(cache=True)
             if ssh:
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_ssh_tmpl') or self.DEFAULT_CLONE_URI_SSH
@@ -2255,7 +2259,6 @@ class Repository(Base, BaseModel):
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
-        request = get_current_request()
         return get_clone_url(request=request,
                              uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,

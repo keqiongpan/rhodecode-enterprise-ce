@@ -68,7 +68,8 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
         c.user = User.get_default_user(refresh=True)
 
-        app_settings = SettingsModel().get_all_settings()
+        app_settings = c.rc_config
+
         defaults = {
             'anonymous': c.user.active,
             'default_register_message': app_settings.get(
