@@ -27,6 +27,7 @@ import logging
 import urlparse
 from cStringIO import StringIO
 
+import rhodecode
 from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
 from rhodecode.lib.vcs.exceptions import (
@@ -141,6 +142,7 @@ class CurlSession(object):
         curl.setopt(curl.HTTPHEADER, ["Expect:"])
         curl.setopt(curl.TCP_NODELAY, True)
         curl.setopt(curl.PROTOCOLS, curl.PROTO_HTTP)
+        curl.setopt(curl.USERAGENT, 'RhodeCode HTTP {}'.format(rhodecode.__version__))
         self._curl = curl
 
     def post(self, url, data, allow_redirects=False):
