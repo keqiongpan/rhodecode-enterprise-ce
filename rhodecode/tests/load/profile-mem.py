@@ -38,31 +38,14 @@ import sys
 import time
 
 import datetime
-import requests
 import psutil
 
 import logging
 import socket
+
+from webhelpers.number import format_byte_size
+
 logging.basicConfig(level=logging.DEBUG)
-
-
-def profile():
-    config = parse_options()
-    try:
-        process = psutil.Process(config.pid)
-    except psutil.NoSuchProcess:
-        print("Process {pid} does not exist!".format(pid=config.pid))
-        sys.exit(1)
-
-    while True:
-        stats = process_stats(process)
-        dump_stats(stats)
-        if config.appenlight:
-            client = AppenlightClient(
-                url=config.appenlight_url,
-                api_key=config.appenlight_api_key)
-            client.dump_stats(stats)
-        time.sleep(config.interval)
 
 
 def parse_options():
@@ -71,6 +54,9 @@ def parse_options():
     parser.add_argument(
         '--pid', required=True, type=int,
         help="Process ID to monitor.")
+    parser.add_argument(
+        '--human', action='store_true',
+        help="Show Human numbers")
     parser.add_argument(
         '--interval', '-i', type=float, default=5,
         help="Interval in secods.")
@@ -87,28 +73,78 @@ def parse_options():
     return parser.parse_args()
 
 
-def process_stats(process):
+def profile():
+    config = parse_options()
+    try:
+        process = psutil.Process(config.pid)
+    except psutil.NoSuchProcess:
+        print("Process {pid} does not exist!".format(pid=config.pid))
+        sys.exit(1)
+
+    prev_stats = None
+    while True:
+        stats = process_stats(process, prev_stats)
+        prev_stats = stats
+        dump_stats(stats, human=config.human)
+
+        if config.appenlight:
+            client = AppenlightClient(
+                url=config.appenlight_url,
+                api_key=config.appenlight_api_key)
+            client.dump_stats(stats)
+        time.sleep(config.interval)
+
+
+def process_stats(process, prev_stats):
     mem = process.memory_info()
     iso_now = datetime.datetime.utcnow().isoformat()
+    prev_rss_diff, prev_vms_diff = 0, 0
+    cur_rss = mem.rss
+    cur_vms = mem.vms
+
+    if prev_stats:
+        prev_rss_diff = cur_rss - prev_stats[0]['tags'][0][1]
+        prev_vms_diff = cur_vms - prev_stats[0]['tags'][1][1]
+
     stats = [
         {'message': 'Memory stats of process {pid}'.format(pid=process.pid),
          'namespace': 'process.{pid}'.format(pid=process.pid),
          'server': socket.getfqdn(socket.gethostname()),
          'tags': [
-            ['rss', mem.rss],
-            ['vms', mem.vms]],
+            ['rss', cur_rss],
+            ['vms', cur_vms]
+         ],
+         'diff': [
+             ['rss', prev_rss_diff],
+             ['vms', prev_vms_diff]
+         ],
          'date': iso_now,
          },
     ]
     return stats
 
 
-def dump_stats(stats):
+def dump_stats(stats, human=False):
     for sample in stats:
-        print(json.dumps(sample))
+        if human:
+            diff = stats[0]['diff'][0][1]
+            if diff < 0:
+                diff = '-' + format_byte_size(abs(diff), binary=True)
+            elif diff > 0:
+                diff = '+' + format_byte_size(diff, binary=True)
+            else:
+                diff = ' ' + format_byte_size(diff, binary=True)
+
+            print('Sample:{message} RSS:{rss} RSS_DIFF:{rss_diff}'.format(
+                message=stats[0]['message'],
+                rss=format_byte_size(stats[0]['tags'][0][1], binary=True),
+                rss_diff=diff,
+            ))
+        else:
+            print(json.dumps(sample))
 
 
-class AppenlightClient():
+class AppenlightClient(object):
 
     url_template = '{url}?protocol_version=0.5'
 
@@ -117,6 +153,7 @@ class AppenlightClient():
         self.api_key = api_key
 
     def dump_stats(self, stats):
+        import requests
         response = requests.post(
             self.url,
             headers={
