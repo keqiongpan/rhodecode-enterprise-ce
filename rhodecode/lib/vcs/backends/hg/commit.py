@@ -71,7 +71,7 @@ class MercurialCommit(base.BaseCommit):
         if not pre_load:
             return
 
-        result = self._remote.bulk_request(self.idx, pre_load)
+        result = self._remote.bulk_request(self.raw_id, pre_load)
         for attr, value in result.items():
             if attr in ["author", "branch", "message"]:
                 value = safe_unicode(value)
@@ -93,7 +93,7 @@ class MercurialCommit(base.BaseCommit):
 
     @LazyProperty
     def branch(self):
-        return safe_unicode(self._remote.ctx_branch(self.idx))
+        return safe_unicode(self._remote.ctx_branch(self.raw_id))
 
     @LazyProperty
     def bookmarks(self):
@@ -104,7 +104,7 @@ class MercurialCommit(base.BaseCommit):
 
     @LazyProperty
     def message(self):
-        return safe_unicode(self._remote.ctx_description(self.idx))
+        return safe_unicode(self._remote.ctx_description(self.raw_id))
 
     @LazyProperty
     def committer(self):
@@ -112,22 +112,22 @@ class MercurialCommit(base.BaseCommit):
 
     @LazyProperty
     def author(self):
-        return safe_unicode(self._remote.ctx_user(self.idx))
+        return safe_unicode(self._remote.ctx_user(self.raw_id))
 
     @LazyProperty
     def date(self):
-        return utcdate_fromtimestamp(*self._remote.ctx_date(self.idx))
+        return utcdate_fromtimestamp(*self._remote.ctx_date(self.raw_id))
 
     @LazyProperty
     def status(self):
         """
         Returns modified, added, removed, deleted files for current commit
         """
-        return self._remote.ctx_status(self.idx)
+        return self._remote.ctx_status(self.raw_id)
 
     @LazyProperty
     def _file_paths(self):
-        return self._remote.ctx_list(self.idx)
+        return self._remote.ctx_list(self.raw_id)
 
     @LazyProperty
     def _dir_paths(self):
@@ -158,7 +158,7 @@ class MercurialCommit(base.BaseCommit):
         """
         Returns list of parent commits.
         """
-        parents = self._remote.ctx_parents(self.idx)
+        parents = self._remote.ctx_parents(self.raw_id)
         return self._make_commits(parents)
 
     def _get_phase_text(self, phase_id):
@@ -170,19 +170,19 @@ class MercurialCommit(base.BaseCommit):
 
     @LazyProperty
     def phase(self):
-        phase_id = self._remote.ctx_phase(self.idx)
+        phase_id = self._remote.ctx_phase(self.raw_id)
         phase_text = self._get_phase_text(phase_id)
 
         return safe_unicode(phase_text)
 
     @LazyProperty
     def obsolete(self):
-        obsolete = self._remote.ctx_obsolete(self.idx)
+        obsolete = self._remote.ctx_obsolete(self.raw_id)
         return obsolete
 
     @LazyProperty
     def hidden(self):
-        hidden = self._remote.ctx_hidden(self.idx)
+        hidden = self._remote.ctx_hidden(self.raw_id)
         return hidden
 
     @LazyProperty
@@ -190,7 +190,7 @@ class MercurialCommit(base.BaseCommit):
         """
         Returns list of child commits.
         """
-        children = self._remote.ctx_children(self.idx)
+        children = self._remote.ctx_children(self.raw_id)
         return self._make_commits(children)
 
     def _fix_path(self, path):
@@ -222,28 +222,28 @@ class MercurialCommit(base.BaseCommit):
         Returns stat mode of the file at the given ``path``.
         """
         path = self._get_filectx(path)
-        if 'x' in self._remote.fctx_flags(self.idx, path):
+        if 'x' in self._remote.fctx_flags(self.raw_id, path):
             return base.FILEMODE_EXECUTABLE
         else:
             return base.FILEMODE_DEFAULT
 
     def is_link(self, path):
         path = self._get_filectx(path)
-        return 'l' in self._remote.fctx_flags(self.idx, path)
+        return 'l' in self._remote.fctx_flags(self.raw_id, path)
 
     def get_file_content(self, path):
         """
         Returns content of the file at given ``path``.
         """
         path = self._get_filectx(path)
-        return self._remote.fctx_node_data(self.idx, path)
+        return self._remote.fctx_node_data(self.raw_id, path)
 
     def get_file_size(self, path):
         """
         Returns size of the file at given ``path``.
         """
         path = self._get_filectx(path)
-        return self._remote.fctx_size(self.idx, path)
+        return self._remote.fctx_size(self.raw_id, path)
 
     def get_path_history(self, path, limit=None, pre_load=None):
         """
@@ -251,7 +251,7 @@ class MercurialCommit(base.BaseCommit):
         for which file at given ``path`` has been modified.
         """
         path = self._get_filectx(path)
-        hist = self._remote.node_history(self.idx, path, limit)
+        hist = self._remote.node_history(self.raw_id, path, limit)
         return [
             self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
             for commit_id in hist]
@@ -261,7 +261,7 @@ class MercurialCommit(base.BaseCommit):
         Returns a generator of four element tuples with
             lineno, commit_id, commit lazy loader and line
         """
-        result = self._remote.fctx_annotate(self.idx, path)
+        result = self._remote.fctx_annotate(self.raw_id, path)
 
         for ln_no, commit_id, content in result:
             yield (
@@ -350,14 +350,14 @@ class MercurialCommit(base.BaseCommit):
         Returns a dictionary with submodule information from substate file
         of hg repository.
         """
-        return self._remote.ctx_substate(self.idx)
+        return self._remote.ctx_substate(self.raw_id)
 
     @LazyProperty
     def affected_files(self):
         """
         Gets a fast accessible file changes for given commit
         """
-        return self._remote.ctx_files(self.idx)
+        return self._remote.ctx_files(self.raw_id)
 
     @property
     def added(self):
