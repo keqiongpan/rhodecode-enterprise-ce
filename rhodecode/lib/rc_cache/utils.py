@@ -284,13 +284,22 @@ class InvalidationContext(object):
             self.proc_id, self.thread_id, self.cache_key)
         self.compute_time = 0
 
-    def get_or_create_cache_obj(self, uid, invalidation_namespace=''):
-        cache_obj = CacheKey.get_active_cache(self.cache_key)
-        log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
+    def get_or_create_cache_obj(self, cache_type, invalidation_namespace=''):
         invalidation_namespace = invalidation_namespace or self.invalidation_namespace
+        # fetch all cache keys for this namespace and convert them to a map to find if we
+        # have specific cache_key object registered. We do this because we want to have
+        # all consistent cache_state_uid for newly registered objects
+        cache_obj_map = CacheKey.get_namespace_map(invalidation_namespace)
+        cache_obj = cache_obj_map.get(self.cache_key)
+        log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
         if not cache_obj:
             new_cache_args = invalidation_namespace
-            cache_obj = CacheKey(self.cache_key, cache_args=new_cache_args)
+            first_cache_obj = next(cache_obj_map.itervalues()) if cache_obj_map else None
+            cache_state_uid = None
+            if first_cache_obj:
+                cache_state_uid = first_cache_obj.cache_state_uid
+            cache_obj = CacheKey(self.cache_key, cache_args=new_cache_args,
+                                 cache_state_uid=cache_state_uid)
         return cache_obj
 
     def __enter__(self):
@@ -300,7 +309,7 @@ class InvalidationContext(object):
         """
         log.debug('Entering cache invalidation check context: %s', self.invalidation_namespace)
         # register or get a new key based on uid
-        self.cache_obj = self.get_or_create_cache_obj(uid=self.uid)
+        self.cache_obj = self.get_or_create_cache_obj(cache_type=self.uid)
         cache_data = self.cache_obj.get_dict()
         self._start_time = time.time()
         if self.cache_obj.cache_active:

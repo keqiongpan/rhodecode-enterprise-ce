@@ -3521,7 +3521,7 @@ class CacheKey(Base, BaseModel):
         self.cache_args = cache_args
         self.cache_active = False
         # first key should be same for all entries, since all workers should share it
-        self.cache_state_uid = cache_state_uid or self.generate_new_state_uid(based_on=cache_args)
+        self.cache_state_uid = cache_state_uid or self.generate_new_state_uid()
 
     def __unicode__(self):
         return u"<%s('%s:%s[%s]')>" % (
@@ -3597,6 +3597,12 @@ class CacheKey(Base, BaseModel):
         if inv_obj:
             return inv_obj
         return None
+
+    @classmethod
+    def get_namespace_map(cls, namespace):
+        return {
+            x.cache_key: x
+            for x in cls.query().filter(cls.cache_args == namespace)}
 
 
 class ChangesetComment(Base, BaseModel):
