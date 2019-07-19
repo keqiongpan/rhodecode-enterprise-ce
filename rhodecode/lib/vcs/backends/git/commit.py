@@ -223,17 +223,9 @@ class GitCommit(base.BaseCommit):
         """
         Returns list of child commits.
         """
-        rev_filter = settings.GIT_REV_FILTER
-        output, __ = self.repository.run_git_command(
-            ['rev-list', '--children'] + rev_filter)
 
-        child_ids = []
-        pat = re.compile(r'^%s' % self.raw_id)
-        for l in output.splitlines():
-            if pat.match(l):
-                found_ids = l.split(' ')[1:]
-                child_ids.extend(found_ids)
-        return self._make_commits(child_ids)
+        children = self._remote.children(self.raw_id)
+        return self._make_commits(children)
 
     def _make_commits(self, commit_ids):
         def commit_maker(_commit_id):
@@ -271,52 +263,27 @@ class GitCommit(base.BaseCommit):
         """
         Returns history of file as reversed list of `GitCommit` objects for
         which file at given `path` has been modified.
-
-        TODO: This function now uses an underlying 'git' command which works
-        quickly but ideally we should replace with an algorithm.
         """
-        self._get_filectx(path)
-        f_path = safe_str(path)
 
-        # optimize for n==1, rev-list is much faster for that use-case
-        if limit == 1:
-            cmd = ['rev-list', '-1', self.raw_id, '--', f_path]
-        else:
-            cmd = ['log']
-            if limit:
-                cmd.extend(['-n', str(safe_int(limit, 0))])
-            cmd.extend(['--pretty=format: %H', '-s', self.raw_id, '--', f_path])
-
-        output, __ = self.repository.run_git_command(cmd)
-        commit_ids = re.findall(r'[0-9a-fA-F]{40}', output)
-
+        path = self._get_filectx(path)
+        hist = self._remote.node_history(self.raw_id, path, limit)
         return [
             self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
-            for commit_id in commit_ids]
+            for commit_id in hist]
 
     def get_file_annotate(self, path, pre_load=None):
         """
         Returns a generator of four element tuples with
             lineno, commit_id, commit lazy loader and line
-
-        TODO: This function now uses os underlying 'git' command which is
-        generally not good. Should be replaced with algorithm iterating
-        commits.
         """
-        cmd = ['blame', '-l', '--root', '-r', self.raw_id, '--', path]
-        # -l     ==> outputs long shas (and we need all 40 characters)
-        # --root ==> doesn't put '^' character for bounderies
-        # -r commit_id ==> blames for the given commit
-        output, __ = self.repository.run_git_command(cmd)
 
-        for i, blame_line in enumerate(output.split('\n')[:-1]):
-            line_no = i + 1
-            commit_id, line = re.split(r' ', blame_line, 1)
+        result = self._remote.node_annotate(self.raw_id, path)
+
+        for ln_no, commit_id, content in result:
             yield (
-                line_no, commit_id,
-                lambda: self.repository.get_commit(commit_id=commit_id,
-                                                   pre_load=pre_load),
-                line)
+                ln_no, commit_id,
+                lambda: self.repository.get_commit(commit_id=commit_id, pre_load=pre_load),
+                content)
 
     def get_nodes(self, path):
 

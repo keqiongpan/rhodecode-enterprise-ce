@@ -1065,37 +1065,35 @@ class TestGitSpecificWithRepo(BackendTestMixin):
 
     def test_paths_fast_traversing(self):
         commit = self.repo.get_commit()
-        assert (
-            commit.get_node('foobar/static/js/admin/base.js').content ==
-            'base')
+        assert commit.get_node('foobar/static/js/admin/base.js').content == 'base'
 
     def test_get_diff_runs_git_command_with_hashes(self):
         comm1 = self.repo[0]
         comm2 = self.repo[1]
-        self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(comm1, comm2)
 
-        self.repo.run_git_command.assert_called_once_with(
-            ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', comm1.raw_id, comm2.raw_id])
+        with mock.patch.object(self.repo, '_remote') as remote_mock:
+            self.repo.get_diff(comm1, comm2)
+
+        remote_mock.diff.assert_called_once_with(
+            comm1.raw_id, comm2.raw_id,
+            file_filter=None, opt_ignorews=False, context=3)
 
     def test_get_diff_runs_git_command_with_str_hashes(self):
         comm2 = self.repo[1]
-        self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(self.repo.EMPTY_COMMIT, comm2)
-        self.repo.run_git_command.assert_called_once_with(
-            ['show', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', comm2.raw_id])
+        with mock.patch.object(self.repo, '_remote') as remote_mock:
+            self.repo.get_diff(self.repo.EMPTY_COMMIT, comm2)
+        remote_mock.diff.assert_called_once_with(
+            self.repo.EMPTY_COMMIT.raw_id, comm2.raw_id,
+            file_filter=None, opt_ignorews=False, context=3)
 
     def test_get_diff_runs_git_command_with_path_if_its_given(self):
         comm1 = self.repo[0]
         comm2 = self.repo[1]
-        self.repo.run_git_command = mock.Mock(return_value=['', ''])
-        self.repo.get_diff(comm1, comm2, 'foo')
-        self.repo.run_git_command.assert_called_once_with(
-            ['diff', '-U3', '--full-index', '--binary', '-p', '-M',
-             '--abbrev=40', self.repo._lookup_commit(0),
-             comm2.raw_id, '--', 'foo'])
+        with mock.patch.object(self.repo, '_remote') as remote_mock:
+            self.repo.get_diff(comm1, comm2, 'foo')
+        remote_mock.diff.assert_called_once_with(
+            self.repo._lookup_commit(0), comm2.raw_id,
+            file_filter='foo', opt_ignorews=False, context=3)
 
 
 @pytest.mark.usefixtures("vcs_repository_support")

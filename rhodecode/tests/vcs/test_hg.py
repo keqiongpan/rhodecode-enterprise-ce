@@ -57,7 +57,7 @@ def repo(request, baseapp):
     return repo
 
 
-class TestMercurialRepository:
+class TestMercurialRepository(object):
 
     # pylint: disable=protected-access
 

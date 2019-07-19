@@ -266,8 +266,7 @@ class MercurialCommit(base.BaseCommit):
         for ln_no, commit_id, content in result:
             yield (
                 ln_no, commit_id,
-                lambda: self.repository.get_commit(commit_id=commit_id,
-                                                   pre_load=pre_load),
+                lambda: self.repository.get_commit(commit_id=commit_id, pre_load=pre_load),
                 content)
 
     def get_nodes(self, path):

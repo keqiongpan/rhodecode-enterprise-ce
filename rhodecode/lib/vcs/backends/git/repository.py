@@ -549,33 +549,16 @@ class GitRepository(BaseRepository):
         if path1 is not None and path1 != path:
             raise ValueError("Diff of two different paths not supported.")
 
-        flags = [
-            '-U%s' % context, '--full-index', '--binary', '-p',
-            '-M', '--abbrev=40']
-        if ignore_whitespace:
-            flags.append('-w')
-
-        if commit1 == self.EMPTY_COMMIT:
-            cmd = ['show'] + flags + [commit2.raw_id]
-        else:
-            cmd = ['diff'] + flags + [commit1.raw_id, commit2.raw_id]
-
         if path:
-            cmd.extend(['--', path])
+            file_filter = path
+        else:
+            file_filter = None
 
-        stdout, __ = self.run_git_command(cmd)
-        # If we used 'show' command, strip first few lines (until actual diff
-        # starts)
-        if commit1 == self.EMPTY_COMMIT:
-            lines = stdout.splitlines()
-            x = 0
-            for line in lines:
-                if line.startswith('diff'):
-                    break
-                x += 1
-            # Append new line just like 'diff' command do
-            stdout = '\n'.join(lines[x:]) + '\n'
-        return GitDiff(stdout)
+        diff = self._remote.diff(
+            commit1.raw_id, commit2.raw_id, file_filter=file_filter,
+            opt_ignorews=ignore_whitespace,
+            context=context)
+        return GitDiff(diff)
 
     def strip(self, commit_id, branch_name):
         commit = self.get_commit(commit_id=commit_id)
