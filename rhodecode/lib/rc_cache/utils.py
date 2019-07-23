@@ -21,6 +21,7 @@ import os
 import time
 import logging
 import functools
+from decorator import decorate
 import threading
 
 from dogpile.cache import CacheRegion
@@ -55,28 +56,35 @@ class RhodeCodeCacheRegion(CacheRegion):
         if function_key_generator is None:
             function_key_generator = self.function_key_generator
 
-        def decorator(fn):
+        def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
+
+            if not condition:
+                log.debug('Calling un-cached func:%s', user_func)
+                return user_func(*arg, **kw)
+
+            key = key_generator(*arg, **kw)
+
+            timeout = expiration_time() if expiration_time_is_callable \
+                else expiration_time
+
+            log.debug('Calling cached fn:%s', user_func)
+            return self.get_or_create(key, user_func, timeout, should_cache_fn, (arg, kw))
+
+        def cache_decorator(user_func):
             if to_str is compat.string_type:
                 # backwards compatible
-                key_generator = function_key_generator(namespace, fn)
+                key_generator = function_key_generator(namespace, user_func)
             else:
-                key_generator = function_key_generator(namespace, fn, to_str=to_str)
+                key_generator = function_key_generator(namespace, user_func, to_str=to_str)
 
-            @functools.wraps(fn)
-            def decorate(*arg, **kw):
+            def refresh(*arg, **kw):
+                """
+                Like invalidate, but regenerates the value instead
+                """
                 key = key_generator(*arg, **kw)
-
-                @functools.wraps(fn)
-                def creator():
-                    return fn(*arg, **kw)
-
-                if not condition:
-                    return creator()
-
-                timeout = expiration_time() if expiration_time_is_callable \
-                    else expiration_time
-
-                return self.get_or_create(key, creator, timeout, should_cache_fn)
+                value = user_func(*arg, **kw)
+                self.set(key, value)
+                return value
 
             def invalidate(*arg, **kw):
                 key = key_generator(*arg, **kw)
@@ -90,23 +98,19 @@ class RhodeCodeCacheRegion(CacheRegion):
                 key = key_generator(*arg, **kw)
                 return self.get(key)
 
-            def refresh(*arg, **kw):
-                key = key_generator(*arg, **kw)
-                value = fn(*arg, **kw)
-                self.set(key, value)
-                return value
+            user_func.set = set_
+            user_func.invalidate = invalidate
+            user_func.get = get
+            user_func.refresh = refresh
+            user_func.key_generator = key_generator
+            user_func.original = user_func
 
-            decorate.set = set_
-            decorate.invalidate = invalidate
-            decorate.refresh = refresh
-            decorate.get = get
-            decorate.original = fn
-            decorate.key_generator = key_generator
-            decorate.__wrapped__ = fn
+            # Use `decorate` to preserve the signature of :param:`user_func`.
 
-            return decorate
+            return decorate(user_func, functools.partial(
+                get_or_create_for_user_func, key_generator))
 
-        return decorator
+        return cache_decorator
 
 
 def make_region(*arg, **kw):
