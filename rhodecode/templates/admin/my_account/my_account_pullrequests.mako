@@ -77,6 +77,9 @@ $(document).ready(function() {
               if (data['owned']) {
                 $(row).addClass('owned');
               }
+              if (data['state'] !== 'created') {
+                  $(row).addClass('state-' + data['state']);
+              }
           }
         });
         $pullRequestListTable.on('xhr.dt', function(e, settings, json, xhr){

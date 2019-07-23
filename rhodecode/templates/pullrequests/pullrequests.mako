@@ -98,7 +98,10 @@ $(document).ready(function() {
       },
       "createdRow": function ( row, data, index ) {
           if (data['closed']) {
-            $(row).addClass('closed');
+              $(row).addClass('closed');
+          }
+          if (data['state'] !== 'created') {
+              $(row).addClass('state-' + data['state']);
           }
       }
     });
