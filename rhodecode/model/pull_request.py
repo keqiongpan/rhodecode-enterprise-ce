@@ -139,7 +139,7 @@ class PullRequestModel(BaseModel):
 
     def _prepare_get_all_query(self, repo_name, source=False, statuses=None,
                                opened_by=None, order_by=None,
-                               order_dir='desc', only_created=True):
+                               order_dir='desc', only_created=False):
         repo = None
         if repo_name:
             repo = self._get_repo(repo_name)

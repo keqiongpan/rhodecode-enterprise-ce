@@ -112,8 +112,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
-                'title': _render(
-                    'pullrequest_title', pr.title, pr.description),
+                'title': _render('pullrequest_title', pr.title, pr.description),
                 'description': h.escape(pr.description),
                 'updated_on': _render('pullrequest_updated_on',
                                       h.datetime_to_time(pr.updated_on)),
@@ -121,6 +120,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'created_on': _render('pullrequest_updated_on',
                                       h.datetime_to_time(pr.created_on)),
                 'created_on_raw': h.datetime_to_time(pr.created_on),
+                'state': pr.pull_request_state,
                 'author': _render('pullrequest_author',
                                   pr.author.full_contact, ),
                 'author_raw': pr.author.full_name,

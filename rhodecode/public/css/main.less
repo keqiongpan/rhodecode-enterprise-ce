@@ -333,10 +333,18 @@ ul.auth_plugins {
     margin: 0 1em 0 0;
 }
 
-.pullrequestlist {
+#pull_request_list_table {
     .closed {
         background-color: @grey6;
     }
+
+    .state-creating,
+    .state-updating,
+    .state-merging
+    {
+        background-color: @grey6;
+    }
+
     .td-status {
         padding-left: .5em;
     }
