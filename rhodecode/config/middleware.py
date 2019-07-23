@@ -410,6 +410,12 @@ def sanitize_settings_and_apply_defaults(global_config, settings):
             "Using the following Mako template directories: %s",
             mako_directories)
 
+    # NOTE(marcink): fix redis requirement for schema of connection since 3.X
+    if 'beaker.session.type' in settings and settings['beaker.session.type'] == 'ext:redis':
+        raw_url = settings['beaker.session.url']
+        if not raw_url.startswith(('redis://', 'rediss://', 'unix://')):
+            settings['beaker.session.url'] = 'redis://' + raw_url
+
     # Default includes, possible to change as a user
     pyramid_includes = settings.setdefault('pyramid.includes', [
         'rhodecode.lib.middleware.request_wrapper',
