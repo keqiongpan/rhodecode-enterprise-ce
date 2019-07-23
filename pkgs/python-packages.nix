@@ -1669,11 +1669,11 @@ self: super: {
     };
   };
   "redis" = super.buildPythonPackage {
-    name = "redis-2.10.6";
+    name = "redis-3.2.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/09/8d/6d34b75326bf96d4139a2ddd8e74b80840f800a0a79f9294399e212cb9a7/redis-2.10.6.tar.gz";
-      sha256 = "03vcgklykny0g0wpvqmy8p6azi2s078317wgb2xjv5m2rs9sjb52";
+      url = "https://files.pythonhosted.org/packages/24/d4/06486dee0f66ef8c5080dc576fdfb33131fd2e0be3747f2be4e5634088a2/redis-3.2.1.tar.gz";
+      sha256 = "0wwj8il4c3aff15xwwcjfci367zxsakq05ps1a2il6yavp91i94c";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
