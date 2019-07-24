@@ -432,8 +432,10 @@ class BaseRepository(object):
     def append_commit_id(self, commit_id):
         if commit_id not in self.commit_ids:
             self._rebuild_cache(self.commit_ids + [commit_id])
-            # clear cache
-            self._invalidate_prop_cache('commit_ids')
+
+        # clear cache
+        self._invalidate_prop_cache('commit_ids')
+        self._is_empty = False
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """

@@ -8,9 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('New Gist')}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='gists')}
@@ -20,46 +18,47 @@
 <div class="box">
     <!-- box / title -->
     <div class="title">
-        ${self.breadcrumbs()}
+
     </div>
 
     <div class="table">
         <div id="files_data">
           ${h.secure_form(h.route_path('gists_create'), id='eform', request=request)}
             <div>
-                <textarea id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
-
                 <span class="gist-gravatar">
                     ${self.gravatar(c.rhodecode_user.email, 30)}
                 </span>
-                 <label for='gistid'>${_('Gist id')}</label>
-                 ${h.text('gistid', placeholder=_('Auto generated'))}
+                <label for='gistid'>${_('Gist id')}</label>
+                ${h.text('gistid', placeholder=_('Auto generated'))}
 
-                 <label for='lifetime'>${_('Gist lifetime')}</label>
-                 ${h.dropdownmenu('lifetime', '', c.lifetime_options)}
+                <label for='lifetime'>${_('Gist lifetime')}</label>
+                ${h.dropdownmenu('lifetime', '', c.lifetime_options)}
 
-                 <label for='acl_level'>${_('Gist access level')}</label>
-                 ${h.dropdownmenu('gist_acl_level', '', c.acl_options)}
+                <label for='acl_level'>${_('Gist access level')}</label>
+                ${h.dropdownmenu('gist_acl_level', '', c.acl_options)}
 
+                <textarea style="margin-top: 5px" id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
             </div>
+
             <div id="codeblock" class="codeblock">
                 <div class="code-header">
                     <div class="form">
                         <div class="fields">
-                            ${h.text('filename', size=30, placeholder=_('name this file...'))}
+                            ${h.text('filename', size=30, placeholder=_('name gist file...'))}
                             ${h.dropdownmenu('mimetype','plain',[('plain',_('plain'))],enable_filter=True)}
                         </div>
                     </div>
                 </div>
+
                 <div id="editor_container">
                     <div id="editor_pre"></div>
                     <textarea id="editor" name="content" ></textarea>
                 </div>
             </div>
+
             <div class="pull-right">
             ${h.submit('private',_('Create Private Gist'),class_="btn")}
             ${h.submit('public',_('Create Public Gist'),class_="btn")}
-            ${h.reset('reset',_('Reset'),class_="btn")}
             </div>
             ${h.end_form()}
         </div>

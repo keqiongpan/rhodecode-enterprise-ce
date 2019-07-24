@@ -824,7 +824,7 @@ class RepoModel(BaseModel):
 
     def _create_filesystem_repo(self, repo_name, repo_type, repo_group,
                                 clone_uri=None, repo_store_location=None,
-                                use_global_config=False):
+                                use_global_config=False, install_hooks=True):
         """
         makes repository on filesystem. It's group aware means it'll create
         a repository within a group, and alter the paths accordingly of
@@ -890,7 +890,8 @@ class RepoModel(BaseModel):
                 repo_path, config=config, create=True, src_url=clone_uri,
                 with_wire={"cache": False})
 
-        repo.install_hooks()
+        if install_hooks:
+            repo.install_hooks()
 
         log.debug('Created repo %s with %s backend',
                   safe_unicode(repo_name), safe_unicode(repo_type))
