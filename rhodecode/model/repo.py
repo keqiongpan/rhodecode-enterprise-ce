@@ -883,11 +883,12 @@ class RepoModel(BaseModel):
         # TODO: johbo: Unify this, hardcoded "bare=True" does not look nice
         if repo_type == 'git':
             repo = backend(
-                repo_path, config=config, create=True, src_url=clone_uri,
-                bare=True)
+                repo_path, config=config, create=True, src_url=clone_uri, bare=True,
+                with_wire={"cache": False})
         else:
             repo = backend(
-                repo_path, config=config, create=True, src_url=clone_uri)
+                repo_path, config=config, create=True, src_url=clone_uri,
+                with_wire={"cache": False})
 
         repo.install_hooks()
 

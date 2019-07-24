@@ -432,11 +432,11 @@ class TestRepoContainer(object):
 
     def _create_repo(self, dump_name, backend_alias, config):
         repo_name = '%s-%s' % (backend_alias, dump_name)
-        backend_class = get_backend(backend_alias)
+        backend = get_backend(backend_alias)
         dump_extractor = self.dump_extractors[backend_alias]
         repo_path = dump_extractor(dump_name, repo_name)
 
-        vcs_repo = backend_class(repo_path, config=config)
+        vcs_repo = backend(repo_path, config=config)
         repo2db_mapper({repo_name: vcs_repo})
 
         repo = RepoModel().get_by_repo_name(repo_name)

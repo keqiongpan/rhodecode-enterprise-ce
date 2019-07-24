@@ -226,8 +226,9 @@ class ScmModel(BaseModel):
                     raise RepositoryError('Duplicate repository name %s '
                                           'found in %s' % (name, path))
                 elif path[0] in rhodecode.BACKENDS:
-                    klass = get_backend(path[0])
-                    repos[name] = klass(path[1], config=config)
+                    backend = get_backend(path[0])
+                    repos[name] = backend(path[1], config=config,
+                                          with_wire={"cache": False})
             except OSError:
                 continue
         log.debug('found %s paths with repositories', len(repos))
