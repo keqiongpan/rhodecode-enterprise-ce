@@ -320,9 +320,15 @@ class PathFilter(object):
         self.permission_checker = permission_checker
 
     def assert_path_permissions(self, path):
-        if path and self.permission_checker and not self.permission_checker.has_access(path):
-            raise HTTPForbidden()
-        return path
+        if self.path_access_allowed(path):
+            return path
+        raise HTTPForbidden()
+
+    def path_access_allowed(self, path):
+        log.debug('Checking ACL permissions for PathFilter for `%s`', path)
+        if self.permission_checker:
+            return path and self.permission_checker.has_access(path)
+        return True
 
     def filter_patchset(self, patchset):
         if not self.permission_checker or not patchset:

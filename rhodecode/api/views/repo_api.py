@@ -616,8 +616,6 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
     cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
     region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                           condition=cache_on)
     def compute_fts_tree(repo_id, commit_id, root_path, cache_ver):
         return ScmModel().get_fts_data(repo_id, commit_id, root_path)
 
