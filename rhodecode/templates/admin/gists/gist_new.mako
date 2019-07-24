@@ -37,7 +37,7 @@
                 <label for='acl_level'>${_('Gist access level')}</label>
                 ${h.dropdownmenu('gist_acl_level', '', c.acl_options)}
 
-                <textarea style="margin-top: 5px" id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
+                <textarea style="margin-top: 5px; border-color: #dbd9da" id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
             </div>
 
             <div id="codeblock" class="codeblock">
