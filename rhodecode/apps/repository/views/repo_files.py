@@ -904,9 +904,11 @@ class RepoFilesView(RepoAppView):
                 raise HTTPFound(h.route_path(
                     'repo_files', repo_name=self.db_repo_name,
                     commit_id='tip', f_path='/'))
+
             return _d + _f
 
-        return compute_file_search(self.db_repo.repo_id, commit_id, f_path)
+        result = compute_file_search(self.db_repo.repo_id, commit_id, f_path)
+        return filter(lambda n: self.path_filter.path_access_allowed(n['name']), result)
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
