@@ -43,7 +43,8 @@ log = logging.getLogger(__name__)
 
 
 @jsonrpc_method()
-def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
+def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None),
+                     merge_state=Optional(False)):
     """
     Get a pull request based on the given ID.
 
@@ -54,6 +55,9 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
     :type repoid: str or int
     :param pullrequestid: ID of the requested pull request.
     :type pullrequestid: int
+    :param merge_state: Optional calculate merge state for each repository.
+        This could result in longer time to fetch the data
+    :type merge_state: bool
 
     Example output:
 
@@ -135,14 +139,15 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None)):
     # NOTE(marcink): only calculate and return merge state if the pr state is 'created'
     # otherwise we can lock the repo on calculation of merge state while update/merge
     # is happening.
-    merge_state = pull_request.pull_request_state == pull_request.STATE_CREATED
+    pr_created = pull_request.pull_request_state == pull_request.STATE_CREATED
+    merge_state = Optional.extract(merge_state, binary=True) and pr_created
     data = pull_request.get_api_data(with_merge_state=merge_state)
     return data
 
 
 @jsonrpc_method()
 def get_pull_requests(request, apiuser, repoid, status=Optional('new'),
-                      merge_state=Optional(True)):
+                      merge_state=Optional(False)):
     """
     Get all pull requests from the repository specified in `repoid`.
 
