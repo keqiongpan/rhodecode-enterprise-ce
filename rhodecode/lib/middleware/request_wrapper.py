@@ -18,10 +18,9 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
+import gc
 import time
 import logging
-
 
 from rhodecode.lib.base import get_ip_addr, get_access_path, get_user_agent
 from rhodecode.lib.utils2 import safe_str
@@ -44,9 +43,10 @@ class RequestWrapperTween(object):
         finally:
             end = time.time()
             total = end - start
+            count = request.request_count()
             log.info(
-                'IP: %s %s Request to %s time: %.4fs [%s]',
-                get_ip_addr(request.environ), request.environ.get('REQUEST_METHOD'),
+                'Req[%4s] IP: %s %s Request to %s time: %.4fs [%s]',
+                count, get_ip_addr(request.environ), request.environ.get('REQUEST_METHOD'),
                 safe_str(get_access_path(request.environ)), total,
                 get_user_agent(request. environ)
             )

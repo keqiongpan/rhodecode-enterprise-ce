@@ -317,6 +317,10 @@ def includeme(config):
         'rhodecode.lib.partial_renderer.get_partial_renderer',
         'get_partial_renderer')
 
+    config.add_request_method(
+        'rhodecode.lib.request_counter.get_request_counter',
+        'request_count')
+
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)
