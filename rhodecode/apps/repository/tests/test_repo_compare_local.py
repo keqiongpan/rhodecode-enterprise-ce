@@ -102,7 +102,7 @@ class TestCompareView(object):
             'git': {
                 'tag': 'v0.2.2',
                 'branch': 'master',
-                'response': (71, 2269, 3416)
+                'response': (70, 1855, 3002)
             },
         }
 

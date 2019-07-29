@@ -153,7 +153,7 @@ class TestRepositoryGetDiff(BackendTestMixin):
     first_commit_diffs = {
         'git': r"""diff --git a/foobar b/foobar
 new file mode 100644
-index 0000000000000000000000000000000000000000..f6ea0495187600e7b2288c8ac19c5886383a4632
+index 0000000..f6ea049
 --- /dev/null
 +++ b/foobar
 @@ -0,0 +1 @@
@@ -161,7 +161,7 @@ index 0000000000000000000000000000000000000000..f6ea0495187600e7b2288c8ac19c5886
 \ No newline at end of file
 diff --git a/foobar2 b/foobar2
 new file mode 100644
-index 0000000000000000000000000000000000000000..e8c9d6b98e3dce993a464935e1a53f50b56a3783
+index 0000000..e8c9d6b
 --- /dev/null
 +++ b/foobar2
 @@ -0,0 +1 @@
@@ -206,7 +206,7 @@ new file mode 10644
 
     second_commit_diffs = {
         'git': r"""diff --git a/foobar b/foobar
-index f6ea0495187600e7b2288c8ac19c5886383a4632..389865bb681b358c9b102d79abd8d5f941e96551 100644
+index f6ea049..389865b 100644
 --- a/foobar
 +++ b/foobar
 @@ -1 +1 @@
@@ -216,7 +216,7 @@ index f6ea0495187600e7b2288c8ac19c5886383a4632..389865bb681b358c9b102d79abd8d5f9
 \ No newline at end of file
 diff --git a/foobar3 b/foobar3
 new file mode 100644
-index 0000000000000000000000000000000000000000..c11c37d41d33fb47741cff93fa5f9d798c1535b0
+index 0000000..c11c37d
 --- /dev/null
 +++ b/foobar3
 @@ -0,0 +1 @@
@@ -264,14 +264,14 @@ new file mode 10644
     third_commit_diffs = {
         'git': r"""diff --git a/foobar b/foobar
 deleted file mode 100644
-index 389865bb681b358c9b102d79abd8d5f941e96551..0000000000000000000000000000000000000000
+index 389865b..0000000
 --- a/foobar
 +++ /dev/null
 @@ -1 +0,0 @@
 -FOOBAR
 \ No newline at end of file
 diff --git a/foobar3 b/foobar3
-index c11c37d41d33fb47741cff93fa5f9d798c1535b0..f9324477362684ff692aaf5b9a81e01b9e9a671c 100644
+index c11c37d..f932447 100644
 --- a/foobar3
 +++ b/foobar3
 @@ -1 +1,3 @@
@@ -324,7 +324,7 @@ diff --git a/foobar3 b/foobar3
     first_commit_one_file = {
         'git': r"""diff --git a/foobar b/foobar
 new file mode 100644
-index 0000000000000000000000000000000000000000..f6ea0495187600e7b2288c8ac19c5886383a4632
+index 0000000..f6ea049
 --- /dev/null
 +++ b/foobar
 @@ -0,0 +1 @@
@@ -352,7 +352,7 @@ new file mode 10644
     }
 
 
-class TestSvnGetDiff:
+class TestSvnGetDiff(object):
 
     @pytest.mark.parametrize('path, path1', [
         ('trunk/example.py', 'tags/v0.2/example.py'),
@@ -451,10 +451,10 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..28380fd4a25c58be1b68b523ba2a314f4459ee9c
 GIT binary patch
 literal 19
-YcmeAS@N?(olHy`uVBq!ia0vp^03%2O-T(jq
+Yc%17D@N?(olHy`uVBq!ia0vp^03%2O-T(jq
 
 literal 0
-HcmV?d00001
+Hc$@<O00001
 
 """,
             'hg': """diff --git a/image.png b/image.png
@@ -486,10 +486,10 @@ new file mode 10644
 index 28380fd4a25c58be1b68b523ba2a314f4459ee9c..1008a77cd372386a1c24fbd96019333f67ad0065 100644
 GIT binary patch
 literal 19
-acmeAS@N?(olHy`uVBq!ia0y~$U;qFkO9I~j
+ac%17D@N?(olHy`uVBq!ia0y~$U;qFkO9I~j
 
 literal 19
-YcmeAS@N?(olHy`uVBq!ia0vp^03%2O-T(jq
+Yc%17D@N?(olHy`uVBq!ia0vp^03%2O-T(jq
 
 """,
             'hg': """diff --git a/image.png b/image.png
@@ -520,10 +520,10 @@ deleted file mode 100644
 index 1008a77cd372386a1c24fbd96019333f67ad0065..0000000000000000000000000000000000000000
 GIT binary patch
 literal 0
-HcmV?d00001
+Hc$@<O00001
 
 literal 19
-acmeAS@N?(olHy`uVBq!ia0y~$U;qFkO9I~j
+ac%17D@N?(olHy`uVBq!ia0y~$U;qFkO9I~j
 
 """,
             'hg': """diff --git a/image.png b/image.png

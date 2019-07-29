@@ -79,13 +79,19 @@ class TestRepoCommitView(object):
             'git': '03fa803d7e9fb14daa9a3089e0d1494eda75d986',
             'svn': '337',
         }
+        diff_stat = {
+            'git': '20 files changed: 941 inserted, 286 deleted',
+            'svn': '21 files changed: 943 inserted, 288 deleted',
+            'hg': '21 files changed: 943 inserted, 288 deleted',
+
+        }
         commit_id = commit_id[backend.alias]
         response = self.app.get(route_path(
             'repo_commit',
             repo_name=backend.repo_name, commit_id=commit_id))
 
         response.mustcontain(_shorten_commit_id(commit_id))
-        response.mustcontain('21 files changed: 943 inserted, 288 deleted')
+        response.mustcontain(diff_stat[backend.alias])
 
         # files op files
         response.mustcontain('File not present at commit: %s' %
@@ -127,6 +133,10 @@ class TestRepoCommitView(object):
             response.mustcontain('1 file changed: 5 inserted, 1 deleted')
             response.mustcontain('12 files changed: 236 inserted, 22 deleted')
             response.mustcontain('21 files changed: 943 inserted, 288 deleted')
+        elif backend.alias == 'git':
+            response.mustcontain('new file 100644')
+            response.mustcontain('12 files changed: 222 inserted, 20 deleted')
+            response.mustcontain('20 files changed: 941 inserted, 286 deleted')
         else:
             response.mustcontain('new file 100644')
             response.mustcontain('12 files changed: 222 inserted, 20 deleted')
@@ -170,6 +180,9 @@ class TestRepoCommitView(object):
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
             response.mustcontain('32 files changed: 1179 inserted, 310 deleted')
+        elif backend.alias == 'git':
+            response.mustcontain('new file 100644')
+            response.mustcontain('31 files changed: 1163 inserted, 306 deleted')
         else:
             response.mustcontain('new file 100644')
             response.mustcontain('32 files changed: 1165 inserted, 308 deleted')
@@ -246,7 +259,7 @@ new file mode 120000
 """,
         'git': r"""diff --git a/README b/README
 new file mode 120000
-index 0000000000000000000000000000000000000000..92cacd285355271487b7e379dba6ca60f9a554a4
+index 0000000..92cacd2
 --- /dev/null
 +++ b/README
 @@ -0,0 +1 @@

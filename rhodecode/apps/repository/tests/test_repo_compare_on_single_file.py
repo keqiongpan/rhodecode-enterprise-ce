@@ -54,7 +54,7 @@ class TestSideBySideDiff(object):
             'git': {
                 'commits': ['6fc9270775aaf5544c1deb014f4ddd60c952fcbb',
                             '03fa803d7e9fb14daa9a3089e0d1494eda75d986'],
-                'changes': '21 files changed: 943 inserted, 288 deleted'
+                'changes': '20 files changed: 941 inserted, 286 deleted'
             },
 
             'svn': {
@@ -92,7 +92,7 @@ class TestSideBySideDiff(object):
             'git': {
                 'commits': ['f5fbf9cfd5f1f1be146f6d3b38bcd791a7480c13',
                             '03fa803d7e9fb14daa9a3089e0d1494eda75d986'],
-                'changes': '32 files changed: 1165 inserted, 308 deleted'
+                'changes': '31 files changed: 1163 inserted, 306 deleted'
             },
 
             'svn': {

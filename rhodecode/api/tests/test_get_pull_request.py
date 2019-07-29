@@ -38,7 +38,7 @@ class TestGetPullRequest(object):
         pull_request = pr_util.create_pull_request(mergeable=True)
         id_, params = build_data(
             self.apikey, 'get_pull_request',
-            pullrequestid=pull_request.pull_request_id)
+            pullrequestid=pull_request.pull_request_id, merge_state=True)
 
         response = api_call(self.app, params)
 
