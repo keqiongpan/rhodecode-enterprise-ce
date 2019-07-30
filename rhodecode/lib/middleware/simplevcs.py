@@ -225,10 +225,10 @@ class SimpleVCS(object):
     def scm_app(self):
         custom_implementation = self.config['vcs.scm_app_implementation']
         if custom_implementation == 'http':
-            log.info('Using HTTP implementation of scm app.')
+            log.debug('Using HTTP implementation of scm app.')
             scm_app_impl = scm_app_http
         else:
-            log.info('Using custom implementation of scm_app: "{}"'.format(
+            log.debug('Using custom implementation of scm_app: "{}"'.format(
                 custom_implementation))
             scm_app_impl = importlib.import_module(custom_implementation)
         return scm_app_impl
