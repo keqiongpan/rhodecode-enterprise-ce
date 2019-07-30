@@ -538,7 +538,7 @@
     <ul id="quick" class="main_nav navigation horizontal-list">
        ## notice box for important system messages
        <li style="display: none">
-          <a class="notice-box" href="#openNotice" onclick="showNoticeBox(); return false">
+          <a class="notice-box" href="#openNotice" onclick="return false">
             <div class="menulabel-notice" >
                 0
             </div>
