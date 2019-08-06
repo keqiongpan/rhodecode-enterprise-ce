@@ -39,7 +39,7 @@
     </script>
 
     <div>
-        <div id="files_data">
+        <div>
             <%include file='files_pjax.mako'/>
         </div>
     </div>

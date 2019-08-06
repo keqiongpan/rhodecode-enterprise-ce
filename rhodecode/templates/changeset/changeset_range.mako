@@ -23,6 +23,7 @@
 </%def>
 
 <%def name="main()">
+
     <div class="box">
         <div class="summary changeset">
             <div class="summary-detail">
@@ -60,8 +61,7 @@
                     <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
-                              <div class="btn btn-primary">
-                                <a href="${h.route_path('repo_compare',
+                                <a class="btn btn-primary" href="${h.route_path('repo_compare',
                                 repo_name=c.repo_name,
                                 source_ref_type='rev',
                                 source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
@@ -70,7 +70,6 @@
                                 >
                                     ${_('Show combined diff')}
                                 </a>
-                              </div>
                             </div>
                         </div>
                     </div>
@@ -104,8 +103,9 @@
       <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
       <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
       <%namespace name="diff_block" file="/changeset/diff_block.mako"/>
-      ${cbdiffs.render_diffset_menu()}
+
       %for commit in c.commit_ranges:
+        ${cbdiffs.render_diffset_menu(c.changes[commit.raw_id])}
         ${cbdiffs.render_diffset(
             diffset=c.changes[commit.raw_id],
             collapse_when_files_over=5,

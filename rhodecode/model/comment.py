@@ -187,6 +187,23 @@ class CommentsModel(BaseModel):
 
         return todos
 
+    def get_commit_resolved_todos(self, commit_id, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.revision == commit_id) \
+            .filter(ChangesetComment.resolved_by != None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
     def _log_audit_action(self, action, action_data, auth_user, comment):
         audit_logger.store(
             action=action,

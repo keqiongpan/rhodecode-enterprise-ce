@@ -1107,6 +1107,52 @@ label {
     }
 }
 
+.review-status {
+    &.under_review {
+        color: @alert3;
+    }
+    &.approved {
+        color: @alert1;
+    }
+    &.rejected,
+    &.forced_closed{
+        color: @alert2;
+    }
+    &.not_reviewed {
+        color: @grey5;
+    }
+}
+
+.review-status-under_review {
+  color: @alert3;
+}
+.status-tag-under_review {
+  border-color: @alert3;
+}
+
+.review-status-approved {
+  color: @alert1;
+}
+.status-tag-approved {
+  border-color: @alert1;
+}
+
+.review-status-rejected,
+.review-status-forced_closed {
+  color: @alert2;
+}
+.status-tag-rejected,
+.status-tag-forced_closed {
+  border-color: @alert2;
+}
+
+.review-status-not_reviewed {
+  color: @grey5;
+}
+.status-tag-not_reviewed {
+  border-color: @grey5;
+}
+
 .flag_status_comment_box {
 	margin: 5px 6px 0px 2px;
 }

@@ -31,7 +31,6 @@
             <p>${_('File last commit')}</p>
             <div class="right-label-summary">
               <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a></code>
-
             ${file_base.refs(c.file_last_commit)}
           </div>
         </div>
@@ -40,8 +39,11 @@
 
     <div class="right-content">
       <div data-toggle="summary-details">
-          <div class="tags commit-info tags-main">
-            <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a></code>
+          <div class="tags tags-main">
+            <code>
+                <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
+            </code>
+            <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
             ${file_base.refs(c.commit)}
           </div>
       </div>

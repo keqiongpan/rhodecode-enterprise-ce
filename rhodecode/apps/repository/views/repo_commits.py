@@ -128,6 +128,7 @@ class RepoCommitsView(RepoAppView):
         c.statuses = []
         c.comments = []
         c.unresolved_comments = []
+        c.resolved_comments = []
         if len(c.commit_ranges) == 1:
             commit = c.commit_ranges[0]
             c.comments = CommentsModel().get_comments(
@@ -148,6 +149,8 @@ class RepoCommitsView(RepoAppView):
 
             c.unresolved_comments = CommentsModel()\
                 .get_commit_unresolved_todos(commit.raw_id)
+            c.resolved_comments = CommentsModel()\
+                .get_commit_resolved_todos(commit.raw_id)
 
         diff = None
         # Iterate over ranges (default commit view is always one commit)

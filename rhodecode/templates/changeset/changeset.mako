@@ -1,10 +1,12 @@
 ## -*- coding: utf-8 -*-
 
 <%inherit file="/base/base.mako"/>
+<%namespace name="base" file="/base/base.mako"/>
 <%namespace name="diff_block" file="/changeset/diff_block.mako"/>
+<%namespace name="file_base" file="/files/base.mako"/>
 
 <%def name="title()">
-    ${_('%s Commit') % c.repo_name} - ${h.show_id(c.commit)}
+    ${_('{} Commit').format(c.repo_name)} - ${h.show_id(c.commit)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -19,120 +21,111 @@
 </%def>
 
 <%def name="main()">
-<script>
+<script type="text/javascript">
     // TODO: marcink switch this to pyroutes
     AJAX_COMMENT_DELETE_URL = "${h.route_path('repo_commit_comment_delete',repo_name=c.repo_name,commit_id=c.commit.raw_id,comment_id='__COMMENT_ID__')}";
     templateContext.commit_data.commit_id = "${c.commit.raw_id}";
 </script>
+
 <div class="box">
 
-  <div id="changeset_compare_view_content"  class="summary changeset">
-    <div class="summary-detail">
-        <div class="fieldset">
-          <div class="left-label-summary">
-            <p>${_('Commit')}</p>
-            <div class="right-label-summary">
-              <code>
-                  ${h.show_id(c.commit)}
-              </code>
-              <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
-              % if hasattr(c.commit, 'phase'):
-                    <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">${c.commit.phase}</span>
-              % endif
+  <div class="summary">
 
-              ## obsolete commits
-              % if hasattr(c.commit, 'obsolete'):
-                % if c.commit.obsolete:
-                    <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">${_('obsolete')}</span>
+      <div class="fieldset">
+        <div class="left-content">
+
+          <div class="left-content-avatar">
+            ${base.gravatar(c.commit.author_email, 30)}
+          </div>
+
+          <div class="left-content-message">
+          <div class="fieldset collapsable-content no-hide" data-toggle="summary-details">
+            <div class="commit truncate-wrap">${h.urlify_commit_message(h.chop_at_smart(c.commit.message, '\n', suffix_if_chopped='...'), c.repo_name)}</div>
+          </div>
+
+          <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none">
+            <div class="commit">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
+          </div>
+
+          <div class="fieldset" data-toggle="summary-details">
+            <div class="">
+                <table>
+                <tr class="file_author tooltip" title="${h.tooltip(h.author_string(c.commit.author_email))}">
+
+                    <td>
+                        <span class="user commit-author">${h.link_to_user(c.commit.author)}</span>
+                        <span class="commit-date">- ${h.age_component(c.commit.date)}</span>
+                    </td>
+
+                    <td>
+                    ## second cell for consistency with files
+                    </td>
+                </tr>
+                </table>
+            </div>
+          </div>
+
+        </div>
+        </div>
+
+          <div class="right-content">
+
+          <div data-toggle="summary-details">
+              <div class="tags tags-main">
+                <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a></code>
+                <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
+                ${file_base.refs(c.commit)}
+
+                ## phase
+                % if hasattr(c.commit, 'phase') and getattr(c.commit, 'phase') != 'public':
+                    <span class="tag phase-${c.commit.phase} tooltip" title="${_('Commit phase')}">
+                        <i class="icon-info"></i>${c.commit.phase}
+                    </span>
                 % endif
-              % endif
 
-              ## hidden commits
-              % if hasattr(c.commit, 'hidden'):
-                % if c.commit.hidden:
-                    <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">${_('hidden')}</span>
+                ## obsolete commits
+                % if getattr(c.commit, 'obsolete', False):
+                    <span class="tag obsolete-${c.commit.obsolete} tooltip" title="${_('Evolve State')}">
+                        ${_('obsolete')}
+                    </span>
                 % endif
-              % endif
 
-
-              <div class="pull-right">
-                  <span id="parent_link">
-                    <a href="#parentCommit" title="${_('Parent Commit')}"><i class="icon-left icon-no-margin"></i>${_('parent')}</a>
-                  </span>
-                   |
-                  <span id="child_link">
-                    <a href="#childCommit" title="${_('Child Commit')}">${_('child')}<i class="icon-right icon-no-margin"></i></a>
-                  </span>
+                ## hidden commits
+                % if getattr(c.commit, 'hidden', False):
+                    <span class="tag hidden-${c.commit.hidden} tooltip" title="${_('Evolve State')}">
+                        ${_('hidden')}
+                    </span>
+                % endif
               </div>
 
-              </div>
-            </div>
+              %if c.statuses:
+                  <div class="tag status-tag-${c.statuses[0]} pull-right">
+                      <i class="icon-circle review-status-${c.statuses[0]}"></i>
+                      <div class="pull-right">${h.commit_status_lbl(c.statuses[0])}</div>
+                  </div>
+              %endif
+
           </div>
 
-
-
-      <div class="fieldset">
-        <div class="left-label-summary">
-          <p>${_('Description')}:</p>
-          <div class="right-label-summary">
-            <div id="trimmed_message_box" class="commit">${h.urlify_commit_message(c.commit.message,c.repo_name)}</div>
-            <div id="message_expand" style="display:none;">
-              ${_('Expand')}
-            </div>
-          </div>
         </div>
       </div>
 
-      %if c.statuses:
-      <div class="fieldset">
+      <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
         <div class="left-label-summary">
-          <p>${_('Commit status')}:</p>
+          <p>${_('Commit navigation')}:</p>
           <div class="right-label-summary">
-            <div class="changeset-status-ico">
-              <div class="${'flag_status %s' % c.statuses[0]} pull-left"></div>
-            </div>
-            <div title="${_('Commit status')}" class="changeset-status-lbl">[${h.commit_status_lbl(c.statuses[0])}]</div>
+              <span id="parent_link" class="tag tagtag">
+                <a href="#parentCommit" title="${_('Parent Commit')}"><i class="icon-left icon-no-margin"></i>${_('parent')}</a>
+              </span>
+
+              <span id="child_link" class="tag tagtag">
+                <a href="#childCommit" title="${_('Child Commit')}">${_('child')}<i class="icon-right icon-no-margin"></i></a>
+              </span>
           </div>
         </div>
       </div>
-      %endif
 
-      <div class="fieldset">
-        <div class="left-label-summary">
-          <p>${_('References')}:</p>
-          <div class="right-label-summary">
-            <div class="tags">
-              %if c.commit.merge:
-                <span class="mergetag tag">
-                 <i class="icon-merge"></i>${_('merge')}
-                </span>
-              %endif
-
-              %if h.is_hg(c.rhodecode_repo):
-                %for book in c.commit.bookmarks:
-                <span class="booktag tag" title="${h.tooltip(_('Bookmark %s') % book)}">
-                  <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=book))}"><i class="icon-bookmark"></i>${h.shorter(book)}</a>
-                </span>
-                %endfor
-              %endif
-
-              %for tag in c.commit.tags:
-               <span class="tagtag tag"  title="${h.tooltip(_('Tag %s') % tag)}">
-                <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=tag))}"><i class="icon-tag"></i>${tag}</a>
-               </span>
-              %endfor
-
-              %if c.commit.branch:
-                <span class="branchtag tag" title="${h.tooltip(_('Branch %s') % c.commit.branch)}">
-                  <a href="${h.route_path('repo_files:default_path',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(at=c.commit.branch))}"><i class="icon-code-fork"></i>${h.shorter(c.commit.branch)}</a>
-                </span>
-              %endif
-              </div>
-            </div>
-        </div>
-      </div>
-
-      <div class="fieldset">
+      <div class="fieldset collapsable-content" data-toggle="summary-details" style="display: none;">
         <div class="left-label-summary">
           <p>${_('Diff options')}:</p>
           <div class="right-label-summary">
@@ -153,64 +146,25 @@
         </div>
       </div>
 
-      <div class="fieldset">
-        <div class="left-label-summary">
-          <p>${_('Comments')}:</p>
-          <div class="right-label-summary">
-            <div class="comments-number">
-                %if c.comments:
-                    <a href="#comments">${_ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}</a>,
-                %else:
-                    ${_ungettext("%d Commit comment", "%d Commit comments", len(c.comments)) % len(c.comments)}
-                %endif
-                %if c.inline_cnt:
-                    <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${_ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}</a>
-                %else:
-                    ${_ungettext("%d Inline Comment", "%d Inline Comments", c.inline_cnt) % c.inline_cnt}
-                %endif
-            </div>
-            </div>
-        </div>
+      <div class="clear-fix"></div>
+
+      <div  class="btn-collapse" data-toggle="summary-details">
+        ${_('Show More')}
       </div>
 
-      <div class="fieldset">
-        <div class="left-label-summary">
-          <p>${_('Unresolved TODOs')}:</p>
-          <div class="right-label-summary">
-              <div class="comments-number">
-                  % if c.unresolved_comments:
-                      % for co in c.unresolved_comments:
-                          <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'))"> #${co.comment_id}</a>${'' if loop.last else ','}
-                      % endfor
-                  % else:
-                      ${_('There are no unresolved TODOs')}
-                  % endif
-              </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="fieldset">
-        <div class="left-label-summary">
-          <p>${_('Author')}</p>
-
-          <div class="right-label-summary">
-            ${self.gravatar_with_user(c.commit.author)}
-            <div class="user-inline-data">- ${h.age_component(c.commit.date)}</div>
-          </div>
-        </div>
-
-    <div class="clear-fix"></div>
-
-    </div> <!-- end summary-detail -->
-  </div> <!-- end summary -->
   </div>
+
   <div class="cs_files">
     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
     ${cbdiffs.render_diffset_menu(c.changes[c.commit.raw_id])}
     ${cbdiffs.render_diffset(
       c.changes[c.commit.raw_id], commit=c.commit, use_comments=True,inline_comments=c.inline_comments )}
   </div>
+
+    <div class="comments-heading">
+        <i class="icon-comment"></i>
+        ${_('Comments')} ${len(c.comments)}
+    </div>
 
     ## template for inline comment form
     <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
@@ -350,6 +304,7 @@
 
           // inject comments into their proper positions
           var file_comments = $('.inline-comment-placeholder');
+
       })
     </script>
 

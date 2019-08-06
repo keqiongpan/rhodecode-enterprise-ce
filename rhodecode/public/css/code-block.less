@@ -682,13 +682,14 @@ input.filediff-collapse-state {
             display: none
         }
         .filediff-collapse-indicator {
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 4.5px 0 4.5px 9.3px;
-            border-color: transparent transparent transparent  #aaa;
-            margin: 6px 0px;
+            float: left;
+            cursor: pointer;
+            margin: 1px -5px;
         }
+        .filediff-collapse-indicator:before {
+            content: '\f105';
+        }
+
         .filediff-menu {
             display: none;
         }
@@ -696,18 +697,20 @@ input.filediff-collapse-state {
     }
 
     &+ .filediff { /* file diff is expanded */
-        .filediff-collapse-indicator {
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 9.3px 4.5px 0 4.5px;
-            border-color: #aaa transparent transparent transparent;
-            margin: 6px 0px;
 
+        .filediff-collapse-indicator {
+            float: left;
+            cursor: pointer;
+            margin: 1px -5px;
         }
+        .filediff-collapse-indicator:before {
+            content: '\f107';
+        }
+
         .filediff-menu {
             display: block;
         }
+
         margin: 10px 0;
         &:nth-child(2) {
             margin: 0;
@@ -735,13 +738,14 @@ input.filediff-collapse-state {
 
 #diff-file-sticky{
     will-change: min-height;
+    height: 80px;
 }
 
 .sidebar__inner{
     transform: translate(0, 0); /* For browsers don't support translate3d. */
     transform: translate3d(0, 0, 0);
     will-change: position, transform;
-    height: 70px;
+    height: 65px;
     z-index: 30;
     background-color: #fff;
     padding: 5px 0px;
@@ -775,10 +779,17 @@ input.filediff-collapse-state {
 }
 
 .diffset-menu {
-    margin-bottom: 20px;
+
 }
+
+#todo-box {
+    clear:both;
+    display: none;
+    text-align: right
+}
+
 .diffset {
-    margin: 20px auto;
+    margin: 0px auto;
     .diffset-heading {
         border: 1px solid @grey5;
         margin-bottom: -1px;
@@ -826,6 +837,8 @@ input.filediff-collapse-state {
         margin-right: 3px;
         font-size: 12px;
         font-weight: normal;
+        min-width: 30px;
+        text-align: center;
 
         &:first-child {
             border-radius: @border-radius 0 0 @border-radius;
@@ -877,18 +890,10 @@ input.filediff-collapse-state {
         }
     }
 
-    .filediff-collapse-indicator {
-        border-style: solid;
-        float: left;
-        margin: 4px 0px 0 0;
-        cursor: pointer;
-    }
-
     .filediff-heading {
-        background: @grey7;
         cursor: pointer;
         display: block;
-        padding: 5px 10px;
+        padding: 10px 10px;
     }
     .filediff-heading:after {
         content: "";
@@ -900,9 +905,9 @@ input.filediff-collapse-state {
     }
 
     .filediff-menu {
-        float: right;
         text-align: right;
         padding: 5px 5px 5px 0px;
+        background: @grey7;
 
         &> a,
         &> span {
@@ -958,8 +963,16 @@ input.filediff-collapse-state {
 }
 
 
+.op-added {
+    color: @alert1;
+}
+
+.op-deleted {
+    color: @alert2;
+}
 
 .filediff, .filelist {
+
     .pill {
         &[op="name"] {
             background: none;

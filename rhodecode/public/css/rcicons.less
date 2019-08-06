@@ -1,12 +1,12 @@
 @font-face {
   font-family: 'rcicons';
 
-  src: url('../fonts/RCIcons/rcicons.eot?92789106');
-  src: url('../fonts/RCIcons/rcicons.eot?92789106#iefix') format('embedded-opentype'),
-       url('../fonts/RCIcons/rcicons.woff2?92789106') format('woff2'),
-       url('../fonts/RCIcons/rcicons.woff?92789106') format('woff'),
-       url('../fonts/RCIcons/rcicons.ttf?92789106') format('truetype'),
-       url('../fonts/RCIcons/rcicons.svg?92789106#rcicons') format('svg');
+  src: url('../fonts/RCIcons/rcicons.eot?44705679');
+  src: url('../fonts/RCIcons/rcicons.eot?44705679#iefix') format('embedded-opentype'),
+       url('../fonts/RCIcons/rcicons.woff2?44705679') format('woff2'),
+       url('../fonts/RCIcons/rcicons.woff?44705679') format('woff'),
+       url('../fonts/RCIcons/rcicons.ttf?44705679') format('truetype'),
+       url('../fonts/RCIcons/rcicons.svg?44705679#rcicons') format('svg');
 
   font-weight: normal;
   font-style: normal;
@@ -163,8 +163,6 @@
 .icon-down:before { content: '\e80b'; } /* '' */
 .icon-folder:before { content: '\e80c'; } /* '' */
 .icon-folder-open:before { content: '\e80d'; } /* '' */
-.icon-folder-empty:before { content: '\f114'; } /* '' */
-.icon-folder-open-empty:before { content: '\f115'; } /* '' */
 .icon-trash-empty:before { content: '\e80e'; } /* '' */
 .icon-group:before { content: '\e80f'; } /* '' */
 .icon-remove:before { content: '\e810'; } /* '' */
@@ -187,6 +185,7 @@
 .icon-info-circled:before { content: '\e821'; } /* '' */
 .icon-upload:before { content: '\e822'; } /* '' */
 .icon-home:before { content: '\e823'; } /* '' */
+.icon-flag-filled:before { content: '\e824'; } /* '' */
 .icon-git:before { content: '\e82a'; } /* '' */
 .icon-hg:before { content: '\e82d'; } /* '' */
 .icon-svn:before { content: '\e82e'; } /* '' */
@@ -195,11 +194,24 @@
 .icon-rhodecode:before { content: '\e831'; } /* '' */
 .icon-up:before { content: '\e832'; } /* '' */
 .icon-merge:before { content: '\e833'; } /* '' */
+.icon-spin-alt:before { content: '\e834'; } /* '' */
+.icon-spin:before { content: '\e838'; } /* '' */
 .icon-docs:before { content: '\f0c5'; } /* '' */
 .icon-menu:before { content: '\f0c9'; } /* '' */
+.icon-sort:before { content: '\f0dc'; } /* '' */
 .icon-paste:before { content: '\f0ea'; } /* '' */
 .icon-doc-text:before { content: '\f0f6'; } /* '' */
 .icon-plus-squared:before { content: '\f0fe'; } /* '' */
+.icon-angle-left:before { content: '\f104'; } /* '' */
+.icon-angle-right:before { content: '\f105'; } /* '' */
+.icon-angle-up:before { content: '\f106'; } /* '' */
+.icon-angle-down:before { content: '\f107'; } /* '' */
+.icon-circle-empty:before { content: '\f10c'; } /* '' */
+.icon-circle:before { content: '\f111'; } /* '' */
+.icon-folder-empty:before { content: '\f114'; } /* '' */
+.icon-folder-open-empty:before { content: '\f115'; } /* '' */
+.icon-code:before { content: '\f121'; } /* '' */
+.icon-info:before { content: '\f129'; } /* '' */
 .icon-minus-squared:before { content: '\f146'; } /* '' */
 .icon-minus-squared-alt:before { content: '\f147'; } /* '' */
 .icon-doc-inv:before { content: '\f15b'; } /* '' */
@@ -207,10 +219,9 @@
 .icon-plus-squared-alt:before { content: '\f196'; } /* '' */
 .icon-file-code:before { content: '\f1c9'; } /* '' */
 .icon-history:before { content: '\f1da'; } /* '' */
+.icon-circle-thin:before { content: '\f1db'; } /* '' */
 .icon-sliders:before { content: '\f1de'; } /* '' */
 .icon-trash:before { content: '\f1f8'; } /* '' */
-.icon-spin-alt:before { content: '\e834'; } /* '' */
-.icon-spin:before { content: '\e838'; } /* '' */
 
 
 // MERGED ICONS BASED ON CURRENT ONES
@@ -233,10 +244,12 @@
 .icon-false:before { &:extend(.icon-delete:before); }
 .icon-expand-linked:before { &:extend(.icon-down:before); }
 .icon-pr-merge-fail:before { &:extend(.icon-delete:before); }
+.icon-wide-mode:before { &:extend(.icon-sort:before); }
+.icon-flag-filled-red:before { &:extend(.icon-flag-filled:before); }
 
 // TRANSFORM
-
 .icon-merge:before {transform: rotate(180deg);}
+.icon-wide-mode:before {transform: rotate(90deg);}
 
 // -- END ICON CLASSES -- //
 
@@ -254,6 +267,7 @@
 .icon-false { color: @grey5 }
 .icon-expand-linked { cursor: pointer; color: @grey3; font-size: 14px }
 .icon-more-linked { cursor: pointer; color: @grey3 }
+.icon-flag-filled-red { color: @color5 !important; }
 
 .repo-switcher-dropdown .select2-result-label {
     .icon-git:before {

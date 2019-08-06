@@ -50,7 +50,7 @@
     </div>
 
     <div class="table">
-        <div id="files_data">
+        <div>
 
             <div id="codeblock" class="codeblock">
                 <div class="editor-items">

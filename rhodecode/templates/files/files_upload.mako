@@ -77,7 +77,7 @@
     </div>
 
     <div class="upload-form table">
-        <div id="files_data">
+        <div>
 
             <div class="dropzone-wrapper" id="file-uploader">
                 <div class="dropzone-pure">

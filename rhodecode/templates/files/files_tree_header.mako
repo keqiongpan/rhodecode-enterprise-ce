@@ -25,11 +25,12 @@
     </div>
 
     <div class="right-content">
-      <div class="tags commit-info">
+      <div class="tags">
         <code>
             <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
         </code>
 
+        <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
         ${file_base.refs(c.commit)}
       </div>
     </div>

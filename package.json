@@ -28,7 +28,7 @@
     "moment": "^2.18.1",
     "mousetrap": "^1.6.1",
     "qrious": "^4.0.2",
-    "sticky-sidebar": "3.3.1",
+    "sticky-sidebar": "3.3.4",
     "waypoints": "4.0.1",
     "webpack": "4.23.1",
     "webpack-cli": "3.1.2",
