@@ -79,6 +79,12 @@ and commit files and |repos| while managing their security permissions.
    contributing/contributing
 
 .. toctree::
+   :maxdepth: 2
+   :caption: RhodeCode Control Documentation
+
+   RhodeCode Installer <https://docs.rhodecode.com/RhodeCode-Control/>
+
+.. toctree::
    :maxdepth: 1
    :caption: About
 
