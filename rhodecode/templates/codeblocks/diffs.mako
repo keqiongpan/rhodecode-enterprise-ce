@@ -49,6 +49,9 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     # for cache purpose
     inline_comments=None,
 
+    # additional menu for PRs
+    pull_request_menu=None
+
 )">
 
 <%
@@ -125,6 +128,12 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         </div>
 
         ## todos
+        % if getattr(c, 'at_version', None):
+        <div class="pull-right">
+            <i class="icon-flag-filled" style="color: #949494">TODOs:</i>
+             ${_('not available in this view')}
+        </div>
+        % else:
         <div class="pull-right">
             <div class="comments-number" style="padding-left: 10px">
                 % if hasattr(c, 'unresolved_comments') and hasattr(c, 'resolved_comments'):
@@ -137,10 +146,11 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                         ${_('0 unresolved')}
                     % endif
 
-                    ${_('{} Resolved').format(len(c.unresolved_comments))}
+                    ${_('{} Resolved').format(len(c.resolved_comments))}
                 % endif
             </div>
         </div>
+        % endif
 
         ## comments
         <div class="pull-right">
@@ -161,6 +171,24 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                         ${_('0 Inline')}
                     % endif
                 % endif
+
+                % if pull_request_menu:
+                    <%
+                    outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
+                    %>
+
+                    % if outdated_comm_count_ver:
+                        <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+                            (${_("{} Outdated").format(outdated_comm_count_ver)})
+                        </a>
+                        <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+                        <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+                    % else:
+                        (${_("{} Outdated").format(outdated_comm_count_ver)})
+                    % endif
+
+                % endif
+
             </div>
         </div>
 
@@ -349,7 +377,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
             <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state collapse-${diffset_container_id}" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
-                    <div class="filediff-collapse-indicator"></div>
+                    <div class="filediff-collapse-indicator icon-"></div>
 
                     <span class="pill">
                         ## file was deleted

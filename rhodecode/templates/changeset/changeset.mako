@@ -161,13 +161,14 @@
       c.changes[c.commit.raw_id], commit=c.commit, use_comments=True,inline_comments=c.inline_comments )}
   </div>
 
+    ## template for inline comment form
+    <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
+
+    ## comments heading with count
     <div class="comments-heading">
         <i class="icon-comment"></i>
         ${_('Comments')} ${len(c.comments)}
     </div>
-
-    ## template for inline comment form
-    <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 
     ## render comments
     ${comment.generate_comments(c.comments)}

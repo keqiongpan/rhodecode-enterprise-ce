@@ -244,55 +244,10 @@
                                </button>
                            </td>
                        </tr>
-
-                       ## show comment/inline comments summary
-                       <%def name="comments_summary()">
-                       <tr>
-                           <td colspan="6" class="comments-summary-td">
-
-                            % if c.at_version:
-                                <% inline_comm_count_ver = len(c.inline_versions[c.at_version_num]['display']) %>
-                                <% general_comm_count_ver = len(c.comment_versions[c.at_version_num]['display']) %>
-                                ${_('Comments at this version')}:
-                            % else:
-                                <% inline_comm_count_ver = len(c.inline_versions[c.at_version_num]['until']) %>
-                                <% general_comm_count_ver = len(c.comment_versions[c.at_version_num]['until']) %>
-                                ${_('Comments for this pull request')}:
-                            % endif
-
-
-                            %if general_comm_count_ver:
-                                <a href="#comments">${_("%d General ") % general_comm_count_ver}</a>
-                            %else:
-                                ${_("%d General ") % general_comm_count_ver}
-                            %endif
-
-                            %if inline_comm_count_ver:
-                               , <a href="#" onclick="return Rhodecode.comments.nextComment();" id="inline-comments-counter">${_("%d Inline") % inline_comm_count_ver}</a>
-                            %else:
-                               , ${_("%d Inline") % inline_comm_count_ver}
-                            %endif
-
-                            %if outdated_comm_count_ver:
-                              , <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">${_("%d Outdated") % outdated_comm_count_ver}</a>
-                                <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated comments')}</a>
-                                <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated comments')}</a>
-                            %else:
-                              , ${_("%d Outdated") % outdated_comm_count_ver}
-                            %endif
-                           </td>
-                       </tr>
-                       </%def>
-                       ${comments_summary()}
                    </table>
                % else:
                    <div class="input">
                    ${_('Pull request versions not available')}.
-                   </div>
-                   <div>
-                      <table>
-                        ${comments_summary()}
-                      </table>
                    </div>
                % endif
                </div>
@@ -534,6 +489,19 @@
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
+                    % if c.at_version:
+                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['display']) %>
+                        <% c.comments = c.comment_versions[c.at_version_num]['display'] %>
+                    % else:
+                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['until']) %>
+                        <% c.comments = c.comment_versions[c.at_version_num]['until'] %>
+                    % endif
+
+                    <%
+                        pr_menu_data = {
+                            'outdated_comm_count_ver': outdated_comm_count_ver
+                        }
+                    %>
 
                     ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on)}
 
@@ -545,7 +513,8 @@
                               collapse_when_files_over=5,
                               disable_new_comments=True,
                               deleted_files_comments=c.deleted_files_comments,
-                              inline_comments=c.inline_comments)}
+                              inline_comments=c.inline_comments,
+                              pull_request_menu=pr_menu_data)}
                         % endfor
                     % else:
                         ${cbdiffs.render_diffset(
@@ -553,7 +522,8 @@
                           collapse_when_files_over=30,
                           disable_new_comments=not c.allowed_to_comment,
                           deleted_files_comments=c.deleted_files_comments,
-                          inline_comments=c.inline_comments)}
+                          inline_comments=c.inline_comments,
+                          pull_request_menu=pr_menu_data)}
                     % endif
 
                 </div>
@@ -568,22 +538,25 @@
       ## template for inline comment form
       <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 
-      ## render general comments
+      ## comments heading with count
+      <div class="comments-heading">
+        <i class="icon-comment"></i>
+        ${_('Comments')} ${len(c.comments)}
+      </div>
 
+      ## render general comments
       <div id="comment-tr-show">
-          <div class="comment">
-            % if general_outdated_comm_count_ver:
-            <div class="meta">
-                % if general_outdated_comm_count_ver == 1:
-                    ${_('there is {num} general comment from older versions').format(num=general_outdated_comm_count_ver)},
-                    <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
-                % else:
-                    ${_('there are {num} general comments from older versions').format(num=general_outdated_comm_count_ver)},
-                    <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
-                % endif
-            </div>
+        % if general_outdated_comm_count_ver:
+        <div class="info-box">
+            % if general_outdated_comm_count_ver == 1:
+                ${_('there is {num} general comment from older versions').format(num=general_outdated_comm_count_ver)},
+                <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show it')}</a>
+            % else:
+                ${_('there are {num} general comments from older versions').format(num=general_outdated_comm_count_ver)},
+                <a href="#show-hidden-comments" onclick="$('.comment-general.comment-outdated').show(); $(this).parent().hide(); return false;">${_('show them')}</a>
             % endif
-          </div>
+        </div>
+        % endif
       </div>
 
       ${comment.generate_comments(c.comments, include_pull_request=True, is_pull_request=True)}

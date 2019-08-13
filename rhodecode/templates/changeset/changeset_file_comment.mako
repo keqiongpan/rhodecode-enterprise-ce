@@ -45,6 +45,9 @@
               % else:
                   % if comment.resolved_comment:
                     fix
+                    <a href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
+                        <span style="text-decoration: line-through">#${comment.resolved_comment.comment_id}</span>
+                    </a>
                   % else:
                     ${comment.comment_type or 'note'}
                   % endif
@@ -83,12 +86,6 @@
             <div title="${_('Commit status')}" class="changeset-status-lbl">
                  ${comment.status_change[0].status_lbl}
             </div>
-          % endif
-
-          % if comment.resolved_comment:
-            <a class="has-spacer-before" href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
-                ${_('resolves comment #{}').format(comment.resolved_comment.comment_id)}
-            </a>
           % endif
 
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>

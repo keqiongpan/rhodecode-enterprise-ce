@@ -426,6 +426,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c.inline_versions = comments_model.aggregate_comments(
             inline_comments, versions, c.at_version_num, inline=True)
 
+        # TODOs
+        c.unresolved_comments = CommentsModel() \
+            .get_pull_request_unresolved_todos(pull_request)
+        c.resolved_comments = CommentsModel() \
+            .get_pull_request_resolved_todos(pull_request)
+
         # inject latest version
         latest_ver = PullRequest.get_pr_display_object(
             pull_request_latest, pull_request_latest)
