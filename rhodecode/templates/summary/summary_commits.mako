@@ -25,16 +25,16 @@
                 <div class="changeset-status-ico shortlog">
                     %if c.statuses.get(cs.raw_id)[2]:
                     <a class="tooltip" title="${_('Commit status: %s\nClick to open associated pull request #%s') % (c.statuses.get(cs.raw_id)[0], c.statuses.get(cs.raw_id)[2])}" href="${h.route_path('pullrequest_show',repo_name=c.statuses.get(cs.raw_id)[3],pull_request_id=c.statuses.get(cs.raw_id)[2])}">
-                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
+                        <i class="icon-circle review-status-${c.statuses.get(cs.raw_id)[0]}"></i>
                     </a>
                     %else:
                     <a class="tooltip" title="${_('Commit status: {}').format(h.commit_status_lbl(c.statuses.get(cs.raw_id)[0]))}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=cs.raw_id,_anchor='comment-%s' % c.comments[cs.raw_id][0].comment_id)}">
-                        <div class="${'flag_status {}'.format(c.statuses.get(cs.raw_id)[0])}"></div>
+                        <i class="icon-circle review-status-${c.statuses.get(cs.raw_id)[0]}"></i>
                     </a>
                     %endif
                 </div>
             %else:
-                <div class="tooltip flag_status not_reviewed" title="${_('Commit status: Not Reviewed')}"></div>
+                <i class="icon-circle review-status-not_reviewed" title="${_('Commit status: Not Reviewed')}"></i>
             %endif
         </td>
         <td class="td-commit">

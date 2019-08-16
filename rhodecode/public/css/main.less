@@ -983,9 +983,6 @@ label {
 }
 
 #graph {
-    .flag_status {
-        margin: 0;
-    }
 
     .pagination-left {
         float: left;
@@ -1090,23 +1087,6 @@ label {
     }
 }
 
-.flag_status {
-    margin: 2px;
-    &.under_review {
-        .circle(5px, @alert3);
-    }
-    &.approved {
-        .circle(5px, @alert1);
-    }
-    &.rejected,
-    &.forced_closed{
-        .circle(5px, @alert2);
-    }
-    &.not_reviewed {
-        .circle(5px, @grey5);
-    }
-}
-
 .review-status {
     &.under_review {
         color: @alert3;
@@ -1153,9 +1133,6 @@ label {
   border-color: @grey5;
 }
 
-.flag_status_comment_box {
-	margin: 5px 6px 0px 2px;
-}
 .test_pattern_preview {
 	margin: @space 0;
 
@@ -1885,10 +1862,6 @@ BIN_FILENODE = 7
       line-height: 15px;
     }
 
-    .flag_status {
-        margin: 0;
-    }
-
     .compare-radio-button {
       position: relative;
       top: -3px;
@@ -1930,10 +1903,6 @@ BIN_FILENODE = 7
 .table_disp {
 	.status {
 		width: auto;
-
-		.flag_status {
-			float: left;
-		}
 	}
 }
 

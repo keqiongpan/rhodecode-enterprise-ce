@@ -79,7 +79,7 @@
           % endif
 
           % if comment.status_change:
-            <div class="${'flag_status %s' % comment.status_change[0].status}"></div>
+            <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
             <div title="${_('Commit status')}" class="changeset-status-lbl">
                  ${comment.status_change[0].status_lbl}
             </div>

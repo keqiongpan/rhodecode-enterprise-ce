@@ -348,8 +348,9 @@
       ${h.link_to(repo_name,h.route_path('repo_summary',repo_name=repo_name))}
     </div>
 </%def>
+
 <%def name="pullrequest_status(status)">
-    <div class="${'flag_status %s' % status} pull-left"></div>
+    <i class="icon-circle review-status-${status}"></i>
 </%def>
 
 <%def name="pullrequest_title(title, description)">

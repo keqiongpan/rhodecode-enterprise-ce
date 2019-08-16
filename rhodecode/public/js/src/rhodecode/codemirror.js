@@ -368,8 +368,9 @@ var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions)
             $(CommentForm.statusChange).select2("val", 'approved').trigger('change');
           },
           render: function(elt, data, completion) {
-            var el = document.createElement('div');
-            el.className = "flag_status flag_status_comment_box approved pull-left";
+            var el = document.createElement('i');
+
+            el.className = "icon-circle review-status-approved";
             elt.appendChild(el);
 
             el = document.createElement('span');
@@ -387,8 +388,8 @@ var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions)
               $(CommentForm.statusChange).select2("val", 'rejected').trigger('change');
           },
           render: function(elt, data, completion) {
-              var el = document.createElement('div');
-              el.className = "flag_status flag_status_comment_box rejected pull-left";
+              var el = document.createElement('i');
+              el.className = "icon-circle review-status-rejected";
               elt.appendChild(el);
 
               el = document.createElement('span');
@@ -708,8 +709,8 @@ var fillCodeMirrorOptions = function(targetSelect) {
         this.initStatusChangeSelector = function(){
             var formatChangeStatus = function(state, escapeMarkup) {
                 var originalOption = state.element;
-                return '<div class="flag_status ' + $(originalOption).data('status') + ' pull-left"></div>' +
-                       '<span>' + escapeMarkup(state.text) + '</span>';
+                var tmpl = '<i class="icon-circle review-status-{0}"></i><span>{1}</span>'.format($(originalOption).data('status'), escapeMarkup(state.text));
+                return tmpl
             };
             var formatResult = function(result, container, query, escapeMarkup) {
                 return formatChangeStatus(result, escapeMarkup);

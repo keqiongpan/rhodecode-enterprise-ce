@@ -218,8 +218,8 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.initStatusChangeSelector = function(){
             var formatChangeStatus = function(state, escapeMarkup) {
                 var originalOption = state.element;
-                return '<div class="flag_status ' + $(originalOption).data('status') + ' pull-left"></div>' +
-                       '<span>' + escapeMarkup(state.text) + '</span>';
+                var tmpl = '<i class="icon-circle review-status-{0}"></i><span>{1}</span>'.format($(originalOption).data('status'), escapeMarkup(state.text));
+                return tmpl
             };
             var formatResult = function(result, container, query, escapeMarkup) {
                 return formatChangeStatus(result, escapeMarkup);

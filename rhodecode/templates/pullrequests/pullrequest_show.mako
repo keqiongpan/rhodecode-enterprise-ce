@@ -150,7 +150,7 @@
             </div>
             <div class="input">
               %if c.pull_request_review_status:
-                <div class="${'flag_status %s' % c.pull_request_review_status} tooltip pull-left"></div>
+                <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
                 <span class="changeset-status-lbl tooltip">
                   %if c.pull_request.is_closed():
                       ${_('Closed')},
@@ -213,7 +213,7 @@
                                </td>
                                <td>
                                 <% review_status = c.review_versions[ver_pr].status if ver_pr in c.review_versions else 'not_reviewed' %>
-                                <div class="${'flag_status %s' % review_status} tooltip pull-left" title="${_('Your review status at this version')}">
+                                <i class="tooltip icon-circle review-status-${review_status}" title="${_('Your review status at this version')}"></i>
                                 </div>
                                </td>
                                <td>
