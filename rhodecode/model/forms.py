@@ -244,12 +244,10 @@ def PasswordResetForm(localizer):
     return _PasswordResetForm
 
 
-def RepoForm(localizer, edit=False, old_data=None, repo_groups=None,
-             landing_revs=None, allow_disabled=False):
+def RepoForm(localizer, edit=False, old_data=None, repo_groups=None, allow_disabled=False):
     _ = localizer
     old_data = old_data or {}
     repo_groups = repo_groups or []
-    landing_revs = landing_revs or []
     supported_backends = BACKENDS.keys()
 
     class _RepoForm(formencode.Schema):
@@ -263,7 +261,6 @@ def RepoForm(localizer, edit=False, old_data=None, repo_groups=None,
                             if_missing=old_data.get('repo_type'))
         repo_description = v.UnicodeString(strip=True, min=1, not_empty=False)
         repo_private = v.StringBoolean(if_missing=False)
-        repo_landing_rev = v.OneOf(landing_revs, hideList=True)
         repo_copy_permissions = v.StringBoolean(if_missing=False)
         clone_uri = All(v.UnicodeString(strip=True, min=1, not_empty=False))
 
@@ -333,12 +330,10 @@ def RepoFieldForm(localizer):
 
 
 def RepoForkForm(localizer, edit=False, old_data=None,
-                 supported_backends=BACKENDS.keys(), repo_groups=None,
-                 landing_revs=None):
+                 supported_backends=BACKENDS.keys(), repo_groups=None):
     _ = localizer
     old_data = old_data or {}
     repo_groups = repo_groups or []
-    landing_revs = landing_revs or []
 
     class _RepoForkForm(formencode.Schema):
         allow_extra_fields = True
@@ -353,7 +348,6 @@ def RepoForkForm(localizer, edit=False, old_data=None,
         copy_permissions = v.StringBoolean(if_missing=False)
         fork_parent_id = v.UnicodeString()
         chained_validators = [v.ValidForkName(localizer, edit, old_data)]
-        landing_rev = v.OneOf(landing_revs, hideList=True)
     return _RepoForkForm
 
 

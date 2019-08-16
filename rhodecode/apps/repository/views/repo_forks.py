@@ -55,9 +55,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
             perm_set=['group.write', 'group.admin'])
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        choices, c.landing_revs = ScmModel().get_repo_landing_revs(
-            self.request.translate)
-        c.landing_revs_choices = choices
+
         c.personal_repo_group = c.rhodecode_user.personal_repo_group
 
         return c
@@ -212,9 +210,9 @@ class RepoForksView(RepoAppView, DataGridAppView):
         _ = self.request.translate
         c = self.load_default_context()
 
-        _form = RepoForkForm(self.request.translate, old_data={'repo_type': self.db_repo.repo_type},
-                             repo_groups=c.repo_groups_choices,
-                             landing_revs=c.landing_revs_choices)()
+        _form = RepoForkForm(self.request.translate,
+                             old_data={'repo_type': self.db_repo.repo_type},
+                             repo_groups=c.repo_groups_choices)()
         post_data = dict(self.request.POST)
 
         # forbid injecting other repo by forging a request

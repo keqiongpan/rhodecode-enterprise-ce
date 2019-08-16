@@ -711,7 +711,7 @@ def create_repo(
         private=Optional(False),
         clone_uri=Optional(None),
         push_uri=Optional(None),
-        landing_rev=Optional('rev:tip'),
+        landing_rev=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
         enable_downloads=Optional(False),
@@ -746,7 +746,7 @@ def create_repo(
     :type clone_uri: str
     :param push_uri: set push_uri
     :type push_uri: str
-    :param landing_rev: <rev_type>:<rev>
+    :param landing_rev: <rev_type>:<rev>, e.g branch:default, book:dev, rev:abcd
     :type landing_rev: str
     :param enable_locking:
     :type enable_locking: bool
@@ -790,7 +790,6 @@ def create_repo(
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
     push_uri = Optional.extract(push_uri)
-    landing_commit_ref = Optional.extract(landing_rev)
 
     defs = SettingsModel().get_default_repo_settings(strip_prefix=True)
     if isinstance(private, Optional):
@@ -804,8 +803,15 @@ def create_repo(
     if isinstance(enable_downloads, Optional):
         enable_downloads = defs.get('repo_enable_downloads')
 
+    landing_ref, _label = ScmModel.backend_landing_ref(repo_type)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(request.translate)
+    ref_choices = list(set(ref_choices + [landing_ref]))
+
+    landing_commit_ref = Optional.extract(landing_rev) or landing_ref
+
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_ref_options=ref_choices,
         repo_type=repo_type,
         # user caller
         user=apiuser)
@@ -955,7 +961,7 @@ def update_repo(
         owner=Optional(OAttr('apiuser')), description=Optional(''),
         private=Optional(False),
         clone_uri=Optional(None), push_uri=Optional(None),
-        landing_rev=Optional('rev:tip'), fork_of=Optional(None),
+        landing_rev=Optional(None), fork_of=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
         enable_downloads=Optional(False), fields=Optional('')):
@@ -990,7 +996,7 @@ def update_repo(
     :type private: bool
     :param clone_uri: Update the |repo| clone URI.
     :type clone_uri: str
-    :param landing_rev: Set the |repo| landing revision. Default is ``rev:tip``.
+    :param landing_rev: Set the |repo| landing revision. e.g branch:default, book:dev, rev:abcd
     :type landing_rev: str
     :param enable_statistics: Enable statistics on the |repo|, (True | False).
     :type enable_statistics: bool
@@ -1046,8 +1052,10 @@ def update_repo(
         repo_enable_downloads=enable_downloads
         if not isinstance(enable_downloads, Optional) else repo.enable_downloads)
 
+    landing_ref, _label = ScmModel.backend_landing_ref(repo.repo_type)
     ref_choices, _labels = ScmModel().get_repo_landing_revs(
         request.translate, repo=repo)
+    ref_choices = list(set(ref_choices + [landing_ref]))
 
     old_values = repo.get_api_data()
     repo_type = repo.repo_type
@@ -1125,7 +1133,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
               description=Optional(''),
               private=Optional(False),
               clone_uri=Optional(None),
-              landing_rev=Optional('rev:tip'),
+              landing_rev=Optional(None),
               copy_permissions=Optional(False)):
     """
     Creates a fork of the specified |repo|.
@@ -1155,7 +1163,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
     :type copy_permissions: bool
     :param private: Make the fork private. The default is False.
     :type private: bool
-    :param landing_rev: Set the landing revision. The default is tip.
+    :param landing_rev: Set the landing revision. E.g branch:default, book:dev, rev:abcd
 
     Example output:
 
@@ -1207,11 +1215,17 @@ def fork_repo(request, apiuser, repoid, fork_name,
     description = Optional.extract(description)
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
-    landing_commit_ref = Optional.extract(landing_rev)
+
+    landing_ref, _label = ScmModel.backend_landing_ref(repo.repo_type)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(request.translate)
+    ref_choices = list(set(ref_choices + [landing_ref]))
+    landing_commit_ref = Optional.extract(landing_rev) or landing_ref
+
     private = Optional.extract(private)
 
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_ref_options=ref_choices,
         repo_type=repo.repo_type,
         # user caller
         user=apiuser)

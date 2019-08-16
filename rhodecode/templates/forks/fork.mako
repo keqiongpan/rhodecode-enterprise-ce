@@ -67,16 +67,6 @@
             </div>
 
             <div class="field">
-                <div class="label">
-                    <label for="landing_rev">${_('Landing commit')}:</label>
-                </div>
-                <div class="select">
-                    ${h.select('landing_rev','',c.landing_revs,class_="medium")}
-                    <span class="help-block">${_('The default commit for file pages, downloads, full text search index, and README generation.')}</span>
-                </div>
-            </div>
-
-            <div class="field">
                 <div class="label label-checkbox">
                     <label for="private">${_('Copy permissions')}:</label>
                 </div>

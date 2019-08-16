@@ -59,8 +59,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
                                    perm_set=['group.write', 'group.admin'])
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        c.landing_revs_choices, c.landing_revs = \
-            ScmModel().get_repo_landing_revs(self.request.translate)
         c.personal_repo_group = self._rhodecode_user.personal_repo_group
 
     @LoginRequired()
@@ -150,8 +148,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
         try:
             # CanWriteToGroup validators checks permissions of this POST
             form = RepoForm(
-                self.request.translate, repo_groups=c.repo_groups_choices,
-                landing_revs=c.landing_revs_choices)()
+                self.request.translate, repo_groups=c.repo_groups_choices)()
             form_result = form.to_python(dict(self.request.POST))
             copy_permissions = form_result.get('repo_copy_permissions')
             # create is done sometimes async on celery, db transaction

@@ -39,15 +39,6 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             </div>
         </div>
         <div class="field">
-            <div class="label">
-                <label for="repo_type">${_('Type')}:</label>
-            </div>
-            <div class="select">
-                ${h.select('repo_type','hg',c.backends)}
-                <span class="help-block">${_('Set the type of repository to create.')}</span>
-            </div>
-        </div>
-        <div class="field">
              <div class="label">
                  <label for="repo_group">${_('Repository group')}:</label>
              </div>
@@ -63,6 +54,15 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
         </div>
         <div class="field">
             <div class="label">
+                <label for="repo_type">${_('Type')}:</label>
+            </div>
+            <div class="select">
+                ${h.select('repo_type','hg',c.backends)}
+                <span class="help-block">${_('Set the type of repository to create.')}</span>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">
                 <label for="repo_description">${_('Description')}:</label>
             </div>
             <div class="textarea editor">
@@ -73,15 +73,6 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
                     <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                     ${dt.metatags_help()}
                 </span>
-            </div>
-        </div>
-        <div class="field">
-            <div class="label">
-                <label for="repo_landing_rev">${_('Landing commit')}:</label>
-            </div>
-            <div class="select">
-                ${h.select('repo_landing_rev','',c.landing_revs,class_="medium")}
-                <span class="help-block">${_('The default commit for file pages, downloads, full text search index, and README generation.')}</span>
             </div>
         </div>
         <div id="copy_perms" class="field">
@@ -147,11 +138,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             'dropdownCssClass': "drop-menu-dropdown",
             'minimumResultsForSearch': -1,
         });
-        $("#repo_landing_rev").select2({
-            'containerCssClass': "drop-menu",
-            'dropdownCssClass': "drop-menu-dropdown",
-            'minimumResultsForSearch': -1,
-        });
+
         $('#repo_name').focus();
 
         $('#select_my_group').on('click', function(e){

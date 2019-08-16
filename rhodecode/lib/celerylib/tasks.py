@@ -125,6 +125,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
 def create_repo(form_data, cur_user):
     from rhodecode.model.repo import RepoModel
     from rhodecode.model.user import UserModel
+    from rhodecode.model.scm import ScmModel
     from rhodecode.model.settings import SettingsModel
 
     log = get_logger(create_repo)
@@ -139,7 +140,6 @@ def create_repo(form_data, cur_user):
     private = form_data['repo_private']
     clone_uri = form_data.get('clone_uri')
     repo_group = safe_int(form_data['repo_group'])
-    landing_rev = form_data['repo_landing_rev']
     copy_fork_permissions = form_data.get('copy_permissions')
     copy_group_permissions = form_data.get('repo_copy_permissions')
     fork_of = form_data.get('fork_parent_id')
@@ -154,6 +154,9 @@ def create_repo(form_data, cur_user):
     enable_downloads = form_data.get(
         'enable_downloads', defs.get('repo_enable_downloads'))
 
+    # set landing rev based on default branches for SCM
+    landing_ref, _label = ScmModel.backend_landing_ref(repo_type)
+
     try:
         RepoModel()._create_repo(
             repo_name=repo_name_full,
@@ -163,7 +166,7 @@ def create_repo(form_data, cur_user):
             private=private,
             clone_uri=clone_uri,
             repo_group=repo_group,
-            landing_rev=landing_rev,
+            landing_rev=landing_ref,
             fork_of=fork_of,
             copy_fork_permissions=copy_fork_permissions,
             copy_group_permissions=copy_group_permissions,

@@ -20,6 +20,8 @@
 
 import logging
 import string
+import time
+
 import rhodecode
 
 from pyramid.view import view_config
@@ -53,24 +55,25 @@ class RepoSummaryView(RepoAppView):
         return c
 
     def _get_readme_data(self, db_repo, renderer_type):
-
         log.debug('Looking for README file')
+        landing_commit = db_repo.get_landing_commit()
+        if isinstance(landing_commit, EmptyCommit):
+            return None, None
 
         cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
             db_repo.repo_id, CacheKey.CACHE_TYPE_README)
-        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
-            repo_id=self.db_repo.repo_id)
         region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+        start = time.time()
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def generate_repo_readme(repo_id, _repo_name, _renderer_type):
+        def generate_repo_readme(repo_id, commit_id, _repo_name, _renderer_type):
             readme_data = None
-            readme_node = None
             readme_filename = None
-            commit = self._get_landing_commit_or_none(db_repo)
-            if commit:
-                log.debug("Searching for a README file.")
-                readme_node = ReadmeFinder(_renderer_type).search(commit)
+
+            commit = db_repo.get_commit(commit_id)
+            log.debug("Searching for a README file at commit %s.", commit_id)
+            readme_node = ReadmeFinder(_renderer_type).search(commit)
+
             if readme_node:
                 log.debug('Found README node: %s', readme_node)
                 relative_urls = {
@@ -81,42 +84,19 @@ class RepoSummaryView(RepoAppView):
                         'repo_files', repo_name=_repo_name,
                         commit_id=commit.raw_id, f_path=readme_node.path),
                 }
-                readme_data = self._render_readme_or_none(
-                    commit, readme_node, relative_urls)
+                readme_data = self._render_readme_or_none(commit, readme_node, relative_urls)
                 readme_filename = readme_node.unicode_path
 
             return readme_data, readme_filename
 
-        inv_context_manager = rc_cache.InvalidationContext(
-            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
-        with inv_context_manager as invalidation_context:
-            args = (db_repo.repo_id, db_repo.repo_name, renderer_type,)
-            # re-compute and store cache if we get invalidate signal
-            if invalidation_context.should_invalidate():
-                instance = generate_repo_readme.refresh(*args)
-            else:
-                instance = generate_repo_readme(*args)
-
-            log.debug(
-                'Repo readme generated and computed in %.4fs',
-                inv_context_manager.compute_time)
-            return instance
-
-    def _get_landing_commit_or_none(self, db_repo):
-        log.debug("Getting the landing commit.")
-        try:
-            commit = db_repo.get_landing_commit()
-            if not isinstance(commit, EmptyCommit):
-                return commit
-            else:
-                log.debug("Repository is empty, no README to render.")
-        except CommitError:
-            log.exception(
-                "Problem getting commit when trying to render the README.")
+        readme_data, readme_filename = generate_repo_readme(
+            db_repo.repo_id, landing_commit.raw_id, db_repo.repo_name, renderer_type,)
+        compute_time = time.time() - start
+        log.debug('Repo readme generated and computed in %.4fs', compute_time)
+        return readme_data, readme_filename
 
     def _render_readme_or_none(self, commit, readme_node, relative_urls):
-        log.debug(
-            'Found README file `%s` rendering...', readme_node.path)
+        log.debug('Found README file `%s` rendering...', readme_node.path)
         renderer = MarkupRenderer()
         try:
             html_source = renderer.render(

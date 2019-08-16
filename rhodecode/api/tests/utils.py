@@ -20,9 +20,14 @@
 
 
 import random
+import pytest
 
 from rhodecode.api.utils import get_origin
 from rhodecode.lib.ext_json import json
+
+
+def jsonify(obj):
+    return json.loads(json.dumps(obj))
 
 
 API_URL = '/_admin/api'
@@ -42,12 +47,16 @@ def assert_call_ok(id_, given):
 
 
 def assert_ok(id_, expected, given):
+    given = json.loads(given)
+    if given.get('error'):
+        pytest.fail("Unexpected ERROR in success response: {}".format(given['error']))
+
     expected = jsonify({
         'id': id_,
         'error': None,
         'result': expected
     })
-    given = json.loads(given)
+
     assert expected == given
 
 
@@ -59,10 +68,6 @@ def assert_error(id_, expected, given):
     })
     given = json.loads(given)
     assert expected == given
-
-
-def jsonify(obj):
-    return json.loads(json.dumps(obj))
 
 
 def build_data(apikey, method, **kw):
