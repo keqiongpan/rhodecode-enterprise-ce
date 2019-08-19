@@ -23,6 +23,7 @@ import os
 import mock
 import pytest
 
+from rhodecode.apps.repository.tests.test_repo_compare import ComparePage
 from rhodecode.apps.repository.views.repo_files import RepoFilesView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.compat import OrderedDict
@@ -617,7 +618,10 @@ class TestFilesDiff(object):
         # use redirect since this is OLD view redirecting to compare page
         response = response.follow()
         response.mustcontain('Expand 1 commit')
-        response.mustcontain('1 file changed: 0 inserted, 0 deleted')
+        file_changes = (1, 0, 0)
+
+        compare_page = ComparePage(response)
+        compare_page.contains_change_summary(*file_changes)
 
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
