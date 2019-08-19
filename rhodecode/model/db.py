@@ -2298,7 +2298,7 @@ class Repository(Base, BaseModel):
 
     def update_commit_cache(self, cs_cache=None, config=None):
         """
-        Update cache of last changeset for repository, keys should be::
+        Update cache of last commit for repository, keys should be::
 
             source_repo_id
             short_id
@@ -2319,7 +2319,7 @@ class Repository(Base, BaseModel):
             empty = scm_repo is None or scm_repo.is_empty()
             if not empty:
                 cs_cache = scm_repo.get_commit(
-                    pre_load=["author", "date", "message", "parents"])
+                    pre_load=["author", "date", "message", "parents", "branch"])
             else:
                 cs_cache = EmptyCommit()
 
