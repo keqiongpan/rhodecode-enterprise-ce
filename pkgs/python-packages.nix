@@ -1271,28 +1271,28 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.5";
+    name = "pyasn1-0.4.6";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/46/60/b7e32f6ff481b8a1f6c8f02b0fd9b693d1c92ddd2efb038ec050d99a7245/pyasn1-0.4.5.tar.gz";
-      sha256 = "1xqh3jh2nfi2bflk5a0vn59y3pp1vn54f3ksx652sid92gz2096s";
+      url = "https://files.pythonhosted.org/packages/e3/12/dfffc84b783e280e942409d6b651fe4a5a746433c34589da7362db2c99c6/pyasn1-0.4.6.tar.gz";
+      sha256 = "11mwdsvrbwvjmny40cxa76h81bbc8jfr1prvw6hw7yvg374xawxp";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "pyasn1-modules" = super.buildPythonPackage {
-    name = "pyasn1-modules-0.2.5";
+    name = "pyasn1-modules-0.2.6";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ec/0b/69620cb04a016e4a1e8e352e8a42717862129b574b3479adb2358a1f12f7/pyasn1-modules-0.2.5.tar.gz";
-      sha256 = "15nvfx0vnl8akdlv3k6s0n80vqvryj82bm040jdsn7wmyxl1ywpg";
+      url = "https://files.pythonhosted.org/packages/f1/a9/a1ef72a0e43feff643cf0130a08123dea76205e7a0dda37e3efb5f054a31/pyasn1-modules-0.2.6.tar.gz";
+      sha256 = "08hph9j1r018drnrny29l7dl2q0cin78csswrhwrh8jmq61pmha3";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
+      license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.bsd2 ];
     };
   };
   "pycparser" = super.buildPythonPackage {
@@ -1669,11 +1669,11 @@ self: super: {
     };
   };
   "redis" = super.buildPythonPackage {
-    name = "redis-3.2.1";
+    name = "redis-3.3.8";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/24/d4/06486dee0f66ef8c5080dc576fdfb33131fd2e0be3747f2be4e5634088a2/redis-3.2.1.tar.gz";
-      sha256 = "0wwj8il4c3aff15xwwcjfci367zxsakq05ps1a2il6yavp91i94c";
+      url = "https://files.pythonhosted.org/packages/d7/e9/549305f1c2480f8c24abadfaa71c20967cc3269769073b59960e9a566072/redis-3.3.8.tar.gz";
+      sha256 = "0fyxzqax7lcwzwhvnz0i0q6v62hxyv1mv52ywx3bpff9a2vjz8lq";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1916,11 +1916,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-41.0.1";
+    name = "setuptools-41.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1d/64/a18a487b4391a05b9c7f938b94a16d80305bf0369c6b0b9509e86165e1d3/setuptools-41.0.1.zip";
-      sha256 = "04sns22y2hhsrwfy1mha2lgslvpjsjsz8xws7h2rh5a7ylkd28m2";
+      url = "https://files.pythonhosted.org/packages/68/0c/e470db6866aedbff3c4c88faf7f81b90343d8ff32cd68b62db1b65037fb4/setuptools-41.1.0.zip";
+      sha256 = "1a246z6cikg42adqmpswzjp59hkqwr7xxqs7xyags4cr556bh6f5";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
