@@ -29,12 +29,17 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">
-            ${(_ungettext('List of repository caches (%(count)s entry)', 'List of repository caches (%(count)s entries)' ,len(c.rhodecode_db_repo.cache_keys)) % {'count': len(c.rhodecode_db_repo.cache_keys)})}
+            ${_('Invalidation keys')}
         </h3>
     </div>
     <div class="panel-body">
-      <div class="field" >
-           <table class="rctable edit_cache">
+      <p>
+        Cache keys used to signal repository state changes after operations such as push, strip etc.
+      </p>
+      <div class="field">
+           <a href="#showKeys" onclick="$('#signal-keys').toggle()">${_('Show all')} ${len(c.rhodecode_db_repo.cache_keys)}</a>
+
+           <table class="rctable edit_cache" id="signal-keys" style="display: none">
            <tr>
             <th>${_('Key')}</th>
             <th>${_('State UID')}</th>
@@ -61,32 +66,36 @@
         </h3>
     </div>
     <div class="panel-body">
-<p>
-    Cache keys used for storing cached values of repository stats,
-    file tree history and file tree search.
-    Invalidating the cache will remove those entries.
-</p>
+    <p>
+        Cache keys used for storing cached values of repository stats,
+        file tree history and file tree search.
+        Invalidating the cache will remove those entries.
+    </p>
 <pre>
-region: ${c.region.name}
 backend: ${c.region.actual_backend.__class__}
 % if c.rhodecode_user.is_admin:
 store: ${c.region.actual_backend.get_store()}
 % else:
 store: ${c.region.actual_backend.get_store().__class__}
 % endif
-
-% if c.repo_keys:
-${len(c.repo_keys)} <a href="#showKeys" onclick="$('#show-keys').toggle()">${_('Show all')}</a>
-<span id="show-keys" style="display: none">
-    % for k in c.repo_keys:
- - ${k}
-    % endfor
-</span>
-% else:
- NO KEYS FOUND
-% endif
-
 </pre>
+
+  <div class="field">
+      <a href="#showKeys" onclick="$('#cache-keys').toggle()">${_('Show all')} ${len(c.repo_keys)}</a>
+
+       <table class="rctable edit_cache" id="cache-keys" style="display: none">
+       <tr>
+        <th>${_('Key')}</th>
+        <th>${_('Region')}</th>
+        </tr>
+      %for cache_key in c.repo_keys:
+          <tr>
+            <td class="td-prefix"><code>${cache_key}</code></td>
+            <td class="td-cachekey">${c.region.name}</td>
+          </tr>
+      %endfor
+      </table>
+  </div>
 
     </div>
 </div>
@@ -120,6 +129,9 @@ ${len(c.repo_keys)} <a href="#showKeys" onclick="$('#show-keys').toggle()">${_('
         <h3 class="panel-title">${_('Diff Caches')}</h3>
     </div>
     <div class="panel-body">
+    <p>
+        Number and size of stored cached diff for commits and pull requests.
+    </p>
         <table class="rctable edit_cache">
             <tr>
                 <td>${_('Cached diff name')}:</td>
