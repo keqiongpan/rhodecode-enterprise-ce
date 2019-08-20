@@ -39,6 +39,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib.utils import repo_name_slug
 from rhodecode.lib.utils2 import safe_int, safe_unicode
 from rhodecode.model.forms import RepoForm
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import RepoList, RepoGroupList, ScmModel
 from rhodecode.model.settings import SettingsModel
@@ -179,7 +180,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
         if copy_permissions:
             # permission flush is done in repo creating
             pass
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(
             h.route_path('repo_creating', repo_name=repo_name,

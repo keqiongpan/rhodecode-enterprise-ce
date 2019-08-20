@@ -43,6 +43,7 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     Session, ChangesetStatus, RepositoryField, Repository, RepoGroup,
     ChangesetComment)
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -1783,8 +1784,9 @@ def grant_user_permission(request, apiuser, repoid, userid, perm):
         }
         audit_logger.store_api(
             'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Granted perm: `%s` for user: `%s` in repo: `%s`' % (
                 perm.permission_name, user.username, repo.repo_name
@@ -1845,8 +1847,9 @@ def revoke_user_permission(request, apiuser, repoid, userid):
         }
         audit_logger.store_api(
             'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Revoked perm for user: `%s` in repo: `%s`' % (
                 user.username, repo.repo_name
@@ -1931,8 +1934,9 @@ def grant_user_group_permission(request, apiuser, repoid, usergroupid, perm):
         }
         audit_logger.store_api(
             'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Granted perm: `%s` for user group: `%s` in '
                    'repo: `%s`' % (
@@ -2004,8 +2008,9 @@ def revoke_user_group_permission(request, apiuser, repoid, usergroupid):
         }
         audit_logger.store_api(
             'repo.edit.permissions', action_data=action_data, user=apiuser, repo=repo)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Revoked perm for user group: `%s` in repo: `%s`' % (
                 user_group.users_group_name, repo.repo_name

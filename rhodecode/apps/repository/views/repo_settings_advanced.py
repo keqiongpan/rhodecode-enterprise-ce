@@ -34,6 +34,7 @@ from rhodecode.lib.exceptions import AttachedForksError, AttachedPullRequestsErr
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.lib.vcs import RepositoryError
 from rhodecode.model.db import Session, UserFollowing, User, Repository
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel
 
@@ -110,7 +111,7 @@ class RepoSettingsView(RepoAppView):
 
         # flush permissions for all users defined in permissions
         affected_user_ids = self._get_users_with_permissions().keys()
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(h.route_path('home'))
 

@@ -266,6 +266,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                     % user_group_name, category='error')
             raise HTTPFound(h.route_path('user_groups_new'))
 
-        events.trigger(events.UserPermissionsChange([self._rhodecode_user.user_id]))
+        affected_user_ids = [self._rhodecode_user.user_id]
+        PermissionModel().trigger_permission_flush(affected_user_ids)
+
         raise HTTPFound(
             h.route_path('edit_user_group', user_group_id=user_group_id))

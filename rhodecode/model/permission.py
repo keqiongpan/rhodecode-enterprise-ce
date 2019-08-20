@@ -28,6 +28,7 @@ import traceback
 
 from sqlalchemy.exc import DatabaseError
 
+from rhodecode import events
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
     User, Permission, UserToPerm, UserRepoToPerm, UserRepoGroupToPerm,
@@ -556,3 +557,21 @@ class PermissionModel(BaseModel):
             self.sa.rollback()
             raise
 
+    def trigger_permission_flush(self, affected_user_ids):
+        events.trigger(events.UserPermissionsChange(affected_user_ids))
+
+    def flush_user_permission_caches(self, changes, affected_user_ids=None):
+        affected_user_ids = affected_user_ids or []
+
+        for change in changes['added'] + changes['updated'] + changes['deleted']:
+            if change['type'] == 'user':
+                affected_user_ids.append(change['id'])
+            if change['type'] == 'user_group':
+                user_group = UserGroup.get(safe_int(change['id']))
+                if user_group:
+                    group_members_ids = [x.user_id for x in user_group.members]
+                    affected_user_ids.extend(group_members_ids)
+
+        self.trigger_permission_flush(affected_user_ids)
+
+        return affected_user_ids

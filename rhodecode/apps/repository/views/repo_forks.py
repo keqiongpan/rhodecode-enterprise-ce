@@ -36,6 +36,7 @@ from rhodecode.lib.auth import (
 import rhodecode.lib.helpers as h
 from rhodecode.lib.celerylib.utils import get_task_id
 from rhodecode.model.db import coalesce, or_, Repository, RepoGroup
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.forms import RepoForkForm
 from rhodecode.model.scm import ScmModel, RepoGroupList
@@ -257,7 +258,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
             # permission flush is done in repo creating
             pass
 
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(
             h.route_path('repo_creating', repo_name=repo_name,
