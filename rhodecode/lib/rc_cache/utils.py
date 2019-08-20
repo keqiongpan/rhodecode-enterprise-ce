@@ -32,7 +32,8 @@ from rhodecode.lib.utils import safe_str, sha1
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.model.db import Session, CacheKey, IntegrityError
 
-from . import region_meta
+from rhodecode.lib.rc_cache import cache_key_meta
+from rhodecode.lib.rc_cache import region_meta
 
 log = logging.getLogger(__name__)
 
@@ -304,6 +305,8 @@ class InvalidationContext(object):
                 cache_state_uid = first_cache_obj.cache_state_uid
             cache_obj = CacheKey(self.cache_key, cache_args=new_cache_args,
                                  cache_state_uid=cache_state_uid)
+            cache_key_meta.cache_keys_by_pid.append(self.cache_key)
+
         return cache_obj
 
     def __enter__(self):
