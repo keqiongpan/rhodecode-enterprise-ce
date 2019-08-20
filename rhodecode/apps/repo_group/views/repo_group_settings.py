@@ -33,6 +33,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAll,
     HasRepoGroupPermissionAny, HasRepoGroupPermissionAnyDecorator, CSRFRequired)
 from rhodecode.model.db import Session, RepoGroup, User
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.validation_schema.schemas import repo_group_schema
@@ -187,7 +188,7 @@ class RepoGroupSettingsView(RepoGroupAppView):
             owner = User.get_by_username(schema_data['repo_group_owner'])
             owner_id = owner.user_id if owner else self._rhodecode_user.user_id
             affected_user_ids.extend([self._rhodecode_user.user_id, owner_id])
-            events.trigger(events.UserPermissionsChange(affected_user_ids))
+            PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(
             h.route_path('edit_repo_group', repo_group_name=new_repo_group_name))

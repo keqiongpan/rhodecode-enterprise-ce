@@ -29,6 +29,7 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import HasUserGroupPermissionAnyApi, HasPermissionAnyApi
 from rhodecode.lib.exceptions import UserGroupAssignedException
 from rhodecode.model.db import Session
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.scm import UserGroupList
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model import validation_schema
@@ -266,6 +267,10 @@ def create_user_group(
             'user_group.create', action_data={'data': creation_data},
             user=apiuser)
         Session().commit()
+
+        affected_user_ids = [apiuser.user_id, owner.user_id]
+        PermissionModel().trigger_permission_flush(affected_user_ids)
+
         return {
             'msg': 'created new user group `%s`' % group_name,
             'user_group': creation_data
@@ -649,8 +654,9 @@ def grant_user_permission_to_user_group(
         audit_logger.store_api(
             'user_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg':
                 'Granted perm: `%s` for user: `%s` in user group: `%s`' % (
@@ -718,8 +724,9 @@ def revoke_user_permission_from_user_group(
         audit_logger.store_api(
             'user_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Revoked perm for user: `%s` in user group: `%s`' % (
                 user.username, user_group.users_group_name
@@ -795,8 +802,9 @@ def grant_user_group_permission_to_user_group(
         audit_logger.store_api(
             'user_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Granted perm: `%s` for user group: `%s` '
                    'in user group: `%s`' % (
@@ -873,8 +881,8 @@ def revoke_user_group_permission_from_user_group(
         audit_logger.store_api(
             'user_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
 
         return {
             'msg': 'Revoked perm for user group: '

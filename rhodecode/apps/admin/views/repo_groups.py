@@ -36,6 +36,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib import helpers as h, audit_logger
 from rhodecode.lib.utils2 import safe_int, safe_unicode, datetime_to_time
 from rhodecode.model.forms import RepoGroupForm
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model.db import (
@@ -354,7 +355,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
             copy_perms = [perm['user_id'] for perm in user_group_perms]
             # also include those newly created by copy
             affected_user_ids.extend(copy_perms)
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(
             h.route_path('repo_group_home',

@@ -31,6 +31,7 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     HasRepoGroupPermissionAnyApi, HasUserGroupPermissionAnyApi)
 from rhodecode.model.db import Session
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList
 from rhodecode.model import validation_schema
@@ -465,8 +466,9 @@ def grant_user_permission_to_repo_group(
         audit_logger.store_api(
             'repo_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Granted perm: `%s` (recursive:%s) for user: '
                    '`%s` in repo group: `%s`' % (
@@ -548,8 +550,9 @@ def revoke_user_permission_from_repo_group(
         audit_logger.store_api(
             'repo_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Revoked perm (recursive:%s) for user: '
                    '`%s` in repo group: `%s`' % (
@@ -641,8 +644,9 @@ def grant_user_group_permission_to_repo_group(
         audit_logger.store_api(
             'repo_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Granted perm: `%s` (recursive:%s) '
                    'for user group: `%s` in repo group: `%s`' % (
@@ -733,8 +737,9 @@ def revoke_user_group_permission_from_repo_group(
         audit_logger.store_api(
             'repo_group.edit.permissions', action_data=action_data,
             user=apiuser)
-
         Session().commit()
+        PermissionModel().flush_user_permission_caches(changes)
+
         return {
             'msg': 'Revoked perm (recursive:%s) for user group: '
                    '`%s` in repo group: `%s`' % (

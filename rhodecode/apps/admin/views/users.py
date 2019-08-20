@@ -597,7 +597,7 @@ class UsersView(UserAppView):
                     category='error')
 
         affected_user_ids = [user_id]
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
         raise HTTPFound(h.route_path('user_edit_global_perms', user_id=user_id))
 
     @LoginRequired()

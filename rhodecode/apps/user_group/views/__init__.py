@@ -199,7 +199,7 @@ class UserGroupsView(UserGroupAppView):
                 affected_user_ids.append(self._rhodecode_user.user_id)
                 affected_user_ids.append(owner_id)
 
-            events.trigger(events.UserPermissionsChange(affected_user_ids))
+            PermissionModel().trigger_permission_flush(affected_user_ids)
 
             Session().commit()
         except formencode.Invalid as errors:
@@ -383,7 +383,7 @@ class UserGroupsView(UserGroupAppView):
                     group_members_ids = [x.user_id for x in user_group.members]
                     affected_user_ids.extend(group_members_ids)
 
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(
             h.route_path('edit_user_group_perms', user_group_id=user_group_id))

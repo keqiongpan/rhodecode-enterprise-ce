@@ -28,6 +28,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (NotAnonymous, HasRepoPermissionAny)
 from rhodecode.model.db import Repository
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.validation_schema.types import RepoNameType
 
 log = logging.getLogger(__name__)
@@ -122,4 +123,4 @@ class RepoChecksView(BaseAppView):
         # repo is finished and created, we flush the permissions now
         user_group_perms = db_repo.permissions(expand_from_user_groups=True)
         affected_user_ids = [perm['user_id'] for perm in user_group_perms]
-        events.trigger(events.UserPermissionsChange(affected_user_ids))
+        PermissionModel().trigger_permission_flush(affected_user_ids)
