@@ -4,7 +4,7 @@ SYSTEM INFO
 -----------
 
 % for dt, dd, warn in c.data_items:
-  ${dt.lower().replace(' ', '_')}${': '+dd if dt else '---'}
+${'{:<60}'.format(dt.lower().replace(' ', '_'))}${': '+dd if dt else ''}
   % if warn and warn['message']:
         ALERT_${warn['type'].upper()} ${warn['message']}
   % endif
@@ -14,22 +14,29 @@ PYTHON PACKAGES
 ---------------
 
 % for key, value in c.py_modules['human_value']:
-${key}: ${value}
+${'{:<60}'.format(key)}: ${value}
 % endfor
 
 SYSTEM SETTINGS
 ---------------
 
 % for key, value in sorted(c.rhodecode_config['human_value'].items()):
+[${key}]
   % if isinstance(value, dict):
+    <% server_main = value.pop('server:main', {}) %>
 
-    % for key2, value2 in value.items():
-[${key}]${key2}: ${value2}
+    % for key2, value2 in sorted(server_main.items()):
+${'{:<60}'.format('server:main')}: ${value2}
+    % endfor
+
+    % for key2, value2 in sorted(value.items()):
+${'{:<60}'.format(key2)}: ${value2}
     % endfor
 
   % else:
-${key}: ${value}
+${value}
   % endif
+
 % endfor
 
 </pre>
