@@ -3505,7 +3505,7 @@ class CacheKey(Base, BaseModel):
     )
 
     CACHE_TYPE_FEED = 'FEED'
-    CACHE_TYPE_README = 'README'
+
     # namespaces used to register process/thread aware caches
     REPO_INVALIDATION_NAMESPACE = 'repo_cache:{repo_id}'
     SETTINGS_INVALIDATION_NAMESPACE = 'system_settings'

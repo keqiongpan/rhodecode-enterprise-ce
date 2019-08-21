@@ -564,7 +564,7 @@ def test_invalidation_context(baseapp):
     repo_id = 9999
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
@@ -627,7 +627,7 @@ def test_invalidation_context_exception_in_compute(baseapp):
     repo_id = 888
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
@@ -656,7 +656,7 @@ def test_cache_invalidation_race_condition(execution_number, baseapp):
     repo_id = 777
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)

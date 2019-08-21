@@ -60,9 +60,8 @@ class RepoSummaryView(RepoAppView):
         if isinstance(landing_commit, EmptyCommit):
             return None, None
 
-        cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-            db_repo.repo_id, CacheKey.CACHE_TYPE_README)
-        region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
+        cache_namespace_uid = 'cache_repo.{}'.format(db_repo.repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
         start = time.time()
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
@@ -234,9 +233,6 @@ class RepoSummaryView(RepoAppView):
 
         return self._get_template_context(c)
 
-    def get_request_commit_id(self):
-        return self.request.matchdict['commit_id']
-
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -244,33 +240,35 @@ class RepoSummaryView(RepoAppView):
         route_name='repo_stats', request_method='GET',
         renderer='json_ext')
     def repo_stats(self):
-        commit_id = self.get_request_commit_id()
         show_stats = bool(self.db_repo.enable_statistics)
         repo_id = self.db_repo.repo_id
 
-        cache_seconds = safe_int(
-            rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+        landing_commit = self.db_repo.get_landing_commit()
+        if isinstance(landing_commit, EmptyCommit):
+            return {'size': 0, 'code_stats': {}}
+
+        cache_seconds = safe_int(rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
         cache_on = cache_seconds > 0
+
         log.debug(
-            'Computing REPO TREE for repo_id %s commit_id `%s` '
+            'Computing REPO STATS for repo_id %s commit_id `%s` '
             'with caching: %s[TTL: %ss]' % (
-                repo_id, commit_id, cache_on, cache_seconds or 0))
+                repo_id, landing_commit, cache_on, cache_seconds or 0))
 
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
                                                condition=cache_on)
-        def compute_stats(repo_id, commit_id, show_stats):
+        def compute_stats(repo_id, commit_id, _show_stats):
             code_stats = {}
             size = 0
             try:
-                scm_instance = self.db_repo.scm_instance()
-                commit = scm_instance.get_commit(commit_id)
+                commit = self.db_repo.get_commit(commit_id)
 
                 for node in commit.get_filenodes_generator():
                     size += node.size
-                    if not show_stats:
+                    if not _show_stats:
                         continue
                     ext = string.lower(node.extension)
                     ext_info = LANGUAGES_EXTENSIONS_MAP.get(ext)
@@ -284,7 +282,7 @@ class RepoSummaryView(RepoAppView):
             return {'size': h.format_byte_size_binary(size),
                     'code_stats': code_stats}
 
-        stats = compute_stats(self.db_repo.repo_id, commit_id, show_stats)
+        stats = compute_stats(self.db_repo.repo_id, landing_commit.raw_id, show_stats)
         return stats
 
     @LoginRequired()
