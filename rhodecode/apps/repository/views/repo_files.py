@@ -844,10 +844,9 @@ class RepoFilesView(RepoAppView):
         if disposition == 'attachment':
             disposition = self._get_attachement_headers(f_path)
 
-        def stream_node():
-            yield file_node.raw_bytes
+        stream_content = file_node.stream_bytes()
 
-        response = Response(app_iter=stream_node())
+        response = Response(app_iter=stream_content)
         response.content_disposition = disposition
         response.content_type = mimetype
 
@@ -883,10 +882,9 @@ class RepoFilesView(RepoAppView):
 
         disposition = self._get_attachement_headers(f_path)
 
-        def stream_node():
-            yield file_node.raw_bytes
+        stream_content = file_node.stream_bytes()
 
-        response = Response(app_iter=stream_node())
+        response = Response(app_iter=stream_content)
         response.content_disposition = disposition
         response.content_type = file_node.mimetype
 

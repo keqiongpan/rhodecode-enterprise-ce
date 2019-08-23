@@ -117,6 +117,11 @@ class SubversionCommit(base.BaseCommit):
         path = self._fix_path(path)
         return self._remote.get_file_content(safe_str(path), self._svn_rev)
 
+    def get_file_content_streamed(self, path):
+        path = self._fix_path(path)
+        stream_method = getattr(self._remote, 'stream:get_file_content')
+        return stream_method(safe_str(path), self._svn_rev)
+
     def get_file_size(self, path):
         path = self._fix_path(path)
         return self._remote.get_file_size(safe_str(path), self._svn_rev)

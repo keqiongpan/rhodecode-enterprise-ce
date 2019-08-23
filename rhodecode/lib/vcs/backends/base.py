@@ -1060,6 +1060,12 @@ class BaseCommit(object):
         """
         raise NotImplementedError
 
+    def get_file_content_streamed(self, path):
+        """
+        returns a streaming response from vcsserver with file content
+        """
+        raise NotImplementedError
+
     def get_file_size(self, path):
         """
         Returns size of the file at the given `path`.
@@ -1630,6 +1636,9 @@ class EmptyCommit(BaseCommit):
 
     def get_file_content(self, path):
         return u''
+
+    def get_file_content_streamed(self, path):
+        yield self.get_file_content()
 
     def get_file_size(self, path):
         return 0

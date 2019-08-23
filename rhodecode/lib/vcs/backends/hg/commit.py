@@ -238,6 +238,11 @@ class MercurialCommit(base.BaseCommit):
         path = self._get_filectx(path)
         return self._remote.fctx_node_data(self.raw_id, path)
 
+    def get_file_content_streamed(self, path):
+        path = self._get_filectx(path)
+        stream_method = getattr(self._remote, 'stream:fctx_node_data')
+        return stream_method(self.raw_id, path)
+
     def get_file_size(self, path):
         """
         Returns size of the file at given ``path``.

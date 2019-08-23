@@ -57,7 +57,6 @@ from rhodecode.model.integration import IntegrationModel
 from rhodecode.integrations import integration_type_registry
 from rhodecode.integrations.types.base import IntegrationTypeBase
 from rhodecode.lib.utils import repo2db_mapper
-from rhodecode.lib.vcs import create_vcsserver_proxy
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.tests import (
@@ -1398,82 +1397,7 @@ def testrun():
     }
 
 
-@pytest.fixture(autouse=True)
-def collect_appenlight_stats(request, testrun):
-    """
-    This fixture reports memory consumtion of single tests.
-
-    It gathers data based on `psutil` and sends them to Appenlight. The option
-    ``--ae`` has te be used to enable this fixture and the API key for your
-    application has to be provided in ``--ae-key``.
-    """
-    try:
-        # cygwin cannot have yet psutil support.
-        import psutil
-    except ImportError:
-        return
-
-    if not request.config.getoption('--appenlight'):
-        return
-    else:
-        # Only request the baseapp fixture if appenlight tracking is
-        # enabled. This will speed up a test run of unit tests by 2 to 3
-        # seconds if appenlight is not enabled.
-        baseapp = request.getfuncargvalue("baseapp")
-    url = '{}/api/logs'.format(request.config.getoption('--appenlight-url'))
-    client = AppenlightClient(
-        url=url,
-        api_key=request.config.getoption('--appenlight-api-key'),
-        namespace=request.node.nodeid,
-        request=str(testrun['uuid']),
-        testrun=testrun)
-
-    client.collect({
-        'message': "Starting",
-    })
-
-    server_and_port = baseapp.config.get_settings()['vcs.server']
-    protocol = baseapp.config.get_settings()['vcs.server.protocol']
-    server = create_vcsserver_proxy(server_and_port, protocol)
-    with server:
-        vcs_pid = server.get_pid()
-        server.run_gc()
-    vcs_process = psutil.Process(vcs_pid)
-    mem = vcs_process.memory_info()
-    client.tag_before('vcsserver.rss', mem.rss)
-    client.tag_before('vcsserver.vms', mem.vms)
-
-    test_process = psutil.Process()
-    mem = test_process.memory_info()
-    client.tag_before('test.rss', mem.rss)
-    client.tag_before('test.vms', mem.vms)
-
-    client.tag_before('time', time.time())
-
-    @request.addfinalizer
-    def send_stats():
-        client.tag_after('time', time.time())
-        with server:
-            gc_stats = server.run_gc()
-        for tag, value in gc_stats.items():
-            client.tag_after(tag, value)
-        mem = vcs_process.memory_info()
-        client.tag_after('vcsserver.rss', mem.rss)
-        client.tag_after('vcsserver.vms', mem.vms)
-
-        mem = test_process.memory_info()
-        client.tag_after('test.rss', mem.rss)
-        client.tag_after('test.vms', mem.vms)
-
-        client.collect({
-            'message': "Finished",
-        })
-        client.send_stats()
-
-    return client
-
-
-class AppenlightClient():
+class AppenlightClient(object):
 
     url_template = '{url}?protocol_version=0.5'
 

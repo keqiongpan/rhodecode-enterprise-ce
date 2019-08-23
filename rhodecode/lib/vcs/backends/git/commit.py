@@ -252,6 +252,11 @@ class GitCommit(base.BaseCommit):
         tree_id, _ = self._get_tree_id_for_path(path)
         return self._remote.blob_as_pretty_string(tree_id)
 
+    def get_file_content_streamed(self, path):
+        tree_id, _ = self._get_tree_id_for_path(path)
+        stream_method = getattr(self._remote, 'stream:blob_as_pretty_string')
+        return stream_method(tree_id)
+
     def get_file_size(self, path):
         """
         Returns size of the file at given `path`.

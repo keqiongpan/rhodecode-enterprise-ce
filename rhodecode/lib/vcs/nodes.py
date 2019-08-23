@@ -27,6 +27,7 @@ import stat
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+import rhodecode
 from rhodecode.config.conf import LANGUAGES_EXTENSIONS_MAP
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.utils2 import md5
@@ -368,6 +369,17 @@ class FileNode(Node):
         else:
             content = self._content
         return content
+
+    def stream_bytes(self):
+        """
+        Returns an iterator that will stream the content of the file directly from
+        vcsserver without loading it to memory.
+        """
+        if self.commit:
+            return self.commit.get_file_content_streamed(self.path)
+        raise NodeError(
+            "Cannot retrieve message of the file without related "
+            "commit attribute")
 
     @LazyProperty
     def md5(self):
@@ -848,3 +860,11 @@ class LargeFileNode(FileNode):
         Overwrites name to be the org lf path
         """
         return self.org_path
+
+    def stream_bytes(self):
+        with open(self.path, 'rb') as stream:
+            while True:
+                data = stream.read(16 * 1024)
+                if not data:
+                    break
+                yield data
