@@ -339,7 +339,7 @@ class MercurialCommit(base.BaseCommit):
         return self.nodes[path]
 
     def get_largefile_node(self, path):
-        pointer_spec = self._remote.is_large_file(path)
+        pointer_spec = self._remote.is_large_file(self.raw_id, path)
         if pointer_spec:
             # content of that file regular FileNode is the hash of largefile
             file_id = self.get_file_content(path).strip()
