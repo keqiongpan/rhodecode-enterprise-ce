@@ -668,7 +668,10 @@ class RepoFilesView(RepoAppView):
 
                 c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
-                if c.file.size < c.visual.cut_off_limit_diff:
+
+                c.file_size_too_big = c.file.size > c.visual.cut_off_limit_file
+
+                if not c.file_size_too_big:
                     if c.annotate:  # annotation has precedence over renderer
                         c.annotated_lines = filenode_as_annotated_lines_tokens(
                             c.file
