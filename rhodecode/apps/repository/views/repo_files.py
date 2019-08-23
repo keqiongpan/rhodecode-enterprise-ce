@@ -671,7 +671,7 @@ class RepoFilesView(RepoAppView):
 
                 c.file_size_too_big = c.file.size > c.visual.cut_off_limit_file
 
-                if not c.file_size_too_big:
+                if not (c.file_size_too_big or c.file.is_binary):
                     if c.annotate:  # annotation has precedence over renderer
                         c.annotated_lines = filenode_as_annotated_lines_tokens(
                             c.file
