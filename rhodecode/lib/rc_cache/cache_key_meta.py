@@ -30,6 +30,11 @@ cache_keys_by_pid = []
 def free_cache_keys():
     from rhodecode.model.db import Session, CacheKey
     log.info('Clearing %s cache keys', len(cache_keys_by_pid))
-    for cache_key in cache_keys_by_pid:
-        CacheKey.query().filter(CacheKey.cache_key == cache_key).delete()
-    Session().commit()
+
+    if cache_keys_by_pid:
+        try:
+            for cache_key in cache_keys_by_pid:
+                CacheKey.query().filter(CacheKey.cache_key == cache_key).delete()
+            Session().commit()
+        except Exception:
+            log.warn('Failed to clear keys, exiting gracefully')
