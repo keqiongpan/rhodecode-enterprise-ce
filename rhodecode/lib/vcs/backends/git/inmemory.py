@@ -58,10 +58,12 @@ class GitInMemoryCommit(base.BaseInMemoryCommit):
 
         updated = []
         for node in self.added + self.changed:
-            if not node.is_binary:
-                content = node.content.encode(ENCODING)
-            else:
+
+            if node.is_binary:
                 content = node.content
+            else:
+                content = node.content.encode(ENCODING)
+
             updated.append({
                 'path': node.path,
                 'node_path': node.name.encode(ENCODING),

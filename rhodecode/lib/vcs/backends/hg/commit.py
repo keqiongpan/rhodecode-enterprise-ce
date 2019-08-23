@@ -231,6 +231,10 @@ class MercurialCommit(base.BaseCommit):
         path = self._get_filectx(path)
         return 'l' in self._remote.fctx_flags(self.raw_id, path)
 
+    def is_node_binary(self, path):
+        path = self._get_filectx(path)
+        return self._remote.is_binary(self.raw_id, path)
+
     def get_file_content(self, path):
         """
         Returns content of the file at given ``path``.

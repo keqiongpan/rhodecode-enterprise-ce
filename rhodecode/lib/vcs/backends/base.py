@@ -1054,6 +1054,12 @@ class BaseCommit(object):
         """
         raise NotImplementedError
 
+    def is_node_binary(self, path):
+        """
+        Returns ``True`` is given path is a binary file
+        """
+        raise NotImplementedError
+
     def get_file_content(self, path):
         """
         Returns content of the file at the given `path`.

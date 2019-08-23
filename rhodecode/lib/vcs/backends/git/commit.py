@@ -245,6 +245,10 @@ class GitCommit(base.BaseCommit):
     def is_link(self, path):
         return stat.S_ISLNK(self.get_file_mode(path))
 
+    def is_node_binary(self, path):
+        tree_id, _ = self._get_tree_id_for_path(path)
+        return self._remote.is_binary(tree_id)
+
     def get_file_content(self, path):
         """
         Returns content of the file at given `path`.

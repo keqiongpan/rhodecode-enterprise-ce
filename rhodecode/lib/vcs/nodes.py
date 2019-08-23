@@ -377,9 +377,7 @@ class FileNode(Node):
         """
         if self.commit:
             return self.commit.get_file_content_streamed(self.path)
-        raise NodeError(
-            "Cannot retrieve message of the file without related "
-            "commit attribute")
+        raise NodeError("Cannot retrieve stream_bytes without related commit attribute")
 
     @LazyProperty
     def md5(self):
@@ -581,8 +579,11 @@ class FileNode(Node):
         """
         Returns True if file has binary content.
         """
-        _bin = self.raw_bytes and '\0' in self.raw_bytes
-        return _bin
+        if self.commit:
+            return self.commit.is_node_binary(self.path)
+        else:
+            raw_bytes = self._content
+            return raw_bytes and '\0' in raw_bytes
 
     @LazyProperty
     def extension(self):
@@ -742,8 +743,7 @@ class DirNode(Node):
                 return self._nodes_dict[path]
             elif len(paths) > 1:
                 if self.commit is None:
-                    raise NodeError(
-                        "Cannot access deeper nodes without commit")
+                    raise NodeError("Cannot access deeper nodes without commit")
                 else:
                     path1, path2 = paths[0], '/'.join(paths[1:])
                     return self.get_node(path1).get_node(path2)
