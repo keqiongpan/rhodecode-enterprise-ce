@@ -305,6 +305,11 @@ class RepoAppView(BaseAppView):
         settings = settings_model.get_general_settings()
         return settings.get(settings_key, default)
 
+    def _get_repo_setting(self, target_repo, settings_key, default=False):
+        settings_model = VcsSettingsModel(repo=target_repo)
+        settings = settings_model.get_repo_settings_inherited()
+        return settings.get(settings_key, default)
+
     def get_recache_flag(self):
         for flag_name in ['force_recache', 'force-recache', 'no-cache']:
             flag_val = self.request.GET.get(flag_name)

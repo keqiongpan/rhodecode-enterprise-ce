@@ -521,6 +521,12 @@ class VcsSettingsModel(object):
         return self._collect_all_settings(global_=False)
 
     @assert_repo_settings
+    def get_repo_settings_inherited(self):
+        global_settings = self.get_global_settings()
+        global_settings.update(self.get_repo_settings())
+        return global_settings
+
+    @assert_repo_settings
     def create_or_update_repo_settings(
             self, data, inherit_global_settings=False):
         from rhodecode.model.scm import ScmModel

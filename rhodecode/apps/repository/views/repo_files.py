@@ -305,6 +305,21 @@ class RepoFilesView(RepoAppView):
         pure_path = pathlib2.PurePath(*sanitized_path)
         return pure_path
 
+    def _is_lf_enabled(self, target_repo):
+        lf_enabled = False
+
+        lf_key_for_vcs_map = {
+            'hg': 'extensions_largefiles',
+            'git': 'vcs_git_lfs_enabled'
+        }
+
+        lf_key_for_vcs = lf_key_for_vcs_map.get(target_repo.repo_type)
+
+        if lf_key_for_vcs:
+            lf_enabled = self._get_repo_setting(target_repo, lf_key_for_vcs)
+
+        return lf_enabled
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -645,7 +660,11 @@ class RepoFilesView(RepoAppView):
 
             # load file content
             if c.file.is_file():
-                c.lf_node = c.file.get_largefile_node()
+                c.lf_node = {}
+
+                has_lf_enabled = self._is_lf_enabled(self.db_repo)
+                if has_lf_enabled:
+                    c.lf_node = c.file.get_largefile_node()
 
                 c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
