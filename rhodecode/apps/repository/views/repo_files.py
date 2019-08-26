@@ -1250,7 +1250,7 @@ class RepoFilesView(RepoAppView):
         default_redirect_url = h.route_path('repo_commit', repo_name=self.db_repo_name,
                                             commit_id=commit_id)
         if content == old_content and node_path == org_node_path:
-            h.flash(_('No changes detected on {}').format(org_node_path),
+            h.flash(_('No changes detected on {}').format(h.escape(org_node_path)),
                     category='warning')
             raise HTTPFound(default_redirect_url)
 
