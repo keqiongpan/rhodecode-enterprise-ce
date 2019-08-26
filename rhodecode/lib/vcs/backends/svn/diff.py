@@ -18,7 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
 """
 SVN diff module
 """
@@ -47,6 +46,6 @@ class SubversionDiff(base.Diff):
         (?:^index[ ](?P<a_blob_id>[0-9A-Fa-f]+)
             \.\.(?P<b_blob_id>[0-9A-Fa-f]+)[ ]?(?P<b_mode>.+)?(?:\n|$))?
         (?:^(?P<bin_patch>GIT[ ]binary[ ]patch)(?:\n|$))?
-        (?:^---[ ](a/(?P<a_file>.+)|/dev/null)\t\(revision[ ]\d+\)(?:\n|$))?
-        (?:^\+\+\+[ ](b/(?P<b_file>.+)|/dev/null)\t\(revision[ ]\d+\)(?:\n|$))?
+        (?:^---[ ]("?a/(?P<a_file>.+)|/dev/null)\t\(revision[ ]\d+\)(?:\n|$))?
+        (?:^\+\+\+[ ]("?b/(?P<b_file>.+)|/dev/null)\t\(revision[ ]\d+\)(?:\n|$))?
     """, re.VERBOSE | re.MULTILINE)

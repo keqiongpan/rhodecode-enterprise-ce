@@ -343,6 +343,14 @@ DIFF_FIXTURES = [
         'ops': {CHMOD_FILENODE: 'modified file chmod 100644 => 100755'}})
       ]),
     ('git',
+     'git_diff_js_chars.diff',
+     [('\\"><img src=x onerror=prompt(0)>/\\"><img src=x onerror=prompt(1)>.txt', 'M',
+       {'added': 1,
+        'deleted': 0,
+        'binary': False,
+        'ops': {MOD_FILENODE: 'modified file'}})
+      ]),
+    ('git',
      'git_diff_rename_file.diff',
      [('file.xls', 'M',
        {'added': 0,
