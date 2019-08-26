@@ -4,9 +4,9 @@ SYSTEM INFO
 -----------
 
 % for dt, dd, warn in c.data_items:
-${'{:<60}'.format(dt.lower().replace(' ', '_'))}${': '+dd if dt else ''}
+${'{:<60}'.format(dt.lower().replace(' ', '_'))}${': {}'.format(dd if dt else '')}
   % if warn and warn['message']:
-        ALERT_${warn['type'].upper()} ${warn['message']}
+${'{:<60}'.format('ALERT')} ${warn['type'].upper()} ${warn['message']}
   % endif
 % endfor
 

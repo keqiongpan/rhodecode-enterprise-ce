@@ -90,6 +90,7 @@ def get_cert_path(ini_path):
 
     return default
 
+
 class SysInfoRes(object):
     def __init__(self, value, state=None, human_value=None):
         self.value = value
@@ -187,7 +188,7 @@ def ulimit_info():
         ('open files', get_resource(resource.RLIMIT_NOFILE)),
     ])
 
-    text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
+    text = ', '.join('{}:{}'.format(k, v) for k, v in data.items())
 
     value = {
         'limits': data,
