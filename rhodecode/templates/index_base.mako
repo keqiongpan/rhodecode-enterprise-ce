@@ -82,6 +82,10 @@
           "drawCallback": function( settings, json ) {
               timeagoActivate();
               quick_repo_menu();
+              // hide pagination for single page
+              if (settings._iDisplayLength > settings.fnRecordsDisplay()) {
+                  $(settings.nTableWrapper).find('.dataTables_paginate').hide();
+              }
           }
         });
         % endif
@@ -115,6 +119,10 @@
           "drawCallback": function( settings, json ) {
               timeagoActivate();
               quick_repo_menu();
+              // hide pagination for single page
+              if (settings._iDisplayLength > settings.fnRecordsDisplay()) {
+                  $(settings.nTableWrapper).find('.dataTables_paginate').hide();
+              }
           }
         });
         % endif
