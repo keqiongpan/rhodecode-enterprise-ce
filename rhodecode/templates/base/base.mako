@@ -549,11 +549,23 @@
                       <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
                       % endif
                       <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
+
+                      % if c.debug_style:
+                      <li>
+                          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
+                            <div class="menulabel">${_('[Style]')}</div>
+                          </a>
+                      </li>
+                      % endif
+
                       ## bookmark-items
                       <li class="bookmark-items">
                           ${_('Bookmarks')}
                           <div class="pull-right">
-                              <a href="${h.route_path('my_account_bookmarks')}">${_('Manage')}</a>
+                              <a href="${h.route_path('my_account_bookmarks')}">
+
+                                  <i class="icon-cog"></i>
+                              </a>
                           </div>
                       </li>
                       % if not c.bookmark_items:
@@ -726,13 +738,6 @@
       ## render extra user menu
       ${usermenu(active=(active=='my_account'))}
 
-      % if c.debug_style:
-      <li>
-          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
-            <div class="menulabel">${_('[Style]')}</div>
-          </a>
-      </li>
-      % endif
     </ul>
 
     <script type="text/javascript">
