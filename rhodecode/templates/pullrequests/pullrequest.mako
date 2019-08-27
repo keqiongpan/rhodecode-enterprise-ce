@@ -19,15 +19,13 @@
 <div class="box">
     ${h.secure_form(h.route_path('pullrequest_create', repo_name=c.repo_name, _query=request.GET.mixed()), id='pull_request_form', request=request)}
 
-        ${_('New pull request')}
-
         <div class="box pr-summary">
 
             <div class="summary-details block-left">
 
 
                 <div class="pr-details-title">
-                    ${_('Summary')}
+                    ${_('New pull request')}
                 </div>
 
                 <div class="form" style="padding-top: 10px">
