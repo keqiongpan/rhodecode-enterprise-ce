@@ -37,14 +37,6 @@
       %endif
     </ul>
 
-    % if c.rhodecode_user.username != h.DEFAULT_USER:
-        <div class="pull-right">
-            <a class="btn btn-primary" href="${h.route_path('gists_new')}" >
-                ${_(u'Create New Gist')}
-            </a>
-        </div>
-    % endif
-
     <div class="grid-quick-filter">
         <ul class="grid-filter-box">
             <li class="grid-filter-box-icon">

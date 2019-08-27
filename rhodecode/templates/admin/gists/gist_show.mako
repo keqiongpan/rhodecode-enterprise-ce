@@ -29,13 +29,6 @@
     <!-- box / title -->
     <div class="title">
         ${self.breadcrumbs()}
-        %if c.rhodecode_user.username != h.DEFAULT_USER:
-        <ul class="links">
-          <li>
-              <a href="${h.route_path('gists_new')}" class="btn btn-primary">${_(u'Create New Gist')}</a>
-          </li>
-        </ul>
-        %endif
     </div>
 
     <div class="table">

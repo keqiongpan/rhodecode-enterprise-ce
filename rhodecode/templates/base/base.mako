@@ -271,6 +271,10 @@
     def is_active(selected):
         if selected == active:
             return "active"
+    ## determine if we have "any" option available
+    can_lock = h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking
+    has_actions = can_lock
+
     %>
     % if c.rhodecode_db_repo.archived:
     <div class="alert alert-warning text-center">
@@ -313,19 +317,12 @@
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
         %endif
 
-        ## determine if we have "any" option available
-        <%
-            can_lock = h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking
-            has_actions = (c.rhodecode_user.username != h.DEFAULT_USER and c.rhodecode_db_repo.repo_type in ['git','hg'] ) or can_lock
-        %>
         <li class="${is_active('options')}">
           % if has_actions:
             <a class="menulink dropdown">
               <div class="menulabel">${_('Options')}<div class="show_more"></div></div>
             </a>
             <ul class="submenu">
-                <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork this repository')}</a></li>
-                <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
                 %if can_lock:
                     %if c.rhodecode_db_repo.locked[0]:
                       <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock Repository')}</a></li>
@@ -368,6 +365,7 @@
 </div>
 </%def>
 
+
 <%def name="repo_group_menu(active=None)">
     <%
     def is_active(selected):
@@ -376,11 +374,10 @@
 
     gr_name = c.repo_group.group_name if c.repo_group else None
     # create repositories with write permission on group is set to true
-    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
     group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
-    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
 
     %>
+
 
   <!--- REPO GROUP CONTEXT BAR -->
   <div id="context-bar">
@@ -390,35 +387,15 @@
       </div>
 
       <ul id="context-pages" class="navigation horizontal-list">
-        <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
-        % if c.is_super_admin or group_admin:
-            <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a></li>
-        % endif
-        ## determine if we have "any" option available
-        <%
-            can_create_repos = c.is_super_admin or group_admin or (group_write and create_on_write)
-            can_create_repo_groups = c.is_super_admin or group_admin
-            has_actions = can_create_repos or can_create_repo_groups
-        %>
-        <li class="${is_active('options')}">
-          % if has_actions:
-            <a class="menulink dropdown">
-              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-            </a>
-            <ul class="submenu">
-                %if can_create_repos:
-                    <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
-                %endif
-                %if can_create_repo_groups:
-                    <li><a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'Add Repository Group')}</a></li>
-                %endif
-            </ul>
-          % else:
-            <a class="menulink disabled">
-              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-            </a>
-          % endif
+        <li class="${is_active('home')}">
+            <a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a>
         </li>
+        % if c.is_super_admin or group_admin:
+            <li class="${is_active('settings')}">
+                <a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a>
+            </li>
+        % endif
+
       </ul>
     </div>
     <div class="clear"></div>
@@ -430,6 +407,114 @@
 
 
 <%def name="usermenu(active=False)">
+    <%
+    not_anonymous = c.rhodecode_user.username != h.DEFAULT_USER
+
+    gr_name = c.repo_group.group_name if (hasattr(c, 'repo_group') and c.repo_group) else None
+    # create repositories with write permission on group is set to true
+
+    can_fork = c.is_super_admin or h.HasPermissionAny('hg.fork.repository')()
+    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
+    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
+    group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
+
+    can_create_repos = c.is_super_admin or c.can_create_repo
+    can_create_repo_groups = c.is_super_admin or c.can_create_repo_group
+
+    can_create_repos_in_group = c.is_super_admin or group_admin or (group_write and create_on_write)
+    can_create_repo_groups_in_group = c.is_super_admin or group_admin
+    %>
+
+    % if not_anonymous:
+    <%
+    default_target_group = dict()
+    if c.rhodecode_user.personal_repo_group:
+        default_target_group = dict(parent_group=c.rhodecode_user.personal_repo_group.group_id)
+    %>
+
+    ## create action
+    <li>
+       <a href="#create-actions" onclick="return false;" class="menulink childs">
+        <i class="icon-plus-circled"></i>
+       </a>
+
+       <div class="action-menu submenu">
+
+        <ol>
+            ## scope of within a repository
+            % if hasattr(c, 'rhodecode_db_repo') and c.rhodecode_db_repo:
+                <li class="submenu-title">${_('This Repository')}</li>
+                <li>
+                    <a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a>
+                </li>
+                % if can_fork:
+                <li>
+                    <a href="${h.route_path('repo_fork_new',repo_name=c.repo_name,_query=default_target_group)}">${_('Fork this repository')}</a>
+                </li>
+                % endif
+            % endif
+
+            ## scope of within repository groups
+            % if hasattr(c, 'repo_group') and c.repo_group and (can_create_repos_in_group or can_create_repo_groups_in_group):
+                <li class="submenu-title">${_('This Repository Group')}</li>
+
+                % if can_create_repos_in_group:
+                    <li>
+                    <a href="${h.route_path('repo_new',_query=default_target_group)}">${_('New Repository')}</a>
+                    </li>
+                % endif
+
+                % if can_create_repo_groups_in_group:
+                    <li>
+                        <a href="${h.route_path('repo_group_new',_query=default_target_group)}">${_(u'New Repository Group')}</a>
+                    </li>
+                % endif
+            % endif
+
+            ## personal group
+            % if c.rhodecode_user.personal_repo_group:
+                <li class="submenu-title">Personal Group</li>
+
+                <li>
+                <a href="${h.route_path('repo_new',_query=dict(parent_group=c.rhodecode_user.personal_repo_group.group_id))}" >${_('New Repository')} </a>
+                </li>
+
+                <li>
+                <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.rhodecode_user.personal_repo_group.group_id))}">${_('New Repository Group')} </a>
+                </li>
+            % endif
+
+            ## Global actions
+            <li class="submenu-title">RhodeCode</li>
+            % if can_create_repos:
+                <li>
+                <a href="${h.route_path('repo_new')}" >${_('New Repository')}</a>
+                </li>
+            % endif
+
+            % if can_create_repo_groups:
+                <li>
+                <a href="${h.route_path('repo_group_new')}" >${_(u'New Repository Group')}</a>
+                </li>
+            % endif
+
+            <li>
+                <a href="${h.route_path('gists_new')}">${_(u'New Gist')}</a>
+            </li>
+
+        </ol>
+
+       </div>
+    </li>
+
+    ## notifications
+    <li>
+       <a class="${('empty' if c.unread_notifications == 0 else '')}" href="${h.route_path('notifications_show_all')}">
+           ${c.unread_notifications}
+       </a>
+    </li>
+   % endif
+
     ## USER MENU
     <li id="quick_login_li" class="${'active' if active else ''}">
         % if c.rhodecode_user.username == h.DEFAULT_USER:
@@ -519,10 +604,7 @@
                 %endif
               </div>
           </div>
-          ## unread counter
-          <div class="pill_container">
-            <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
-          </div>
+
         % endif
     </li>
 </%def>

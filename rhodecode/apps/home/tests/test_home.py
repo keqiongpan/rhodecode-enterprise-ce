@@ -47,7 +47,7 @@ class TestHomeController(TestController):
         self.log_user()
         response = self.app.get(route_path('home'))
         # if global permission is set
-        response.mustcontain('Add Repository')
+        response.mustcontain('New Repository')
 
         # search for objects inside the JavaScript JSON
         for repo in Repository.getAll():

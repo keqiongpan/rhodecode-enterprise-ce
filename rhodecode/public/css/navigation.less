@@ -200,6 +200,7 @@
 
         &#quick_login_li {
             padding-left: .5em;
+            margin-right: 0px;
 
             &:hover #quick_login_link {
                 color: inherit;
@@ -425,6 +426,56 @@
         }
     }
 }
+
+
+// new objects main action
+.action-menu {
+    left: auto;
+    right: 0;
+    padding: 12px;
+    z-index: 999;
+    overflow: hidden;
+    background-color: #fff;
+    border: 1px solid @grey5;
+    color: @grey2;
+    box-shadow: @dropdown-shadow;
+
+    .submenu-title {
+        font-weight: bold;
+    }
+
+    .submenu-title:not(:first-of-type) {
+        padding-top: 10px;
+    }
+
+    &.submenu {
+        min-width: 200px;
+
+        ol {
+            padding:0;
+        }
+
+        li {
+            display: block;
+            margin: 0;
+            padding: .2em .5em;
+            line-height: 1em;
+
+            background-color: #fff;
+            list-style-type: none;
+
+            a {
+                padding: 4px;
+                color: @grey4 !important;
+                border-bottom: none;
+            }
+        }
+        li:not(.submenu-title) a:hover{
+            color: @grey2 !important;
+        }
+    }
+}
+
 
 // Header Repository Switcher
 // Select2 Dropdown

@@ -12,20 +12,7 @@
    <div class="box">
         <!-- box / title -->
         <div class="title">
-            %if c.rhodecode_user.username != h.DEFAULT_USER:
-              <div class="block-right">
-                %if not c.repo_group:
-                    ## no repository group context here
-                    %if c.is_super_admin or c.can_create_repo:
-                        <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
-                    %endif
 
-                    %if c.is_super_admin or c.can_create_repo_group:
-                        <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
-                    %endif
-                %endif
-              </div>
-            %endif
         </div>
         <!-- end box / title -->
         <div class="table">
