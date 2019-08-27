@@ -37,7 +37,7 @@
                 <i class="icon-circle review-status-not_reviewed" title="${_('Commit status: Not Reviewed')}"></i>
             %endif
         </td>
-        <td class="td-commit">
+        <td class="td-hash">
             <code>
                 <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=cs.raw_id)}">${h.show_id(cs)}</a>
                 <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${cs.raw_id}" title="${_('Copy the full commit id')}"></i>

@@ -27,7 +27,7 @@
                     ${search.repo_icon(repo_type)}
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
-                <td class="td-commit">
+                <td class="td-hash">
                     ${h.link_to(h._shorten_commit_id(entry['commit_id']),
                       h.route_path('repo_commit',repo_name=entry['repository'],commit_id=entry['commit_id']))}
                 </td>
