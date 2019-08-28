@@ -69,6 +69,10 @@ def should_load_all():
     Returns if all application components should be loaded. In some cases it's
     desired to skip apps loading for faster shell script execution
     """
+    ssh_cmd = os.environ.get('RC_CMD_SSH_WRAPPER')
+    if ssh_cmd:
+        return False
+
     return True
 
 
@@ -256,9 +260,10 @@ def includeme(config):
     config.include('rhodecode.apps._base.navigation')
     config.include('rhodecode.apps._base.subscribers')
     config.include('rhodecode.tweens')
-
-    config.include('rhodecode.integrations')
     config.include('rhodecode.authentication')
+
+    if load_all:
+        config.include('rhodecode.integrations')
 
     if load_all:
         from rhodecode.authentication import discover_legacy_plugins
@@ -275,9 +280,8 @@ def includeme(config):
         discover_legacy_plugins(config)
 
     # apps
-    config.include('rhodecode.apps._base')
-
     if load_all:
+        config.include('rhodecode.apps._base')
         config.include('rhodecode.apps.ops')
         config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')
@@ -303,14 +307,15 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
-    config.add_subscriber(inject_app_settings,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(scan_repositories_if_enabled,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(write_metadata_if_needed,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(write_js_routes_if_enabled,
-                          pyramid.events.ApplicationCreated)
+    if load_all:
+        config.add_subscriber(inject_app_settings,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(scan_repositories_if_enabled,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(write_metadata_if_needed,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(write_js_routes_if_enabled,
+                              pyramid.events.ApplicationCreated)
 
     # request custom methods
     config.add_request_method(

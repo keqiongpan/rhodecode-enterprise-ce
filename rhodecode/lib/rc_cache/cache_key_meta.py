@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import os
 import atexit
 import logging
 
@@ -28,6 +29,10 @@ cache_keys_by_pid = []
 
 @atexit.register
 def free_cache_keys():
+    ssh_cmd = os.environ.get('RC_CMD_SSH_WRAPPER')
+    if ssh_cmd:
+        return
+
     from rhodecode.model.db import Session, CacheKey
     log.info('Clearing %s cache keys', len(cache_keys_by_pid))
 
