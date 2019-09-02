@@ -47,7 +47,7 @@ class AdminProcessManagementView(BaseAppView):
                 'name': proc.name(),
                 'mem_rss': mem.rss,
                 'mem_vms': mem.vms,
-                'cpu_percent': proc.cpu_percent(),
+                'cpu_percent': proc.cpu_percent(interval=0.2),
                 'create_time': proc.create_time(),
                 'cmd': ' '.join(proc.cmdline()),
             })
