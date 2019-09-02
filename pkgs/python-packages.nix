@@ -84,17 +84,6 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
-  "authomatic" = super.buildPythonPackage {
-    name = "authomatic-0.1.0.post1";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://code.rhodecode.com/upstream/authomatic/artifacts/download/0-4fe9c041-a567-4f84-be4c-7efa2a606d3c.tar.gz?md5=f6bdc3c769688212db68233e8d2b0383";
-      sha256 = "0pc716mva0ym6xd8jwzjbjp8dqxy9069wwwv2aqwb8lyhl4757ab";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.mit ];
-    };
-  };
   "babel" = super.buildPythonPackage {
     name = "babel-1.3";
     doCheck = false;
@@ -920,11 +909,11 @@ self: super: {
     };
   };
   "meld3" = super.buildPythonPackage {
-    name = "meld3-1.0.2";
+    name = "meld3-2.0.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/45/a0/317c6422b26c12fe0161e936fc35f36552069ba8e6f7ecbd99bbffe32a5f/meld3-1.0.2.tar.gz";
-      sha256 = "0n4mkwlpsqnmn0dm0wm5hn9nkda0nafl0jdy5sdl5977znh59dzp";
+      url = "https://files.pythonhosted.org/packages/00/3b/023446ddc1bf0b519c369cbe88269c30c6a64bd10af4817c73f560c302f7/meld3-2.0.0.tar.gz";
+      sha256 = "1fbyafwi0d54394hkmp65nf6vk0qm4kipf5z60pdp4244rvadz8y";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
@@ -1271,11 +1260,11 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.6";
+    name = "pyasn1-0.4.7";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e3/12/dfffc84b783e280e942409d6b651fe4a5a746433c34589da7362db2c99c6/pyasn1-0.4.6.tar.gz";
-      sha256 = "11mwdsvrbwvjmny40cxa76h81bbc8jfr1prvw6hw7yvg374xawxp";
+      url = "https://files.pythonhosted.org/packages/ca/f8/2a60a2c88a97558bdd289b6dc9eb75b00bd90ff34155d681ba6dbbcb46b2/pyasn1-0.4.7.tar.gz";
+      sha256 = "0146ryp4g09ycy8p3l2vigmgfg42n4gb8whgg8cysrhxr9b56jd9";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1738,7 +1727,6 @@ self: super: {
     doCheck = true;
     propagatedBuildInputs = [
       self."amqp"
-      self."authomatic"
       self."babel"
       self."beaker"
       self."bleach"
@@ -1916,11 +1904,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-41.1.0";
+    name = "setuptools-41.2.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/68/0c/e470db6866aedbff3c4c88faf7f81b90343d8ff32cd68b62db1b65037fb4/setuptools-41.1.0.zip";
-      sha256 = "1a246z6cikg42adqmpswzjp59hkqwr7xxqs7xyags4cr556bh6f5";
+      url = "https://files.pythonhosted.org/packages/d9/ca/7279974e489e8b65003fe618a1a741d6350227fa2bf48d16be76c7422423/setuptools-41.2.0.zip";
+      sha256 = "04k0dp9msmlv3g3zx7f5p8wdjr6hdf5c0bgmczlc4yncwyx6pf36";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

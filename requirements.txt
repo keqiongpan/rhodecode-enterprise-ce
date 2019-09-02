@@ -1,8 +1,6 @@
 ## dependencies
 
 amqp==2.3.1
-# not released authomatic that has updated some oauth providers
-https://code.rhodecode.com/upstream/authomatic/artifacts/download/0-4fe9c041-a567-4f84-be4c-7efa2a606d3c.tar.gz?md5=f6bdc3c769688212db68233e8d2b0383#egg=authomatic==0.1.0.post1
 
 babel==1.3
 beaker==1.9.1
