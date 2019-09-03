@@ -572,7 +572,6 @@ def _sanitize_vcs_settings(settings):
     settings.
     """
     _string_setting(settings, 'vcs.svn.compatible_version', '')
-    _string_setting(settings, 'git_rev_filter', '--all')
     _string_setting(settings, 'vcs.hooks.protocol', 'http')
     _string_setting(settings, 'vcs.hooks.host', '127.0.0.1')
     _string_setting(settings, 'vcs.scm_app_implementation', 'http')

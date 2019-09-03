@@ -25,9 +25,6 @@ Internal settings for vcs-lib
 # list of default encoding used in safe_unicode/safe_str methods
 DEFAULT_ENCODINGS = ['utf8']
 
-# Optional arguments to rev-filter, it has to be a list
-# It can also be ['--branches', '--tags']
-GIT_REV_FILTER = ['--all']
 
 # Compatibility version when creating SVN repositories. None means newest.
 # Other available options are: pre-1.4-compatible, pre-1.5-compatible,
