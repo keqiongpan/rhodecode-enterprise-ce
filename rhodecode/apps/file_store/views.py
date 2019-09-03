@@ -106,7 +106,9 @@ class FileStoreView(BaseAppView):
         log.debug('Requesting FID:%s from store %s', file_uid, self.storage)
 
         if not self.storage.exists(file_uid):
-            log.debug('File with FID:%s not found in the store', file_uid)
+            store_path = self.storage.store_path(file_uid)
+            log.debug('File with FID:%s not found in the store under `%s`',
+                      file_uid, store_path)
             raise HTTPNotFound()
 
         db_obj = FileStore().query().filter(FileStore.file_uid == file_uid).scalar()

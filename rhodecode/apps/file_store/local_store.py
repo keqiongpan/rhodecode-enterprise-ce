@@ -91,6 +91,9 @@ class LocalFileStorage(object):
         self.base_path = base_path
         self.extensions = resolve_extensions([], groups=extension_groups)
 
+    def __repr__(self):
+        return '{}@{}'.format(self.__class__, self.base_path)
+
     def store_path(self, filename):
         """
         Returns absolute file path of the filename, joined to the
