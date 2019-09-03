@@ -22,14 +22,14 @@ self: super: {
     };
   };
   "amqp" = super.buildPythonPackage {
-    name = "amqp-2.3.1";
+    name = "amqp-2.5.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."vine"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1b/32/242ff76cd802766f11c89c72f3389b5c8de4bdfbab406137b90c5fae8b05/amqp-2.3.1.tar.gz";
-      sha256 = "0wlfnvhmfrn7c8qif2jyvsm63ibdxp02ss564qwrvqfhz0di72s0";
+      url = "https://files.pythonhosted.org/packages/b5/f5/70e364a1f5fbafc742c098ad88a064b801b0d69cf56bfad13be2c08be4e2/amqp-2.5.1.tar.gz";
+      sha256 = "0s2yxnnhhx9hww0n33yn22q6sgnbd6n2nw92050qv2qpc3i1ga8r";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -135,11 +135,11 @@ self: super: {
     };
   };
   "billiard" = super.buildPythonPackage {
-    name = "billiard-3.5.0.3";
+    name = "billiard-3.6.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/39/ac/f5571210cca2e4f4532e38aaff242f26c8654c5e2436bee966c230647ccc/billiard-3.5.0.3.tar.gz";
-      sha256 = "1riwiiwgb141151md4ykx49qrz749akj5k8g290ji9bsqjyj4yqx";
+      url = "https://files.pythonhosted.org/packages/68/1d/2aea8fbb0b1e1260a8a2e77352de2983d36d7ac01207cf14c2b9c6cc860e/billiard-3.6.1.0.tar.gz";
+      sha256 = "09hzy3aqi7visy4vmf4xiish61n0rq5nd3iwjydydps8yrs9r05q";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -172,16 +172,17 @@ self: super: {
     };
   };
   "celery" = super.buildPythonPackage {
-    name = "celery-4.1.1";
+    name = "celery-4.3.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."pytz"
       self."billiard"
       self."kombu"
+      self."vine"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e9/cf/a4c0597effca20c57eb586324e41d1180bc8f13a933da41e0646cff69f02/celery-4.1.1.tar.gz";
-      sha256 = "1xbir4vw42n2ir9lanhwl7w69zpmj7lbi66fxm2b7pyvkcss7wni";
+      url = "https://files.pythonhosted.org/packages/a2/4b/d020836f751617e907e84753a41c92231cd4b673ff991b8ee9da52361323/celery-4.3.0.tar.gz";
+      sha256 = "1y8y0gbgkwimpxqnxq2rm5qz2vy01fvjiybnpm00y5rzd2m34iac";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -282,6 +283,17 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  "contextlib2" = super.buildPythonPackage {
+    name = "contextlib2-0.5.5";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/6e/db/41233498c210b03ab8b072c8ee49b1cd63b3b0c76f8ea0a0e5d02df06898/contextlib2-0.5.5.tar.gz";
+      sha256 = "0j6ad6lwwyc9kv71skj098v5l7x5biyj2hs4lc5x1kcixqcr97sh";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
     };
   };
   "cov-core" = super.buildPythonPackage {
@@ -665,6 +677,23 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "importlib-metadata" = super.buildPythonPackage {
+    name = "importlib-metadata-0.20";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."zipp"
+      self."contextlib2"
+      self."configparser"
+      self."pathlib2"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/05/41/7d339dd7b507e97f67be812fdf29c4ad991ddd34b1ed0f3c54e8f1c4e0b3/importlib_metadata-0.20.tar.gz";
+      sha256 = "13bshj8i98l9gxi6df4xbw1262phmawgr527as20brblwf93a55p";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.asl20 ];
+    };
+  };
   "infrae.cache" = super.buildPythonPackage {
     name = "infrae.cache-1.0.1";
     doCheck = false;
@@ -848,14 +877,15 @@ self: super: {
     };
   };
   "kombu" = super.buildPythonPackage {
-    name = "kombu-4.2.1";
+    name = "kombu-4.6.4";
     doCheck = false;
     propagatedBuildInputs = [
       self."amqp"
+      self."importlib-metadata"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/39/9f/556b988833abede4a80dbd18b2bdf4e8ff4486dd482ed45da961347e8ed2/kombu-4.2.1.tar.gz";
-      sha256 = "10lh3hncvw67fz0k5vgbx3yh9gjfpqdlia1f13i28cgnc1nfrbc6";
+      url = "https://files.pythonhosted.org/packages/52/f2/5a64fc850b0533d2daf09a523406e51e85a8b2a4a2bc87a922a8906ba2aa/kombu-4.6.4.tar.gz";
+      sha256 = "16w02mvkxchz7041yia4h8xmqavci88szk18ynxvw4chzcnk3w75";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1636,11 +1666,11 @@ self: super: {
     };
   };
   "pytz" = super.buildPythonPackage {
-    name = "pytz-2018.4";
+    name = "pytz-2019.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/10/76/52efda4ef98e7544321fd8d5d512e11739c1df18b0649551aeccfb1c8376/pytz-2018.4.tar.gz";
-      sha256 = "0jgpqx3kk2rhv81j1izjxvmx8d0x7hzs1857pgqnixic5wq2ar60";
+      url = "https://files.pythonhosted.org/packages/27/c0/fbd352ca76050952a03db776d241959d5a2ee1abddfeb9e2a53fdb489be4/pytz-2019.2.tar.gz";
+      sha256 = "0ckb27hhjc8i8gcdvk4d9avld62b7k52yjijc60s2m3y8cpb7h16";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2269,6 +2299,20 @@ self: super: {
     };
     meta = {
       license = [ { fullName = "PSF or ZPL"; } ];
+    };
+  };
+  "zipp" = super.buildPythonPackage {
+    name = "zipp-0.6.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."more-itertools"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/57/dd/585d728479d97d25aeeb9aa470d36a4ad8d0ba5610f84e14770128ce6ff7/zipp-0.6.0.tar.gz";
+      sha256 = "13ndkf7vklw978a4gdl1yfvn8hch28429a0iam67sg4nrp5v261p";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   "zope.cachedescriptors" = super.buildPythonPackage {

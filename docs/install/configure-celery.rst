@@ -11,16 +11,20 @@ and import repositories in async way. It is also used for bi-directional
 repository sync in scheduler.
 
 If you decide to use Celery you also need a working message queue.
-The recommended and fully supported message broker is rabbitmq_.
+There are two fully supported message brokers is rabbitmq_ and redis_ (recommended).
+
+Since release 4.18.X we recommend using redis_ as a backend since it's generally
+easier to work with, and results in simpler stack as redis is generally recommended
+for caching purposes.
 
 
 In order to install and configure Celery, follow these steps:
 
-1. Install RabbitMQ, see the documentation on the Celery website for
-   `rabbitmq installation`_, or `rabbitmq website installation`_
+1. Install RabbitMQ or Redis for a message queue, see the documentation on the Celery website for
+   `redis installation`_ or `rabbitmq installation`_
 
 
-1a. As en example configuration after installation, you can run::
+1a. If you choose RabbitMQ example configuration after installation would look like that::
 
    sudo rabbitmqctl add_user rcuser secret_password
    sudo rabbitmqctl add_vhost rhodevhost
@@ -45,6 +49,10 @@ In order to install and configure Celery, follow these steps:
    Set the broker_url as minimal settings required to enable operation.
    If used our example data from pt 1a, here is how the broker url should look like::
 
+        # for Redis
+        celery.broker_url = redis://localhost:6379/8
+
+        # for RabbitMQ
         celery.broker_url = amqp://rcuser:secret_password@localhost:5672/rhodevhost
 
    Full configuration example is below:
@@ -57,7 +65,7 @@ In order to install and configure Celery, follow these steps:
         ####################################
 
         use_celery = true
-        celery.broker_url = amqp://rcuser:secret@localhost:5672/rhodevhost
+        celery.broker_url = redis://localhost:6379/8
 
         # maximum tasks to execute before worker restart
         celery.max_tasks_per_child = 100
@@ -69,6 +77,8 @@ In order to install and configure Celery, follow these steps:
 .. _python: http://www.python.org/
 .. _mercurial: http://mercurial.selenic.com/
 .. _celery: http://celeryproject.org/
+.. _redis: http://redis.io
+.. _redis installation: https://redis.io/topics/quickstart
 .. _rabbitmq: http://www.rabbitmq.com/
 .. _rabbitmq installation: http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html
 .. _rabbitmq website installation: http://www.rabbitmq.com/download.html

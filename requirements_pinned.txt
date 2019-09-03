@@ -2,7 +2,7 @@
 
 atomicwrites==1.2.1
 attrs==18.2.0
-billiard==3.5.0.3
+billiard==3.6.1.0
 chameleon==2.24
 cffi==1.12.2
 ecdsa==0.13.2
