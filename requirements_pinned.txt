@@ -1,7 +1,7 @@
 # contains not directly required libraries we want to pin the version.
 
 atomicwrites==1.2.1
-attrs==18.2.0
+attrs==19.1.0
 billiard==3.6.1.0
 chameleon==2.24
 cffi==1.12.2

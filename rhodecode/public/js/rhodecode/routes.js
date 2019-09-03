@@ -14,6 +14,7 @@ function registerRCRoutes() {
     // routes registration
     pyroutes.register('favicon', '/favicon.ico', []);
     pyroutes.register('robots', '/robots.txt', []);
+    pyroutes.register('auth_home', '/_admin/auth*traverse', []);
     pyroutes.register('global_integrations_new', '/_admin/integrations/new', []);
     pyroutes.register('global_integrations_home', '/_admin/integrations', []);
     pyroutes.register('global_integrations_list', '/_admin/integrations/%(integration)s', ['integration']);
@@ -29,7 +30,6 @@ function registerRCRoutes() {
     pyroutes.register('repo_integrations_list', '/%(repo_name)s/settings/integrations/%(integration)s', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_create', '/%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '/%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
-    pyroutes.register('auth_home', '/_admin/auth*traverse', []);
     pyroutes.register('ops_ping', '/_admin/ops/ping', []);
     pyroutes.register('ops_error_test', '/_admin/ops/error', []);
     pyroutes.register('ops_redirect_test', '/_admin/ops/redirect', []);
