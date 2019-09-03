@@ -47,6 +47,7 @@
         </tr>
         <% mem_sum = 0 %>
         % for proc_child in proc.children:
+            % if proc_child:
             <tr>
                 <td>
                     <code>
@@ -78,6 +79,7 @@
                     </a>
                 </td>
             </tr>
+            % endif
         % endfor
         <tr>
             <td colspan="2"><code>| total processes: ${len(proc.children)}</code></td>
