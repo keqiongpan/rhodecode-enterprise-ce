@@ -15,8 +15,9 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+import logging
 from .utils import DotDict, HookResponse, has_kwargs
+log = logging.getLogger('rhodecode.' + __name__)
 
 
 # Config shortcut to keep, all configuration in one place
