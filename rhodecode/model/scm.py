@@ -583,6 +583,42 @@ class ScmModel(BaseModel):
 
         return _dirs, _files
 
+    def get_quick_filter_nodes(self, repo_name, commit_id, root_path='/'):
+        """
+        Generate files for quick filter in files view
+        """
+
+        _files = list()
+        _dirs = list()
+        try:
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+            root_path = root_path.lstrip('/')
+            for __, dirs, files in commit.walk(root_path):
+
+                for f in files:
+
+                    _data = {
+                        "name": h.escape(f.unicode_path),
+                        "type": "file",
+                        }
+
+                    _files.append(_data)
+
+                for d in dirs:
+
+                    _data = {
+                        "name": h.escape(d.unicode_path),
+                        "type": "dir",
+                        }
+
+                    _dirs.append(_data)
+        except RepositoryError:
+            log.exception("Exception in get_quick_filter_nodes")
+            raise
+
+        return _dirs, _files
+
     def get_node(self, repo_name, commit_id, file_path,
                  extended_info=False, content=False, max_file_bytes=None, cache=True):
         """

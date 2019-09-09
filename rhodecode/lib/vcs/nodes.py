@@ -667,7 +667,7 @@ class DirNode(Node):
     """
     DirNode stores list of files and directories within this node.
     Nodes may be used standalone but within repository context they
-    lazily fetch data within same repositorty's commit.
+    lazily fetch data within same repository's commit.
     """
 
     def __init__(self, path, nodes=(), commit=None):

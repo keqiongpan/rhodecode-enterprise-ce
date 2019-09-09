@@ -920,8 +920,7 @@ class RepoFilesView(RepoAppView):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
                       repo_id, commit_id, f_path)
             try:
-                _d, _f = ScmModel().get_nodes(
-                    repo_name, commit_id, f_path, flat=False)
+                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, commit_id, f_path)
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
                 h.flash(safe_str(h.escape(e)), category='error')
