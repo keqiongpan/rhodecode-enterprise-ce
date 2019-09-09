@@ -706,6 +706,10 @@ class RepoFilesView(RepoAppView):
                 # later via ajax we call repo_nodetree_full and fetch whole
                 c.file_tree = self._get_tree_at_commit(c, c.commit.raw_id, f_path)
 
+                c.readme_data, c.readme_file = \
+                    self._get_readme_data(self.db_repo, c.visual.default_renderer,
+                                          c.commit.raw_id, f_path)
+
         except RepositoryError as e:
             h.flash(safe_str(h.escape(e)), category='error')
             raise HTTPNotFound()

@@ -25,9 +25,11 @@ import operator
 from pyramid import compat
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPBadRequest
 
-from rhodecode.lib import helpers as h, diffs
+from rhodecode.lib import helpers as h, diffs, rc_cache
 from rhodecode.lib.utils2 import (
     StrictAttributeDict, str2bool, safe_int, datetime_to_time, safe_unicode)
+from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
+from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import RepositoryRequirementError
 from rhodecode.model import repo
 from rhodecode.model import repo_group
@@ -36,6 +38,7 @@ from rhodecode.model import user
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
 from rhodecode.model.settings import VcsSettingsModel
+from rhodecode.model.repo import ReadmeFinder
 
 log = logging.getLogger(__name__)
 
@@ -309,6 +312,64 @@ class RepoAppView(BaseAppView):
         settings_model = VcsSettingsModel(repo=target_repo)
         settings = settings_model.get_repo_settings_inherited()
         return settings.get(settings_key, default)
+
+    def _get_readme_data(self, db_repo, renderer_type, commit_id=None, path='/'):
+        log.debug('Looking for README file at path %s', path)
+        if commit_id:
+            landing_commit_id = commit_id
+        else:
+            landing_commit = db_repo.get_landing_commit()
+            if isinstance(landing_commit, EmptyCommit):
+                return None, None
+            landing_commit_id = landing_commit.raw_id
+
+        cache_namespace_uid = 'cache_repo.{}'.format(db_repo.repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+        start = time.time()
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
+        def generate_repo_readme(repo_id, _commit_id, _repo_name, _readme_search_path, _renderer_type):
+            readme_data = None
+            readme_filename = None
+
+            commit = db_repo.get_commit(_commit_id)
+            log.debug("Searching for a README file at commit %s.", _commit_id)
+            readme_node = ReadmeFinder(_renderer_type).search(commit, path=_readme_search_path)
+
+            if readme_node:
+                log.debug('Found README node: %s', readme_node)
+                relative_urls = {
+                    'raw': h.route_path(
+                        'repo_file_raw', repo_name=_repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                    'standard': h.route_path(
+                        'repo_files', repo_name=_repo_name,
+                        commit_id=commit.raw_id, f_path=readme_node.path),
+                }
+                readme_data = self._render_readme_or_none(commit, readme_node, relative_urls)
+                readme_filename = readme_node.unicode_path
+
+            return readme_data, readme_filename
+
+        readme_data, readme_filename = generate_repo_readme(
+            db_repo.repo_id, landing_commit_id, db_repo.repo_name, path, renderer_type,)
+        compute_time = time.time() - start
+        log.debug('Repo README for path %s generated and computed in %.4fs',
+                  path, compute_time)
+        return readme_data, readme_filename
+
+    def _render_readme_or_none(self, commit, readme_node, relative_urls):
+        log.debug('Found README file `%s` rendering...', readme_node.path)
+        renderer = MarkupRenderer()
+        try:
+            html_source = renderer.render(
+                readme_node.content, filename=readme_node.path)
+            if relative_urls:
+                return relative_links(html_source, relative_urls)
+            return html_source
+        except Exception:
+            log.exception(
+                "Exception while trying to render the README")
 
     def get_recache_flag(self):
         for flag_name in ['force_recache', 'force-recache', 'no-cache']:
