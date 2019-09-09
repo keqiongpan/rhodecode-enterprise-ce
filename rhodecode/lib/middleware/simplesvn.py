@@ -29,7 +29,7 @@ from pyramid.httpexceptions import HTTPNotAcceptable
 from rhodecode.lib import rc_cache
 from rhodecode.lib.middleware import simplevcs
 from rhodecode.lib.utils import is_valid_repo
-from rhodecode.lib.utils2 import str2bool, safe_int
+from rhodecode.lib.utils2 import str2bool, safe_int, safe_str
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.hooks_daemon import store_txn_id_data
 
@@ -98,7 +98,8 @@ class SimpleSvnApp(object):
             raise
 
         if response.status_code not in [200, 401]:
-            text = '\n{}'.format(response.text) if response.text else ''
+            from rhodecode.lib.utils2 import safe_str
+            text = '\n{}'.format(safe_str(response.text)) if response.text else ''
             if response.status_code >= 500:
                 log.error('Got SVN response:%s with text:`%s`', response, text)
             else:
