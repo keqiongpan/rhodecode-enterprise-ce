@@ -507,10 +507,10 @@ class PullRequestModel(BaseModel):
         # operation
         pull_request = PullRequest.get(pull_request.pull_request_id)
 
-        # set as merging, for simulation, and if finished to created so we mark
+        # set as merging, for merge simulation, and if finished to created so we mark
         # simulation is working fine
         with pull_request.set_state(PullRequest.STATE_MERGING,
-                                    final_state=PullRequest.STATE_CREATED):
+                                    final_state=PullRequest.STATE_CREATED) as state_obj:
             MergeCheck.validate(
                 pull_request, auth_user=auth_user, translator=translator)
 
@@ -1098,6 +1098,8 @@ class PullRequestModel(BaseModel):
         # notification to reviewers
         if not reviewers_ids:
             return
+
+        log.debug('Notify following reviewers about pull-request %s', reviewers_ids)
 
         pull_request_obj = pull_request
         # get the current participants of this pull request
