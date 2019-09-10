@@ -3805,21 +3805,35 @@ class _SetState(object):
         self._pr = pull_request
         self._org_state = back_state or pull_request.pull_request_state
         self._pr_state = pr_state
+        self._current_state = None
 
     def __enter__(self):
         log.debug('StateLock: entering set state context, setting state to: `%s`',
                   self._pr_state)
-        self._pr.pull_request_state = self._pr_state
-        Session().add(self._pr)
-        Session().commit()
+        self.set_pr_state(self._pr_state)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val is not None:
+            log.error(traceback.format_exc(exc_tb))
+            return None
+
+        self.set_pr_state(self._org_state)
         log.debug('StateLock: exiting set state context, setting state to: `%s`',
                   self._org_state)
-        self._pr.pull_request_state = self._org_state
-        Session().add(self._pr)
-        Session().commit()
+    @property
+    def state(self):
+        return self._current_state
 
+    def set_pr_state(self, pr_state):
+        try:
+            self._pr.pull_request_state = pr_state
+            Session().add(self._pr)
+            Session().commit()
+            self._current_state = pr_state
+        except Exception:
+            log.exception('Failed to set PullRequest %s state to %s', self._pr, pr_state)
+            raise
 
 class _PullRequestBase(BaseModel):
     """
