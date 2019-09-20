@@ -2505,6 +2505,12 @@ class Repository(Base, BaseModel):
             repo.count()  # cache rebuild
         return repo
 
+    def get_shadow_repository_path(self, workspace_id):
+        from rhodecode.lib.vcs.backends.base import BaseRepository
+        shadow_repo_path = BaseRepository._get_shadow_repository_path(
+            self.repo_full_path, self.repo_id, workspace_id)
+        return shadow_repo_path
+
     def __json__(self):
         return {'landing_rev': self.landing_rev}
 
@@ -4209,10 +4215,9 @@ class PullRequest(Base, _PullRequestBase):
 
     def get_shadow_repo(self):
         workspace_id = self.workspace_id
-        vcs_obj = self.target_repo.scm_instance()
-        shadow_repository_path = vcs_obj._get_shadow_repository_path(
-            self.target_repo.repo_id, workspace_id)
+        shadow_repository_path = self.target_repo.get_shadow_repository_path(workspace_id)
         if os.path.isdir(shadow_repository_path):
+            vcs_obj = self.target_repo.scm_instance()
             return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 

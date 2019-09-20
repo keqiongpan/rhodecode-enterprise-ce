@@ -333,9 +333,7 @@ class TestShadowRepoExposure(object):
 
         # Get file system path to shadow repo for assertions.
         workspace_id = PullRequestModel()._workspace_id(pull_request)
-        target_vcs = pull_request.target_repo.scm_instance()
-        vcs_repo_name = target_vcs._get_shadow_repository_path(
-            pull_request.target_repo.repo_id, workspace_id)
+        vcs_repo_name = pull_request.target_repo.get_shadow_repository_path(workspace_id)
 
         assert controller.vcs_repo_name == vcs_repo_name
         assert controller.url_repo_name == shadow_url

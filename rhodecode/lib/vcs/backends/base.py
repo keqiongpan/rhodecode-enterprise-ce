@@ -645,24 +645,26 @@ class BaseRepository(object):
         """
         raise NotImplementedError
 
-    def _get_legacy_shadow_repository_path(self, workspace_id):
+    @classmethod
+    def _get_legacy_shadow_repository_path(cls, repo_path, workspace_id):
         """
         Legacy version that was used before. We still need it for
         backward compat
         """
         return os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
+            os.path.dirname(repo_path),
+            '.__shadow_%s_%s' % (os.path.basename(repo_path), workspace_id))
 
-    def _get_shadow_repository_path(self, repo_id, workspace_id):
+    @classmethod
+    def _get_shadow_repository_path(cls, repo_path, repo_id, workspace_id):
         # The name of the shadow repository must start with '.', so it is
         # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
-        legacy_repository_path = self._get_legacy_shadow_repository_path(workspace_id)
+        legacy_repository_path = cls._get_legacy_shadow_repository_path(repo_path, workspace_id)
         if os.path.exists(legacy_repository_path):
             return legacy_repository_path
         else:
             return os.path.join(
-                os.path.dirname(self.path),
+                os.path.dirname(repo_path),
                 '.__shadow_repo_%s_%s' % (repo_id, workspace_id))
 
     def cleanup_merge_workspace(self, repo_id, workspace_id):
@@ -674,7 +676,8 @@ class BaseRepository(object):
 
         :param workspace_id: `workspace_id` unique identifier.
         """
-        shadow_repository_path = self._get_shadow_repository_path(repo_id, workspace_id)
+        shadow_repository_path = self._get_shadow_repository_path(
+            self.path, repo_id, workspace_id)
         shadow_repository_path_del = '{}.{}.delete'.format(
             shadow_repository_path, time.time())
 

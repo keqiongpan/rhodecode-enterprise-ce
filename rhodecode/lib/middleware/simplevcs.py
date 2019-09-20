@@ -201,14 +201,11 @@ class SimpleVCS(object):
 
             # Only proceed if we got a pull request and if acl repo name from
             # URL equals the target repo name of the pull request.
-            if pull_request and \
-                    (acl_repo_name == pull_request.target_repo.repo_name):
-                repo_id = pull_request.target_repo.repo_id
+            if pull_request and (acl_repo_name == pull_request.target_repo.repo_name):
+
                 # Get file system path to shadow repository.
                 workspace_id = PullRequestModel()._workspace_id(pull_request)
-                target_vcs = pull_request.target_repo.scm_instance()
-                vcs_repo_name = target_vcs._get_shadow_repository_path(
-                    repo_id, workspace_id)
+                vcs_repo_name = pull_request.target_repo.get_shadow_repository_path(workspace_id)
 
                 # Store names for later usage.
                 self.vcs_repo_name = vcs_repo_name

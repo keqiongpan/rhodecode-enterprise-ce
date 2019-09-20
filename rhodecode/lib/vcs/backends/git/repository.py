@@ -892,7 +892,7 @@ class GitRepository(BaseRepository):
     def _maybe_prepare_merge_workspace(
             self, repo_id, workspace_id, target_ref, source_ref):
         shadow_repository_path = self._get_shadow_repository_path(
-            repo_id, workspace_id)
+            self.path, repo_id, workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(
                 shadow_repository_path, target_ref.name, source_ref.name)
