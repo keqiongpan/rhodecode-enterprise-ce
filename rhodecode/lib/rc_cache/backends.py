@@ -24,6 +24,7 @@ import logging
 
 import msgpack
 import gevent
+import redis
 
 from dogpile.cache.api import CachedValue
 from dogpile.cache.backends import memory as memory_backend
@@ -203,6 +204,23 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
 
 
 class BaseRedisBackend(redis_backend.RedisBackend):
+
+    def _create_client(self):
+        args = {}
+
+        if self.url is not None:
+            args.update(url=self.url)
+
+        else:
+            args.update(
+                host=self.host, password=self.password,
+                port=self.port, db=self.db
+            )
+
+        connection_pool = redis.ConnectionPool(**args)
+
+        return redis.StrictRedis(connection_pool=connection_pool)
+
     def list_keys(self, prefix=''):
         prefix = '{}:{}*'.format(self.key_prefix, prefix)
         return self.client.keys(prefix)
