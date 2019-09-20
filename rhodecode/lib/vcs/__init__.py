@@ -128,6 +128,8 @@ class CurlSession(object):
         curl.setopt(curl.TCP_NODELAY, True)
         curl.setopt(curl.PROTOCOLS, curl.PROTO_HTTP)
         curl.setopt(curl.USERAGENT, 'RhodeCode HTTP {}'.format(rhodecode.__version__))
+        curl.setopt(curl.SSL_VERIFYPEER, 0)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
         self._curl = curl
 
     def post(self, url, data, allow_redirects=False):
