@@ -654,6 +654,9 @@ class SimpleVCS(object):
         raise NotImplementedError()
 
     def _should_use_callback_daemon(self, extras, environ, action):
+        if extras.get('is_shadow_repo'):
+            # we don't want to execute hooks, and callback daemon for shadow repos
+            return False
         return True
 
     def _prepare_callback_daemon(self, extras, environ, action, txn_id=None):
