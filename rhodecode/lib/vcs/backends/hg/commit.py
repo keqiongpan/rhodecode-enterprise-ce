@@ -149,9 +149,9 @@ class MercurialCommit(base.BaseCommit):
     def short_id(self):
         return self.raw_id[:12]
 
-    def _make_commits(self, indexes, pre_load=None):
-        return [self.repository.get_commit(commit_idx=idx, pre_load=pre_load)
-                for idx in indexes if idx >= 0]
+    def _make_commits(self, commit_ids, pre_load=None):
+        return [self.repository.get_commit(commit_id=commit_id, pre_load=pre_load)
+                for commit_id in commit_ids]
 
     @LazyProperty
     def parents(self):
