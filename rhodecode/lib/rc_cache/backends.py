@@ -161,6 +161,9 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
         arguments['lock_factory'] = CustomLockFactory
         super(FileNamespaceBackend, self).__init__(arguments)
 
+    def __repr__(self):
+        return '{} `{}`'.format(self.__class__, self.filename)
+
     def list_keys(self, prefix=''):
         prefix = '{}:{}'.format(self.key_prefix, prefix)
 

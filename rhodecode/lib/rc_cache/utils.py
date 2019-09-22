@@ -60,7 +60,7 @@ class RhodeCodeCacheRegion(CacheRegion):
         def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
 
             if not condition:
-                log.debug('Calling un-cached func:%s', user_func)
+                log.debug('Calling un-cached func:%s', user_func.func_name)
                 return user_func(*arg, **kw)
 
             key = key_generator(*arg, **kw)
@@ -68,7 +68,7 @@ class RhodeCodeCacheRegion(CacheRegion):
             timeout = expiration_time() if expiration_time_is_callable \
                 else expiration_time
 
-            log.debug('Calling cached fn:%s', user_func)
+            log.debug('Calling cached fn:%s', user_func.func_name)
             return self.get_or_create(key, user_func, timeout, should_cache_fn, (arg, kw))
 
         def cache_decorator(user_func):
