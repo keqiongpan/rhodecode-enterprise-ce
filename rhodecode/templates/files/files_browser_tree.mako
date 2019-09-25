@@ -19,13 +19,14 @@
         <tbody id="tbody">
         <tr>
             <td colspan="5">
-
                 ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'), limit_items=True)}
-
             </td>
         </tr>
-          %for cnt,node in enumerate(c.file):
-          <tr class="parity${cnt%2}">
+
+        <% has_files = False %>
+        % for cnt,node in enumerate(c.file):
+        <% has_files = True %>
+        <tr class="parity${(cnt % 2)}">
             <td class="td-componentname">
             % if node.is_submodule():
               <span class="submodule-dir">
@@ -76,7 +77,17 @@
               <td></td>
             %endif
           </tr>
-          %endfor
+        % endfor
+
+        % if not has_files:
+        <tr>
+            <td colspan="5">
+                ##empty-dir mostly SVN
+                &nbsp;
+            </td>
+        </tr>
+        % endif
+
         </tbody>
         <tbody id="tbody_filtered"></tbody>
     </table>
