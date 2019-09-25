@@ -49,7 +49,7 @@ var CG = new ColorGenerator();
 
     <div class="reviewers_member" style="<%= groupStyle%>" >
         <div class="reviewer_status tooltip" title="<%= review_status_label %>">
-          <div class="flag_status <%= review_status %> pull-left reviewer_member_status"></div>
+          <i class="icon-circle review-status-<%= review_status %>"></i>
         </div>
       <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
         <% if (mandatory) { %>
