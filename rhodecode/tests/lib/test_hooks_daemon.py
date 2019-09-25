@@ -39,7 +39,7 @@ class TestDummyHooksCallbackDaemon(object):
         with mock.patch.object(hooks_daemon.log, 'debug') as log_mock:
             with daemon as return_value:
                 log_mock.assert_called_once_with(
-                    'Running dummy hooks callback daemon')
+                    'Running `%s` callback daemon', 'DummyHooksCallbackDaemon')
         assert return_value == daemon
 
     def test_logs_exiting_the_hook(self):
@@ -47,7 +47,8 @@ class TestDummyHooksCallbackDaemon(object):
         with mock.patch.object(hooks_daemon.log, 'debug') as log_mock:
             with daemon:
                 pass
-        log_mock.assert_called_with('Exiting dummy hooks callback daemon')
+        log_mock.assert_called_with(
+            'Exiting `%s` callback daemon', 'DummyHooksCallbackDaemon')
 
 
 class TestHooks(object):
