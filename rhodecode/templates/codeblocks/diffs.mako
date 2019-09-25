@@ -367,15 +367,17 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 
     ## outdated comments that are made for a file that has been deleted
     % for filename, comments_dict in (deleted_files_comments or {}).items():
+
         <%
             display_state = 'display: none'
             open_comments_in_file = [x for x in comments_dict['comments'] if x.outdated is False]
             if open_comments_in_file:
                 display_state = ''
+            fid = str(id(filename))
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
             <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state collapse-${diffset_container_id}" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
-            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
+            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(fid, filename)}">
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator icon-"></div>
 
@@ -387,7 +389,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                         ## file op, doesn't need translation
                         <span class="pill" op="removed">removed in this version</span>
                     </span>
-                    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filename)}">¶</a>
+                    <a class="pill filediff-anchor" href="#a_${h.FID(fid, filename)}">¶</a>
                     <span class="pill-group pull-right">
                         <span class="pill" op="deleted">-${comments_dict['stats']}</span>
                     </span>

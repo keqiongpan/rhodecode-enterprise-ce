@@ -735,7 +735,7 @@ class BaseRepository(object):
 
     def _validate_commit_id(self, commit_id):
         if not isinstance(commit_id, compat.string_types):
-            raise TypeError("commit_id must be a string value")
+            raise TypeError("commit_id must be a string value got {} instead".format(type(commit_id)))
 
     def _validate_commit_idx(self, commit_idx):
         if not isinstance(commit_idx, (int, long)):
