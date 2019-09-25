@@ -466,13 +466,14 @@ class GitCommit(base.BaseCommit):
             except NodeDoesNotExistError:
                 return None
 
-            content = submodules_node.content
-
-            # ConfigParser fails if there are whitespaces
-            content = '\n'.join(l.strip() for l in content.split('\n'))
+            # ConfigParser fails if there are whitespaces, also it needs an iterable
+            # file like content
+            def iter_content(_content):
+                for line in _content.splitlines():
+                    yield line
 
             parser = configparser.ConfigParser()
-            parser.readfp(StringIO(content))
+            parser.read_file(iter_content(submodules_node.content))
 
             for section in parser.sections():
                 path = parser.get(section, 'path')
