@@ -660,7 +660,7 @@ class Flash(object):
                 })
         return json.dumps(payloads)
 
-    def __call__(self, message, category=None, ignore_duplicate=False,
+    def __call__(self, message, category=None, ignore_duplicate=True,
                  session=None, request=None):
 
         if not session:
