@@ -29,6 +29,20 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
+        <h3 class="panel-title">${_('VCS Server')}</h3>
+    </div>
+    <div class="panel-body">
+        <dl class="dl-horizontal settings">
+        % for dt, dd in c.vcsserver_data_items:
+          <dt>${dt}${':' if dt else '---'}</dt>
+          <dd>${dd}${'' if dt else '---'}</dd>
+        % endfor
+        </dl>
+    </div>
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
         <h3 class="panel-title">${_('Python Packages')}</h3>
     </div>
     <div class="panel-body">

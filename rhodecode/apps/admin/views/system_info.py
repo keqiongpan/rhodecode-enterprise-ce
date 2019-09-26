@@ -155,6 +155,10 @@ class AdminSystemInfoSettingsView(BaseAppView):
 
         ]
 
+        c.vcsserver_data_items = [
+            (k, v) for k,v in (val('vcs_server_config') or {}).items()
+        ]
+
         if snapshot:
             if c.allowed_to_snapshot:
                 c.data_items.pop(0)  # remove server info
