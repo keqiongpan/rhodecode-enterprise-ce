@@ -948,7 +948,7 @@ class User(Base, BaseModel):
         old.update(**kwargs)
         usr.user_data = old
         Session().add(usr)
-        log.debug('updated userdata with ', kwargs)
+        log.debug('updated userdata with %s', kwargs)
 
     def update_lastlogin(self):
         """Update user lastlogin"""

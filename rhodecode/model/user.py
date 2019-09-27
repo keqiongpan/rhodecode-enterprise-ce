@@ -328,7 +328,7 @@ class UserModel(BaseModel):
             new_user = User()
             edit = False
         else:
-            log.debug('updating user %s', username)
+            log.debug('updating user `%s`', username)
             events.trigger(events.UserPreUpdate(user, user_data))
             new_user = user
             edit = True
