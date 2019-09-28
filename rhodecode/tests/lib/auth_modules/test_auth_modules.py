@@ -77,7 +77,7 @@ def test_authenticate_migrates_to_new_hash(stub_auth_data):
     assert result == stub_auth_data
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_auth_data(user_util):
     user = user_util.create_user()
     data = {

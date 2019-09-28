@@ -47,7 +47,7 @@ class TestDeleteScopesDeletesIntegrations(object):
         assert integration is None
 
 
-@pytest.fixture
+@pytest.fixture()
 def integration_repos(request, StubIntegrationType, stub_integration_settings):
     """
     Create repositories and integrations for testing, and destroy them after

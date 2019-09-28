@@ -325,7 +325,7 @@ class MockServer(object):
         self.handler = Handler(self.request, ip_port, self)
 
 
-@pytest.fixture
+@pytest.fixture()
 def tcp_server():
     server = mock.Mock()
     server.server_address = ('127.0.0.1', 8881)

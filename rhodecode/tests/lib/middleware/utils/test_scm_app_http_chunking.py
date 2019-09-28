@@ -40,7 +40,7 @@ def test_does_chunked_end_to_end_transfer(scm_app):
     assert times[1] - times[0] > 0.1, "Chunks arrived at the same time"
 
 
-@pytest.fixture
+@pytest.fixture()
 def echo_app_chunking(request, available_port_factory):
     """
     Run the EchoApp via Waitress in a subprocess.
@@ -63,7 +63,7 @@ def echo_app_chunking(request, available_port_factory):
     return echo_app_url
 
 
-@pytest.fixture
+@pytest.fixture()
 def scm_app(request, available_port_factory, echo_app_chunking):
     """
     Run the scm_app in Waitress.

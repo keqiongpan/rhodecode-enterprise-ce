@@ -32,7 +32,7 @@ from rhodecode.events.repo import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def scm_extras(user_regular, repo_stub):
     extras = utils2.AttributeDict({
         'ip': '127.0.0.1',

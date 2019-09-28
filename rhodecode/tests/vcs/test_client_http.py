@@ -34,7 +34,7 @@ def is_new_connection(logger, level, message):
         message.startswith('Starting new HTTP'))
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session():
     """
     Stub of `requests.Session()`.
@@ -48,7 +48,7 @@ def stub_session():
     return session
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_fail_session():
     """
     Stub of `requests.Session()`.
@@ -62,7 +62,7 @@ def stub_fail_session():
     return session
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session_factory(stub_session):
     """
     Stub of `rhodecode.lib.vcs.client_http.ThreadlocalSessionFactory`.
@@ -72,7 +72,7 @@ def stub_session_factory(stub_session):
     return session_factory
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session_failing_factory(stub_fail_session):
     """
     Stub of `rhodecode.lib.vcs.client_http.ThreadlocalSessionFactory`.

@@ -61,7 +61,7 @@ class SubversionServerCreator(object):
         return server
 
 
-@pytest.fixture
+@pytest.fixture()
 def svn_server(app):
     return SubversionServerCreator()
 

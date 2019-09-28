@@ -743,7 +743,7 @@ TODO: To be written...
 
 class TestGetShadowInstance(object):
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self, vcsbackend_hg, monkeypatch):
         repo = vcsbackend_hg.repo
         monkeypatch.setattr(repo, 'config', mock.Mock())

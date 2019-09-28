@@ -24,7 +24,7 @@ from rhodecode import events
 from rhodecode.lib.utils2 import AttributeDict
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_push_event(backend, user_regular):
     commits = [
         {'message': 'ancestor commit fixes #15'},

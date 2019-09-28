@@ -36,7 +36,7 @@ from rhodecode.tests.fixture import Fixture
 fixture = Fixture()
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_name(backend_hg):
     return backend_hg.repo_name
 

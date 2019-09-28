@@ -59,7 +59,7 @@ def pytest_collection_modifyitems(session, config, items):
     items[:] = remaining
 
 
-@pytest.fixture
+@pytest.fixture()
 def db_backend(
         request, db_backend_name, ini_config, tmpdir_factory):
     basetemp = tmpdir_factory.getbasetemp().strpath

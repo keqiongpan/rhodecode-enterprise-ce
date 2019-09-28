@@ -119,7 +119,7 @@ class TestGetUsers(object):
         assert len(fake_users) == 3
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_user(request, baseapp):
     usr = UserModel().create_or_update(
         username=u'test_user',

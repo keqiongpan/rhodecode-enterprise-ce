@@ -86,12 +86,12 @@ def crypto_backend_class(request):
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture()
 def crypto_backend(crypto_backend_class):
     return crypto_backend_class()
 
 
-@pytest.fixture
+@pytest.fixture()
 def password():
     encoding = 'utf-8'
     value = u'value'

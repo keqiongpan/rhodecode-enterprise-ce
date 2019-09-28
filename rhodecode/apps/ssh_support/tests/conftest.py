@@ -26,7 +26,7 @@ from rhodecode.apps.ssh_support.lib.ssh_wrapper import SshWrapper
 from rhodecode.lib.utils2 import AttributeDict
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_conf_file(tmpdir):
     conf = configparser.ConfigParser()
     conf.add_section('app:main')
@@ -48,7 +48,7 @@ def plain_dummy_env():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_env():
     return plain_dummy_env()
 
@@ -57,12 +57,12 @@ def plain_dummy_user():
     return AttributeDict(username='test_user')
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_user():
     return plain_dummy_user()
 
 
-@pytest.fixture
+@pytest.fixture()
 def ssh_wrapper(app, dummy_conf_file, dummy_env):
     conn_info = '127.0.0.1 22 10.0.0.1 443'
     return SshWrapper(

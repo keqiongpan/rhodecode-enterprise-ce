@@ -73,7 +73,7 @@ class StubVCSController(simplevcs.SimpleVCS):
         return None
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcscontroller(baseapp, config_stub, request_stub):
     config_stub.testing_securitypolicy()
     config_stub.include('rhodecode.authentication')

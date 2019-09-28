@@ -24,7 +24,7 @@ from rhodecode.lib.vcs import nodes
 from rhodecode.model.repo import ReadmeFinder
 
 
-@pytest.fixture
+@pytest.fixture()
 def commit_util(vcsbackend_stub):
     """
     Provide a commit which has certain files in it's tree.

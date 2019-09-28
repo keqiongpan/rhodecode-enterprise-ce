@@ -25,7 +25,7 @@ from rhodecode.model.scm import ScmModel
 from rhodecode.api.tests.utils import build_data, api_call, assert_ok
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_host_stub():
     """
     To ensure that we can get an IP address, this test shall run with a

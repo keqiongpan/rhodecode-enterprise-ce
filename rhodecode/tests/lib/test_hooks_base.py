@@ -61,7 +61,7 @@ def assert_called_with_mock(callable_, expected_mock_name):
     assert mock_name == expected_mock_name
 
 
-@pytest.fixture
+@pytest.fixture()
 def hook_extras(user_regular, repo_stub):
     extras = utils2.AttributeDict({
         'ip': '127.0.0.1',

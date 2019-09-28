@@ -412,14 +412,14 @@ class TestAdminSettingsVcs(object):
         setting = SettingsModel().get_setting_by_name(setting_key)
         assert setting.app_settings_value is new_value
 
-    @pytest.fixture
+    @pytest.fixture()
     def disable_sql_cache(self, request):
         patcher = mock.patch(
             'rhodecode.lib.caching_query.FromCache.process_query')
         request.addfinalizer(patcher.stop)
         patcher.start()
 
-    @pytest.fixture
+    @pytest.fixture()
     def form_defaults(self):
         from rhodecode.apps.admin.views.settings import AdminSettingsView
         return AdminSettingsView._form_defaults()

@@ -173,7 +173,7 @@ class TestMixedFilenameEncodings(object):
         return fixture.load_resource(
             'hg_diff_mixed_filename_encodings.diff')
 
-    @pytest.fixture
+    @pytest.fixture()
     def processor(self, raw_diff):
         diff = MercurialDiff(raw_diff)
         processor = DiffProcessor(diff)

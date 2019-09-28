@@ -327,7 +327,7 @@ def summary_view(context_stub, request_stub, user_util):
 @pytest.mark.usefixtures('app')
 class TestCreateReferenceData(object):
 
-    @pytest.fixture
+    @pytest.fixture()
     def example_refs(self):
         section_1_refs = OrderedDict((('a', 'a_id'), ('b', 'b_id')))
         example_refs = [

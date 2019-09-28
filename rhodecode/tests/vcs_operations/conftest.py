@@ -155,7 +155,7 @@ def rc_web_server(
     return server
 
 
-@pytest.fixture
+@pytest.fixture()
 def disable_locking(baseapp):
     r = Repository.get_by_repo_name(GIT_REPO)
     Repository.unlock(r)
@@ -170,7 +170,7 @@ def disable_locking(baseapp):
     Session().commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def enable_auth_plugins(request, baseapp, csrf_token):
     """
     Return a factory object that when called, allows to control which
@@ -217,7 +217,7 @@ def enable_auth_plugins(request, baseapp, csrf_token):
     return _enable_plugins
 
 
-@pytest.fixture
+@pytest.fixture()
 def fs_repo_only(request, rhodecode_fixtures):
     def fs_repo_fabric(repo_name, repo_type):
         rhodecode_fixtures.create_repo(repo_name, repo_type=repo_type)
@@ -232,7 +232,7 @@ def fs_repo_only(request, rhodecode_fixtures):
     return fs_repo_fabric
 
 
-@pytest.fixture
+@pytest.fixture()
 def enable_webhook_push_integration(request):
     integration = Integration()
     integration.integration_type = WebhookIntegrationType.key
@@ -269,7 +269,7 @@ def enable_webhook_push_integration(request):
         Session().commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def branch_permission_setter(request):
     """
 

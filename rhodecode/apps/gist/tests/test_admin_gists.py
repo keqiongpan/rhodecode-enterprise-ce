@@ -83,7 +83,7 @@ class GistUtility(object):
         Session().commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_gist(request):
     gist_utility = GistUtility()
     request.addfinalizer(gist_utility.cleanup)

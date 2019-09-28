@@ -34,7 +34,7 @@ from rhodecode.lib.vcs.nodes import DirNode, FileNode
 from rhodecode.tests.vcs.conftest import BackendTestMixin
 
 
-@pytest.fixture
+@pytest.fixture()
 def nodes():
     nodes = [
         FileNode('foobar', content='Foo & bar'),

@@ -25,7 +25,7 @@ from rhodecode.lib.db_manage import DbManage
 from rhodecode.model import db
 
 
-@pytest.fixture
+@pytest.fixture()
 def db_manage(baseapp):
     db_manage = DbManage(
         log_sql=True, dbconf='fake', root='fake', tests=False,

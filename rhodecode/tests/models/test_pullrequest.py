@@ -44,7 +44,7 @@ pytestmark = [
 @pytest.mark.usefixtures('config_stub')
 class TestPullRequestModel(object):
 
-    @pytest.fixture
+    @pytest.fixture()
     def pull_request(self, request, backend, pr_util):
         """
         A pull request combined with multiples patches.
@@ -538,7 +538,7 @@ def test_merge_response_message(mr_type, expected_msg):
     assert merge_response.merge_status_message == expected_msg
 
 
-@pytest.fixture
+@pytest.fixture()
 def merge_extras(user_regular):
     """
     Context for the vcs operation when running a merge.
