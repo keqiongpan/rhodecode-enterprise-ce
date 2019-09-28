@@ -746,7 +746,6 @@ input.filediff-collapse-state {
     transform: translate3d(0, 0, 0);
     will-change: position, transform;
     height: 65px;
-    z-index: 30;
     background-color: #fff;
     padding: 5px 0px;
 }
@@ -761,18 +760,24 @@ input.filediff-collapse-state {
 }
 
 .is-affixed {
+
+    .sidebar__inner {
+        z-index: 30;
+    }
+
     .sidebar_inner_shadow {
         position: fixed;
         top: 75px;
         right: -100%;
         left: -100%;
-        z-index: 28;
+        z-index: 30;
         display: block;
         height: 5px;
         content: "";
         background: linear-gradient(rgba(0, 0, 0, 0.075), rgba(0, 0, 0, 0.001)) repeat-x 0 0;
         border-top: 1px solid rgba(0, 0, 0, 0.15);
     }
+
     .fpath-placeholder {
         visibility: visible !important;
     }
