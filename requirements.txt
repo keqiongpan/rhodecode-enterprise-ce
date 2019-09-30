@@ -95,7 +95,7 @@ nbformat==4.4.0
 jupyter_client==5.0.0
 
 ## cli tools
-alembic==1.0.10
+alembic==1.2.1
 invoke==0.13.0
 bumpversion==0.5.3
 
