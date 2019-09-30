@@ -63,11 +63,11 @@ self: super: {
     };
   };
   "atomicwrites" = super.buildPythonPackage {
-    name = "atomicwrites-1.2.1";
+    name = "atomicwrites-1.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ac/ed/a311712ef6b4355035489f665e63e1a73f9eb371929e3c98e5efd451069e/atomicwrites-1.2.1.tar.gz";
-      sha256 = "1vmkbw9j0qammwxbxycrs39gvdg4lc2d4lk98kwf8ag2manyi6pc";
+      url = "https://files.pythonhosted.org/packages/ec/0f/cd484ac8820fed363b374af30049adc8fd13065720fd4f4c6be8a2309da7/atomicwrites-1.3.0.tar.gz";
+      sha256 = "19ngcscdf3jsqmpcxn6zl5b6anmsajb6izp1smcd1n02midl9abm";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -189,14 +189,14 @@ self: super: {
     };
   };
   "cffi" = super.buildPythonPackage {
-    name = "cffi-1.12.2";
+    name = "cffi-1.12.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."pycparser"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/64/7c/27367b38e6cc3e1f49f193deb761fe75cda9f95da37b67b422e62281fcac/cffi-1.12.2.tar.gz";
-      sha256 = "19qfks2djya8vix95bmg3xzipjb8w9b8mbj4j5k2hqkc8j58f4z1";
+      url = "https://files.pythonhosted.org/packages/93/1a/ab8c62b5838722f29f3daffcc8d4bd61844aa9b5f437341cc890ceee483b/cffi-1.12.3.tar.gz";
+      sha256 = "0x075521fxwv0mfp4cqzk7lvmw4n94bjw601qkcv314z5s182704";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -275,22 +275,22 @@ self: super: {
     };
   };
   "configparser" = super.buildPythonPackage {
-    name = "configparser-3.7.4";
+    name = "configparser-4.0.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e2/1c/83fd53748d8245cb9a3399f705c251d3fc0ce7df04450aac1cfc49dd6a0f/configparser-3.7.4.tar.gz";
-      sha256 = "0xac32886ihs2xg7w1gppcq2sgin5qsm8lqwijs5xifq9w0x0q6s";
+      url = "https://files.pythonhosted.org/packages/16/4f/48975536bd488d3a272549eb795ac4a13a5f7fcdc8995def77fbef3532ee/configparser-4.0.2.tar.gz";
+      sha256 = "1priacxym85yjcf68hh38w55nqswaxp71ryjyfdk222kg9l85ln7";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "contextlib2" = super.buildPythonPackage {
-    name = "contextlib2-0.5.5";
+    name = "contextlib2-0.6.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/6e/db/41233498c210b03ab8b072c8ee49b1cd63b3b0c76f8ea0a0e5d02df06898/contextlib2-0.5.5.tar.gz";
-      sha256 = "0j6ad6lwwyc9kv71skj098v5l7x5biyj2hs4lc5x1kcixqcr97sh";
+      url = "https://files.pythonhosted.org/packages/f0/08/ac376929b2c51e2d5fd4b9fa1f72eca0162c990edc526bdd3b16449323ad/contextlib2-0.6.0.tar.gz";
+      sha256 = "1lvy0xvh5kkx0cmv2y8rpxjrg909q920k05x7m8srjkpcxrsm5vi";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -515,14 +515,14 @@ self: super: {
     };
   };
   "elasticsearch2" = super.buildPythonPackage {
-    name = "elasticsearch2-2.5.0";
+    name = "elasticsearch2-2.5.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."urllib3"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/84/77/63cf63d4ba11d913b5278406f2a37b0712bec6fc85edfb6151a33eaeba25/elasticsearch2-2.5.0.tar.gz";
-      sha256 = "0ky0q16lbvz022yv6q3pix7aamf026p1y994537ccjf0p0dxnbxr";
+      url = "https://files.pythonhosted.org/packages/f6/09/f9b24aa6b1120bea371cd57ef6f57c7694cf16660469456a8be6c2bdbe22/elasticsearch2-2.5.1.tar.gz";
+      sha256 = "19k2znpjfyp0hrq73cz7pjyj289040xpsxsm0xhh4jfh6y551g7k";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -667,18 +667,18 @@ self: super: {
     };
   };
   "hupper" = super.buildPythonPackage {
-    name = "hupper-1.6.1";
+    name = "hupper-1.8.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/85/d9/e005d357b11249c5d70ddf5b7adab2e4c0da4e8b0531ff146917a04fe6c0/hupper-1.6.1.tar.gz";
-      sha256 = "0d3cvkc8ssgwk54wvhbifj56ry97qi10pfzwfk8vwzzcikbfp3zy";
+      url = "https://files.pythonhosted.org/packages/c7/d0/e4b893c88eb8b7389d3a4b5306525742c3497b4bffe0a4257bbacbdbcec5/hupper-1.8.1.tar.gz";
+      sha256 = "0hilni2gzkcz5n3pqnwj4hs7vp017s7scz52n20x92ms8qmfqsaq";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
   "importlib-metadata" = super.buildPythonPackage {
-    name = "importlib-metadata-0.20";
+    name = "importlib-metadata-0.23";
     doCheck = false;
     propagatedBuildInputs = [
       self."zipp"
@@ -687,8 +687,8 @@ self: super: {
       self."pathlib2"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/05/41/7d339dd7b507e97f67be812fdf29c4ad991ddd34b1ed0f3c54e8f1c4e0b3/importlib_metadata-0.20.tar.gz";
-      sha256 = "13bshj8i98l9gxi6df4xbw1262phmawgr527as20brblwf93a55p";
+      url = "https://files.pythonhosted.org/packages/5d/44/636bcd15697791943e2dedda0dbe098d8530a38d113b202817133e0b06c0/importlib_metadata-0.23.tar.gz";
+      sha256 = "09mdqdfv5rdrwz80jh9m379gxmvk2vhjfz0fg53hid00icvxf65a";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -1198,11 +1198,14 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.11.0";
+    name = "pluggy-0.13.0";
     doCheck = false;
+    propagatedBuildInputs = [
+      self."importlib-metadata"
+    ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0d/a1/862ab336e8128fde20981d2c1aa8506693412daf5083b1911d539412676b/pluggy-0.11.0.tar.gz";
-      sha256 = "10511a54dvafw1jrk75mrhml53c7b7w4yaw7241696lc2hfvr895";
+      url = "https://files.pythonhosted.org/packages/d7/9d/ae82a5facf2dd89f557a33ad18eb68e5ac7b7a75cf52bf6a208f29077ecf/pluggy-0.13.0.tar.gz";
+      sha256 = "0d4gsvb4kjqhiqqi4bbsdp7s1xlyl5phibcw1q1mrpd65xia2pzs";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
