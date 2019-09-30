@@ -33,9 +33,9 @@ msgpack-python==0.5.6
 pyotp==2.2.7
 packaging==15.2
 pathlib2==2.3.4
-paste==3.0.8
+paste==3.2.1
 pastedeploy==2.0.1
-pastescript==3.1.0
+pastescript==3.2.0
 peppercorn==0.6
 psutil==5.6.3
 py-bcrypt==0.4

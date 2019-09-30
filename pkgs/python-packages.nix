@@ -1074,14 +1074,14 @@ self: super: {
     };
   };
   "paste" = super.buildPythonPackage {
-    name = "paste-3.0.8";
+    name = "paste-3.2.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/66/65/e3acf1663438483c1f6ced0b6c6f3b90da9f0faacb0a6e2aa0f3f9f4b235/Paste-3.0.8.tar.gz";
-      sha256 = "05w1sh6ky4d7pmdb8nv82n13w22jcn3qsagg5ih3hjmbws9kkwf4";
+      url = "https://files.pythonhosted.org/packages/0d/86/7008b5563594e8a63763f05212a3eb84c85f0b2eff834e5697716e56bca9/Paste-3.2.1.tar.gz";
+      sha256 = "1vjxr8n1p31c9x9rh8g0f34yisa9028cxpvn36q7g1s0m2b9x71x";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1099,7 +1099,7 @@ self: super: {
     };
   };
   "pastescript" = super.buildPythonPackage {
-    name = "pastescript-3.1.0";
+    name = "pastescript-3.2.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."paste"
@@ -1107,8 +1107,8 @@ self: super: {
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/9e/1d/14db1c283eb21a5d36b6ba1114c13b709629711e64acab653d9994fe346f/PasteScript-3.1.0.tar.gz";
-      sha256 = "02qcxjjr32ks7a6d4f533wl34ysc7yhwlrfcyqwqbzr52250v4fs";
+      url = "https://files.pythonhosted.org/packages/ff/47/45c6f5a3cb8f5abf786fea98dbb8d02400a55768a9b623afb7df12346c61/PasteScript-3.2.0.tar.gz";
+      sha256 = "1b3jq7xh383nvrrlblk05m37345bv97xrhx77wshllba3h7mq3wv";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
