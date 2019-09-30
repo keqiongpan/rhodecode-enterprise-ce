@@ -1388,11 +1388,11 @@ self: super: {
     };
   };
   "pyparsing" = super.buildPythonPackage {
-    name = "pyparsing-2.3.0";
+    name = "pyparsing-2.4.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d0/09/3e6a5eeb6e04467b737d55f8bba15247ac0876f98fae659e58cd744430c6/pyparsing-2.3.0.tar.gz";
-      sha256 = "14k5v7n3xqw8kzf42x06bzp184spnlkya2dpjyflax6l3yrallzk";
+      url = "https://files.pythonhosted.org/packages/7e/24/eaa8d7003aee23eda270099eeec754d7bf4399f75c6a011ef948304f66a2/pyparsing-2.4.2.tar.gz";
+      sha256 = "106xmhd2xn5bv6blsbqaa6wciwcq2c9i1pq1riw6s83y76wsg63g";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
