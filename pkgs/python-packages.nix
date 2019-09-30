@@ -1374,11 +1374,11 @@ self: super: {
     };
   };
   "pyotp" = super.buildPythonPackage {
-    name = "pyotp-2.2.7";
+    name = "pyotp-2.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b1/ab/477cda97b6ca7baced5106471cb1ac1fe698d1b035983b9f8ee3422989eb/pyotp-2.2.7.tar.gz";
-      sha256 = "00p69nw431f0s2ilg0hnd77p1l22m06p9rq4f8zfapmavnmzw3xy";
+      url = "https://files.pythonhosted.org/packages/f7/15/395c4945ea6bc37e8811280bb675615cb4c2b2c1cd70bdc43329da91a386/pyotp-2.3.0.tar.gz";
+      sha256 = "18d13ikra1iq0xyfqfm72zhgwxi2qi9ps6z1a6zmqp4qrn57wlzw";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
