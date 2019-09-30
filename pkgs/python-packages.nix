@@ -903,14 +903,14 @@ self: super: {
     };
   };
   "mako" = super.buildPythonPackage {
-    name = "mako-1.0.7";
+    name = "mako-1.1.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."markupsafe"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/eb/f3/67579bb486517c0d49547f9697e36582cd19dafb5df9e687ed8e22de57fa/Mako-1.0.7.tar.gz";
-      sha256 = "1bi5gnr8r8dva06qpyx4kgjc6spm2k1y908183nbbaylggjzs0jf";
+      url = "https://files.pythonhosted.org/packages/b0/3c/8dcd6883d009f7cae0f3157fb53e9afb05a0d3d33b3db1268ec2e6f4a56b/Mako-1.1.0.tar.gz";
+      sha256 = "0jqa3qfpykyn4fmkn0kh6043sfls7br8i2bsdbccazcvk9cijsd3";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -928,14 +928,14 @@ self: super: {
     };
   };
   "markupsafe" = super.buildPythonPackage {
-    name = "markupsafe-1.1.0";
+    name = "markupsafe-1.1.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ac/7e/1b4c2e05809a4414ebce0892fe1e32c14ace86ca7d50c70f00979ca9b3a3/MarkupSafe-1.1.0.tar.gz";
-      sha256 = "1lxirjypbdd3l9jl4vliilhfnhy7c7f2vlldqg1b0i74khn375sf";
+      url = "https://files.pythonhosted.org/packages/b9/2e/64db92e53b86efccfaea71321f597fa2e1b2bd3853d8ce658568f7a13094/MarkupSafe-1.1.1.tar.gz";
+      sha256 = "0sqipg4fk7xbixqd8kq6rlkxj664d157bdwbh93farcphf92x1r9";
     };
     meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
+      license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.bsd3 ];
     };
   };
   "meld3" = super.buildPythonPackage {
@@ -1470,15 +1470,15 @@ self: super: {
     };
   };
   "pyramid-mako" = super.buildPythonPackage {
-    name = "pyramid-mako-1.0.2";
+    name = "pyramid-mako-1.1.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyramid"
       self."mako"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f1/92/7e69bcf09676d286a71cb3bbb887b16595b96f9ba7adbdc239ffdd4b1eb9/pyramid_mako-1.0.2.tar.gz";
-      sha256 = "18gk2vliq8z4acblsl6yzgbvnr9rlxjlcqir47km7kvlk1xri83d";
+      url = "https://files.pythonhosted.org/packages/63/7b/5e2af68f675071a6bad148c1c393928f0ef5fcd94e95cbf53b89d6471a83/pyramid_mako-1.1.0.tar.gz";
+      sha256 = "1qj0m091mnii86j2q1d82yir22nha361rvhclvg3s70z8iiwhrh0";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
