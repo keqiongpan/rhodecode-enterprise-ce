@@ -31,10 +31,11 @@ from rhodecode.tests.fixture import TestINI
 
 
 def _get_dbs_from_metafunc(metafunc):
-    if hasattr(metafunc.function, 'dbs'):
-        # Supported backends by this test function, created from
-        # pytest.mark.dbs
-        backends = metafunc.definition.get_closest_marker('dbs').args
+    dbs_mark = metafunc.definition.get_closest_marker('dbs')
+
+    if dbs_mark:
+        # Supported backends by this test function, created from pytest.mark.dbs
+        backends = dbs_mark.args
     else:
         backends = metafunc.config.getoption('--dbs')
     return backends

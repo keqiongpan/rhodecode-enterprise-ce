@@ -30,7 +30,6 @@ import subprocess32
 import time
 import uuid
 import dateutil.tz
-import functools
 
 import mock
 import pyramid.testing
@@ -66,6 +65,7 @@ from rhodecode.tests import (
 from rhodecode.tests.utils import CustomTestApp, set_anonymous_access
 from rhodecode.tests.fixture import Fixture
 from rhodecode.config import utils as config_utils
+
 
 def _split_comma(value):
     return value.split(',')
@@ -120,14 +120,18 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 def pytest_generate_tests(metafunc):
+
     # Support test generation based on --backend parameter
     if 'backend_alias' in metafunc.fixturenames:
         backends = get_backends_from_metafunc(metafunc)
         scope = None
         if not backends:
             pytest.skip("Not enabled for any of selected backends")
+
         metafunc.parametrize('backend_alias', backends, scope=scope)
-    elif hasattr(metafunc.function, 'backends'):
+
+    backend_mark = metafunc.definition.get_closest_marker('backends')
+    if backend_mark:
         backends = get_backends_from_metafunc(metafunc)
         if not backends:
             pytest.skip("Not enabled for any of selected backends")
@@ -135,10 +139,11 @@ def pytest_generate_tests(metafunc):
 
 def get_backends_from_metafunc(metafunc):
     requested_backends = set(metafunc.config.getoption('--backends'))
-    if hasattr(metafunc.function, 'backends'):
+    backend_mark = metafunc.definition.get_closest_marker('backends')
+    if backend_mark:
         # Supported backends by this test function, created from
         # pytest.mark.backends
-        backends = metafunc.definition.get_closest_marker('backends').args
+        backends = backend_mark.args
     elif hasattr(metafunc.cls, 'backend_alias'):
         # Support class attribute "backend_alias", this is mainly
         # for legacy reasons for tests not yet using pytest.mark.backends
@@ -1810,17 +1815,3 @@ def repo_groups(request):
         fixture.destroy_repo_group(parent_group)
 
     return zombie_group, parent_group, child_group
-
-
-@pytest.fixture(scope="session")
-def tmp_path_factory(request):
-    """Return a :class:`_pytest.tmpdir.TempPathFactory` instance for the test session.
-    """
-
-    class TempPathFactory:
-
-        def mktemp(self, basename):
-            import tempfile
-            return tempfile.mktemp(basename)
-
-    return TempPathFactory()

@@ -31,36 +31,38 @@ from rhodecode.api.tests.utils import (
 @pytest.fixture()
 def make_repo_comments_factory(request):
 
-    def maker(repo):
-        user = User.get_first_super_admin()
-        commit = repo.scm_instance()[0]
+    class Make(object):
 
-        commit_id = commit.raw_id
-        file_0 = commit.affected_files[0]
-        comments = []
+        def make_comments(self, repo):
+            user = User.get_first_super_admin()
+            commit = repo.scm_instance()[0]
 
-        # general
-        CommentsModel().create(
-            text='General Comment', repo=repo, user=user, commit_id=commit_id,
-            comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
+            commit_id = commit.raw_id
+            file_0 = commit.affected_files[0]
+            comments = []
 
-        # inline
-        CommentsModel().create(
-            text='Inline Comment', repo=repo, user=user, commit_id=commit_id,
-            f_path=file_0, line_no='n1',
-            comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
+            # general
+            CommentsModel().create(
+                text='General Comment', repo=repo, user=user, commit_id=commit_id,
+                comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
 
-        # todo
-        CommentsModel().create(
-            text='INLINE TODO Comment', repo=repo, user=user, commit_id=commit_id,
-            f_path=file_0, line_no='n1',
-            comment_type=ChangesetComment.COMMENT_TYPE_TODO, send_email=False)
+            # inline
+            CommentsModel().create(
+                text='Inline Comment', repo=repo, user=user, commit_id=commit_id,
+                f_path=file_0, line_no='n1',
+                comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
 
-        @request.addfinalizer
-        def cleanup():
-            for comment in comments:
-                Session().delete(comment)
-    return maker
+            # todo
+            CommentsModel().create(
+                text='INLINE TODO Comment', repo=repo, user=user, commit_id=commit_id,
+                f_path=file_0, line_no='n1',
+                comment_type=ChangesetComment.COMMENT_TYPE_TODO, send_email=False)
+
+            @request.addfinalizer
+            def cleanup():
+                for comment in comments:
+                    Session().delete(comment)
+    return Make()
 
 
 @pytest.mark.usefixtures("testuser_api", "app")
@@ -76,7 +78,7 @@ class TestGetRepo(object):
                                    make_repo_comments_factory, filters, expected_count):
         commits = [{'message': 'A'}, {'message': 'B'}]
         repo = backend.create_repo(commits=commits)
-        make_repo_comments_factory(repo)
+        make_repo_comments_factory.make_comments(repo)
 
         api_call_params = {'repoid': repo.repo_name,}
         api_call_params.update(filters)
@@ -92,12 +94,13 @@ class TestGetRepo(object):
 
         assert len(result) == expected_count
 
-    def test_api_get_repo_comments_wrong_comment_typ(self, backend_hg):
+    def test_api_get_repo_comments_wrong_comment_type(
+            self, make_repo_comments_factory, backend_hg):
+        commits = [{'message': 'A'}, {'message': 'B'}]
+        repo = backend_hg.create_repo(commits=commits)
+        make_repo_comments_factory.make_comments(repo)
 
-        repo = backend_hg.create_repo()
-        make_repo_comments_factory(repo)
-
-        api_call_params = {'repoid': repo.repo_name,}
+        api_call_params = {'repoid': repo.repo_name}
         api_call_params.update({'comment_type': 'bogus'})
 
         expected = 'comment_type must be one of `{}` got {}'.format(
