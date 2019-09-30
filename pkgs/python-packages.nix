@@ -1337,11 +1337,11 @@ self: super: {
     };
   };
   "pycurl" = super.buildPythonPackage {
-    name = "pycurl-7.43.0.2";
+    name = "pycurl-7.43.0.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e8/e4/0dbb8735407189f00b33d84122b9be52c790c7c3b25286826f4e1bdb7bde/pycurl-7.43.0.2.tar.gz";
-      sha256 = "1915kb04k1j4y6k1dx1sgnbddxrl9r1n4q928if2lkrdm73xy30g";
+      url = "https://files.pythonhosted.org/packages/ac/b3/0f3979633b7890bab6098d84c84467030b807a1e2b31f5d30103af5a71ca/pycurl-7.43.0.3.tar.gz";
+      sha256 = "13nsvqhvnmnvfk75s8iynqsgszyv06cjp4drd3psi7zpbh63623g";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit { fullName = "LGPL/MIT"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];

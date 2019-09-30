@@ -39,7 +39,7 @@ pastescript==3.1.0
 peppercorn==0.6
 psutil==5.6.3
 py-bcrypt==0.4
-pycurl==7.43.0.2
+pycurl==7.43.0.3
 pycrypto==2.6.1
 pygments==2.4.2
 pyparsing==2.3.0
