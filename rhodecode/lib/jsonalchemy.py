@@ -25,6 +25,7 @@ from sqlalchemy import UnicodeText
 from sqlalchemy.ext.mutable import Mutable
 
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.utils2 import safe_unicode
 
 
 class JsonRaw(unicode):
@@ -56,10 +57,12 @@ class JSONEncodedObj(sqlalchemy.types.TypeDecorator):
 
     impl = UnicodeText
     safe = True
+    enforce_unicode = True
 
     def __init__(self, *args, **kwargs):
         self.default = kwargs.pop('default', None)
         self.safe = kwargs.pop('safe_json', self.safe)
+        self.enforce_unicode = kwargs.pop('enforce_unicode', self.enforce_unicode)
         self.dialect_map = kwargs.pop('dialect_map', {})
         super(JSONEncodedObj, self).__init__(*args, **kwargs)
 
@@ -73,6 +76,8 @@ class JSONEncodedObj(sqlalchemy.types.TypeDecorator):
             value = value
         elif value is not None:
             value = json.dumps(value)
+            if self.enforce_unicode:
+                value = safe_unicode(value)
         return value
 
     def process_result_value(self, value, dialect):

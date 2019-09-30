@@ -3956,7 +3956,7 @@ class _PullRequestBase(BaseModel):
 
     @revisions.setter
     def revisions(self, val):
-        self._revisions = ':'.join(val)
+        self._revisions = u':'.join(val)
 
     @hybrid_property
     def last_merge_status(self):
