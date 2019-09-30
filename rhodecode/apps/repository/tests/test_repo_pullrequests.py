@@ -284,7 +284,7 @@ class TestPullrequestsView(object):
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
             .filter(UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-1].action == 'repo.pull_request.close'
 
@@ -323,7 +323,7 @@ class TestPullrequestsView(object):
 
         journal = UserLog.query()\
             .filter(UserLog.user_id == author, UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-1].action == 'repo.pull_request.close'
 
@@ -563,7 +563,7 @@ class TestPullrequestsView(object):
             pull_request, ChangesetStatus.STATUS_APPROVED)
 
         # Check the relevant log entries were added
-        user_logs = UserLog.query().order_by('-user_log_id').limit(3)
+        user_logs = UserLog.query().order_by(UserLog.user_log_id.desc()).limit(3)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [
@@ -573,7 +573,7 @@ class TestPullrequestsView(object):
         ]
         assert actions == expected_actions
 
-        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        user_logs = UserLog.query().order_by(UserLog.user_log_id.desc()).limit(4)
         actions = [log for log in user_logs]
         assert actions[-1].action == 'user.push'
         assert actions[-1].action_data['commit_ids'] == pr_commit_ids

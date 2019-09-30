@@ -134,7 +134,7 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(UserGroup.users_group_id, allowed_ids)
             )) \
-            .outerjoin(UserGroupMember) \
+            .outerjoin(UserGroupMember, UserGroupMember.users_group_id == UserGroup.users_group_id) \
             .join(User, User.user_id == UserGroup.user_id) \
             .group_by(UserGroup, User)
 

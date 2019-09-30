@@ -180,7 +180,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(RepoGroup.group_id, allowed_ids)
             )) \
-            .outerjoin(Repository) \
+            .outerjoin(Repository,  Repository.group_id == RepoGroup.group_id) \
             .join(User, User.user_id == RepoGroup.user_id) \
             .group_by(RepoGroup, User)
 

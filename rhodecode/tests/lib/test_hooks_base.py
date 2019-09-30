@@ -48,7 +48,7 @@ def test_post_push_truncates_commits(user_regular, repo_stub):
     # Calculate appropriate action string here
     commit_ids = extras.commit_ids[:400]
 
-    entry = UserLog.query().order_by('-user_log_id').first()
+    entry = UserLog.query().order_by(UserLog.user_log_id.desc()).first()
     assert entry.action == 'user.push'
     assert entry.action_data['commit_ids'] == commit_ids
     Session().delete(entry)
@@ -149,3 +149,4 @@ def test_hooks_propagates_not_on_shadow(func, extension, event, hook_extras):
     # Assert that extensions are *not* called and event was *not* fired.
     assert not extension_mock.called
     assert not events_mock.trigger.called
+
