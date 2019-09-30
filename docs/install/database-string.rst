@@ -35,4 +35,3 @@ use the following steps:
     # see sqlalchemy docs for other advanced settings
     sqlalchemy.db1.echo = false
     sqlalchemy.db1.pool_recycle = 3600
-    sqlalchemy.db1.convert_unicode = true
