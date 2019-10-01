@@ -607,27 +607,32 @@ class FileNode(Node):
         if self.commit:
             return self.commit.get_largefile_node(self.path)
 
+    def count_lines(self, content, count_empty=False):
+
+        if count_empty:
+            all_lines = 0
+            empty_lines = 0
+            for line in content.splitlines(True):
+                if line == '\n':
+                    empty_lines += 1
+                all_lines += 1
+
+            return all_lines, all_lines - empty_lines
+        else:
+            # fast method
+            empty_lines = all_lines = content.count('\n')
+            if all_lines == 0 and content:
+                # one-line without a newline
+                empty_lines = all_lines = 1
+
+        return all_lines, empty_lines
+
     def lines(self, count_empty=False):
         all_lines, empty_lines = 0, 0
 
         if not self.is_binary:
             content = self.content
-            if count_empty:
-                all_lines = 0
-                empty_lines = 0
-                for line in content.splitlines(True):
-                    if line == '\n':
-                        empty_lines += 1
-                    all_lines += 1
-
-                return all_lines, all_lines - empty_lines
-            else:
-                # fast method
-                empty_lines = all_lines = content.count('\n')
-                if all_lines == 0 and content:
-                    # one-line without a newline
-                    empty_lines = all_lines = 1
-
+            all_lines, empty_lines = self.count_lines(content, count_empty=count_empty)
         return all_lines, empty_lines
 
     def __repr__(self):

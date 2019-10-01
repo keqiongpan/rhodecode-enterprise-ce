@@ -665,11 +665,14 @@ class ScmModel(BaseModel):
                 size = file_node.size
                 over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
                 full_content = None
+                all_lines = 0
                 if not file_node.is_binary and not over_size_limit:
                     full_content = safe_unicode(file_node.content)
+                    all_lines, empty_lines = file_node.count_lines(full_content)
 
                 file_data.update({
                     "content": full_content,
+                    "lines": all_lines
                 })
             elif content:
                 # get content *without* cache
@@ -678,11 +681,14 @@ class ScmModel(BaseModel):
 
                 over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
                 full_content = None
+                all_lines = 0
                 if not is_binary and not over_size_limit:
                     full_content = safe_unicode(_content)
+                    all_lines, empty_lines = file_node.count_lines(full_content)
 
                 file_data.update({
                     "content": full_content,
+                    "lines": all_lines
                 })
 
         except RepositoryError:
