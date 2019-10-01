@@ -8,15 +8,15 @@
         <th>${_('Repository')}</th>
         <th>${_('Commit')}</th>
         <th></th>
-        <th>${_('Commit message')}</th>
         <th>
-        %if c.sort == 'newfirst':
-            <a href="${c.url_generator(sort='oldfirst')}">${_('Age (new first)')}</a>
-        %else:
-            <a href="${c.url_generator(sort='newfirst')}">${_('Age (old first)')}</a>
-        %endif
+            <a href="${search.field_sort('message.raw')}">${_('Commit message')}</a>
         </th>
-        <th>${_('Author')}</th>
+        <th>
+            <a href="${search.field_sort('date')}">${_('Age')}</a>
+        </th>
+        <th>
+            <a href="${search.field_sort('author.email.raw')}">${_('Author')}</a>
+        </th>
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate

@@ -44,6 +44,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     search_tags = []
     search_params = {}
     errors = []
+
     try:
         search_params = schema.deserialize(
             dict(
@@ -61,8 +62,8 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     def url_generator(**kw):
         q = urllib.quote(safe_str(search_query))
         return update_params(
-            "?q=%s&type=%s&max_lines=%s" % (
-                q, safe_str(search_type), search_max_lines), **kw)
+            "?q=%s&type=%s&max_lines=%s&sort=%s" % (
+                q, safe_str(search_type), search_max_lines, search_sort), **kw)
 
     c = tmpl_context
     search_query = search_params.get('search_query')
@@ -99,7 +100,6 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.perm_user = c.auth_user
     c.repo_name = repo_name
     c.repo_group_name = repo_group_name
-    c.sort = search_sort
     c.url_generator = url_generator
     c.errors = errors
     c.formatted_results = formatted_results
@@ -108,6 +108,11 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.search_type = search_type
     c.searcher = searcher
     c.search_tags = search_tags
+
+    direction, sort_field = searcher.get_sort(search_type, search_sort)
+    c.sort = '{}:{}'.format(direction, sort_field)
+    c.sort_tag = sort_field
+    c.sort_tag_dir = direction
 
 
 class SearchView(BaseAppView):

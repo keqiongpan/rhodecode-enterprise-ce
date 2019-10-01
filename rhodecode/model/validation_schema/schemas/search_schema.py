@@ -22,6 +22,18 @@
 import colander
 
 
+def sort_validator(node, value):
+    if value in ['oldfirst', 'newfirst']:
+        return value
+    if value.startswith('asc:'):
+        return value
+    if value.startswith('desc:'):
+        return value
+
+    msg = u'Invalid search sort, must be `oldfirst`, `newfirst`, or start with asc: or desc:'
+    raise colander.Invalid(node, msg)
+
+
 class SearchParamsSchema(colander.MappingSchema):
     search_query = colander.SchemaNode(
         colander.String(),
@@ -33,7 +45,7 @@ class SearchParamsSchema(colander.MappingSchema):
     search_sort = colander.SchemaNode(
         colander.String(),
         missing='newfirst',
-        validator=colander.OneOf(['oldfirst', 'newfirst']))
+        validator=sort_validator)
     search_max_lines = colander.SchemaNode(
         colander.Integer(),
         missing=10)

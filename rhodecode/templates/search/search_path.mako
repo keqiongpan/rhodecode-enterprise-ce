@@ -5,9 +5,15 @@
 <table class="rctable search-results">
     <tr>
         <th>${_('Repository')}</th>
-        <th>${_('File')}</th>
-        <th>${_('Size')}</th>
-        <th>${_('Lines')}</th>
+        <th>
+            <a href="${search.field_sort('file.raw')}">${_('File')}</a>
+        </th>
+        <th>
+            <a href="${search.field_sort('size')}">${_('Size')}</a>
+        </th>
+        <th>
+            <a href="${search.field_sort('lines')}">${_('Lines')}</a>
+        </th>
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate
@@ -19,6 +25,7 @@
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
                 <td class="td-componentname">
+                    <i class="icon-file"></i>
                     ${h.link_to(h.literal(entry['f_path']),
                         h.route_path('repo_files',repo_name=entry['repository'],commit_id='tip',f_path=entry['f_path']))}
                 </td>
@@ -29,7 +36,7 @@
                 </td>
                 <td>
                     %if entry.get('lines'):
-                      ${entry.get('lines', 0.)} ${_ungettext('line', 'lines', entry.get('lines', 0.))}
+                      ${entry.get('lines', 0.)}
                     %endif
                 </td>
             </tr>
