@@ -110,7 +110,8 @@ ipdb==0.12.0
 ipython==5.1.0
 
 ## rhodecode-tools, special case
-https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-10ac93f4-bb7d-4b97-baea-68110743dd5a.tar.gz?md5=962dc77c06aceee62282b98d33149661#egg=rhodecode-tools==1.2.1
+https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-2e546668-61c4-42b2-ae03-7850a2dbb846.tar.gz?sha256=0938220f33264b0514dc63207ce1f77e38b1b1fd93fd4f68d34243ab62ecc853#egg=rhodecode-tools==1.3.0
+
 
 ## appenlight
 appenlight-client==0.6.26
