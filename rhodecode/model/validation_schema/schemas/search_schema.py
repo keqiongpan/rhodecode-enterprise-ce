@@ -44,7 +44,7 @@ class SearchParamsSchema(colander.MappingSchema):
         validator=colander.OneOf(['content', 'path', 'commit', 'repository']))
     search_sort = colander.SchemaNode(
         colander.String(),
-        missing='newfirst',
+        missing='desc:date',
         validator=sort_validator)
     search_max_lines = colander.SchemaNode(
         colander.Integer(),
