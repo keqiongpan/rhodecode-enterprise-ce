@@ -1052,14 +1052,18 @@ self: super: {
     };
   };
   "packaging" = super.buildPythonPackage {
-    name = "packaging-15.2";
+    name = "packaging-19.2";
     doCheck = false;
+    propagatedBuildInputs = [
+      self."pyparsing"
+      self."six"
+    ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/24/c4/185da1304f07047dc9e0c46c31db75c0351bd73458ac3efad7da3dbcfbe1/packaging-15.2.tar.gz";
-      sha256 = "1zn60w84bxvw6wypffka18ca66pa1k2cfrq3cq8fnsfja5m3k4ng";
+      url = "https://files.pythonhosted.org/packages/5a/2f/449ded84226d0e2fda8da9252e5ee7731bdf14cd338f622dfcd9934e0377/packaging-19.2.tar.gz";
+      sha256 = "0izwlz9h0bw171a1chr311g2y7n657zjaf4mq4rgm8pp9lbj9f98";
     };
     meta = {
-      license = [ pkgs.lib.licenses.asl20 ];
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "BSD or Apache License, Version 2.0"; } pkgs.lib.licenses.asl20 ];
     };
   };
   "pandocfilters" = super.buildPythonPackage {
