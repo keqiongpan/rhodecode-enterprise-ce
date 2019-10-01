@@ -124,18 +124,25 @@ class WhooshSearcher(BaseSearcher):
                 query = qp.parse(safe_unicode(query))
                 log.debug('query: %s (%s)', query, repr(query))
 
-                reverse, sortedby = False, None
-                if search_type == 'message':
-                    if sort == 'oldfirst':
-                        sortedby = 'date'
-                        reverse = False
-                    elif sort == 'newfirst':
-                        sortedby = 'date'
+                def sort_def(_direction, _sort_field):
+                    field2whoosh = {
+                        'message.raw': 'message',
+                        'author.email.raw': 'author',
+                    }
+                    return field2whoosh.get(_sort_field) or _sort_field
+
+                reverse, sorted_by = False, None
+                direction, sort_field = self.get_sort(search_type, sort)
+                if sort_field:
+                    if direction == Searcher.DIRECTION_DESC:
                         reverse = True
+                    if direction == Searcher.DIRECTION_ASC:
+                        reverse = False
+                    sorted_by = sort_def(direction, sort_field)
 
                 whoosh_results = self.searcher.search(
                     query, filter=allowed_repos_filter, limit=None,
-                    sortedby=sortedby, reverse=reverse)
+                    sortedby=sorted_by, reverse=reverse)
 
                 # fixes for 32k limit that whoosh uses for highlight
                 whoosh_results.fragmenter.charlimit = None
