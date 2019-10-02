@@ -89,6 +89,15 @@ class BaseSearcher(object):
         """
         return val
 
+    def sort_def(self, search_type, direction, sort_field):
+        """
+        Defines sorting for search. This function should decide if for given
+        search_type, sorting can be done with sort_field.
+
+        It also should translate common sort fields into backend specific. e.g elasticsearch
+        """
+        raise NotImplementedError()
+
     @staticmethod
     def get_sort(search_type, search_val):
         """

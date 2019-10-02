@@ -6,7 +6,7 @@
     <tr>
         <th>${_('Repository')}</th>
         <th>
-            <a href="${search.field_sort('file.raw')}">${_('File')}</a>
+            <a href="${search.field_sort('file')}">${_('File')}</a>
         </th>
         <th>
             <a href="${search.field_sort('size')}">${_('Size')}</a>

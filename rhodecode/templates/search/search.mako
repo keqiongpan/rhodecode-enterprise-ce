@@ -69,7 +69,7 @@
     elif c.sort.startswith('desc:'):
         return c.url_generator(sort='asc:{}'.format(field_name))
 
-    return 'asc:{}'.format(field_name)
+    return c.url_generator(sort='asc:{}'.format(field_name))
     %>
 </%def>
 

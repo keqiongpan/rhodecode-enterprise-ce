@@ -110,9 +110,13 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.search_tags = search_tags
 
     direction, sort_field = searcher.get_sort(search_type, search_sort)
-    c.sort = '{}:{}'.format(direction, sort_field)
-    c.sort_tag = sort_field
+    sort_definition = searcher.sort_def(search_type, direction, sort_field)
+    c.sort = ''
+    c.sort_tag = None
     c.sort_tag_dir = direction
+    if sort_definition:
+        c.sort = '{}:{}'.format(direction, sort_field)
+        c.sort_tag = sort_field
 
 
 class SearchView(BaseAppView):

@@ -9,13 +9,13 @@
         <th>${_('Commit')}</th>
         <th></th>
         <th>
-            <a href="${search.field_sort('message.raw')}">${_('Commit message')}</a>
+            <a href="${search.field_sort('message')}">${_('Commit message')}</a>
         </th>
         <th>
-            <a href="${search.field_sort('date')}">${_('Age')}</a>
+            <a href="${search.field_sort('date')}">${_('Commit date')}</a>
         </th>
         <th>
-            <a href="${search.field_sort('author.email.raw')}">${_('Author')}</a>
+            <a href="${search.field_sort('author_email')}">${_('Author')}</a>
         </th>
     </tr>
     %for entry in c.formatted_results:
