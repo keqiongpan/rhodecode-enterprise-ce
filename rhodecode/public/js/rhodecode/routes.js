@@ -369,6 +369,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_artifacts_new', '/%(repo_name)s/artifacts/new', ['repo_name']);
     pyroutes.register('repo_artifacts_get', '/%(repo_name)s/artifacts/download/%(uid)s', ['repo_name', 'uid']);
     pyroutes.register('repo_artifacts_store', '/%(repo_name)s/artifacts/store', ['repo_name']);
+    pyroutes.register('repo_artifacts_info', '/%(repo_name)s/artifacts/info/%(uid)s', ['repo_name', 'uid']);
     pyroutes.register('repo_artifacts_delete', '/%(repo_name)s/artifacts/delete/%(uid)s', ['repo_name', 'uid']);
     pyroutes.register('repo_automation', '/%(repo_name)s/settings/automation', ['repo_name']);
     pyroutes.register('repo_automation_update', '/%(repo_name)s/settings/automation/%(entry_id)s/update', ['repo_name', 'entry_id']);

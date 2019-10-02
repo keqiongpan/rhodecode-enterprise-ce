@@ -390,11 +390,18 @@
     <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
 </%def>
 
+<%def name="repo_artifact_sha256(artifact_sha256)">
+    <div class="code">${h.shorter(artifact_sha256, 12)}<i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${artifact_sha256}" title="${_('Copy the sha256 ({})').format(artifact_sha256)}"></i></div>
+</%def>
+
 <%def name="repo_artifact_actions(repo_name, file_store_id, file_uid)">
 ##  <div class="grid_edit">
 ##     <a href="#Edit" title="${_('Edit')}">${_('Edit')}</a>
 ##  </div>
-% if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
+<div class="grid_edit">
+    <a href="${h.route_path('repo_artifacts_info', repo_name=repo_name, uid=file_store_id)}" title="${_('Info')}">${_('Info')}</a>
+</div>
+    % if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
     <div class="grid_delete">
     ${h.secure_form(h.route_path('repo_artifacts_delete', repo_name=repo_name, uid=file_store_id), request=request)}
       ${h.submit('remove_',_('Delete'),id="remove_artifact_%s" % file_store_id, class_="btn btn-link btn-danger",
