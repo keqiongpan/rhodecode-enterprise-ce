@@ -130,7 +130,6 @@ class TestRepoForkViewTests(TestController):
             'repo_type': backend.alias,
             'description': description,
             'private': 'False',
-            'landing_rev': 'rev:tip',
             'csrf_token': csrf_token,
         }
 
@@ -159,7 +158,6 @@ class TestRepoForkViewTests(TestController):
             'repo_type': backend.alias,
             'description': description,
             'private': 'False',
-            'landing_rev': 'rev:tip',
             'csrf_token': csrf_token,
         }
         self.app.post(
@@ -172,8 +170,8 @@ class TestRepoForkViewTests(TestController):
             route_path('repo_creating_check', repo_name=fork_name))
         # test if we have a message that fork is ok
         assert_session_flash(response,
-                'Forked repository %s as <a href="/%s">%s</a>'
-                % (repo_name, fork_name, fork_name))
+                'Forked repository %s as <a href="/%s">%s</a>' % (
+                                 repo_name, fork_name, fork_name))
 
         # test if the fork was created in the database
         fork_repo = Session().query(Repository)\
@@ -205,7 +203,6 @@ class TestRepoForkViewTests(TestController):
             'repo_type': backend.alias,
             'description': description,
             'private': 'False',
-            'landing_rev': 'rev:tip',
             'csrf_token': csrf_token,
         }
         self.app.post(
@@ -218,8 +215,8 @@ class TestRepoForkViewTests(TestController):
             route_path('repo_creating_check', repo_name=fork_name_full))
         # test if we have a message that fork is ok
         assert_session_flash(response,
-                'Forked repository %s as <a href="/%s">%s</a>'
-                % (repo_name, fork_name_full, fork_name_full))
+                             'Forked repository %s as <a href="/%s">%s</a>' % (
+                                 repo_name, fork_name_full, fork_name_full))
 
         # test if the fork was created in the database
         fork_repo = Session().query(Repository)\

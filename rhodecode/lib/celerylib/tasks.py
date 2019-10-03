@@ -239,7 +239,7 @@ def create_repo_fork(form_data, cur_user):
     private = form_data['private']
     clone_uri = form_data.get('clone_uri')
     repo_group = safe_int(form_data['repo_group'])
-    landing_rev = form_data['landing_rev']
+    landing_ref = form_data['landing_rev']
     copy_fork_permissions = form_data.get('copy_permissions')
     fork_id = safe_int(form_data.get('fork_parent_id'))
 
@@ -253,7 +253,7 @@ def create_repo_fork(form_data, cur_user):
             private=private,
             clone_uri=clone_uri,
             repo_group=repo_group,
-            landing_rev=landing_rev,
+            landing_rev=landing_ref,
             fork_of=fork_of,
             copy_fork_permissions=copy_fork_permissions
         )

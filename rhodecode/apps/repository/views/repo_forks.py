@@ -218,6 +218,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
 
         # forbid injecting other repo by forging a request
         post_data['fork_parent_id'] = self.db_repo.repo_id
+        post_data['landing_rev'] = self.db_repo._landing_revision
 
         form_result = {}
         task_id = None
