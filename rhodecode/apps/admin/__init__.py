@@ -378,6 +378,10 @@ def admin_routes(config):
         name='edit_user_audit_logs',
         pattern='/users/{user_id:\d+}/edit/audit', user_route=True)
 
+    config.add_route(
+        name='edit_user_audit_logs_download',
+        pattern='/users/{user_id:\d+}/edit/audit/download', user_route=True)
+
     # user caches
     config.add_route(
         name='edit_user_caches',

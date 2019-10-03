@@ -1200,6 +1200,29 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @view_config(
+        route_name='edit_user_audit_logs_download', request_method='GET',
+        renderer='string')
+    def user_audit_logs_download(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        user_log = UserModel().get_user_log(c.user, filter_term=None)
+
+        audit_log_data = {}
+        for entry in user_log:
+            audit_log_data[entry.user_log_id] = entry.get_dict()
+
+        response = Response(json.dumps(audit_log_data, indent=4))
+        response.content_disposition = str(
+            'attachment; filename=%s' % 'user_{}_audit_logs.json'.format(c.user.user_id))
+        response.content_type = 'application/json'
+
+        return response
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
         route_name='edit_user_perms_summary', request_method='GET',
         renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_perms_summary(self):
