@@ -5115,6 +5115,9 @@ class FileStore(Base, BaseModel):
     # if repo/repo_group reference is set, check for permissions
     check_acl = Column('check_acl', Boolean(), nullable=False, default=True)
 
+    # hidden defines an attachement that should be hidden from showing in artifact listing
+    hidden = Column('hidden', Boolean(), nullable=False, default=False)
+
     user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), nullable=False)
     upload_user = relationship('User', lazy='joined', primaryjoin='User.user_id==FileStore.user_id')
 
