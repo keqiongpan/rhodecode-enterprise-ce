@@ -143,13 +143,18 @@ class LocalFileStorage(object):
         :param ext: extension to check
         :param extensions: iterable of extensions to validate against (or self.extensions)
         """
+        def normalize_ext(_ext):
+            if _ext.startswith('.'):
+                _ext = _ext[1:]
+            return _ext.lower()
 
         extensions = extensions or self.extensions
         if not extensions:
             return True
-        if ext.startswith('.'):
-            ext = ext[1:]
-        return ext.lower() in extensions
+
+        ext = normalize_ext(ext)
+
+        return ext in [normalize_ext(x) for x in extensions]
 
     def save_file(self, file_obj, filename, directory=None, extensions=None,
                   extra_metadata=None, **kwargs):
