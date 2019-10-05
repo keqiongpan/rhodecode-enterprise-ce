@@ -257,7 +257,6 @@
             });
         % endif
 
-
     </script>
     % else:
     ## form state when not logged in
@@ -309,8 +308,8 @@
 
 
 <%def name="comment_form(form_type, form_id='', lineno_id='{1}', review_statuses=None, form_extras=None)">
-  ## comment injected based on assumption that user is logged in
 
+  ## comment injected based on assumption that user is logged in
   <form ${'id="{}"'.format(form_id) if form_id else '' |n} action="#" method="GET">
 
     <div class="comment-area">
@@ -341,7 +340,7 @@
             </div>
         </div>
 
-        <div class="comment-area-footer">
+        <div class="comment-area-footer comment-attachment-uploader">
             <div class="toolbar">
                 <div class="toolbar-text">
                   ${(_('Comments parsed using %s syntax with %s, and %s actions support.') % (
@@ -351,6 +350,23 @@
                        )
                     )|n}
                 </div>
+
+                <div class="comment-attachment-text">
+                    <div class="dropzone-text">
+                        ${_("Drag'n Drop files here or")} <span class="link pick-attachment">${_('Choose your files')}</span>.<br>
+                    </div>
+                    <div class="dropzone-upload" style="display:none">
+                        <i class="icon-spin animate-spin"></i> ${_('uploading...')}
+                    </div>
+                </div>
+
+                ## comments dropzone template, empty on purpose
+                <div style="display: none" class="comment-attachment-uploader-template">
+                    <div class="dz-file-preview" style="margin: 0">
+                        <div class="dz-error-message"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

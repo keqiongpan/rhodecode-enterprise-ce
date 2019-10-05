@@ -34,6 +34,11 @@ c.template_context['search_context'] = {
     'repo_view_type': c.template_context.get('repo_view_type'),
 }
 
+c.template_context['attachment_store'] = {
+    'max_file_size_mb': 10,
+    'image_ext': ["png", "jpg", "gif", "jpeg"]
+}
+
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>

@@ -5115,7 +5115,7 @@ class FileStore(Base, BaseModel):
     # if repo/repo_group reference is set, check for permissions
     check_acl = Column('check_acl', Boolean(), nullable=False, default=True)
 
-    # hidden defines an attachement that should be hidden from showing in artifact listing
+    # hidden defines an attachment that should be hidden from showing in artifact listing
     hidden = Column('hidden', Boolean(), nullable=False, default=False)
 
     user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), nullable=False)
@@ -5147,8 +5147,8 @@ class FileStore(Base, BaseModel):
 
     @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
-               file_description='', enabled=True, check_acl=True, user_id=None,
-               scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
+               file_description='', enabled=True, hidden=False, check_acl=True,
+               user_id=None, scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
 
         store_entry = FileStore()
         store_entry.file_uid = file_uid
@@ -5160,11 +5160,13 @@ class FileStore(Base, BaseModel):
 
         store_entry.check_acl = check_acl
         store_entry.enabled = enabled
+        store_entry.hidden = hidden
 
         store_entry.user_id = user_id
         store_entry.scope_user_id = scope_user_id
         store_entry.scope_repo_id = scope_repo_id
         store_entry.scope_repo_group_id = scope_repo_group_id
+
         return store_entry
 
     @classmethod

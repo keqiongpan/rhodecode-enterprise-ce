@@ -539,11 +539,38 @@ form.comment-form {
 }
 
 .comment-area-footer {
-    display: flex;
+    min-height: 30px;
 }
 
 .comment-footer .toolbar {
 
+}
+
+.comment-attachment-uploader {
+    border: 1px dashed white;
+    border-radius: @border-radius;
+    margin-top: -10px;
+
+    &.dz-drag-hover {
+        border-color: @grey3;
+    }
+
+    .dz-error-message {
+        padding-top: 0;
+    }
+}
+
+.comment-attachment-text {
+    clear: both;
+    font-size: 11px;
+    color: #8F8F8F;
+    width: 100%;
+    .pick-attachment {
+        color: #8F8F8F;
+    }
+    .pick-attachment:hover {
+        color: @rcblue;
+    }
 }
 
 .nav-links {
@@ -579,7 +606,6 @@ form.comment-form {
 
 .toolbar-text {
     float: left;
-    margin: -5px 0px 0px 0px;
     font-size: 12px;
 }
 

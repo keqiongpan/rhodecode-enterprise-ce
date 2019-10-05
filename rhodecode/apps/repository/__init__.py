@@ -79,6 +79,10 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/preview', repo_route=True)
 
     config.add_route(
+        name='repo_commit_comment_attachment_upload',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/attachment_upload', repo_route=True)
+
+    config.add_route(
         name='repo_commit_comment_delete',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/delete', repo_route=True)
 
