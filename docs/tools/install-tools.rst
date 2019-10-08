@@ -57,9 +57,12 @@ To install |RCT|, use the following steps:
 
 1. Set up a ``virtualenv`` on your local machine, see virtualenv_ instructions
    here.
-2. Install |RCT| using pip. Full url with token is available at https://rhodecode.com/u/#rhodecode-tools
-   ``pip install -I https://dls.rhodecode.com/dls/<token>/rhodecode-tools/latest``
+2. Install |RCT| using pip. All downloadable versions of |RCT| are available at:
+   `https://code.rhodecode.com/rhodecode-tools-ce/artifacts`
 
+   Example installation::
+
+    pip install -I https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-10ac93f4-bb7d-4b97-baea-68110743dd5a.tar.gz
 
 Once |RCT| is installed using these steps there are a few extra
 configuration changes you can make. These are explained in more detail in the
