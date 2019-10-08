@@ -29,7 +29,7 @@ test-only-mysql:
 	PYTHONHASHSEED=random \
 	py.test -x -vv -r xw -p no:sugar --cov=rhodecode \
     --cov-report=term-missing --cov-report=html \
-    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "mysql://root:qweqwe@localhost/rhodecode_test"}}' \
+    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "mysql://root:qweqwe@localhost/rhodecode_test?charset=utf8"}}' \
     rhodecode
 
 test-only-postgres:
