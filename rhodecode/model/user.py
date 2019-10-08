@@ -507,6 +507,8 @@ class UserModel(BaseModel):
 
     def delete(self, user, cur_user=None, handle_repos=None,
                handle_repo_groups=None, handle_user_groups=None):
+        from rhodecode.lib.hooks_base import log_delete_user
+
         if not cur_user:
             cur_user = getattr(
                 get_current_rhodecode_user(), 'username', None)
@@ -547,12 +549,14 @@ class UserModel(BaseModel):
                     u'removed. Switch owners or remove those user groups:%s'
                     % (user.username, len(user_groups), ', '.join(user_groups)))
 
+            user_data = user.get_dict()  # fetch user data before expire
+
             # we might change the user data with detach/delete, make sure
             # the object is marked as expired before actually deleting !
             self.sa.expire(user)
             self.sa.delete(user)
-            from rhodecode.lib.hooks_base import log_delete_user
-            log_delete_user(deleted_by=cur_user, **user.get_dict())
+
+            log_delete_user(deleted_by=cur_user, **user_data)
         except Exception:
             log.error(traceback.format_exc())
             raise
