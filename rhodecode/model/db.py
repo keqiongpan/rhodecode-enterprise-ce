@@ -1061,7 +1061,7 @@ class User(Base, BaseModel):
 class UserApiKeys(Base, BaseModel):
     __tablename__ = 'user_api_keys'
     __table_args__ = (
-        Index('uak_api_key_idx', 'api_key', unique=True),
+        Index('uak_api_key_idx', 'api_key'),
         Index('uak_api_key_expires_idx', 'api_key', 'expires'),
         base_table_args
     )
