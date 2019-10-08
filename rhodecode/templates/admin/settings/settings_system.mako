@@ -12,7 +12,7 @@
         % endif
     </div>
     <div class="panel-body">
-        <dl class="dl-horizontal settings">
+        <dl class="dl-horizontal settings dt-400">
         % for dt, dd, warn in c.data_items:
           <dt>${dt}${':' if dt else '---'}</dt>
           <dd>${dd}${'' if dt else '---'}
@@ -32,7 +32,7 @@
         <h3 class="panel-title">${_('VCS Server')}</h3>
     </div>
     <div class="panel-body">
-        <dl class="dl-horizontal settings">
+        <dl class="dl-horizontal settings dt-400">
         % for dt, dd in c.vcsserver_data_items:
           <dt>${dt}${':' if dt else '---'}</dt>
           <dd>${dd}${'' if dt else '---'}</dd>
@@ -46,20 +46,12 @@
         <h3 class="panel-title">${_('Python Packages')}</h3>
     </div>
     <div class="panel-body">
-        <table class="table">
-          <colgroup>
-              <col class='label'>
-              <col class='content'>
-          </colgroup>
-          <tbody>
-              % for key, value in c.py_modules['human_value']:
-                  <tr>
-                      <td>${key}</td>
-                      <td>${value}</td>
-                  </tr>
-              % endfor
-          </tbody>
-        </table>
+        <dl class="dl-horizontal settings dt-400">
+        % for dt, dd in c.py_modules['human_value']:
+          <dt>${dt}${':' if dt else '---'}</dt>
+          <dd>${dd}${'' if dt else '---'}</dd>
+        % endfor
+        </dl>
     </div>
 </div>
 
