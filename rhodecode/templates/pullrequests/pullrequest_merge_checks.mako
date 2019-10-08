@@ -52,30 +52,34 @@
         <div>
           ${h.secure_form(h.route_path('pullrequest_merge', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id), id='merge_pull_request_form', request=request)}
           <% merge_disabled = ' disabled' if c.pr_merge_possible is False else '' %>
-          <a class="btn" href="#" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
-          <input type="submit" id="merge_pull_request" value="${_('Merge Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>
+
+          % if c.allowed_to_close:
+            ## close PR action, injected later next to COMMENT button
+            % if c.pull_request_review_status == c.REVIEW_STATUS_APPROVED:
+            <a id="close-pull-request-action" class="btn btn-approved-status" href="#close-as-approved" onclick="closePullRequest('${c.REVIEW_STATUS_APPROVED}'); return false;">
+                ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_APPROVED))}
+            </a>
+            % else:
+            <a id="close-pull-request-action" class="btn btn-rejected-status" href="#close-as-rejected" onclick="closePullRequest('${c.REVIEW_STATUS_REJECTED}'); return false;">
+                ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_REJECTED))}
+            </a>
+            % endif
+          % endif
+
+          <input type="submit" id="merge_pull_request" value="${_('Merge and close Pull Request')}" class="btn${merge_disabled}"${merge_disabled}>
           ${h.end_form()}
+
+          <div class="pull-request-merge-refresh">
+              <a href="#refreshChecks" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
+          </div>
+
         </div>
         % elif c.rhodecode_user.username != h.DEFAULT_USER:
             <a class="btn" href="#" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
-            <input type="submit" value="${_('Merge Pull Request')}" class="btn disabled" disabled="disabled" title="${_('You are not allowed to merge this pull request.')}">
+            <input type="submit" value="${_('Merge and close Pull Request')}" class="btn disabled" disabled="disabled" title="${_('You are not allowed to merge this pull request.')}">
         % else:
           <input type="submit" value="${_('Login to Merge this Pull Request')}" class="btn disabled" disabled="disabled">
         % endif
     </div>
 
-    % if c.allowed_to_close:
-        ## close PR action, injected later next to COMMENT button
-        <div id="close-pull-request-action" style="display: none">
-        % if c.pull_request_review_status == c.REVIEW_STATUS_APPROVED:
-        <a class="btn btn-approved-status" href="#close-as-approved" onclick="closePullRequest('${c.REVIEW_STATUS_APPROVED}'); return false;">
-            ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_APPROVED))}
-        </a>
-        % else:
-        <a class="btn btn-rejected-status" href="#close-as-rejected" onclick="closePullRequest('${c.REVIEW_STATUS_REJECTED}'); return false;">
-            ${_('Close with status {}').format(h.commit_status_lbl(c.REVIEW_STATUS_REJECTED))}
-        </a>
-        % endif
-        </div>
-    % endif
 </div>

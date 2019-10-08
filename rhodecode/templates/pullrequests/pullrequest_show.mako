@@ -692,17 +692,8 @@
                         $('.pull-request-merge').css('opacity', 1);
 
                         $('.action-buttons-extra').css('opacity', 1);
-                        injectCloseAction();
                     }
                 );
-            };
-
-            injectCloseAction =  function() {
-                var closeAction = $('#close-pull-request-action').html();
-                var $actionButtons = $('.action-buttons-extra');
-                // clear the action before
-                $actionButtons.html("");
-                $actionButtons.html(closeAction);
             };
 
             closePullRequest = function (status) {
@@ -800,8 +791,6 @@
             window.commentFormGlobalSubmitSuccessCallback = function(){
                 refreshMergeChecks();
             };
-            // initial injection
-            injectCloseAction();
 
             ReviewerAutoComplete('#user');
 
