@@ -46,7 +46,7 @@ class TestSearchController(TestController):
     def test_index(self):
         self.log_user()
         response = self.app.get(route_path('search'))
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.one_element_exists('input#q')
 
     def test_search_files_empty_search(self):

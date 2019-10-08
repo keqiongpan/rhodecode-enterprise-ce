@@ -395,7 +395,7 @@ class TestVCSOperations(object):
 
         user = user_util.create_user()
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -10, AuthTokenModel.cls.ROLE_VCS)
+            user.user_id, u'test-token', -10, AuthTokenModel.cls.ROLE_VCS)
         token = auth_token.api_key
 
         clone_url = rc_web_server.repo_clone_url(
@@ -412,7 +412,7 @@ class TestVCSOperations(object):
 
         user = user_util.create_user()
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_API)
+            user.user_id, u'test-token', -1, AuthTokenModel.cls.ROLE_API)
         token = auth_token.api_key
 
         clone_url = rc_web_server.repo_clone_url(
@@ -445,7 +445,7 @@ class TestVCSOperations(object):
                              'egg:rhodecode-enterprise-ce#rhodecode'])
         user = user_util.create_user()
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
+            user.user_id, u'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
         token = auth_token.api_key
 
         # manually set scope
@@ -466,7 +466,7 @@ class TestVCSOperations(object):
                              'egg:rhodecode-enterprise-ce#rhodecode'])
         user = user_util.create_user()
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
+            user.user_id, u'test-token', -1, AuthTokenModel.cls.ROLE_VCS)
         token = auth_token.api_key
 
         # manually set scope

@@ -124,6 +124,8 @@ class TestPullRequestModel(object):
         PullRequestModel().update_reviewers(
             pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
+        Session().commit()
+
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
@@ -133,6 +135,8 @@ class TestPullRequestModel(object):
         PullRequestModel().update_reviewers(
             pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
+        Session().commit()
+
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert pr_count == 1
@@ -140,6 +144,7 @@ class TestPullRequestModel(object):
     def test_delete_calls_cleanup_merge(self, pull_request):
         repo_id = pull_request.target_repo.repo_id
         PullRequestModel().delete(pull_request, pull_request.author)
+        Session().commit()
 
         self.workspace_remove_mock.assert_called_once_with(
             repo_id, self.workspace_id)
@@ -147,6 +152,8 @@ class TestPullRequestModel(object):
     def test_close_calls_cleanup_and_hook(self, pull_request):
         PullRequestModel().close_pull_request(
             pull_request, pull_request.author)
+        Session().commit()
+
         repo_id = pull_request.target_repo.repo_id
 
         self.workspace_remove_mock.assert_called_once_with(
@@ -286,6 +293,7 @@ class TestPullRequestModel(object):
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
+        Session().commit()
 
         message = (
             u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
@@ -327,6 +335,7 @@ class TestPullRequestModel(object):
             assert pull_request.pull_request_state == PullRequest.STATE_UPDATING
             PullRequestModel().merge_repo(
                 pull_request, pull_request.author, extras=merge_extras)
+            Session().commit()
 
         assert pull_request.pull_request_state == PullRequest.STATE_CREATED
 
@@ -367,6 +376,7 @@ class TestPullRequestModel(object):
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
+        Session().commit()
 
         message = (
             u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
@@ -442,6 +452,7 @@ class TestIntegrationMerge(object):
         with mock.patch.dict(rhodecode.CONFIG, extra_config, clear=False):
             merge_state = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
+            Session().commit()
 
         assert merge_state.executed
         assert '_pre_push_hook' in capture_rcextensions
@@ -459,6 +470,7 @@ class TestIntegrationMerge(object):
             pre_pull.side_effect = RepositoryError("Disallow push!")
             merge_status = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
+            Session().commit()
 
         assert not merge_status.executed
         assert 'pre_push' not in capture_rcextensions
@@ -479,6 +491,8 @@ class TestIntegrationMerge(object):
         Session().commit()
         merge_status = PullRequestModel().merge_repo(
             pull_request, user_regular, extras=merge_extras)
+        Session().commit()
+
         assert not merge_status.executed
 
 
@@ -889,6 +903,7 @@ def test_link_comments_to_version_only_updates_unlinked_comments(pr_util, config
     version2 = pr_util.create_version_of_pull_request()
 
     PullRequestModel()._link_comments_to_version(version2)
+    Session().commit()
 
     # Expect that only the new comment is linked to version2
     assert (

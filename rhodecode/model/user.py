@@ -510,8 +510,7 @@ class UserModel(BaseModel):
         from rhodecode.lib.hooks_base import log_delete_user
 
         if not cur_user:
-            cur_user = getattr(
-                get_current_rhodecode_user(), 'username', None)
+            cur_user = getattr(get_current_rhodecode_user(), 'username', None)
         user = self._get_user(user)
 
         try:

@@ -81,13 +81,13 @@ class TestAdminRepos(object):
     def test_create_page_restricted_to_single_backend(self, autologin_user, backend):
         with mock.patch('rhodecode.BACKENDS', {'git': 'git'}):
             response = self.app.get(route_path('repo_new'), status=200)
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         element = assert_response.get_element('#repo_type')
         assert element.text_content() == '\ngit\n'
 
     def test_create_page_non_restricted_backends(self, autologin_user, backend):
         response = self.app.get(route_path('repo_new'), status=200)
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains('#repo_type', 'git')
         assert_response.element_contains('#repo_type', 'svn')
         assert_response.element_contains('#repo_type', 'hg')

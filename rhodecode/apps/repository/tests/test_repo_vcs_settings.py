@@ -98,7 +98,7 @@ class TestVcsSettings(object):
         repo_name = backend.repo_name
         response = self.app.get(route_path('edit_repo_vcs', repo_name=repo_name))
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         element = assert_response.get_element('#inherit_global_settings')
         assert element.checked
 
@@ -111,7 +111,7 @@ class TestVcsSettings(object):
             repo, 'inherit_vcs_settings', checked_value, 'bool')
         response = self.app.get(route_path('edit_repo_vcs', repo_name=repo_name))
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         element = assert_response.get_element('#inherit_global_settings')
         assert element.checked == checked_value
 
@@ -491,7 +491,7 @@ class TestVcsSettings(object):
 
         response = self.app.get(
             route_path('edit_repo_vcs', repo_name=repo_name), status=200)
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         for branch in branches:
             css_selector = '[name=branch_value_{}]'.format(branch.ui_id)
             element = assert_response.get_element(css_selector)
@@ -668,7 +668,7 @@ class TestVcsSettings(object):
         Session().commit()
 
     def assert_repo_value_equals_global_value(self, response, setting):
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         global_css_selector = '[name={}_inherited]'.format(setting)
         repo_css_selector = '[name={}]'.format(setting)
         repo_element = assert_response.get_element(repo_css_selector)

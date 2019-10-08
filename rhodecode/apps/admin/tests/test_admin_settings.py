@@ -367,7 +367,7 @@ class TestAdminSettingsVcs(object):
 
     def test_has_an_input_for_invalidation_of_inline_comments(self):
         response = self.app.get(route_path('admin_settings_vcs'))
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.one_element_exists(
             '[name=rhodecode_use_outdated_comments]')
 
@@ -518,7 +518,7 @@ class TestOpenSourceLicenses(object):
             response = self.app.get(
                 route_path('admin_settings_open_source'), status=200)
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
         for license_data in sample_licenses:
@@ -528,7 +528,7 @@ class TestOpenSourceLicenses(object):
     def test_records_can_be_read(self, autologin_user):
         response = self.app.get(
             route_path('admin_settings_open_source'), status=200)
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
 

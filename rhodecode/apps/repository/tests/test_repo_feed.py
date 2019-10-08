@@ -116,7 +116,7 @@ class TestFeedView(TestController):
             self, backend, user_util, feed_type):
         user = user_util.create_user()
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_API)
+            user.user_id, u'test-token', -1, AuthTokenModel.cls.ROLE_API)
         auth_token = auth_token.api_key
 
         self.app.get(
@@ -127,7 +127,7 @@ class TestFeedView(TestController):
             status=302)
 
         auth_token = AuthTokenModel().create(
-            user.user_id, 'test-token', -1, AuthTokenModel.cls.ROLE_FEED)
+            user.user_id, u'test-token', -1, AuthTokenModel.cls.ROLE_FEED)
         auth_token = auth_token.api_key
         self.app.get(
             route_path(

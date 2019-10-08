@@ -236,7 +236,7 @@ class TestSummaryView(object):
         with scm_patcher:
             response = self.app.get(
                 route_path('repo_summary', repo_name=repo_name))
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '.main .alert-warning strong', 'Missing requirements')
         assert_response.element_contains(

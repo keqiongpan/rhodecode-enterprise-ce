@@ -584,7 +584,7 @@ class User(Base, BaseModel):
     _user_data = Column("user_data", LargeBinary(), nullable=True)  # JSON data
 
     user_log = relationship('UserLog')
-    user_perms = relationship('UserToPerm', primaryjoin="User.user_id==UserToPerm.user_id", cascade='all')
+    user_perms = relationship('UserToPerm', primaryjoin="User.user_id==UserToPerm.user_id", cascade='all, delete-orphan')
 
     repositories = relationship('Repository')
     repository_groups = relationship('RepoGroup')
@@ -593,9 +593,9 @@ class User(Base, BaseModel):
     user_followers = relationship('UserFollowing', primaryjoin='UserFollowing.follows_user_id==User.user_id', cascade='all')
     followings = relationship('UserFollowing', primaryjoin='UserFollowing.user_id==User.user_id', cascade='all')
 
-    repo_to_perm = relationship('UserRepoToPerm', primaryjoin='UserRepoToPerm.user_id==User.user_id', cascade='all')
-    repo_group_to_perm = relationship('UserRepoGroupToPerm', primaryjoin='UserRepoGroupToPerm.user_id==User.user_id', cascade='all')
-    user_group_to_perm = relationship('UserUserGroupToPerm', primaryjoin='UserUserGroupToPerm.user_id==User.user_id', cascade='all')
+    repo_to_perm = relationship('UserRepoToPerm', primaryjoin='UserRepoToPerm.user_id==User.user_id', cascade='all, delete-orphan')
+    repo_group_to_perm = relationship('UserRepoGroupToPerm', primaryjoin='UserRepoGroupToPerm.user_id==User.user_id', cascade='all, delete-orphan')
+    user_group_to_perm = relationship('UserUserGroupToPerm', primaryjoin='UserUserGroupToPerm.user_id==User.user_id', cascade='all, delete-orphan')
 
     group_member = relationship('UserGroupMember', cascade='all')
 
@@ -1328,7 +1328,7 @@ class UserGroup(Base, BaseModel):
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     _group_data = Column("group_data", LargeBinary(), nullable=True)  # JSON data
 
-    members = relationship('UserGroupMember', cascade="all, delete, delete-orphan", lazy="joined")
+    members = relationship('UserGroupMember', cascade="all, delete-orphan", lazy="joined")
     users_group_to_perm = relationship('UserGroupToPerm', cascade='all')
     users_group_repo_to_perm = relationship('UserGroupRepoToPerm', cascade='all')
     users_group_repo_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -1665,21 +1665,21 @@ class Repository(Base, BaseModel):
         primaryjoin='UserFollowing.follows_repo_id==Repository.repo_id',
         cascade='all')
     extra_fields = relationship(
-        'RepositoryField', cascade="all, delete, delete-orphan")
+        'RepositoryField', cascade="all, delete-orphan")
     logs = relationship('UserLog')
     comments = relationship(
-        'ChangesetComment', cascade="all, delete, delete-orphan")
+        'ChangesetComment', cascade="all, delete-orphan")
     pull_requests_source = relationship(
         'PullRequest',
         primaryjoin='PullRequest.source_repo_id==Repository.repo_id',
-        cascade="all, delete, delete-orphan")
+        cascade="all, delete-orphan")
     pull_requests_target = relationship(
         'PullRequest',
         primaryjoin='PullRequest.target_repo_id==Repository.repo_id',
-        cascade="all, delete, delete-orphan")
+        cascade="all, delete-orphan")
     ui = relationship('RepoRhodeCodeUi', cascade="all")
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
-    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete-orphan")
 
     scoped_tokens = relationship('UserApiKeys', cascade="all")
 
@@ -2551,7 +2551,7 @@ class RepoGroup(Base, BaseModel):
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
-    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete-orphan")
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -3270,7 +3270,7 @@ class UserRepoToPerm(Base, BaseModel):
     repository = relationship('Repository')
     permission = relationship('Permission')
 
-    branch_perm_entry = relationship('UserToRepoBranchPermission', cascade="all, delete, delete-orphan", lazy='joined')
+    branch_perm_entry = relationship('UserToRepoBranchPermission', cascade="all, delete-orphan", lazy='joined')
 
     @classmethod
     def create(cls, user, repository, permission):
@@ -3646,7 +3646,7 @@ class ChangesetComment(Base, BaseModel):
 
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
+    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='joined')
     pull_request = relationship('PullRequest', lazy='joined')
     pull_request_version = relationship('PullRequestVersion')
 
@@ -4120,13 +4120,13 @@ class PullRequest(Base, _PullRequestBase):
             return '<DB:PullRequest at %#x>' % id(self)
 
     reviewers = relationship('PullRequestReviewers',
-                             cascade="all, delete, delete-orphan")
+                             cascade="all, delete-orphan")
     statuses = relationship('ChangesetStatus',
-                            cascade="all, delete, delete-orphan")
+                            cascade="all, delete-orphan")
     comments = relationship('ChangesetComment',
-                            cascade="all, delete, delete-orphan")
+                            cascade="all, delete-orphan")
     versions = relationship('PullRequestVersion',
-                            cascade="all, delete, delete-orphan",
+                            cascade="all, delete-orphan",
                             lazy='dynamic')
 
     @classmethod
@@ -4341,7 +4341,7 @@ class Notification(Base, BaseModel):
 
     created_by_user = relationship('User')
     notifications_to_users = relationship('UserNotification', lazy='joined',
-                                          cascade="all, delete, delete-orphan")
+                                          cascade="all, delete-orphan")
 
     @property
     def recipients(self):

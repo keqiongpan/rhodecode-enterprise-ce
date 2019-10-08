@@ -27,7 +27,7 @@ from mock import patch
 from rhodecode.lib import auth
 from rhodecode.lib.utils2 import md5
 from rhodecode.model.auth_token import AuthTokenModel
-from rhodecode.model.db import User
+from rhodecode.model.db import Session, User
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
@@ -93,6 +93,7 @@ def test_cached_perms_data_user_group_global_permissions(user_util):
 
     granted_permission = 'repository.write'
     UserGroupModel().grant_perm(user_group, granted_permission)
+    Session().commit()
 
     permissions = get_permissions(user)
     assert granted_permission in permissions['global']
@@ -104,6 +105,7 @@ def test_cached_perms_data_user_group_global_permissions_(user_util):
 
     granted_permission = 'repository.write'
     UserGroupModel().grant_perm(user_group, granted_permission)
+    Session().commit()
 
     permissions = get_permissions(user)
     assert granted_permission in permissions['global']
@@ -112,6 +114,7 @@ def test_cached_perms_data_user_group_global_permissions_(user_util):
 def test_cached_perms_data_user_global_permissions(user_util):
     user = user_util.create_user()
     UserModel().grant_perm(user, 'repository.none')
+    Session().commit()
 
     permissions = get_permissions(user, user_inherit_default_permissions=True)
     assert 'repository.read' in permissions['global']
@@ -127,6 +130,7 @@ def test_cached_perms_data_repository_permissions_on_private_repository(
     granted_permission = 'repository.write'
     RepoModel().grant_user_group_permission(
         repo, user_group.users_group_name, granted_permission)
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == granted_permission
@@ -153,6 +157,7 @@ def test_cached_perms_data_repository_permissions_not_inheriting_defaults(
 
     # Don't inherit default object permissions
     UserModel().grant_perm(user, 'hg.inherit_default_perms.false')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == 'repository.none'
@@ -203,6 +208,7 @@ def test_cached_perms_data_default_permissions_on_repository_group_no_inherit(
     # Don't inherit default object permissions
     user = user_util.create_user()
     UserModel().grant_perm(user, 'hg.inherit_default_perms.false')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories_groups'][repo_group.group_name] == \
@@ -224,6 +230,7 @@ def test_cached_perms_data_repository_permissions_from_user_group(
         repo, user_group.users_group_name, 'repository.read')
     RepoModel().grant_user_group_permission(
         repo, user_group2.users_group_name, 'repository.write')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == 'repository.write'
@@ -238,6 +245,7 @@ def test_cached_perms_data_repository_permissions_from_user_group_owner(
 
     RepoModel().grant_user_group_permission(
         repo, user_group.users_group_name, 'repository.write')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == 'repository.admin'
@@ -249,6 +257,7 @@ def test_cached_perms_data_user_repository_permissions(
     repo = backend_random.create_repo()
     granted_permission = 'repository.write'
     RepoModel().grant_user_permission(repo, user, granted_permission)
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == granted_permission
@@ -260,6 +269,7 @@ def test_cached_perms_data_user_repository_permissions_explicit(
     repo = backend_random.create_repo()
     granted_permission = 'repository.none'
     RepoModel().grant_user_permission(repo, user, granted_permission)
+    Session().commit()
 
     permissions = get_permissions(user, explicit=True)
     assert permissions['repositories'][repo.repo_name] == granted_permission
@@ -271,6 +281,7 @@ def test_cached_perms_data_user_repository_permissions_owner(
     repo = backend_random.create_repo()
     repo.user_id = user.user_id
     RepoModel().grant_user_permission(repo, user, 'repository.write')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['repositories'][repo.repo_name] == 'repository.admin'
@@ -380,6 +391,7 @@ def test_cached_perms_data_user_group_permissions(
     user = user_util.create_user()
     user_group = user_util.create_user_group()
     UserGroupModel().grant_user_permission(user_group, user, 'usergroup.write')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['user_groups'][user_group.users_group_name] == \
@@ -391,6 +403,7 @@ def test_cached_perms_data_user_group_permissions_explicit(
     user = user_util.create_user()
     user_group = user_util.create_user_group()
     UserGroupModel().grant_user_permission(user_group, user, 'usergroup.none')
+    Session().commit()
 
     permissions = get_permissions(user, explicit=True)
     assert permissions['user_groups'][user_group.users_group_name] == \
@@ -404,6 +417,7 @@ def test_cached_perms_data_user_group_permissions_not_inheriting_defaults(
 
     # Don't inherit default object permissions
     UserModel().grant_perm(user, 'hg.inherit_default_perms.false')
+    Session().commit()
 
     permissions = get_permissions(user)
     assert permissions['user_groups'][user_group.users_group_name] == \
@@ -447,6 +461,7 @@ def test_permission_calculator_repository_permissions_robustness_from_user(
 
     RepoModel().grant_user_permission(
         backend_random.repo, user, 'repository.write')
+    Session().commit()
 
     calculator = auth.PermissionCalculator(
         user.user_id, {}, False, False, False, 'higherwin')
@@ -610,7 +625,7 @@ def test_auth_by_token(test_token, test_roles, auth_result, expected_tokens,
     user = user_util.create_user()
     user_id = user.user_id
     for token, role, expires in expected_tokens:
-        new_token = AuthTokenModel().create(user_id, 'test-token', expires, role)
+        new_token = AuthTokenModel().create(user_id, u'test-token', expires, role)
         new_token.api_key = token  # inject known name for testing...
 
     assert auth_result == user.authenticate_by_token(
