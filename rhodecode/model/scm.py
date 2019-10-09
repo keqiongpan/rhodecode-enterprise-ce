@@ -47,8 +47,9 @@ from rhodecode.lib.utils2 import (safe_str, safe_unicode)
 from rhodecode.lib.system_info import get_system_info
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
+    or_, false,
     Repository, CacheKey, UserFollowing, UserLog, User, RepoGroup,
-    PullRequest)
+    PullRequest, FileStore)
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.validation_schema.validators import url_validator, InvalidCloneUrl
 
@@ -363,6 +364,12 @@ class ScmModel(BaseModel):
         return self.sa.query(PullRequest)\
             .filter(PullRequest.target_repo == repo)\
             .filter(PullRequest.status != PullRequest.STATUS_CLOSED).count()
+
+    def get_artifacts(self, repo):
+        repo = self._get_repo(repo)
+        return self.sa.query(FileStore)\
+            .filter(FileStore.repo == repo)\
+            .filter(or_(FileStore.hidden == None, FileStore.hidden == false())).count()
 
     def mark_as_fork(self, repo, fork, user):
         repo = self._get_repo(repo)

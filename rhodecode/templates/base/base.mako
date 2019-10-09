@@ -301,17 +301,19 @@
           <li class="${is_active('showpullrequest')}">
             <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
               <div class="menulabel">
-              %if c.repository_pull_requests == 1:
-                  ${_('Pull Request')} ${c.repository_pull_requests}
-              %else:
-                  ${_('Pull Requests')} ${c.repository_pull_requests} 
-              %endif
+                  ${_('Pull Requests')} <span class="menulink-counter">${c.repository_pull_requests}</span>
               </div>
             </a>
           </li>
         %endif
 
-        <li class="${is_active('artifacts')}"><a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}"><div class="menulabel">${_('Artifacts')}</div></a></li>
+        <li class="${is_active('artifacts')}">
+            <a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}">
+                <div class="menulabel">
+                    ${_('Artifacts')}  <span class="menulink-counter">${c.repository_artifacts}</span>
+                </div>
+            </a>
+        </li>
 
         %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
             <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
