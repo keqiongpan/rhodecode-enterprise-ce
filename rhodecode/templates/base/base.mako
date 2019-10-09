@@ -1040,7 +1040,7 @@
                          ('g F', 'Goto files page with file search activated'),
                          ('g p', 'Goto pull requests page'),
                          ('g o', 'Goto repository settings'),
-                         ('g O', 'Goto repository permissions settings'),
+                         ('g O', 'Goto repository access permissions settings'),
                      ]
                   %>
                   %for key, desc in elems:

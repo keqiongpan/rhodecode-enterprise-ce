@@ -2,7 +2,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Permissions')}</h3>
+        <h3 class="panel-title">${_('Repository Access Permissions')}</h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_repo_perms', repo_name=c.repo_name), request=request)}

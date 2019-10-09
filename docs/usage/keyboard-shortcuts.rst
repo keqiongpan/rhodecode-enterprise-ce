@@ -56,4 +56,4 @@ Repository Shortcuts
         Go to the repository settings page.
 
     \--:kbd:`gO`
-        Go to the repository permissions settings.
+        Go to the repository access permissions settings.

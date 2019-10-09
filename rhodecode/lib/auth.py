@@ -723,7 +723,7 @@ class PermissionCalculator(object):
 
     def _calculate_repository_permissions(self):
         """
-        Repository permissions for the current user.
+        Repository access permissions for the current user.
 
         Check if the user is part of user groups for this repository and
         fill in the permission from it. `_choose_permission` decides of which

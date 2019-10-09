@@ -87,7 +87,7 @@ class RepoSettingsPermissionsView(RepoAppView):
             user=self._rhodecode_user, repo=self.db_repo)
 
         Session().commit()
-        h.flash(_('Repository permissions updated'), category='success')
+        h.flash(_('Repository access permissions updated'), category='success')
 
         PermissionModel().flush_user_permission_caches(changes)
 

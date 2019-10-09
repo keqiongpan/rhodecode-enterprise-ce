@@ -7,7 +7,7 @@
 <% section_to_label = {
     'global': 'Global Permissions',
     'repository_branches': 'Repository Branch Rules',
-    'repositories': 'Repository Permissions',
+    'repositories': 'Repository Access Permissions',
     'user_groups': 'User Group Permissions',
     'repositories_groups': 'Repository Group Permissions',
 } %>
