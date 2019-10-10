@@ -12,10 +12,8 @@
         %if c.extern_type != 'rhodecode':
             <% readonly = "readonly" %>
             <% disabled = " disabled" %>
-            <div class="infoform">
-              <div class="fields">
-                <p>${_('This user was created from external source (%s). Editing some of the settings is limited.' % c.extern_type)}</p>
-              </div>
+            <div class="alert-warning" style="margin:0px 0px 20px 0px; padding: 10px">
+                <strong>${_('This user was created from external source (%s). Editing some of the settings is limited.' % c.extern_type)}</strong>
             </div>
         %endif
         <div class="form">
@@ -105,9 +103,8 @@
                     ${_('Authentication type')}:
                </div>
                <div class="input">
-                    <p>${c.extern_type}</p>
-                    ${h.hidden('extern_type', readonly="readonly")}
-                    <p class="help-block">${_('User was created using an external source. He is bound to authentication using this method.')}</p>
+                    ${h.select('extern_type', c.extern_type, c.allowed_extern_types)}
+                    <p class="help-block">${_('When user was created using an external source. He is bound to authentication using this method.')}</p>
                 </div>
             </div>
             <div class="field">

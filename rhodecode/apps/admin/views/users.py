@@ -31,6 +31,7 @@ from pyramid.response import Response
 from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView, UserAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
+from rhodecode.authentication.base import get_authn_registry, RhodeCodeExternalAuthPlugin
 from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
 from rhodecode.model.db import true
@@ -249,7 +250,32 @@ class UsersView(UserAppView):
     in there as well.
     """
 
+    def get_auth_plugins(self):
+        valid_plugins = []
+        authn_registry = get_authn_registry(self.request.registry)
+        for plugin in authn_registry.get_plugins_for_authentication():
+            if isinstance(plugin, RhodeCodeExternalAuthPlugin):
+                valid_plugins.append(plugin)
+            elif plugin.name == 'rhodecode':
+                valid_plugins.append(plugin)
+
+        # extend our choices if user has set a bound plugin which isn't enabled at the
+        # moment
+        extern_type = self.db_user.extern_type
+        if extern_type not in [x.uid for x in valid_plugins]:
+            try:
+                plugin = authn_registry.get_plugin_by_uid(extern_type)
+                if plugin:
+                    valid_plugins.append(plugin)
+
+            except Exception:
+                log.exception(
+                    'Could not extend user plugins with `{}`'.format(extern_type))
+        return valid_plugins
+
     def load_default_context(self):
+        req = self.request
+
         c = self._get_local_tmpl_context()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
         c.allowed_languages = [
@@ -263,7 +289,10 @@ class UsersView(UserAppView):
             ('ru', 'Russian (ru)'),
             ('zh', 'Chinese (zh)'),
         ]
-        req = self.request
+
+        c.allowed_extern_types = [
+            (x.uid, x.get_display_name()) for x in self.get_auth_plugins()
+        ]
 
         c.available_permissions = req.registry.settings['available_permissions']
         PermissionModel().set_global_permission_choices(
@@ -297,7 +326,7 @@ class UsersView(UserAppView):
         old_values = c.user.get_api_data()
         try:
             form_result = _form.to_python(dict(self.request.POST))
-            skip_attrs = ['extern_type', 'extern_name']
+            skip_attrs = ['extern_name']
             # TODO: plugin should define if username can be updated
             if c.extern_type != "rhodecode":
                 # forbid updating username for external accounts
