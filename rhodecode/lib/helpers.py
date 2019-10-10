@@ -150,10 +150,14 @@ def chop_at_smart(s, sub, inclusive=False, suffix_if_chopped=None):
     return chopped
 
 
-def shorter(text, size=20):
+def shorter(text, size=20, prefix=False):
     postfix = '...'
     if len(text) > size:
-        return text[:size - len(postfix)] + postfix
+        if prefix:
+            # shorten in front
+            return postfix + text[-(size - len(postfix)):]
+        else:
+            return text[:size - len(postfix)] + postfix
     return text
 
 

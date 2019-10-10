@@ -381,9 +381,14 @@
 
 
 ## ARTIFACT RENDERERS
+<%def name="repo_artifact_name(repo_name, file_uid, artifact_display_name)">
+    <a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">
+        ${artifact_display_name or 'EMPTY NAME'}
+    </a>
+</%def>
 
 <%def name="repo_artifact_uid(repo_name, file_uid)">
-    <code><a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">${file_uid}</a></code>
+    <code>${h.shorter(file_uid, size=12, prefix=True)}</code>
 </%def>
 
 <%def name="repo_artifact_uid_action(repo_name, file_uid)">
