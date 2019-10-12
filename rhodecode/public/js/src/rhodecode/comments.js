@@ -680,69 +680,69 @@ var CommentsController = function() {
             {'repo_name': templateContext.repo_name,
                      'commit_id': templateContext.commit_data.commit_id})
 
-        var previewTmpl = $(formElement).find('.comment-attachment-uploader-template').get(0).innerHTML;
-        var selectLink = $(formElement).find('.pick-attachment').get(0);
-        $(formElement).find('.comment-attachment-uploader').dropzone({
-            url: storeUrl,
-            headers: {"X-CSRF-Token": CSRF_TOKEN},
-            paramName: function () {
-                return "attachment"
-            }, // The name that will be used to transfer the file
-            clickable: selectLink,
-            parallelUploads: 1,
-            maxFiles: 10,
-            maxFilesize: templateContext.attachment_store.max_file_size_mb,
-            uploadMultiple: false,
-            autoProcessQueue: true, // if false queue will not be processed automatically.
-            createImageThumbnails: false,
-            previewTemplate: previewTmpl,
+        var previewTmpl = $(formElement).find('.comment-attachment-uploader-template').get(0);
+        if (previewTmpl !== undefined){
+            var selectLink = $(formElement).find('.pick-attachment').get(0);
+            $(formElement).find('.comment-attachment-uploader').dropzone({
+                url: storeUrl,
+                headers: {"X-CSRF-Token": CSRF_TOKEN},
+                paramName: function () {
+                    return "attachment"
+                }, // The name that will be used to transfer the file
+                clickable: selectLink,
+                parallelUploads: 1,
+                maxFiles: 10,
+                maxFilesize: templateContext.attachment_store.max_file_size_mb,
+                uploadMultiple: false,
+                autoProcessQueue: true, // if false queue will not be processed automatically.
+                createImageThumbnails: false,
+                previewTemplate: previewTmpl.innerHTML,
 
-            accept: function (file, done) {
-                done();
-            },
-            init: function () {
+                accept: function (file, done) {
+                    done();
+                },
+                init: function () {
 
-                this.on("sending", function (file, xhr, formData) {
-                    $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').hide();
-                    $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').show();
-                });
+                    this.on("sending", function (file, xhr, formData) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').hide();
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').show();
+                    });
 
-                this.on("success", function (file, response) {
-                    $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').show();
-                    $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
+                    this.on("success", function (file, response) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').show();
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
 
-                    var isRendered = false;
-                    var ext = file.name.split('.').pop();
-                    var imageExts = templateContext.attachment_store.image_ext;
-                    if (imageExts.indexOf(ext) !== -1){
-                        isRendered = true;
-                    }
-
-                    insertAttachmentText(cm, file.name, response.repo_fqn_access_path, isRendered)
-                });
-
-                this.on("error", function (file, errorMessage, xhr) {
-                    $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
-
-                    var error = null;
-
-                    if (xhr !== undefined){
-                        var httpStatus = xhr.status + " " + xhr.statusText;
-                        if (xhr.status >= 500) {
-                            error = httpStatus;
+                        var isRendered = false;
+                        var ext = file.name.split('.').pop();
+                        var imageExts = templateContext.attachment_store.image_ext;
+                        if (imageExts.indexOf(ext) !== -1){
+                            isRendered = true;
                         }
-                    }
 
-                    if (error === null) {
-                        error = errorMessage.error || errorMessage || httpStatus;
-                    }
-                    $(file.previewElement).find('.dz-error-message').html('ERROR: {0}'.format(error));
+                        insertAttachmentText(cm, file.name, response.repo_fqn_access_path, isRendered)
+                    });
 
-                });
-            }
-        });
+                    this.on("error", function (file, errorMessage, xhr) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
 
+                        var error = null;
 
+                        if (xhr !== undefined){
+                            var httpStatus = xhr.status + " " + xhr.statusText;
+                            if (xhr.status >= 500) {
+                                error = httpStatus;
+                            }
+                        }
+
+                        if (error === null) {
+                            error = errorMessage.error || errorMessage || httpStatus;
+                        }
+                        $(file.previewElement).find('.dz-error-message').html('ERROR: {0}'.format(error));
+
+                    });
+                }
+            });
+        }
       return commentForm;
   };
 
