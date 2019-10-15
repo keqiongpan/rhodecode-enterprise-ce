@@ -333,6 +333,7 @@ def setup_request(request):
             raise JSONRPCError("Content-Length is 0")
 
     raw_body = request.body
+    log.debug("Loading JSON body now")
     try:
         json_body = json.loads(raw_body)
     except ValueError as e:
@@ -359,7 +360,7 @@ def setup_request(request):
         request.rpc_params = json_body['args'] \
             if isinstance(json_body['args'], dict) else {}
 
-        log.debug('method: %s, params: %s', request.rpc_method, request.rpc_params)
+        log.debug('method: %s, params: %.10240r', request.rpc_method, request.rpc_params)
     except KeyError as e:
         raise JSONRPCError('Incorrect JSON data. Missing %s' % e)
 
