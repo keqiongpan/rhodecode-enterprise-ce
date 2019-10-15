@@ -729,7 +729,7 @@ var CommentsController = function() {
 
                         if (xhr !== undefined){
                             var httpStatus = xhr.status + " " + xhr.statusText;
-                            if (xhr.status >= 500) {
+                            if (xhr !== undefined && xhr.status >= 500) {
                                 error = httpStatus;
                             }
                         }
