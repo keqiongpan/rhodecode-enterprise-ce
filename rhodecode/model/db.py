@@ -5085,7 +5085,7 @@ class UserBookmark(Base, BaseModel):
             .all()
 
     def __unicode__(self):
-        return u'<UserBookmark(%d @ %r)>' % (self.position, self.redirect_url)
+        return u'<UserBookmark(%s @ %r)>' % (self.position, self.redirect_url)
 
 
 class FileStore(Base, BaseModel):

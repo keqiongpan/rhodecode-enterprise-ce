@@ -400,14 +400,15 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c.active = 'bookmarks'
         return self._get_template_context(c)
 
-    def _process_entry(self, entry, user_id):
+    def _process_bookmark_entry(self, entry, user_id):
         position = safe_int(entry.get('position'))
-        if position is None:
+        cur_position = safe_int(entry.get('cur_position'))
+        if position is None or cur_position is None:
             return
 
         # check if this is an existing entry
         is_new = False
-        db_entry = UserBookmark().get_by_position_for_user(position, user_id)
+        db_entry = UserBookmark().get_by_position_for_user(cur_position, user_id)
 
         if db_entry and str2bool(entry.get('remove')):
             log.debug('Marked bookmark %s for deletion', db_entry)
@@ -446,12 +447,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
             should_save = True
 
         if should_save:
-            log.debug('Saving bookmark %s, new:%s', db_entry, is_new)
             # mark user and position
             db_entry.user_id = user_id
             db_entry.position = position
             db_entry.title = entry.get('title')
             db_entry.redirect_url = entry.get('redirect_url') or default_redirect_url
+            log.debug('Saving bookmark %s, new:%s', db_entry, is_new)
 
             Session().add(db_entry)
 
@@ -468,15 +469,31 @@ class MyAccountView(BaseAppView, DataGridAppView):
         controls = peppercorn.parse(self.request.POST.items())
         user_id = c.user.user_id
 
+        # validate positions
+        positions = {}
+        for entry in controls.get('bookmarks', []):
+            position = safe_int(entry['position'])
+            if position is None:
+                continue
+
+            if position in positions:
+                h.flash(_("Position {} is defined twice. "
+                          "Please correct this error.").format(position), category='error')
+                return HTTPFound(h.route_path('my_account_bookmarks'))
+
+            entry['position'] = position
+            entry['cur_position'] = safe_int(entry.get('cur_position'))
+            positions[position] = entry
+
         try:
-            for entry in controls.get('bookmarks', []):
-                self._process_entry(entry, user_id)
+            for entry in positions.values():
+                self._process_bookmark_entry(entry, user_id)
 
             Session().commit()
             h.flash(_("Update Bookmarks"), category='success')
         except IntegrityError:
             h.flash(_("Failed to update bookmarks. "
-                      "Make sure an unique position is used"), category='error')
+                      "Make sure an unique position is used."), category='error')
 
         return HTTPFound(h.route_path('my_account_bookmarks'))
 
