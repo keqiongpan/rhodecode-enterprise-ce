@@ -2018,24 +2018,31 @@ def current_route_path(request, **kw):
     return request.current_route_path(_query=new_args)
 
 
-def api_call_example(method, args):
-    """
-    Generates an API call example via CURL
-    """
+def curl_api_example(method, args):
     args_json = json.dumps(OrderedDict([
         ('id', 1),
         ('auth_token', 'SECRET'),
         ('method', method),
         ('args', args)
     ]))
+
+    return "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{args_json}'".format(
+        api_url=route_url('apiv2'),
+        args_json=args_json
+    )
+
+
+def api_call_example(method, args):
+    """
+    Generates an API call example via CURL
+    """
+    curl_call = curl_api_example(method, args)
+
     return literal(
-        "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{data}'"
+        curl_call +
         "<br/><br/>SECRET can be found in <a href=\"{token_url}\">auth-tokens</a> page, "
         "and needs to be of `api calls` role."
-        .format(
-            api_url=route_url('apiv2'),
-            token_url=route_url('my_account_auth_tokens'),
-            data=args_json))
+        .format(token_url=route_url('my_account_auth_tokens')))
 
 
 def notification_description(notification, request):
