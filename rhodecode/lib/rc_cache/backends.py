@@ -182,7 +182,7 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
     def get_store(self):
         return self.filename
 
-    def get(self, key):
+    def _dbm_get(self, key):
         with self._dbm_file(False) as dbm:
             if hasattr(dbm, 'get'):
                 value = dbm.get(key, NO_VALUE)
@@ -195,6 +195,13 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
             if value is not NO_VALUE:
                 value = self._loads(value)
             return value
+
+    def get(self, key):
+        try:
+            return self._dbm_get(key)
+        except Exception:
+            log.error('Failed to fetch DBM key %s from DB: %s', key, self.get_store())
+            raise
 
     def set(self, key, value):
         with self._dbm_file(True) as dbm:
