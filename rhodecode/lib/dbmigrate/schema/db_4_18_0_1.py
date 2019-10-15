@@ -5170,25 +5170,6 @@ class FileStore(Base, BaseModel):
         return store_entry
 
     @classmethod
-    def store_metadata(cls, file_store_id, args, commit=True):
-        file_store = FileStore.get(file_store_id)
-        if file_store is None:
-            return
-
-        for section, key, value, value_type in args:
-            meta_entry = FileStoreMetadata()
-            meta_entry.file_store = file_store
-            meta_entry.file_store_meta_section = section
-            meta_entry.file_store_meta_key = key
-            meta_entry.file_store_meta_value_type = value_type
-            meta_entry.file_store_meta_value = value
-
-            Session().add(meta_entry)
-
-        if commit:
-            Session().commit()
-
-    @classmethod
     def bump_access_counter(cls, file_uid, commit=True):
         FileStore().query()\
             .filter(FileStore.file_uid == file_uid)\
@@ -5244,10 +5225,9 @@ class FileStoreMetadata(Base, BaseModel):
         v = self._file_store_meta_value
         _type = self._file_store_meta_value
         if _type:
-            # e.g unicode.encrypted == unicode
             _type = self._file_store_meta_value.split('.')[0]
             # decode the encrypted value
-            if '.encrypted' in self._file_store_meta_value_type:
+            if '.encrypted' in self._file_store_meta_value:
                 cipher = EncryptedTextValue()
                 v = safe_unicode(cipher.process_result_value(v, None))
 

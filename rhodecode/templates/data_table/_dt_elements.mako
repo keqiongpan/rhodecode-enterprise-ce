@@ -383,15 +383,12 @@
 ## ARTIFACT RENDERERS
 <%def name="repo_artifact_name(repo_name, file_uid, artifact_display_name)">
     <a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">
-        ${artifact_display_name or 'EMPTY NAME'}
+        ${artifact_display_name or '_EMPTY_NAME_'}
     </a>
 </%def>
 
 <%def name="repo_artifact_uid(repo_name, file_uid)">
-    <code>${h.shorter(file_uid, size=12, prefix=True)}</code>
-</%def>
-
-<%def name="repo_artifact_uid_action(repo_name, file_uid)">
+    <code>${h.shorter(file_uid, size=24, prefix=True)}</code>
     <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
 </%def>
 
