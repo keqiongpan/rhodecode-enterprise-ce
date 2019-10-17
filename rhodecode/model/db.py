@@ -5204,7 +5204,7 @@ class FileStore(Base, BaseModel):
 class FileStoreMetadata(Base, BaseModel):
     __tablename__ = 'file_store_metadata'
     __table_args__ = (
-        UniqueConstraint('file_store_meta_section', 'file_store_meta_key'),
+        UniqueConstraint('file_store_id', 'file_store_meta_section', 'file_store_meta_key'),
         Index('file_store_meta_section_idx', 'file_store_meta_section'),
         Index('file_store_meta_key_idx', 'file_store_meta_key'),
         base_table_args

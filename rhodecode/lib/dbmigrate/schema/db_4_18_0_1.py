@@ -67,6 +67,8 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher, validate_and_get_enc_data
 from rhodecode.lib.encrypt2 import Encryptor
+from rhodecode.lib.exceptions import (
+    ArtifactMetadataDuplicate, ArtifactMetadataBadValueType)
 from rhodecode.model.meta import Base, Session
 
 URL_SEP = '/'
@@ -5085,7 +5087,7 @@ class UserBookmark(Base, BaseModel):
             .all()
 
     def __unicode__(self):
-        return u'<UserBookmark(%d @ %r)>' % (self.position, self.redirect_url)
+        return u'<UserBookmark(%s @ %r)>' % (self.position, self.redirect_url)
 
 
 class FileStore(Base, BaseModel):
@@ -5146,6 +5148,10 @@ class FileStore(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     @classmethod
+    def get_by_store_uid(cls, file_store_uid):
+        return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
+
+    @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
                file_description='', enabled=True, hidden=False, check_acl=True,
                user_id=None, scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
@@ -5170,6 +5176,42 @@ class FileStore(Base, BaseModel):
         return store_entry
 
     @classmethod
+    def store_metadata(cls, file_store_id, args, commit=True):
+        file_store = FileStore.get(file_store_id)
+        if file_store is None:
+            return
+
+        for section, key, value, value_type in args:
+            has_key = FileStoreMetadata().query() \
+                .filter(FileStoreMetadata.file_store_id == file_store.file_store_id) \
+                .filter(FileStoreMetadata.file_store_meta_section == section) \
+                .filter(FileStoreMetadata.file_store_meta_key == key) \
+                .scalar()
+            if has_key:
+                msg = 'key `{}` already defined under section `{}` for this file.'\
+                    .format(key, section)
+                raise ArtifactMetadataDuplicate(msg, err_section=section, err_key=key)
+
+            # NOTE(marcink): raises ArtifactMetadataBadValueType
+            FileStoreMetadata.valid_value_type(value_type)
+
+            meta_entry = FileStoreMetadata()
+            meta_entry.file_store = file_store
+            meta_entry.file_store_meta_section = section
+            meta_entry.file_store_meta_key = key
+            meta_entry.file_store_meta_value_type = value_type
+            meta_entry.file_store_meta_value = value
+
+            Session().add(meta_entry)
+
+        try:
+            if commit:
+                Session().commit()
+        except IntegrityError:
+            Session().rollback()
+            raise ArtifactMetadataDuplicate('Duplicate section/key found for this file.')
+
+    @classmethod
     def bump_access_counter(cls, file_uid, commit=True):
         FileStore().query()\
             .filter(FileStore.file_uid == file_uid)\
@@ -5185,7 +5227,7 @@ class FileStore(Base, BaseModel):
 class FileStoreMetadata(Base, BaseModel):
     __tablename__ = 'file_store_metadata'
     __table_args__ = (
-        UniqueConstraint('file_store_meta_section', 'file_store_meta_key'),
+        UniqueConstraint('file_store_id', 'file_store_meta_section', 'file_store_meta_key'),
         Index('file_store_meta_section_idx', 'file_store_meta_section'),
         Index('file_store_meta_key_idx', 'file_store_meta_key'),
         base_table_args
@@ -5220,19 +5262,28 @@ class FileStoreMetadata(Base, BaseModel):
 
     file_store = relationship('FileStore', lazy='joined')
 
+    @classmethod
+    def valid_value_type(cls, value):
+        if value.split('.')[0] not in cls.SETTINGS_TYPES:
+            raise ArtifactMetadataBadValueType(
+                'value_type must be one of %s got %s' % (cls.SETTINGS_TYPES.keys(), value))
+
     @hybrid_property
     def file_store_meta_value(self):
-        v = self._file_store_meta_value
-        _type = self._file_store_meta_value
-        if _type:
-            _type = self._file_store_meta_value.split('.')[0]
-            # decode the encrypted value
-            if '.encrypted' in self._file_store_meta_value:
-                cipher = EncryptedTextValue()
-                v = safe_unicode(cipher.process_result_value(v, None))
+        val = self._file_store_meta_value
 
-        converter = self.SETTINGS_TYPES.get(_type) or self.SETTINGS_TYPES['unicode']
-        return converter(v)
+        if self._file_store_meta_value_type:
+            # e.g unicode.encrypted == unicode
+            _type = self._file_store_meta_value_type.split('.')[0]
+            # decode the encrypted value if it's encrypted field type
+            if '.encrypted' in self._file_store_meta_value_type:
+                cipher = EncryptedTextValue()
+                val = safe_unicode(cipher.process_result_value(val, None))
+            # do final type conversion
+            converter = self.SETTINGS_TYPES.get(_type) or self.SETTINGS_TYPES['unicode']
+            val = converter(val)
+
+        return val
 
     @file_store_meta_value.setter
     def file_store_meta_value(self, val):
@@ -5250,10 +5301,18 @@ class FileStoreMetadata(Base, BaseModel):
     @file_store_meta_value_type.setter
     def file_store_meta_value_type(self, val):
         # e.g unicode.encrypted
-        if val.split('.')[0] not in self.SETTINGS_TYPES:
-            raise Exception('type must be one of %s got %s'
-                            % (self.SETTINGS_TYPES.keys(), val))
+        self.valid_value_type(val)
         self._file_store_meta_value_type = val
+
+    def __json__(self):
+        data = {
+            'artifact': self.file_store.file_uid,
+            'section': self.file_store_meta_section,
+            'key': self.file_store_meta_key,
+            'value': self.file_store_meta_value,
+        }
+
+        return data
 
     def __repr__(self):
         return '<%s[%s]%s=>%s]>' % (self.__class__.__name__, self.file_store_meta_section,
