@@ -2298,6 +2298,10 @@ class Repository(Base, BaseModel):
             return self.get_commit()
         return commit
 
+    def flush_commit_cache(self):
+        self.update_commit_cache(cs_cache={'raw_id':'0'})
+        self.update_commit_cache()
+
     def update_commit_cache(self, cs_cache=None, config=None):
         """
         Update cache of last commit for repository, keys should be::
@@ -2351,7 +2355,7 @@ class Repository(Base, BaseModel):
             Session().add(self)
             Session().commit()
 
-            log.debug('updated repo %s with new commit cache %s',
+            log.debug('updated repo `%s` with new commit cache %s',
                       self.repo_name, cs_cache)
         else:
             cs_cache = self.changeset_cache
@@ -2868,7 +2872,7 @@ class RepoGroup(Base, BaseModel):
             Session().add(repo_group)
             Session().commit()
 
-            log.debug('updated repo group %s with new commit cache %s',
+            log.debug('updated repo group `%s` with new commit cache %s',
                       repo_group.group_name, latest_repo_cs_cache)
 
     def permissions(self, with_admins=True, with_owner=True,
