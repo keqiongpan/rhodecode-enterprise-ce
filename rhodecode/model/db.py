@@ -5224,6 +5224,23 @@ class FileStore(Base, BaseModel):
         if commit:
             Session().commit()
 
+    def __json__(self):
+        data = {
+            'filename': self.file_display_name,
+            'filename_org': self.file_org_name,
+            'file_uid': self.file_uid,
+            'description': self.file_description,
+            'hidden': self.hidden,
+            'size': self.file_size,
+            'created_on': self.created_on,
+            'uploaded_by': self.upload_user.get_api_data(details='basic'),
+            'downloaded_times': self.accessed_count,
+            'sha256': self.file_hash,
+            'metadata': self.file_metadata,
+        }
+
+        return data
+
     def __repr__(self):
         return '<FileStore({})>'.format(self.file_store_id)
 
