@@ -28,6 +28,7 @@ import datetime
 import itertools
 import logging
 import shutil
+import time
 import traceback
 import string
 
@@ -519,7 +520,7 @@ class RepoGroupModel(BaseModel):
 
             if 'user' in form_data:
                 repo_group.user = User.get_by_username(form_data['user'])
-            repo_group.updated_on = datetime.datetime.now()
+
             self.sa.add(repo_group)
 
             # iterate over all members of this groups and do fixes
@@ -536,7 +537,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing group %s to new name %s',
                               obj.group_name, new_name)
                     obj.group_name = new_name
-                    obj.updated_on = datetime.datetime.now()
+
                 elif isinstance(obj, Repository):
                     # we need to get all repositories from this new group and
                     # rename them accordingly to new group path
@@ -544,7 +545,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing repo %s to new name %s',
                               obj.repo_name, new_name)
                     obj.repo_name = new_name
-                    obj.updated_on = datetime.datetime.now()
+
                 self.sa.add(obj)
 
             self._rename_group(old_path, new_path)
@@ -714,8 +715,10 @@ class RepoGroupModel(BaseModel):
 
         def last_change(last_change):
             if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                last_change = last_change + datetime.timedelta(seconds=
-                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
             return _render("last_change", last_change)
 
         def last_rev(repo_name, cs_cache):

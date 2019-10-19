@@ -217,8 +217,11 @@ class RepoModel(BaseModel):
 
         def last_change(last_change):
             if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                last_change = last_change + datetime.timedelta(seconds=
-                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
+
             return _render("last_change", last_change)
 
         def rss_lnk(repo_name):
@@ -381,7 +384,7 @@ class RepoModel(BaseModel):
                 if ex_field:
                     ex_field.field_value = kwargs[field]
                     self.sa.add(ex_field)
-            cur_repo.updated_on = datetime.datetime.now()
+
             self.sa.add(cur_repo)
 
             if source_repo_name != new_name:

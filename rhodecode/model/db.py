@@ -2352,6 +2352,7 @@ class Repository(Base, BaseModel):
 
             cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
+            self.updated_on = last_change
             Session().add(self)
             Session().commit()
 
@@ -2858,6 +2859,7 @@ class RepoGroup(Base, BaseModel):
         for repo_group, repos in repo_groups_and_repos().items():
 
             latest_repo_cs_cache = {}
+            _date_latest = empty_date
             for repo in repos:
                 repo_cs_cache = repo.changeset_cache
                 date_latest = latest_repo_cs_cache.get('date', empty_date)
@@ -2866,9 +2868,11 @@ class RepoGroup(Base, BaseModel):
                 if current_timestamp < datetime_to_time(parse_datetime(date_current)):
                     latest_repo_cs_cache = repo_cs_cache
                     latest_repo_cs_cache['source_repo_id'] = repo.repo_id
+                    _date_latest = parse_datetime(latest_repo_cs_cache['date'])
 
             latest_repo_cs_cache['updated_on'] = time.time()
             repo_group.changeset_cache = latest_repo_cs_cache
+            repo_group.updated_on = _date_latest
             Session().add(repo_group)
             Session().commit()
 

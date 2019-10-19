@@ -19,6 +19,8 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import datetime
 import logging
+import time
+
 import formencode
 import formencode.htmlfill
 
@@ -131,9 +133,10 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
 
         def last_change(last_change):
             if isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                delta = datetime.timedelta(
-                    seconds=(datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
-                last_change = last_change + delta
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
             return _render("last_change", last_change)
 
         def desc(desc, personal):
