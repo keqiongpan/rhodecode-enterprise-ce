@@ -40,7 +40,7 @@ from sqlalchemy import (
     or_, and_, not_, func, TypeDecorator, event,
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
-    Text, Float, PickleType)
+    Text, Float, PickleType, BigInteger)
 from sqlalchemy.sql.expression import true, false, case
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
@@ -5131,7 +5131,7 @@ class FileStore(Base, BaseModel):
 
     # sha256 hash
     file_hash = Column('file_hash', String(512), nullable=False)
-    file_size = Column('file_size', Integer(), nullable=False)
+    file_size = Column('file_size', BigInteger(), nullable=False)
 
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     accessed_on = Column('accessed_on', DateTime(timezone=False), nullable=True)
