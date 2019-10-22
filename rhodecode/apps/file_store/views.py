@@ -30,8 +30,10 @@ from rhodecode.apps.file_store.exceptions import (
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
-from rhodecode.lib.auth import (CSRFRequired, NotAnonymous, HasRepoPermissionAny, HasRepoGroupPermissionAny)
-from rhodecode.model.db import Session, FileStore
+from rhodecode.lib.auth import (
+    CSRFRequired, NotAnonymous, HasRepoPermissionAny, HasRepoGroupPermissionAny,
+    LoginRequired)
+from rhodecode.model.db import Session, FileStore, UserApiKeys
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +46,7 @@ class FileStoreView(BaseAppView):
         self.storage = utils.get_file_storage(self.request.registry.settings)
         return c
 
+    @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
     @view_config(route_name='upload_file', request_method='POST', renderer='json_ext')
@@ -99,11 +102,7 @@ class FileStoreView(BaseAppView):
         return {'store_fid': store_uid,
                 'access_path': h.route_path('download_file', fid=store_uid)}
 
-    @view_config(route_name='download_file')
-    def download_file(self):
-        self.load_default_context()
-        file_uid = self.request.matchdict['fid']
-        log.debug('Requesting FID:%s from store %s', file_uid, self.storage)
+    def _serve_file(self, file_uid):
 
         if not self.storage.exists(file_uid):
             store_path = self.storage.store_path(file_uid)
@@ -128,7 +127,7 @@ class FileStoreView(BaseAppView):
             perm_set = ['repository.read', 'repository.write', 'repository.admin']
             has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'FileStore check')
             if not has_perm:
-                log.warning('Access to file store object forbidden')
+                log.warning('Access to file store object `%s` forbidden', file_uid)
                 raise HTTPNotFound()
 
         # scoped to repository group permissions
@@ -137,10 +136,31 @@ class FileStoreView(BaseAppView):
             perm_set = ['group.read', 'group.write', 'group.admin']
             has_perm = HasRepoGroupPermissionAny(*perm_set)(repo_group.group_name, 'FileStore check')
             if not has_perm:
-                log.warning('Access to file store object forbidden')
+                log.warning('Access to file store object `%s` forbidden', file_uid)
                 raise HTTPNotFound()
 
         FileStore.bump_access_counter(file_uid)
 
         file_path = self.storage.store_path(file_uid)
         return FileResponse(file_path)
+
+    # ACL is checked by scopes, if no scope the file is accessible to all
+    @view_config(route_name='download_file')
+    def download_file(self):
+        self.load_default_context()
+        file_uid = self.request.matchdict['fid']
+        log.debug('Requesting FID:%s from store %s', file_uid, self.storage)
+        return self._serve_file(file_uid)
+
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_ARTIFACT_DOWNLOAD])
+    @view_config(route_name='download_file_by_token')
+    def download_file_by_token(self):
+        """
+        Special view that allows to access the download file by special URL that
+        is stored inside the URL.
+
+        http://example.com/_file_store/token-download/TOKEN/FILE_UID
+        """
+        self.load_default_context()
+        file_uid = self.request.matchdict['fid']
+        return self._serve_file(file_uid)

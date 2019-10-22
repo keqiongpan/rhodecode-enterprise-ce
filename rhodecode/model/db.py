@@ -718,6 +718,23 @@ class User(Base, BaseModel):
             return feed_tokens[0].api_key
         return 'NO_FEED_TOKEN_AVAILABLE'
 
+    @LazyProperty
+    def artifact_token(self):
+        return self.get_artifact_token()
+
+    def get_artifact_token(self, cache=True):
+        artifacts_tokens = UserApiKeys.query()\
+            .filter(UserApiKeys.user == self)\
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+        if cache:
+            artifacts_tokens = artifacts_tokens.options(
+                FromCache("sql_cache_short", "get_user_artifact_token_%s" % self.user_id))
+
+        artifacts_tokens = artifacts_tokens.all()
+        if artifacts_tokens:
+            return artifacts_tokens[0].api_key
+        return 'NO_ARTIFACT_TOKEN_AVAILABLE'
+
     @classmethod
     def get(cls, user_id, cache=False):
         if not user_id:
@@ -765,7 +782,7 @@ class User(Base, BaseModel):
             else:
                 plain_token_map[token.api_key] = token
         log.debug(
-            'Found %s plain and %s encrypted user tokens to check for authentication',
+            'Found %s plain and %s encrypted tokens to check for authentication for this user',
             len(plain_token_map), len(enc_token_map))
 
         # plain token match comes first
@@ -1075,9 +1092,10 @@ class UserApiKeys(Base, BaseModel):
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
     ROLE_FEED = 'token_role_feed'
+    ROLE_ARTIFACT_DOWNLOAD = 'role_artifact_download'
     ROLE_PASSWORD_RESET = 'token_password_reset'
 
-    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED]
+    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
@@ -1139,6 +1157,7 @@ class UserApiKeys(Base, BaseModel):
             cls.ROLE_VCS: _('vcs (git/hg/svn protocol)'),
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
+            cls.ROLE_ARTIFACT_DOWNLOAD: _('artifacts downloads'),
         }.get(role, role)
 
     @property

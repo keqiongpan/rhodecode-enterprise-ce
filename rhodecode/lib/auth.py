@@ -1140,7 +1140,7 @@ class AuthUser(object):
 
         # try go get user by api key
         elif self._api_key and self._api_key != anon_user.api_key:
-            log.debug('Trying Auth User lookup by API KEY: `%s`', self._api_key)
+            log.debug('Trying Auth User lookup by API KEY: `...%s`', self._api_key[-4:])
             is_user_loaded = user_model.fill_data(self, api_key=self._api_key)
 
         # lookup by username
@@ -1365,6 +1365,10 @@ class AuthUser(object):
     @LazyProperty
     def feed_token(self):
         return self.get_instance().feed_token
+
+    @LazyProperty
+    def artifact_token(self):
+        return self.get_instance().artifact_token
 
     @classmethod
     def check_ip_allowed(cls, user_id, ip_addr, inherit_from_default):
@@ -1597,6 +1601,11 @@ class LoginRequired(object):
     """
     def __init__(self, auth_token_access=None):
         self.auth_token_access = auth_token_access
+        if self.auth_token_access:
+            valid_type = set(auth_token_access).intersection(set(UserApiKeys.ROLES))
+            if not valid_type:
+                raise ValueError('auth_token_access must be on of {}, got {}'.format(
+                    UserApiKeys.ROLES, auth_token_access))
 
     def __call__(self, func):
         return get_cython_compat_decorator(self.__wrapper, func)
@@ -1616,19 +1625,25 @@ class LoginRequired(object):
         # check if our IP is allowed
         ip_access_valid = True
         if not user.ip_allowed:
-            h.flash(h.literal(_('IP %s not allowed' % (user.ip_addr,))),
+            h.flash(h.literal(_('IP {} not allowed'.format(user.ip_addr))),
                     category='warning')
             ip_access_valid = False
 
-        # check if we used an APIKEY and it's a valid one
+        # we used stored token that is extract from GET or URL param (if any)
+        _auth_token = request.user_auth_token
+
+        # check if we used an AUTH_TOKEN and it's a valid one
         # defined white-list of controllers which API access will be enabled
-        _auth_token = request.GET.get(
-            'auth_token', '') or request.GET.get('api_key', '')
+        whitelist = None
+        if self.auth_token_access:
+            # since this location is allowed by @LoginRequired decorator it's our
+            # only whitelist
+            whitelist = [loc]
         auth_token_access_valid = allowed_auth_token_access(
-            loc, auth_token=_auth_token)
+            loc, whitelist=whitelist, auth_token=_auth_token)
 
         # explicit controller is enabled or API is in our whitelist
-        if self.auth_token_access or auth_token_access_valid:
+        if auth_token_access_valid:
             log.debug('Checking AUTH TOKEN access for %s', cls)
             db_user = user.get_instance()
 
@@ -1637,6 +1652,8 @@ class LoginRequired(object):
                     roles = self.auth_token_access
                 else:
                     roles = [UserApiKeys.ROLE_HTTP]
+                log.debug('AUTH TOKEN: checking auth for user %s and roles %s',
+                          db_user, roles)
                 token_match = db_user.authenticate_by_token(
                     _auth_token, roles=roles)
             else:
