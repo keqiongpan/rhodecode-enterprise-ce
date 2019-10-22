@@ -459,9 +459,14 @@ def get_auth_user(request):
     session = request.session
 
     ip_addr = get_ip_addr(environ)
+
     # make sure that we update permissions each time we call controller
-    _auth_token = (request.GET.get('auth_token', '') or
-                   request.GET.get('api_key', ''))
+    _auth_token = (request.GET.get('auth_token', '') or request.GET.get('api_key', ''))
+    if not _auth_token:
+        url_auth_token = request.matchdict.get('_auth_token')
+        _auth_token = url_auth_token
+        if _auth_token:
+            log.debug('Using URL extracted auth token `...%s`', _auth_token[-4:])
 
     if _auth_token:
         # when using API_KEY we assume user exists, and
@@ -495,7 +500,7 @@ def get_auth_user(request):
         # user is not authenticated and not empty
         auth_user.set_authenticated(authenticated)
 
-    return auth_user
+    return auth_user, _auth_token
 
 
 def h_filter(s):
