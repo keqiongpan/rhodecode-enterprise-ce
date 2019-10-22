@@ -977,10 +977,10 @@ def bool2icon(value, show_at_false=True):
     """
 
     if value:  # does bool conversion
-        return HTML.tag('i', class_="icon-true")
+        return HTML.tag('i', class_="icon-true", title='True')
     else:  # not true as bool
         if show_at_false:
-            return HTML.tag('i', class_="icon-false")
+            return HTML.tag('i', class_="icon-false", title='False')
         return HTML.tag('i')
 
 #==============================================================================
