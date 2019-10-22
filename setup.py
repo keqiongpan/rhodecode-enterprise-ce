@@ -169,6 +169,7 @@ setup(
             'rc-setup-app=rhodecode.lib.rc_commands.setup_rc:main',
             'rc-upgrade-db=rhodecode.lib.rc_commands.upgrade_db:main',
             'rc-ishell=rhodecode.lib.rc_commands.ishell:main',
+            'rc-add-artifact=rhodecode.lib.rc_commands.add_artifact:main',
             'rc-ssh-wrapper=rhodecode.apps.ssh_support.lib.ssh_wrapper:main',
         ],
         'beaker.backends': [
