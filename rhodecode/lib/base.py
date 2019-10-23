@@ -466,7 +466,7 @@ def get_auth_user(request):
 
     # make sure that we update permissions each time we call controller
     _auth_token = (request.GET.get('auth_token', '') or request.GET.get('api_key', ''))
-    if not _auth_token:
+    if not _auth_token and request.matchdict:
         url_auth_token = request.matchdict.get('_auth_token')
         _auth_token = url_auth_token
         if _auth_token:
