@@ -280,10 +280,13 @@ def branch_permission_setter(request):
 
     rule_id = None
     write_perm_id = None
+    write_perm = None
+    rule = None
 
     def _branch_permissions_setter(
             repo_name, username, pattern='*', permission='branch.push_force'):
         global rule_id, write_perm_id
+        global rule, write_perm
 
         repo = Repository.get_by_repo_name(repo_name)
         repo_id = repo.repo_id
@@ -292,8 +295,6 @@ def branch_permission_setter(request):
         user_id = user.user_id
 
         rule_perm_obj = Permission.get_by_key(permission)
-
-        write_perm = None
 
         # add new entry, based on existing perm entry
         perm = UserRepoToPerm.query() \
@@ -322,8 +323,6 @@ def branch_permission_setter(request):
         rule.repository_id = repo_id
         Session().add(rule)
         Session().commit()
-
-        global rule, write_perm
 
         return rule
 
