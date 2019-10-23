@@ -87,7 +87,7 @@ class FileStoreView(BaseAppView):
             entry = FileStore.create(
                 file_uid=store_uid, filename=metadata["filename"],
                 file_hash=metadata["sha256"], file_size=metadata["size"],
-                file_description='upload attachment',
+                file_description=u'upload attachment',
                 check_acl=False, user_id=self._rhodecode_user.user_id
             )
             Session().add(entry)
@@ -116,6 +116,8 @@ class FileStoreView(BaseAppView):
 
         # private upload for user
         if db_obj.check_acl and db_obj.scope_user_id:
+            log.debug('Artifact: checking scope access for bound artifact user: `%s`',
+                      db_obj.scope_user_id)
             user = db_obj.user
             if self._rhodecode_db_user.user_id != user.user_id:
                 log.warning('Access to file store object forbidden')
@@ -123,6 +125,8 @@ class FileStoreView(BaseAppView):
 
         # scoped to repository permissions
         if db_obj.check_acl and db_obj.scope_repo_id:
+            log.debug('Artifact: checking scope access for bound artifact repo: `%s`',
+                      db_obj.scope_repo_id)
             repo = db_obj.repo
             perm_set = ['repository.read', 'repository.write', 'repository.admin']
             has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'FileStore check')
@@ -132,6 +136,8 @@ class FileStoreView(BaseAppView):
 
         # scoped to repository group permissions
         if db_obj.check_acl and db_obj.scope_repo_group_id:
+            log.debug('Artifact: checking scope access for bound artifact repo group: `%s`',
+                      db_obj.scope_repo_group_id)
             repo_group = db_obj.repo_group
             perm_set = ['group.read', 'group.write', 'group.admin']
             has_perm = HasRepoGroupPermissionAny(*perm_set)(repo_group.group_name, 'FileStore check')
@@ -152,7 +158,9 @@ class FileStoreView(BaseAppView):
         log.debug('Requesting FID:%s from store %s', file_uid, self.storage)
         return self._serve_file(file_uid)
 
+    # in addition to @LoginRequired ACL is checked by scopes
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_ARTIFACT_DOWNLOAD])
+    @NotAnonymous()
     @view_config(route_name='download_file_by_token')
     def download_file_by_token(self):
         """
