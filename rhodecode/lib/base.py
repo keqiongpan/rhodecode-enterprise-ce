@@ -363,6 +363,10 @@ def attach_context_attributes(context, request, user_id=None):
     context.visual.cut_off_limit_file = safe_int(
         config.get('cut_off_limit_file'))
 
+    context.license = AttributeDict({})
+    context.license.hide_license_info = str2bool(
+        config.get('license.hide_license_info', False))
+
     # AppEnlight
     context.appenlight_enabled = str2bool(config.get('appenlight', 'false'))
     context.appenlight_api_public_key = config.get(
