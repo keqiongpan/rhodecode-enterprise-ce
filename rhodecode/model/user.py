@@ -37,7 +37,7 @@ from rhodecode.lib.utils2 import (
     AttributeDict, str2bool)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
-    UserOwnsUserGroupsException, NotAllowedToCreateUserError)
+    UserOwnsUserGroupsException, NotAllowedToCreateUserError, UserOwnsArtifactsException)
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
@@ -505,8 +505,33 @@ class UserModel(BaseModel):
         # if nothing is done we have left overs left
         return left_overs
 
+    def _handle_user_artifacts(self, username, artifacts, handle_mode=None):
+        _superadmin = self.cls.get_first_super_admin()
+        left_overs = True
+
+        if handle_mode == 'detach':
+            for a in artifacts:
+                a.upload_user = _superadmin
+                # set description we know why we super admin now owns
+                # additional artifacts that were orphaned !
+                a.file_description += '  \n::detached artifact from deleted user: %s' % (username,)
+                self.sa.add(a)
+            left_overs = False
+        elif handle_mode == 'delete':
+            from rhodecode.apps.file_store import utils as store_utils
+            storage = store_utils.get_file_storage(self.request.registry.settings)
+            for a in artifacts:
+                file_uid = a.file_uid
+                storage.delete(file_uid)
+                self.sa.delete(a)
+
+            left_overs = False
+
+        # if nothing is done we have left overs left
+        return left_overs
+
     def delete(self, user, cur_user=None, handle_repos=None,
-               handle_repo_groups=None, handle_user_groups=None):
+               handle_repo_groups=None, handle_user_groups=None, handle_artifacts=None):
         from rhodecode.lib.hooks_base import log_delete_user
 
         if not cur_user:
@@ -547,6 +572,15 @@ class UserModel(BaseModel):
                     u'user "%s" still owns %s user groups and cannot be '
                     u'removed. Switch owners or remove those user groups:%s'
                     % (user.username, len(user_groups), ', '.join(user_groups)))
+
+            left_overs = self._handle_user_artifacts(
+                user.username, user.artifacts, handle_artifacts)
+            if left_overs and user.artifacts:
+                artifacts = [x.file_uid for x in user.artifacts]
+                raise UserOwnsArtifactsException(
+                    u'user "%s" still owns %s artifacts and cannot be '
+                    u'removed. Switch owners or remove those artifacts:%s'
+                    % (user.username, len(artifacts), ', '.join(artifacts)))
 
             user_data = user.get_dict()  # fetch user data before expire
 

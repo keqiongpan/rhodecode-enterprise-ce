@@ -376,59 +376,69 @@ class UsersView(UserAppView):
         _repos = c.user.repositories
         _repo_groups = c.user.repository_groups
         _user_groups = c.user.user_groups
+        _artifacts = c.user.artifacts
 
         handle_repos = None
         handle_repo_groups = None
         handle_user_groups = None
-        # dummy call for flash of handle
-        set_handle_flash_repos = lambda: None
-        set_handle_flash_repo_groups = lambda: None
-        set_handle_flash_user_groups = lambda: None
+        handle_artifacts = None
+
+        # calls for flash of handle based on handle case detach or delete
+        def set_handle_flash_repos():
+            handle = handle_repos
+            if handle == 'detach':
+                h.flash(_('Detached %s repositories') % len(_repos),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s repositories') % len(_repos),
+                        category='success')
+
+        def set_handle_flash_repo_groups():
+            handle = handle_repo_groups
+            if handle == 'detach':
+                h.flash(_('Detached %s repository groups') % len(_repo_groups),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s repository groups') % len(_repo_groups),
+                        category='success')
+
+        def set_handle_flash_user_groups():
+            handle = handle_user_groups
+            if handle == 'detach':
+                h.flash(_('Detached %s user groups') % len(_user_groups),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s user groups') % len(_user_groups),
+                        category='success')
+
+        def set_handle_flash_artifacts():
+            handle = handle_artifacts
+            if handle == 'detach':
+                h.flash(_('Detached %s artifacts') % len(_artifacts),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s artifacts') % len(_artifacts),
+                        category='success')
 
         if _repos and self.request.POST.get('user_repos'):
-            do = self.request.POST['user_repos']
-            if do == 'detach':
-                handle_repos = 'detach'
-                set_handle_flash_repos = lambda: h.flash(
-                    _('Detached %s repositories') % len(_repos),
-                    category='success')
-            elif do == 'delete':
-                handle_repos = 'delete'
-                set_handle_flash_repos = lambda: h.flash(
-                    _('Deleted %s repositories') % len(_repos),
-                    category='success')
+            handle_repos = self.request.POST['user_repos']
 
         if _repo_groups and self.request.POST.get('user_repo_groups'):
-            do = self.request.POST['user_repo_groups']
-            if do == 'detach':
-                handle_repo_groups = 'detach'
-                set_handle_flash_repo_groups = lambda: h.flash(
-                    _('Detached %s repository groups') % len(_repo_groups),
-                    category='success')
-            elif do == 'delete':
-                handle_repo_groups = 'delete'
-                set_handle_flash_repo_groups = lambda: h.flash(
-                    _('Deleted %s repository groups') % len(_repo_groups),
-                    category='success')
+            handle_repo_groups = self.request.POST['user_repo_groups']
 
         if _user_groups and self.request.POST.get('user_user_groups'):
-            do = self.request.POST['user_user_groups']
-            if do == 'detach':
-                handle_user_groups = 'detach'
-                set_handle_flash_user_groups = lambda: h.flash(
-                    _('Detached %s user groups') % len(_user_groups),
-                    category='success')
-            elif do == 'delete':
-                handle_user_groups = 'delete'
-                set_handle_flash_user_groups = lambda: h.flash(
-                    _('Deleted %s user groups') % len(_user_groups),
-                    category='success')
+            handle_user_groups = self.request.POST['user_user_groups']
+
+        if _artifacts and self.request.POST.get('user_artifacts'):
+            handle_artifacts = self.request.POST['user_artifacts']
 
         old_values = c.user.get_api_data()
+
         try:
             UserModel().delete(c.user, handle_repos=handle_repos,
                                handle_repo_groups=handle_repo_groups,
-                               handle_user_groups=handle_user_groups)
+                               handle_user_groups=handle_user_groups,
+                               handle_artifacts=handle_artifacts)
 
             audit_logger.store_web(
                 'user.delete', action_data={'old_data': old_values},
@@ -438,7 +448,9 @@ class UsersView(UserAppView):
             set_handle_flash_repos()
             set_handle_flash_repo_groups()
             set_handle_flash_user_groups()
-            h.flash(_('Successfully deleted user'), category='success')
+            set_handle_flash_artifacts()
+            username = h.escape(old_values['username'])
+            h.flash(_('Successfully deleted user `{}`').format(username), category='success')
         except (UserOwnsReposException, UserOwnsRepoGroupsException,
                 UserOwnsUserGroupsException, DefaultUserException) as e:
             h.flash(e, category='warning')

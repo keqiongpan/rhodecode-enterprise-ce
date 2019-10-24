@@ -164,6 +164,36 @@
     </dl>
 </%def>
 
+<%def name="tr_info_entry(element)">
+    <% key, val, title, show_items = element %>
+
+    <tr>
+        <td style="vertical-align: top">${key}</td>
+        <td title="${h.tooltip(title)}">
+          %if callable(val):
+              ## allow lazy evaluation of elements
+              ${val()}
+          %else:
+              ${val}
+          %endif
+          %if show_items:
+              <div class="collapsable-content" data-toggle="item-${h.md5_safe(val)[:6]}-details" style="display: none">
+              % for item in show_items:
+                  <dt></dt>
+                  <dd>${item}</dd>
+              % endfor
+              </div>
+          %endif
+        </td>
+        <td style="vertical-align: top">
+          %if show_items:
+              <span class="btn-collapse" data-toggle="item-${h.md5_safe(val)[:6]}-details">${_('Show More')} </span>
+          %endif
+        </td>
+    </tr>
+
+</%def>
+
 <%def name="gravatar(email, size=16)">
   <%
     if (size > 16):

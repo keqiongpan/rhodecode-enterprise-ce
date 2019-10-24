@@ -13,6 +13,8 @@
     (_('Repository groups'), len(c.user.repository_groups), '', [x.group_name for x in c.user.repository_groups]),
     (_('User groups'), len(c.user.user_groups), '', [x.users_group_name for x in c.user.user_groups]),
 
+    (_('Owned Artifacts'), len(c.user.artifacts), '', [x.file_uid for x in c.user.artifacts]),
+
     (_('Reviewer of pull requests'), len(c.user.reviewer_pull_requests), '', ['Pull Request #{}'.format(x.pull_request.pull_request_id) for x in c.user.reviewer_pull_requests]),
     (_('Assigned to review rules'), len(c.user_to_review_rules), '', [x for x in c.user_to_review_rules]),
 
@@ -23,10 +25,19 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User: %s') % c.user.username}</h3>
+        <h3 class="panel-title">${_('User: {}').format(c.user.username)}</h3>
     </div>
     <div class="panel-body">
-        ${base.dt_info_panel(elems)}
+        <table class="rctable">
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+                <th>Action</th>
+            </tr>
+            % for elem in elems:
+                ${base.tr_info_entry(elem)}
+            % endfor
+        </table>
     </div>
 </div>
 
@@ -132,6 +143,19 @@
                         <input type="radio" id="user_user_groups_2" name="user_user_groups" value="delete" ${'disabled=1' if len(c.user.user_groups) == 0 else ''}/> <label for="user_user_groups_2">${_('Delete repositories')}</label>
                     </td>
                 </tr>
+
+                <tr>
+                    <td>
+                        ${_ungettext('This user owns %s artifact.', 'This user owns %s artifacts.', len(c.user.artifacts)) % len(c.user.artifacts)}
+                    </td>
+                    <td>
+                        <input type="radio" id="user_artifacts_1" name="user_artifacts" value="detach" checked="checked" ${'disabled=1' if len(c.user.artifacts) == 0 else ''}/> <label for="user_artifacts_1">${_('Detach Artifacts')}</label>
+                    </td>
+                    <td>
+                        <input type="radio" id="user_artifacts_2" name="user_artifacts" value="delete" ${'disabled=1' if len(c.user.artifacts) == 0 else ''}/> <label for="user_artifacts_2">${_('Delete Artifacts')}</label>
+                    </td>
+                </tr>
+
             </table>
             <div style="margin: 0 0 20px 0" class="fake-space"></div>
             <div class="pull-left">

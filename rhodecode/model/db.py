@@ -617,12 +617,18 @@ class User(Base, BaseModel):
     # user pull requests
     user_pull_requests = relationship('PullRequest', cascade='all')
     # external identities
-    extenal_identities = relationship(
+    external_identities = relationship(
         'ExternalIdentity',
         primaryjoin="User.user_id==ExternalIdentity.local_user_id",
         cascade='all')
     # review rules
     user_review_rules = relationship('RepoReviewRuleUser', cascade='all')
+
+    # artifacts owned
+    artifacts = relationship('FileStore', primaryjoin='FileStore.user_id==User.user_id')
+
+    # no cascade, set NULL
+    scope_artifacts = relationship('FileStore', primaryjoin='FileStore.scope_user_id==User.user_id')
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
@@ -1704,7 +1710,8 @@ class Repository(Base, BaseModel):
 
     scoped_tokens = relationship('UserApiKeys', cascade="all")
 
-    artifacts = relationship('FileStore', cascade="all")
+    # no cascade, set NULL
+    artifacts = relationship('FileStore', primaryjoin='FileStore.scope_repo_id==Repository.repo_id')
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
@@ -2578,6 +2585,9 @@ class RepoGroup(Base, BaseModel):
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
     integrations = relationship('Integration', cascade="all, delete-orphan")
+
+    # no cascade, set NULL
+    scope_artifacts = relationship('FileStore', primaryjoin='FileStore.scope_repo_group_id==RepoGroup.group_id')
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -3870,6 +3880,7 @@ class _SetState(object):
             log.exception('Failed to set PullRequest %s state to %s', self._pr, pr_state)
             raise
 
+
 class _PullRequestBase(BaseModel):
     """
     Common attributes of pull request and version entries.
@@ -4148,14 +4159,10 @@ class PullRequest(Base, _PullRequestBase):
         else:
             return '<DB:PullRequest at %#x>' % id(self)
 
-    reviewers = relationship('PullRequestReviewers',
-                             cascade="all, delete-orphan")
-    statuses = relationship('ChangesetStatus',
-                            cascade="all, delete-orphan")
-    comments = relationship('ChangesetComment',
-                            cascade="all, delete-orphan")
-    versions = relationship('PullRequestVersion',
-                            cascade="all, delete-orphan",
+    reviewers = relationship('PullRequestReviewers', cascade="all, delete-orphan")
+    statuses = relationship('ChangesetStatus', cascade="all, delete-orphan")
+    comments = relationship('ChangesetComment', cascade="all, delete-orphan")
+    versions = relationship('PullRequestVersion', cascade="all, delete-orphan",
                             lazy='dynamic')
 
     @classmethod

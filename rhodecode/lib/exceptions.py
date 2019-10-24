@@ -58,6 +58,10 @@ class UserOwnsUserGroupsException(Exception):
     pass
 
 
+class UserOwnsArtifactsException(Exception):
+    pass
+
+
 class UserGroupAssignedException(Exception):
     pass
 

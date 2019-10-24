@@ -517,7 +517,7 @@ class TestAdminUsersView(TestController):
             route_path('user_delete', user_id=new_user.user_id),
             params={'csrf_token': self.csrf_token})
 
-        assert_session_flash(response, 'Successfully deleted user')
+        assert_session_flash(response, 'Successfully deleted user `{}`'.format(username))
 
     def test_delete_owner_of_repository(self, request, user_util):
         self.log_user()
