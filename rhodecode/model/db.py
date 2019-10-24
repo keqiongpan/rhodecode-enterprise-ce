@@ -5271,9 +5271,9 @@ class FileStore(Base, BaseModel):
 class FileStoreMetadata(Base, BaseModel):
     __tablename__ = 'file_store_metadata'
     __table_args__ = (
-        UniqueConstraint('file_store_id', 'file_store_meta_section', 'file_store_meta_key'),
-        Index('file_store_meta_section_idx', 'file_store_meta_section'),
-        Index('file_store_meta_key_idx', 'file_store_meta_key'),
+        UniqueConstraint('file_store_id', 'file_store_meta_section_hash', 'file_store_meta_key_hash'),
+        Index('file_store_meta_section_idx', 'file_store_meta_section', mysql_length=255),
+        Index('file_store_meta_key_idx', 'file_store_meta_key', mysql_length=255),
         base_table_args
     )
     SETTINGS_TYPES = {
@@ -5287,14 +5287,19 @@ class FileStoreMetadata(Base, BaseModel):
     file_store_meta_id = Column(
         "file_store_meta_id", Integer(), nullable=False, unique=True, default=None,
         primary_key=True)
-    file_store_meta_section = Column(
-        "file_store_meta_section", UnicodeText().with_variant(UnicodeText(1024), 'mysql'), 
+    _file_store_meta_section = Column(
+        "file_store_meta_section", UnicodeText().with_variant(UnicodeText(1024), 'mysql'),
         nullable=True, unique=None, default=None)
-    file_store_meta_key = Column(
-        "file_store_meta_key", UnicodeText().with_variant(UnicodeText(1024), 'mysql'), 
+    _file_store_meta_section_hash = Column(
+        "file_store_meta_section_hash", String(255),
         nullable=True, unique=None, default=None)
+    _file_store_meta_key = Column(
+        "file_store_meta_key", UnicodeText().with_variant(UnicodeText(1024), 'mysql'),
+        nullable=True, unique=None, default=None)
+    _file_store_meta_key_hash = Column(
+        "file_store_meta_key_hash", String(255), nullable=True, unique=None, default=None)
     _file_store_meta_value = Column(
-        "file_store_meta_value", UnicodeText().with_variant(UnicodeText(20480), 'mysql'), 
+        "file_store_meta_value", UnicodeText().with_variant(UnicodeText(20480), 'mysql'),
         nullable=True, unique=None, default=None)
     _file_store_meta_value_type = Column(
         "file_store_meta_value_type", String(255), nullable=True, unique=None,
@@ -5311,6 +5316,24 @@ class FileStoreMetadata(Base, BaseModel):
         if value.split('.')[0] not in cls.SETTINGS_TYPES:
             raise ArtifactMetadataBadValueType(
                 'value_type must be one of %s got %s' % (cls.SETTINGS_TYPES.keys(), value))
+
+    @hybrid_property
+    def file_store_meta_section(self):
+        return self._file_store_meta_section
+
+    @file_store_meta_section.setter
+    def file_store_meta_section(self, value):
+        self._file_store_meta_section = value
+        self._file_store_meta_section_hash = _hash_key(value)
+
+    @hybrid_property
+    def file_store_meta_key(self):
+        return self._file_store_meta_key
+
+    @file_store_meta_key.setter
+    def file_store_meta_key(self, value):
+        self._file_store_meta_key = value
+        self._file_store_meta_key_hash = _hash_key(value)
 
     @hybrid_property
     def file_store_meta_value(self):
