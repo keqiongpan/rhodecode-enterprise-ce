@@ -168,7 +168,13 @@ def render_tokenstream(tokenstream):
             if op_tag:
                 result.append(u'<%s>' % op_tag)
 
-            escaped_text = html_escape(token_text)
+            # NOTE(marcink): in some cases of mixed encodings, we might run into
+            # troubles in the html_escape, in this case we say unicode force on token_text
+            # that would ensure "correct" data even with the cost of rendered
+            try:
+                escaped_text = html_escape(token_text)
+            except TypeError:
+                escaped_text = html_escape(safe_unicode(token_text))
 
             # TODO: dan: investigate showing hidden characters like space/nl/tab
             # escaped_text = escaped_text.replace(' ', '<sp> </sp>')
