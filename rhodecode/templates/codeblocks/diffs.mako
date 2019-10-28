@@ -290,10 +290,12 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             open_comments_in_file = [x for x in comments_dict['comments'] if x.outdated is False]
             if open_comments_in_file:
                 display_state = ''
+            fid = str(id(filename))
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
             <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
-            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(filediff.raw_id, filename)}">
+            <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(fid, filename)}">
+
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
                     <div class="filediff-collapse-indicator"></div>
                     <span class="pill">
@@ -304,7 +306,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                         ## file op, doesn't need translation
                         <span class="pill" op="removed">removed in this version</span>
                     </span>
-                    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filename)}">¶</a>
+                    <a class="pill filediff-anchor" href="#a_${h.FID(fid, filename)}">¶</a>
                     <span class="pill-group" style="float: right">
                         <span class="pill" op="deleted">-${comments_dict['stats']}</span>
                     </span>
