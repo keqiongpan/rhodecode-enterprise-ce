@@ -13,9 +13,10 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-webpack');
-  grunt.registerTask('default', ['less:production', 'less:components', 'copy', 'webpack', 'concat:dist']);
+  grunt.registerTask('default', ['less:production', 'less:components', 'copy', 'webpack', 'concat:dist', 'uglify:dist']);
 };

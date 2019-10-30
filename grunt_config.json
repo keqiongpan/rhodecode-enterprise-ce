@@ -99,6 +99,12 @@
       "nonull": true
     }
   },
+  "uglify": {
+    "dist": {
+      "src": "<%= dirs.js.dest %>/scripts.js",
+      "dest": "<%= dirs.js.dest %>/scripts.min.js"
+    }
+  },
   "less": {
     "development": {
       "options": {
