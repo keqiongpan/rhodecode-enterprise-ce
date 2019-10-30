@@ -721,11 +721,11 @@ self: super: {
     };
   };
   "ipaddress" = super.buildPythonPackage {
-    name = "ipaddress-1.0.22";
+    name = "ipaddress-1.0.23";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/97/8d/77b8cedcfbf93676148518036c6b1ce7f8e14bf07e95d7fd4ddcb8cc052f/ipaddress-1.0.22.tar.gz";
-      sha256 = "0b570bm6xqpjwqis15pvdy6lyvvzfndjvkynilcddjj5x98wfimi";
+      url = "https://files.pythonhosted.org/packages/b9/9a/3e9da40ea28b8210dd6504d3fe9fe7e013b62bf45902b458d1cdc3c34ed9/ipaddress-1.0.23.tar.gz";
+      sha256 = "1qp743h30s04m3cg3yk3fycad930jv17q7dsslj4mfw0jlvf1y5p";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -1216,15 +1216,15 @@ self: super: {
     };
   };
   "prompt-toolkit" = super.buildPythonPackage {
-    name = "prompt-toolkit-1.0.16";
+    name = "prompt-toolkit-1.0.18";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
       self."wcwidth"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f1/03/bb36771dc9fa7553ac4bdc639a9ecdf6fda0ff4176faf940d97e3c16e41d/prompt_toolkit-1.0.16.tar.gz";
-      sha256 = "1d65hm6nf0cbq0q0121m60zzy4s1fpg9fn761s1yxf08dridvkn1";
+      url = "https://files.pythonhosted.org/packages/c5/64/c170e5b1913b540bf0c8ab7676b21fdd1d25b65ddeb10025c6ca43cccd4c/prompt_toolkit-1.0.18.tar.gz";
+      sha256 = "09h1153wgr5x2ny7ds0w2m81n3bb9j8hjb8sjfnrg506r01clkyx";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1948,11 +1948,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-41.2.0";
+    name = "setuptools-41.6.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d9/ca/7279974e489e8b65003fe618a1a741d6350227fa2bf48d16be76c7422423/setuptools-41.2.0.zip";
-      sha256 = "04k0dp9msmlv3g3zx7f5p8wdjr6hdf5c0bgmczlc4yncwyx6pf36";
+      url = "https://files.pythonhosted.org/packages/11/0a/7f13ef5cd932a107cd4c0f3ebc9d831d9b78e1a0e8c98a098ca17b1d7d97/setuptools-41.6.0.zip";
+      sha256 = "08nplghlnlb4qkhb9hp1lqqqlnh1qingdj8fi6w6rlfwj6rn3yka";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -2076,7 +2076,7 @@ self: super: {
     };
   };
   "traitlets" = super.buildPythonPackage {
-    name = "traitlets-4.3.2";
+    name = "traitlets-4.3.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."ipython-genutils"
@@ -2085,8 +2085,8 @@ self: super: {
       self."enum34"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a5/98/7f5ef2fe9e9e071813aaf9cb91d1a732e0a68b6c44a32b38cb8e14c3f069/traitlets-4.3.2.tar.gz";
-      sha256 = "0dbq7sx26xqz5ixs711k5nc88p8a0nqyz6162pwks5dpcz9d4jww";
+      url = "https://files.pythonhosted.org/packages/75/b0/43deb021bc943f18f07cbe3dac1d681626a48997b7ffa1e7fb14ef922b21/traitlets-4.3.3.tar.gz";
+      sha256 = "1xsrwgivpkxlbr4dfndfsi098s29yqgswgjc1qqn69yxklvfw8yh";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

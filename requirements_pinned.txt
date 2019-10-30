@@ -5,6 +5,7 @@ attrs==19.1.0
 billiard==3.6.1.0
 chameleon==2.24
 configparser==4.0.2
+contextlib2==0.6.0
 cffi==1.12.3
 ecdsa==0.13.2
 hupper==1.8.1
