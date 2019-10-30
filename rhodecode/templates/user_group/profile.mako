@@ -2,7 +2,7 @@
 
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User group profile')}</h3>
+        <h3 class="panel-title">${_('User Group Profile')}</h3>
         %if c.is_super_admin:
             ${h.link_to(_('Edit'), h.route_path('edit_user_group', user_group_id=c.user_group.users_group_id), class_='panel-edit')}
         %endif
