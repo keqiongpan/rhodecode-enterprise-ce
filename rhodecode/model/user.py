@@ -734,19 +734,40 @@ class UserModel(BaseModel):
                 return False
 
             log.debug('AuthUser: filling found user:%s data', dbuser)
-            user_data = dbuser.get_dict()
 
-            user_data.update({
-                # set explicit the safe escaped values
+            attrs = {
+                'user_id': dbuser.user_id,
+                'username': dbuser.username,
+                'name': dbuser.name,
                 'first_name': dbuser.first_name,
+                'firstname': dbuser.firstname,
                 'last_name': dbuser.last_name,
-            })
+                'lastname': dbuser.lastname,
+                'admin': dbuser.admin,
+                'active': dbuser.active,
 
-            for k, v in user_data.items():
-                # properties of auth user we dont update
-                if k not in ['auth_tokens', 'permissions']:
-                    setattr(auth_user, k, v)
+                'email': dbuser.email,
+                'emails': dbuser.emails_cached(),
+                'short_contact': dbuser.short_contact,
+                'full_contact': dbuser.full_contact,
+                'full_name': dbuser.full_name,
+                'full_name_or_username': dbuser.full_name_or_username,
 
+                '_api_key': dbuser._api_key,
+                '_user_data': dbuser._user_data,
+
+                'created_on': dbuser.created_on,
+                'extern_name': dbuser.extern_name,
+                'extern_type': dbuser.extern_type,
+
+                'inherit_default_permissions': dbuser.inherit_default_permissions,
+
+                'language': dbuser.language,
+                'last_activity': dbuser.last_activity,
+                'last_login': dbuser.last_login,
+                'password': dbuser.password,
+            }
+            auth_user.__dict__.update(attrs)
         except Exception:
             log.error(traceback.format_exc())
             auth_user.is_authenticated = False

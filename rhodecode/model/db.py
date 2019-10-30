@@ -696,6 +696,17 @@ class User(Base, BaseModel):
             .all()
         return [self.email] + [x.email for x in other]
 
+    def emails_cached(self):
+        emails = UserEmailMap.query()\
+            .filter(UserEmailMap.user == self) \
+            .order_by(UserEmailMap.email_id.asc())
+
+        emails = emails.options(
+            FromCache("sql_cache_short", "get_user_{}_emails".format(self.user_id))
+        )
+
+        return [self.email] + [x.email for x in emails]
+
     @property
     def auth_tokens(self):
         auth_tokens = self.get_auth_tokens()
@@ -853,6 +864,10 @@ class User(Base, BaseModel):
     @property
     def is_admin(self):
         return self.admin
+
+    @property
+    def language(self):
+        return self.user_data.get('language')
 
     def AuthUser(self, **kwargs):
         """
