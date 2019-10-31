@@ -167,6 +167,12 @@ class UserProfileSchema(colander.Schema):
     lastname = colander.SchemaNode(
         colander.String(), missing='', title='Last name')
 
+    description = colander.SchemaNode(
+        colander.String(), missing='', title='Personal Description',
+        widget=forms.widget.TextAreaWidget(),
+        validator=colander.Length(max=250)
+    )
+
     email = colander.SchemaNode(
         colander.String(), widget=deferred_user_email_in_emails_widget,
         validator=deferred_user_email_in_emails_validator,
@@ -174,6 +180,7 @@ class UserProfileSchema(colander.Schema):
             _('Additional emails can be specified at <a href="{}">extra emails</a> page.').format(
                 '/_admin/my_account/emails')),
     )
+
 
 
 class AddEmailSchema(colander.Schema):

@@ -143,6 +143,7 @@ def UserForm(localizer, edit=False, available_languages=None, old_data=None):
         firstname = v.UnicodeString(strip=True, min=1, not_empty=False)
         lastname = v.UnicodeString(strip=True, min=1, not_empty=False)
         email = All(v.UniqSystemEmail(localizer, old_data), v.Email(not_empty=True))
+        description = v.UnicodeString(strip=True, min=1, max=250, not_empty=False)
         extern_name = v.UnicodeString(strip=True)
         extern_type = v.UnicodeString(strip=True)
         language = v.OneOf(available_languages, hideList=False,

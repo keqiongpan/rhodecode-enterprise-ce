@@ -599,6 +599,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
             'email': c.user.email,
             'firstname': c.user.firstname,
             'lastname': c.user.lastname,
+            'description': c.user.description,
         }
         c.form = forms.RcForm(
             schema, appstruct=appstruct,

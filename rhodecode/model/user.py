@@ -179,6 +179,7 @@ class UserModel(BaseModel):
             'email': user.email,
             'firstname': user.name,
             'lastname': user.lastname,
+            'description': user.description,
             'active': user.active,
             'admin': user.admin,
             'extern_name': user.extern_name,
@@ -225,7 +226,8 @@ class UserModel(BaseModel):
             active=True, admin=False, extern_type=None, extern_name=None,
             cur_user=None, plugin=None, force_password_change=False,
             allow_to_create_user=True, create_repo_group=None,
-            updating_user_id=None, language=None, strict_creation_check=True):
+            updating_user_id=None, language=None, description=None,
+            strict_creation_check=True):
         """
         Creates a new instance if not found, or updates current one
 
@@ -356,6 +358,7 @@ class UserModel(BaseModel):
             new_user.extern_type = safe_unicode(extern_type)
             new_user.name = firstname
             new_user.lastname = lastname
+            new_user.description = description
 
             # set password only if creating an user or password is changed
             if not edit or _password_change(new_user, password):

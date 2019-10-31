@@ -68,6 +68,14 @@
             </div>
             <div class="field">
                <div class="label">
+                   <label for="description">${_('Description')}:</label>
+               </div>
+               <div class="input textarea editor">
+                   ${h.textarea('description', class_="medium")}
+               </div>
+            </div>
+            <div class="field">
+               <div class="label">
                     ${_('New Password')}:
                </div>
                <div class="input">
