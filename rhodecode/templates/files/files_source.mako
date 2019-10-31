@@ -102,6 +102,7 @@
                   ${h.link_to(_('Annotation'), h.route_path('repo_files:annotated',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
                 %endif
                  | ${h.link_to(_('Raw'), h.route_path('repo_file_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path))}
+                 |<a href="#copySource" onclick="return false;" class="clipboard-action" data-clipboard-text="${c.file.content}">${_('Copy content')}</a>
 
           </div>
           <div class="clear-fix"></div>
