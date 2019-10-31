@@ -1,4 +1,5 @@
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
@@ -16,6 +17,16 @@
             <div class="input">
                 <div class="text-as-placeholder">
                 ${c.user_group.users_group_name}
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">
+                ${_('Description')}:
+            </div>
+            <div class="input">
+                <div class="text-as-placeholder">
+                    <div class="user-hovercard-bio">${dt.render_description(c.user_group.user_group_description, c.visual.stylify_metatags)}</div>
                 </div>
             </div>
         </div>

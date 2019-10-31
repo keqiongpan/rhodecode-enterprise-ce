@@ -37,6 +37,18 @@
     </table>
 </%def>
 
+<%def name="render_description(description, stylify_metatags)">
+<%
+    tags = []
+    if stylify_metatags:
+        tags, description = h.extract_metatags(description)
+%>
+% for tag_type, tag in tags:
+${h.style_metatag(tag_type, tag)|n,trim}
+% endfor
+<code style="white-space: pre-wrap">${description}</code>
+</%def>
+
 ## REPOSITORY RENDERERS
 <%def name="quick_menu(repo_name)">
   <i class="icon-more"></i>
@@ -219,7 +231,8 @@
 <%def name="repo_group_desc(description, personal, stylify_metatags)">
 
     <%
-    tags, description = h.extract_metatags(description)
+        if stylify_metatags:
+            tags, description = h.extract_metatags(description)
     %>
 
     <div class="truncate-wrap">
