@@ -75,6 +75,7 @@ def get_user(request, apiuser, userid=Optional(OAttr('apiuser'))):
             "extern_name": "rhodecode",
             "extern_type": "rhodecode",
             "firstname": "username",
+            "description": "user description",
             "ip_addresses": [],
             "language": null,
             "last_login": "Timestamp",
@@ -159,7 +160,7 @@ def get_users(request, apiuser):
 
 @jsonrpc_method()
 def create_user(request, apiuser, username, email, password=Optional(''),
-                firstname=Optional(''), lastname=Optional(''),
+                firstname=Optional(''), lastname=Optional(''), description=Optional(''),
                 active=Optional(True), admin=Optional(False),
                 extern_name=Optional('rhodecode'),
                 extern_type=Optional('rhodecode'),
@@ -185,6 +186,8 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     :type firstname: Optional(str)
     :param lastname: Set the new user surname.
     :type lastname: Optional(str)
+    :param description: Set user description, or short bio. Metatags are allowed.
+    :type description: Optional(str)
     :param active: Set the user as active.
     :type active: Optional(``True`` | ``False``)
     :param admin: Give the new user admin rights.
@@ -250,6 +253,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
     email = Optional.extract(email)
     first_name = Optional.extract(firstname)
     last_name = Optional.extract(lastname)
+    description = Optional.extract(description)
     active = Optional.extract(active)
     admin = Optional.extract(admin)
     extern_type = Optional.extract(extern_type)
@@ -267,6 +271,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
             last_name=last_name,
             active=active,
             admin=admin,
+            description=description,
             extern_type=extern_type,
             extern_name=extern_name,
             ))
@@ -280,6 +285,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
             email=schema_data['email'],
             firstname=schema_data['first_name'],
             lastname=schema_data['last_name'],
+            description=schema_data['description'],
             active=schema_data['active'],
             admin=schema_data['admin'],
             extern_type=schema_data['extern_type'],
@@ -307,7 +313,7 @@ def create_user(request, apiuser, username, email, password=Optional(''),
 def update_user(request, apiuser, userid, username=Optional(None),
                 email=Optional(None), password=Optional(None),
                 firstname=Optional(None), lastname=Optional(None),
-                active=Optional(None), admin=Optional(None),
+                description=Optional(None), active=Optional(None), admin=Optional(None),
                 extern_type=Optional(None), extern_name=Optional(None), ):
     """
     Updates the details for the specified user, if that user exists.
@@ -331,6 +337,8 @@ def update_user(request, apiuser, userid, username=Optional(None),
     :type firstname: Optional(str)
     :param lastname: Set the new surname.
     :type lastname: Optional(str)
+    :param description: Set user description, or short bio. Metatags are allowed.
+    :type description: Optional(str)
     :param active: Set the new user as active.
     :type active: Optional(``True`` | ``False``)
     :param admin: Give the user admin rights.
@@ -379,6 +387,7 @@ def update_user(request, apiuser, userid, username=Optional(None),
         store_update(updates, email, 'email')
         store_update(updates, firstname, 'name')
         store_update(updates, lastname, 'lastname')
+        store_update(updates, description, 'description')
         store_update(updates, active, 'active')
         store_update(updates, admin, 'admin')
         store_update(updates, extern_name, 'extern_name')

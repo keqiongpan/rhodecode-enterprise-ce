@@ -103,6 +103,9 @@ class UserSchema(colander.Schema):
     last_name = colander.SchemaNode(
         colander.String(), missing='')
 
+    description = colander.SchemaNode(
+        colander.String(), missing='')
+
     active = colander.SchemaNode(
         types.StringBooleanType(),
         missing=False)

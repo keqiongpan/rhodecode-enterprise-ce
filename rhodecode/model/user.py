@@ -226,7 +226,7 @@ class UserModel(BaseModel):
             active=True, admin=False, extern_type=None, extern_name=None,
             cur_user=None, plugin=None, force_password_change=False,
             allow_to_create_user=True, create_repo_group=None,
-            updating_user_id=None, language=None, description=None,
+            updating_user_id=None, language=None, description='',
             strict_creation_check=True):
         """
         Creates a new instance if not found, or updates current one
@@ -251,6 +251,8 @@ class UserModel(BaseModel):
         :param updating_user_id: if we set it up this is the user we want to
             update this allows to editing username.
         :param language: language of user from interface.
+        :param description: user description
+        :param strict_creation_check: checks for allowed creation license wise etc.
 
         :returns: new User object with injected `is_new_user` attribute.
         """

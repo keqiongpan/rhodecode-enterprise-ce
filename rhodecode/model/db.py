@@ -1062,6 +1062,7 @@ class User(Base, BaseModel):
             'username': user.username,
             'firstname': user.name,
             'lastname': user.lastname,
+            'description': user.description,
             'email': user.email,
             'emails': user.emails,
         }

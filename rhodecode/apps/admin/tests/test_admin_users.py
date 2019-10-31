@@ -335,6 +335,7 @@ class TestAdminUsersView(TestController):
         response = self.app.post(route_path('users_create'), params={
             'username': username,
             'password': password,
+            'description': 'mr CTO',
             'password_confirmation': password_confirmation,
             'firstname': name,
             'active': True,
@@ -383,6 +384,7 @@ class TestAdminUsersView(TestController):
             'name': name,
             'active': False,
             'lastname': lastname,
+            'description': 'mr CTO',
             'email': email,
             'csrf_token': self.csrf_token,
         })
@@ -420,6 +422,7 @@ class TestAdminUsersView(TestController):
         ('email', {'email': 'some@email.com'}),
         ('language', {'language': 'de'}),
         ('language', {'language': 'en'}),
+        ('description', {'description': 'hello CTO'}),
         # ('new_password', {'new_password': 'foobar123',
         #                   'password_confirmation': 'foobar123'})
         ])

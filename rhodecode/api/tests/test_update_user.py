@@ -42,7 +42,8 @@ class TestUpdateUser(object):
         ('extern_name', None),
         ('active', False),
         ('active', True),
-        ('password', 'newpass')
+        ('password', 'newpass'),
+        ('description', 'CTO 4 Life')
     ])
     def test_api_update_user(self, name, expected, user_util):
         usr = user_util.create_user()

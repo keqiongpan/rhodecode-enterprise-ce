@@ -82,6 +82,7 @@ class TestCreateUser(object):
             self.apikey, 'create_user',
             username=username,
             email=email,
+            description='CTO of Things',
             password='example')
         response = api_call(self.app, params)
 
