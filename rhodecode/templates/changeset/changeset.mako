@@ -33,9 +33,11 @@
 
       <div class="fieldset">
         <div class="left-content">
-
+          <%
+              rc_user = h.discover_user(c.commit.author_email)
+          %>
           <div class="left-content-avatar">
-            ${base.gravatar(c.commit.author_email, 30)}
+            ${base.gravatar(c.commit.author_email, 30, tooltip=True, user=rc_user)}
           </div>
 
           <div class="left-content-message">
@@ -50,10 +52,10 @@
           <div class="fieldset" data-toggle="summary-details">
             <div class="">
                 <table>
-                <tr class="file_author tooltip" title="${h.tooltip(h.author_string(c.commit.author_email))}">
+                <tr class="file_author">
 
                     <td>
-                        <span class="user commit-author">${h.link_to_user(c.commit.author)}</span>
+                        <span class="user commit-author">${h.link_to_user(rc_user or c.commit.author)}</span>
                         <span class="commit-date">- ${h.age_component(c.commit.date)}</span>
                     </td>
 
@@ -130,15 +132,15 @@
           <p>${_('Diff options')}:</p>
           <div class="right-label-summary">
             <div class="diff-actions">
-              <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Raw diff'))}">
+              <a href="${h.route_path('repo_commit_raw',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">
                 ${_('Raw Diff')}
               </a>
                |
-              <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id=c.commit.raw_id)}"  class="tooltip" title="${h.tooltip(_('Patch diff'))}">
+              <a href="${h.route_path('repo_commit_patch',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">
                 ${_('Patch Diff')}
               </a>
                |
-              <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(diff='download'))}" class="tooltip" title="${h.tooltip(_('Download diff'))}">
+              <a href="${h.route_path('repo_commit_download',repo_name=c.repo_name,commit_id=c.commit.raw_id,_query=dict(diff='download'))}">
                 ${_('Download Diff')}
               </a>
             </div>

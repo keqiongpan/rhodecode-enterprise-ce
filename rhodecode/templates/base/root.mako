@@ -131,6 +131,7 @@ c.template_context['attachment_store'] = {
             $(document).ready(function(){
               show_more_event();
               timeagoActivate();
+              tooltipActivate();
               clipboardActivate();
             })
             </script>

@@ -205,6 +205,7 @@ hit preview to see the link
               },
               success: function(data){
                   $('#test_pattern_result').html(data);
+                  tooltipActivate();
               },
               error: function(jqXHR, textStatus, errorThrown){
                   $('#test_pattern_result').html('Error: ' + errorThrown);

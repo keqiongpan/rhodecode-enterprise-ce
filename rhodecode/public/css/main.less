@@ -26,6 +26,7 @@
 @import 'panels-bootstrap';
 @import 'panels';
 @import 'deform';
+@import 'tooltips';
 
 //--- BASE ------------------//
 .noscript-error {
@@ -2775,31 +2776,31 @@ form.markup-form {
 
 .dropzone,
 .dropzone-pure {
-    border: 2px dashed @grey5;
-    border-radius: 5px;
-    background: white;
-    min-height: 200px;
-    padding: 54px;
+  border: 2px dashed @grey5;
+  border-radius: 5px;
+  background: white;
+  min-height: 200px;
+  padding: 54px;
 
   .dz-message {
-      font-weight: 700;
-      text-align: center;
-      margin: 2em 0;
+    font-weight: 700;
+    text-align: center;
+    margin: 2em 0;
   }
 
 }
 
 .dz-preview {
-    margin: 10px 0 !important;
-    position: relative;
-    vertical-align: top;
-    padding: 10px;
-    border-bottom: 1px solid @grey5;
+  margin: 10px 0 !important;
+  position: relative;
+  vertical-align: top;
+  padding: 10px;
+  border-bottom: 1px solid @grey5;
 }
 
 .dz-filename {
-    font-weight: 700;
-    float:left;
+  font-weight: 700;
+  float: left;
 }
 
 .dz-sending {
@@ -2807,15 +2808,90 @@ form.markup-form {
 }
 
 .dz-response {
-  clear:both
+  clear: both
 }
 
 .dz-filename-size {
-    float:right
+  float: right
 }
 
 .dz-error-message {
-    color: @alert2;
-    padding-top: 10px;
-    clear: both;
+  color: @alert2;
+  padding-top: 10px;
+  clear: both;
+}
+
+
+.user-hovercard {
+  padding: 5px;
+}
+
+.user-hovercard-icon {
+  display: inline;
+  padding: 0;
+  box-sizing: content-box;
+  border-radius: 50%;
+  float: left;
+}
+
+.user-hovercard-name {
+  float: right;
+  vertical-align: top;
+  padding-left: 10px;
+  min-width: 150px;
+}
+
+.user-hovercard-bio {
+  clear: both;
+  padding-top: 10px;
+}
+
+.user-hovercard-header {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-hovercard-footer {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-group-hovercard {
+  padding: 5px;
+}
+
+.user-group-hovercard-icon {
+  display: inline;
+  padding: 0;
+  box-sizing: content-box;
+  border-radius: 50%;
+  float: left;
+}
+
+.user-group-hovercard-name {
+  float: left;
+  vertical-align: top;
+  padding-left: 10px;
+  min-width: 150px;
+}
+
+.user-group-hovercard-icon i {
+  border: 1px solid @grey4;
+  border-radius: 4px;
+}
+
+.user-group-hovercard-bio {
+  clear: both;
+  padding-top: 10px;
+  line-height: 1.0em;
+}
+
+.user-group-hovercard-header {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-group-hovercard-footer {
+  clear: both;
+  min-height: 10px;
 }

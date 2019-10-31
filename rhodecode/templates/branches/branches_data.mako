@@ -2,6 +2,7 @@
 ## usage:
 ## <%namespace name="branch" file="/branches/branches_data.mako"/>
 ## branch.<func_name>(arg,arg2)
+<%namespace name="base" file="/base/base.mako"/>
 
 <%def name="compare(commit_id)">
     <input class="compare-radio-button" type="radio" name="compare_source" value="${commit_id}"/>
@@ -9,7 +10,7 @@
 </%def>
 
 <%def name="name(name, files_url, closed)">
-     <span class="tag branchtag" title="${h.tooltip(_('Branch %s') % (name,))}">
+     <span class="tag branchtag">
      <a href="${files_url}"><i class="icon-code-fork"></i>${name}
         %if closed:
             [closed]
@@ -23,7 +24,7 @@
 </%def>
 
 <%def name="author(author)">
-    <span class="tooltip" title="${h.tooltip(author)}">${h.link_to_user(author)}</span>
+    ${base.gravatar_with_user(author, tooltip=True)}
 </%def>
 
 <%def name="commit(message, commit_id, commit_idx)">

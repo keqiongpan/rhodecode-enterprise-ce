@@ -111,7 +111,7 @@
                 <div class="block-right pr-details-content reviewers">
                     <ul class="group_members">
                       <li>
-                        ${self.gravatar_with_user(c.rhodecode_user.email, 16)}
+                        ${self.gravatar_with_user(c.rhodecode_user.email, 16, tooltip=True)}
                       </li>
                     </ul>
                 </div>

@@ -194,30 +194,70 @@
 
 </%def>
 
-<%def name="gravatar(email, size=16)">
+<%def name="gravatar(email, size=16, tooltip=False, tooltip_alt=None, user=None)">
   <%
-    if (size > 16):
-        gravatar_class = 'gravatar gravatar-large'
+    if size > 16:
+        gravatar_class = ['gravatar','gravatar-large']
     else:
-        gravatar_class = 'gravatar'
+        gravatar_class = ['gravatar']
+
+    data_hovercard_url = ''
+    data_hovercard_alt = tooltip_alt.replace('<', '&lt;').replace('>', '&gt;') if tooltip_alt else ''
+
+    if tooltip:
+        gravatar_class += ['tooltip-hovercard']
+
+    if tooltip and user:
+        if user.username == h.DEFAULT_USER:
+            gravatar_class.pop(-1)
+        else:
+            data_hovercard_url = request.route_path('hovercard_user', user_id=getattr(user, 'user_id', ''))
+    gravatar_class = ' '.join(gravatar_class)
+
   %>
   <%doc>
     TODO: johbo: For now we serve double size images to make it smooth
     for retina. This is how it worked until now. Should be replaced
     with a better solution at some point.
   </%doc>
-  <img class="${gravatar_class}" src="${h.gravatar_url(email, size * 2)}" height="${size}" width="${size}">
+
+  <img class="${gravatar_class}" height="${size}" width="${size}" data-hovercard-url="${data_hovercard_url}" data-hovercard-alt="${data_hovercard_alt}" src="${h.gravatar_url(email, size * 2)}" />
 </%def>
 
 
-<%def name="gravatar_with_user(contact, size=16, show_disabled=False)">
-  <% email = h.email_or_none(contact) %>
-  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
-    ${self.gravatar(email, size)}
-    <span class="${'user user-disabled' if show_disabled else 'user'}"> ${h.link_to_user(contact)}</span>
+<%def name="gravatar_with_user(contact, size=16, show_disabled=False, tooltip=False)">
+  <%
+      email = h.email_or_none(contact)
+      rc_user = h.discover_user(contact)
+  %>
+
+  <div class="rc-user">
+    ${self.gravatar(email, size, tooltip=tooltip, tooltip_alt=contact, user=rc_user)}
+    <span class="${('user user-disabled' if show_disabled else 'user')}"> ${h.link_to_user(rc_user or contact)}</span>
   </div>
 </%def>
 
+
+<%def name="user_group_icon(user_group=None, size=16, tooltip=False)">
+  <%
+    if (size > 16):
+        gravatar_class = 'icon-user-group-alt'
+    else:
+        gravatar_class = 'icon-user-group-alt'
+
+    if tooltip:
+        gravatar_class += ' tooltip-hovercard'
+
+    data_hovercard_url = request.route_path('hovercard_user_group', user_group_id=user_group.users_group_id)
+  %>
+  <%doc>
+    TODO: johbo: For now we serve double size images to make it smooth
+    for retina. This is how it worked until now. Should be replaced
+    with a better solution at some point.
+  </%doc>
+
+  <i style="font-size: ${size}px" class="${gravatar_class} x-icon-size-${size}" data-hovercard-url="${data_hovercard_url}"></i>
+</%def>
 
 <%def name="repo_page_title(repo_instance)">
 <div class="title-content repo-title">
@@ -1090,4 +1130,3 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
-

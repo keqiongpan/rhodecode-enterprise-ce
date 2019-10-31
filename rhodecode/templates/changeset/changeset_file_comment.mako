@@ -56,7 +56,7 @@
           </div>
 
           <div class="author ${'author-inline' if inline else 'author-general'}">
-              ${base.gravatar_with_user(comment.author.email, 16)}
+              ${base.gravatar_with_user(comment.author.email, 16, tooltip=True)}
           </div>
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}

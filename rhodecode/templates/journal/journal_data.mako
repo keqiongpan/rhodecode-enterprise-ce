@@ -44,6 +44,7 @@
       $(document).on('pjax:success',function(){
         show_more_event();
         timeagoActivate();
+        tooltipActivate();
       });
     </script>
 %else:

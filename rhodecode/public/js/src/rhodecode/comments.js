@@ -335,6 +335,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                     $('#injected_page_comments').append(o.rendered_text);
                     self.resetCommentFormState();
                     timeagoActivate();
+                    tooltipActivate();
 
                     // mark visually which comment was resolved
                     if (resolvesCommentId) {
@@ -865,6 +866,7 @@ var CommentsController = function() {
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
+              tooltipActivate();
 
               if (window.updateSticky !== undefined) {
                   // potentially our comments change the active window size, so we

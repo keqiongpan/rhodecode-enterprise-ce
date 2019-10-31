@@ -35,7 +35,7 @@
                 ${h.age_component(commit.date)}
             </td>
             <td class="td-user">
-                ${base.gravatar_with_user(commit.author, 16)}
+                ${base.gravatar_with_user(commit.author, 16, tooltip=True)}
             </td>
             <td class="td-hash">
                 <code>

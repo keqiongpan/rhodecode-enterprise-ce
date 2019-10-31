@@ -35,9 +35,8 @@
                 ${_('Owner')}:
             </div>
             <div class="group_member">
-                ${base.gravatar(c.user_group.user.email, 16)}
+                ${base.gravatar(c.user_group.user.email, 16, user=c.user_group.user, tooltip=True)}
                 <span class="username user">${h.link_to_user(c.user_group.user)}</span>
-
             </div>
         </div>
         <div class="field">
@@ -65,7 +64,7 @@
                         <tr>
                           <td id="member_user_${user.user_id}" class="td-author">
                             <div class="group_member">
-                              ${base.gravatar(user.email, 16)}
+                              ${base.gravatar(user.email, 16, user=user, tooltip=True)}
                               <span class="username user">${h.link_to(h.person(user), h.route_path('user_edit',user_id=user.user_id))}</span>
                               <input type="hidden" name="__start__" value="member:mapping">
                               <input type="hidden" name="member_user_id" value="${user.user_id}">

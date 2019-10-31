@@ -90,7 +90,7 @@
         ${h.age_component(commit.date)}
     </td>
     <td class="td-user">
-        ${base.gravatar_with_user(commit.author)}
+        ${base.gravatar_with_user(commit.author, tooltip=True)}
     </td>
 
     <td class="td-tags tags-col">

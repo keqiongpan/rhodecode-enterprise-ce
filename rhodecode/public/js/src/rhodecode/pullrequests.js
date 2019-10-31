@@ -320,6 +320,7 @@ ReviewersController = function () {
                         'reasons': reasons,
                         'create': true
                         });
+                tooltipActivate();
             }
         }
 

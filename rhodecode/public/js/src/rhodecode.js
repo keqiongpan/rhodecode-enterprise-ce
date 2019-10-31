@@ -221,6 +221,90 @@ var clipboardActivate = function() {
     });
 };
 
+var tooltipActivate = function () {
+    var delay = 50;
+    var animation = 'fade';
+    var theme = 'tooltipster-shadow';
+    var debug = false;
+
+    $('.tooltip').tooltipster({
+        debug: debug,
+        theme: theme,
+        animation: animation,
+        delay: delay,
+        contentCloning: true,
+        contentAsHTML: true,
+
+        functionBefore: function (instance, helper) {
+            var $origin = $(helper.origin);
+            var data = '<div style="white-space: pre-wrap">{0}</div>'.format(instance.content());
+            instance.content(data);
+        }
+    });
+    var hovercardCache = {};
+
+    var loadHoverCard = function (url, callback) {
+        var id = url;
+
+        if (hovercardCache[id] !== undefined) {
+            callback(hovercardCache[id]);
+            return;
+        }
+
+        hovercardCache[id] = undefined;
+        $.get(url, function (data) {
+            hovercardCache[id] = data;
+            callback(hovercardCache[id]);
+        }).fail(function (data, textStatus, errorThrown) {
+            var msg = "Error while fetching hovercard.\nError code {0} ({1}).".format(data.status,data.statusText);
+            callback(msg);
+        });
+    };
+
+    $('.tooltip-hovercard').tooltipster({
+        debug: debug,
+        theme: theme,
+        animation: animation,
+        delay: delay,
+        interactive: true,
+        contentCloning: true,
+
+        trigger: 'custom',
+        triggerOpen: {
+            mouseenter: true,
+        },
+        triggerClose: {
+            mouseleave: true,
+            originClick: true,
+            touchleave: true
+        },
+        content: _gettext('Loading...'),
+        contentAsHTML: true,
+        updateAnimation: null,
+
+        functionBefore: function (instance, helper) {
+
+            var $origin = $(helper.origin);
+
+            // we set a variable so the data is only loaded once via Ajax, not every time the tooltip opens
+            if ($origin.data('loaded') !== true) {
+                var hovercardUrl = $origin.data('hovercardUrl');
+
+                if (hovercardUrl !== undefined && hovercardUrl !== "") {
+                    loadHoverCard(hovercardUrl, function (data) {
+                        instance.content(data);
+                    })
+                } else {
+                    var data = '<div style="white-space: pre-wrap">{0}</div>'.format($origin.data('hovercardAlt'))
+                    instance.content(data);
+                }
+
+                // to remember that the data has been loaded
+                $origin.data('loaded', true);
+            }
+        }
+    })
+};
 
 // Formatting values in a Select2 dropdown of commit references
 var formatSelect2SelectionRefs = function(commit_ref){

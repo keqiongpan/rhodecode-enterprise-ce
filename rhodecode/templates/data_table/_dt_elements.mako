@@ -167,12 +167,6 @@ ${h.style_metatag(tag_type, tag)|n,trim}
   %endif
 </%def>
 
-<%def name="user_gravatar(email, size=16)">
-  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
-    ${base.gravatar(email, 16)}
-  </div>
-</%def>
-
 <%def name="repo_actions(repo_name, super_user=True)">
   <div>
     <div class="grid_edit">
@@ -295,7 +289,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 </%def>
 
 <%def name="user_profile(username)">
-    ${base.gravatar_with_user(username, 16)}
+    ${base.gravatar_with_user(username, 16, tooltip=True)}
 </%def>
 
 <%def name="user_group_name(user_group_name)">
@@ -323,7 +317,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 </%def>
 
 <%def name="gist_author(full_contact, created_on, expires)">
-    ${base.gravatar_with_user(full_contact, 16)}
+    ${base.gravatar_with_user(full_contact, 16, tooltip=True)}
 </%def>
 
 
@@ -389,7 +383,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 </%def>
 
 <%def name="pullrequest_author(full_contact)">
-    ${base.gravatar_with_user(full_contact, 16)}
+    ${base.gravatar_with_user(full_contact, 16, tooltip=True)}
 </%def>
 
 

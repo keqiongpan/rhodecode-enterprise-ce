@@ -382,6 +382,7 @@ var getFilesMetadata = function() {
     metadataRequest.done(function(data) {
         $('#file-tree').html(data);
         timeagoActivate();
+        tooltipActivate();
     });
     metadataRequest.fail(function (data, textStatus, errorThrown) {
         if (data.status != 0) {
@@ -406,7 +407,8 @@ var showAuthors = function(elem, annotate) {
         timeout: 5000
     }).complete(function(){
         $(elem).hide();
-        $('#file_authors_title').html(_gettext('All Authors'))
+        $('#file_authors_title').html(_gettext('All Authors'));
+        tooltipActivate();
     })
 };
 

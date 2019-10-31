@@ -271,7 +271,7 @@
         <div class="block-right pr-details-content reviewers">
             <ul class="group_members">
               <li>
-                ${self.gravatar_with_user(c.pull_request.author.email, 16)}
+                ${self.gravatar_with_user(c.pull_request.author.email, 16, tooltip=True)}
               </li>
             </ul>
         </div>
@@ -328,6 +328,7 @@
             % endfor
 
             </ul>
+
             <input type="hidden" name="__end__" value="review_members:sequence">
             ## end members redering block
 
@@ -457,7 +458,7 @@
                                     ${h.age_component(commit.date)}
                                 </td>
                                 <td class="td-user">
-                                    ${base.gravatar_with_user(commit.author, 16)}
+                                    ${base.gravatar_with_user(commit.author, 16, tooltip=True)}
                                 </td>
                                 <td class="td-hash">
                                     <code>

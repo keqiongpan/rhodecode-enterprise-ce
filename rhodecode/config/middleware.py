@@ -282,6 +282,7 @@ def includeme(config):
     # apps
     if load_all:
         config.include('rhodecode.apps._base')
+        config.include('rhodecode.apps.hovercards')
         config.include('rhodecode.apps.ops')
         config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')

@@ -54,7 +54,7 @@
             ${h.age_component(cs.date)}
         </td>
         <td class="td-user author">
-            ${base.gravatar_with_user(cs.author)}
+            ${base.gravatar_with_user(cs.author, tooltip=True)}
         </td>
 
         <td class="td-tags">
@@ -98,7 +98,7 @@
 
 <script type="text/javascript">
   $(document).pjax('#shortlog_data .pager_link','#shortlog_data', {timeout: 5000, scrollTo: false, push: false});
-  $(document).on('pjax:success', function(){ timeagoActivate(); });
+  $(document).on('pjax:success', function(){ timeagoActivate(); tooltipActivate();});
   $(document).on('pjax:timeout', function(event) {
     // Prevent default timeout redirection behavior
     event.preventDefault()

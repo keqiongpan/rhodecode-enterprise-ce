@@ -147,7 +147,7 @@
           <div class="left-label-summary">
             <p>${_('Owner')}</p>
             <div class="right-label-summary">
-                ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16)}
+                ${base.gravatar_with_user(c.rhodecode_db_repo.user.email, 16, tooltip=True)}
             </div>
 
           </div>

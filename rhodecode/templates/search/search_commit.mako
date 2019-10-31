@@ -54,7 +54,7 @@
                     if isinstance(author, dict):
                         author = author['email']
                     %>
-                    ${base.gravatar_with_user(author)}
+                    ${base.gravatar_with_user(author, tooltip=True)}
                 </td>
             </tr>
         % endif

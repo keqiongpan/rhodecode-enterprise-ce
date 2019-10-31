@@ -899,10 +899,9 @@ def person_by_id(id_, show_attr="username_and_name"):
     return id_
 
 
-def gravatar_with_user(request, author, show_disabled=False):
-    _render = request.get_partial_renderer(
-        'rhodecode:templates/base/base.mako')
-    return _render('gravatar_with_user', author, show_disabled=show_disabled)
+def gravatar_with_user(request, author, show_disabled=False, tooltip=False):
+    _render = request.get_partial_renderer('rhodecode:templates/base/base.mako')
+    return _render('gravatar_with_user', author, show_disabled=show_disabled, tooltip=tooltip)
 
 
 tags_paterns = OrderedDict((
@@ -1625,7 +1624,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
 
     if link_format == 'html':
         tmpl = (
-            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(pref)s<a class="tooltip %(cls)s" href="%(url)s" title="%(title)s">'
             '%(issue-prefix)s%(id-repr)s'
             '</a>')
     elif link_format == 'rst':
@@ -1643,7 +1642,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id': issue_id,
         'repo': repo_name,
         'repo_name': repo_name_cleaned,
-        'group_name': parent_group_name
+        'group_name': parent_group_name,
     }
     # named regex variables
     named_vars.update(match_obj.groupdict())
@@ -1660,6 +1659,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
+        'title': entry['desc']
     }
     if return_raw_data:
         return {

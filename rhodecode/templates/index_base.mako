@@ -68,6 +68,7 @@
           },
           "drawCallback": function( settings, json ) {
               timeagoActivate();
+              tooltipActivate();
               quick_repo_menu();
               // hide pagination for single page
               if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
@@ -105,6 +106,7 @@
           },
           "drawCallback": function( settings, json ) {
               timeagoActivate();
+              tooltipActivate();
               quick_repo_menu();
               // hide pagination for single page
               if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {

@@ -69,6 +69,7 @@ $(document).ready(function() {
           },
           "drawCallback": function( settings, json ) {
               timeagoActivate();
+              tooltipActivate();
           },
           "createdRow": function ( row, data, index ) {
               if (data['closed']) {

@@ -110,6 +110,7 @@ $(document).ready(function() {
       },
       "initComplete": function( settings, json ) {
           timeagoActivate();
+          tooltipActivate();
           get_datatable_count();
       }
     });
@@ -117,6 +118,7 @@ $(document).ready(function() {
     // update the counter when things change
     $('#gist_list_table').on('draw.dt', function() {
         timeagoActivate();
+        tooltipActivate();
         get_datatable_count();
     });
 
