@@ -113,7 +113,7 @@ c.template_context['attachment_store'] = {
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
             ## avoide escaping the %N
-            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.min.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
 
