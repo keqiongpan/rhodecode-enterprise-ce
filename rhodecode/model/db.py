@@ -577,6 +577,7 @@ class User(Base, BaseModel):
     _email = Column("email", String(255), nullable=True, unique=None, default=None)
     last_login = Column("last_login", DateTime(timezone=False), nullable=True, unique=None, default=None)
     last_activity = Column('last_activity', DateTime(timezone=False), nullable=True, unique=None, default=None)
+    description = Column('description', UnicodeText().with_variant(UnicodeText(1024), 'mysql'))
 
     extern_type = Column("extern_type", String(255), nullable=True, unique=None, default=None)
     extern_name = Column("extern_name", String(255), nullable=True, unique=None, default=None)
