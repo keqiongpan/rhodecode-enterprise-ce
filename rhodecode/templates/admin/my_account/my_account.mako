@@ -27,6 +27,7 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='profile' or c.active=='profile_edit' else ''}"><a href="${h.route_path('my_account_profile')}">${_('Profile')}</a></li>
+          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
           <li class="${'active' if c.active=='password' else ''}"><a href="${h.route_path('my_account_password')}">${_('Password')}</a></li>
           <li class="${'active' if c.active=='bookmarks' else ''}"><a href="${h.route_path('my_account_bookmarks')}">${_('Bookmarks')}</a></li>
           <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
@@ -38,7 +39,7 @@
           % if my_account_external_url:
           <li class="${'active' if c.active=='external_identity' else ''}"><a href="${my_account_external_url}">${_('External Identities')}</a></li>
           % endif
-          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
+
           <li class="${'active' if c.active=='repos' else ''}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>
           <li class="${'active' if c.active=='watched' else ''}"><a href="${h.route_path('my_account_watched')}">${_('Watched')}</a></li>
           <li class="${'active' if c.active=='pullrequests' else ''}"><a href="${h.route_path('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
