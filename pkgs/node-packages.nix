@@ -229,13 +229,13 @@ let
         sha1 = "e7365648c1b42136a59c7d5040637b3b5c83b614";
       };
     };
-    "@types/node-6.14.8" = {
+    "@types/node-6.14.9" = {
       name = "_at_types_slash_node";
       packageName = "@types/node";
-      version = "6.14.8";
+      version = "6.14.9";
       src = fetchurl {
-        url = "https://registry.npmjs.org/@types/node/-/node-6.14.8.tgz";
-        sha512 = "ZVswkI0zxOcADy2b4T9Lj3N+OYyHwCyzMtmkRIi1P94vF/GOLpDPB76P1uBXX/QM6e5wICriSz2XBPSBdxIN5g==";
+        url = "https://registry.npmjs.org/@types/node/-/node-6.14.9.tgz";
+        sha512 = "leP/gxHunuazPdZaCvsCefPQxinqUDsCxCR5xaDUrY2MkYxQRFZZwU5e7GojyYsGB7QVtCi7iVEl/hoFXQYc+w==";
       };
     };
     "@types/parse5-2.2.34" = {
@@ -2543,13 +2543,13 @@ let
         sha1 = "3a83a904e54353287874c564b7549386849a98c9";
       };
     };
-    "electron-to-chromium-1.3.296" = {
+    "electron-to-chromium-1.3.302" = {
       name = "electron-to-chromium";
       packageName = "electron-to-chromium";
-      version = "1.3.296";
+      version = "1.3.302";
       src = fetchurl {
-        url = "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.296.tgz";
-        sha512 = "s5hv+TSJSVRsxH190De66YHb50pBGTweT9XGWYu/LMR20KX6TsjFzObo36CjVAzM+PUeeKSBRtm/mISlCzeojQ==";
+        url = "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.302.tgz";
+        sha512 = "1qConyiVEbj4xZRBXqtGR003+9tV0rJF0PS6aeO0Ln/UL637js9hdwweCl07meh/kJoI2N4W8q3R3g3F5z46ww==";
       };
     };
     "elliptic-6.5.1" = {
@@ -2984,13 +2984,13 @@ let
         sha512 = "lNaHNVymajmk0OJMBn8fVUAU1BtDeKIqKoVhk4xAALB57aALg6b4W0MfJ/cUE0g9YBXy5XhSlPIpYIJ7HaY/3Q==";
       };
     };
-    "flatten-1.0.2" = {
+    "flatten-1.0.3" = {
       name = "flatten";
       packageName = "flatten";
-      version = "1.0.2";
+      version = "1.0.3";
       src = fetchurl {
-        url = "https://registry.npmjs.org/flatten/-/flatten-1.0.2.tgz";
-        sha1 = "dae46a9d78fbe25292258cc1e780a41d95c03782";
+        url = "https://registry.npmjs.org/flatten/-/flatten-1.0.3.tgz";
+        sha512 = "dVsPA/UwQ8+2uoFe5GHtiBMu48dWLTdsuEd7CKGlZlD78r1TTWBvDuFaFGKCo/ZfEr95Uk56vZoX86OsHkUeIg==";
       };
     };
     "flush-write-stream-1.1.1" = {
@@ -7124,13 +7124,13 @@ let
         sha512 = "Y2VsbPVs0FIshJztycsO2SfPk7/KAF/T72qzv9u5EpQ4kB2hQoHlhNQTsNyy6ul7lQtqJN/AoWeS23OzEiEFxw==";
       };
     };
-    "uglify-js-3.6.5" = {
+    "uglify-js-3.6.7" = {
       name = "uglify-js";
       packageName = "uglify-js";
-      version = "3.6.5";
+      version = "3.6.7";
       src = fetchurl {
-        url = "https://registry.npmjs.org/uglify-js/-/uglify-js-3.6.5.tgz";
-        sha512 = "7L3W+Npia1OCr5Blp4/Vw83tK1mu5gnoIURtT1fUVfQ3Kf8WStWV6NJz0fdoBJZls0KlweruRTLVe6XLafmy5g==";
+        url = "https://registry.npmjs.org/uglify-js/-/uglify-js-3.6.7.tgz";
+        sha512 = "4sXQDzmdnoXiO+xvmTzQsfIiwrjUCSA95rSP4SEd8tDb51W2TiDOlL76Hl+Kw0Ie42PSItCW8/t6pBNCF2R48A==";
       };
     };
     "uglify-to-browserify-1.0.2" = {
@@ -7642,7 +7642,7 @@ let
       sources."@polymer/paper-tooltip-3.0.1"
       sources."@polymer/polymer-3.3.0"
       sources."@types/clone-0.1.30"
-      sources."@types/node-6.14.8"
+      sources."@types/node-6.14.9"
       sources."@types/parse5-2.2.34"
       sources."@webassemblyjs/ast-1.7.10"
       sources."@webassemblyjs/floating-point-hex-parser-1.7.10"
@@ -8056,7 +8056,7 @@ let
         ];
       })
       sources."ecc-jsbn-0.1.2"
-      sources."electron-to-chromium-1.3.296"
+      sources."electron-to-chromium-1.3.302"
       sources."elliptic-6.5.1"
       sources."emojis-list-2.1.0"
       sources."end-of-stream-1.4.4"
@@ -8142,7 +8142,7 @@ let
       })
       sources."fined-1.2.0"
       sources."flagged-respawn-1.0.1"
-      sources."flatten-1.0.2"
+      sources."flatten-1.0.3"
       (sources."flush-write-stream-1.1.1" // {
         dependencies = [
           sources."readable-stream-2.3.6"
@@ -8960,7 +8960,7 @@ let
           sources."source-map-0.6.1"
         ];
       })
-      (sources."uglify-js-3.6.5" // {
+      (sources."uglify-js-3.6.7" // {
         dependencies = [
           sources."source-map-0.6.1"
         ];
