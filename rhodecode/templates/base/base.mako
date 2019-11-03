@@ -1,4 +1,13 @@
 ## -*- coding: utf-8 -*-
+
+## base64 filter
+<%!
+    def base64(text):
+        import base64
+        from rhodecode.lib.helpers import safe_str
+        return base64.encodestring(safe_str(text))
+%>
+
 <%inherit file="root.mako"/>
 
 <%include file="/ejs_templates/templates.html"/>

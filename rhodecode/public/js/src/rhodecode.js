@@ -295,7 +295,12 @@ var tooltipActivate = function () {
                         instance.content(data);
                     })
                 } else {
-                    var data = '<div style="white-space: pre-wrap">{0}</div>'.format($origin.data('hovercardAlt'))
+                    if ($origin.data('hovercardAltHtml')) {
+                        var data =  atob($origin.data('hovercardAltHtml'));
+                    } else {
+                        var data = '<div style="white-space: pre-wrap">{0}</div>'.format($origin.data('hovercardAlt'))
+                    }
+
                     instance.content(data);
                 }
 
