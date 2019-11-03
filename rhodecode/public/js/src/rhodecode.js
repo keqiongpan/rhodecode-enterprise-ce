@@ -248,16 +248,18 @@ var tooltipActivate = function () {
 
         if (hovercardCache[id] !== undefined) {
             callback(hovercardCache[id]);
-            return;
+            return true;
         }
 
         hovercardCache[id] = undefined;
         $.get(url, function (data) {
             hovercardCache[id] = data;
             callback(hovercardCache[id]);
+            return true;
         }).fail(function (data, textStatus, errorThrown) {
-            var msg = "Error while fetching hovercard.\nError code {0} ({1}).".format(data.status,data.statusText);
+            var msg = "<p class='error-message'>Error while fetching hovercard.\nError code {0} ({1}).</p>".format(data.status,data.statusText);
             callback(msg);
+            return false
         });
     };
 
@@ -291,7 +293,7 @@ var tooltipActivate = function () {
                 var hovercardUrl = $origin.data('hovercardUrl');
 
                 if (hovercardUrl !== undefined && hovercardUrl !== "") {
-                    loadHoverCard(hovercardUrl, function (data) {
+                    var loaded = loadHoverCard(hovercardUrl, function (data) {
                         instance.content(data);
                     })
                 } else {
@@ -300,12 +302,12 @@ var tooltipActivate = function () {
                     } else {
                         var data = '<div style="white-space: pre-wrap">{0}</div>'.format($origin.data('hovercardAlt'))
                     }
-
+                    var loaded = true;
                     instance.content(data);
                 }
 
                 // to remember that the data has been loaded
-                $origin.data('loaded', true);
+                $origin.data('loaded', loaded);
             }
         }
     })

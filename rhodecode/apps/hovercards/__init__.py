@@ -17,7 +17,6 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-from rhodecode.config import routing_links
 
 
 def includeme(config):
@@ -31,8 +30,8 @@ def includeme(config):
         pattern='/_hovercard/user_group/{user_group_id}')
 
     config.add_route(
-        name='hovercard_commit',
-        pattern='/_hovercard/commit/{repo_name}/{user_id}')
+        name='hovercard_repo_commit',
+        pattern='/_hovercard/commit/{repo_name:.*?[^/]}/{commit_id}', repo_route=True)
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')

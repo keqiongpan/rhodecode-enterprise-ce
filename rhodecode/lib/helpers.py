@@ -1690,8 +1690,9 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
 
     active_entries = active_entries or get_active_pattern_entries(repo_name)
     issues_data = []
-    newtext = text_string
+    new_text = text_string
 
+    log.debug('Got %s entries to process', len(active_entries))
     for uid, entry in active_entries.items():
         log.debug('found issue tracker entry with uid %s', uid)
 
@@ -1705,9 +1706,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         try:
             pattern = re.compile(r'%s' % entry['pat'])
         except re.error:
-            log.exception(
-                'issue tracker pattern: `%s` failed to compile',
-                entry['pat'])
+            log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
             continue
 
         data_func = partial(
@@ -1721,10 +1720,10 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
             _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
             link_format=link_format)
 
-        newtext = pattern.sub(url_func, newtext)
+        new_text = pattern.sub(url_func, new_text)
         log.debug('processed prefix:uid `%s`', uid)
 
-    return newtext, issues_data
+    return new_text, issues_data
 
 
 def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None):

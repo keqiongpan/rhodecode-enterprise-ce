@@ -141,10 +141,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     ${h.age_component(last_change, time_is_local=True)}
 </%def>
 
-<%def name="revision(name,rev,tip,author,last_msg, commit_date)">
+<%def name="revision(repo_name, rev, commit_id, author, last_msg, commit_date)">
   <div>
   %if rev >= 0:
-      <code><a title="${h.tooltip('%s\n%s\n\n%s' % (author, commit_date, last_msg))}" class="tooltip" href="${h.route_path('repo_commit',repo_name=name,commit_id=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
+      <code><a class="tooltip-hovercard" data-hovercard-alt="${last_msg}" data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)}" href="${h.route_path('repo_commit',repo_name=repo_name,commit_id=commit_id)}">${'r{}:{}'.format(rev,h.short_id(commit_id))}</a></code>
   %else:
       ${_('No commits yet')}
   %endif

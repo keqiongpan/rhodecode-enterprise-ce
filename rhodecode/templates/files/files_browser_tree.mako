@@ -1,3 +1,5 @@
+<%namespace name="base" file="/base/base.mako"/>
+
 <%
     if request.GET.get('at'):
         query={'at': request.GET.get('at')}
@@ -60,7 +62,7 @@
               </td>
               <td class="td-hash" data-attr-name="commit_id">
                   % if c.full_load:
-                  <div class="tooltip" title="${h.tooltip(node.last_commit.message)}">
+                  <div class="tooltip-hovercard" data-hovercard-alt="${node.last_commit.message}" data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=c.repo_name, commit_id=node.last_commit.raw_id)}">
                       <pre data-commit-id="${node.last_commit.raw_id}">r${node.last_commit.idx}:${node.last_commit.short_id}</pre>
                   </div>
                   % endif

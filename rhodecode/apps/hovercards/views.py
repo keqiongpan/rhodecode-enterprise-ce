@@ -24,10 +24,11 @@ import collections
 
 from pyramid.view import view_config
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base import BaseAppView, RepoAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired)
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired,
+    HasRepoPermissionAnyDecorator)
 from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
@@ -68,4 +69,22 @@ class HoverCardsView(BaseAppView):
         c = self.load_default_context()
         user_group_id = self.request.matchdict['user_group_id']
         c.user_group = UserGroup.get_or_404(user_group_id)
+        return self._get_template_context(c)
+
+
+class HoverCardsRepoView(RepoAppView):
+    def load_default_context(self):
+        c = self._get_local_tmpl_context()
+        return c
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='hovercard_repo_commit', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_repo_commit.mako')
+    def hovercard_repo_commit(self):
+        c = self.load_default_context()
+        commit_id = self.request.matchdict['commit_id']
+        pre_load = ['author', 'branch', 'date', 'message']
+        c.commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id, pre_load=pre_load)
         return self._get_template_context(c)
