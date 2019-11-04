@@ -84,7 +84,7 @@ class TestRepoIssueTracker(object):
             extra_environ=xhr_header, params=data)
 
         assert response.body == \
-               'example of <a class="issue-tracker-link" href="http://url">prefix</a> replacement'
+               'example of <a class="tooltip issue-tracker-link" href="http://url" title="description">prefix</a> replacement'
 
         @request.addfinalizer
         def cleanup():

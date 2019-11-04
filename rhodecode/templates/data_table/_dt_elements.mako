@@ -144,7 +144,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 <%def name="revision(repo_name, rev, commit_id, author, last_msg, commit_date)">
   <div>
   %if rev >= 0:
-      <code><a class="tooltip-hovercard" data-hovercard-alt="${last_msg}" data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)}" href="${h.route_path('repo_commit',repo_name=repo_name,commit_id=commit_id)}">${'r{}:{}'.format(rev,h.short_id(commit_id))}</a></code>
+      <code><a class="tooltip-hovercard" data-hovercard-alt=${h.tooltip(last_msg)} data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)}" href="${h.route_path('repo_commit',repo_name=repo_name,commit_id=commit_id)}">${'r{}:{}'.format(rev,h.short_id(commit_id))}</a></code>
   %else:
       ${_('No commits yet')}
   %endif

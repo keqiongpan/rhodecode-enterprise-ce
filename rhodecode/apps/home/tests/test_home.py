@@ -101,20 +101,6 @@ class TestHomeController(TestController):
             RepoGroupModel().delete(repo_group='gr1', force_delete=True)
             Session().commit()
 
-    def test_index_with_name_with_tags(self, user_util, autologin_user):
-        user = user_util.create_user()
-        username = user.username
-        user.name = '<img src="/image1" onload="alert(\'Hello, World!\');">'
-        user.lastname = '#"><img src=x onerror=prompt(document.cookie);>'
-
-        Session().add(user)
-        Session().commit()
-        user_util.create_repo(owner=username)
-
-        response = self.app.get(route_path('home'))
-        response.mustcontain(h.html_escape(user.first_name))
-        response.mustcontain(h.html_escape(user.last_name))
-
     @pytest.mark.parametrize("name, state", [
         ('Disabled', False),
         ('Enabled', True),
