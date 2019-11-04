@@ -272,7 +272,8 @@ class RepoFilesView(RepoAppView):
                 'rhodecode:templates/files/files_browser_tree.mako',
                 self._get_template_context(c), self.request)
 
-        return compute_file_tree('v1', self.db_repo.repo_id, commit_id, f_path, full_load)
+        return compute_file_tree(
+            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_id, commit_id, f_path, full_load)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)

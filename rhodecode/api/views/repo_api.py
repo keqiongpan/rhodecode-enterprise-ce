@@ -617,7 +617,7 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
     cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
     region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-    def compute_fts_tree(repo_id, commit_id, root_path, cache_ver):
+    def compute_fts_tree(cache_ver, repo_id, commit_id, root_path):
         return ScmModel().get_fts_data(repo_id, commit_id, root_path)
 
     try:
@@ -638,7 +638,7 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
             'with caching: %s[TTL: %ss]' % (
                 repo_id, commit_id, cache_on, cache_seconds or 0))
 
-        tree_files = compute_fts_tree(repo_id, commit_id, root_path, 'v1')
+        tree_files = compute_fts_tree(rc_cache.FILE_TREE_CACHE_VER, repo_id, commit_id, root_path)
         return tree_files
 
     except Exception:

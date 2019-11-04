@@ -47,6 +47,9 @@ from .utils import (
     FreshRegionCache, ActiveRegionCache)
 
 
+FILE_TREE_CACHE_VER = 'v2'
+
+
 def configure_dogpile_cache(settings):
     cache_dir = settings.get('cache_dir')
     if cache_dir:
