@@ -1106,12 +1106,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 ]
             };
 
-            // get stored diff mode and pre-enable it
-            if (templateContext.session_attrs.wide_diff_mode === "true") {
-                Rhodecode.comments.toggleWideMode(null);
-                $('.toggle-wide-diff').addClass('btn-active');
-            }
-
             var diffMenuId = "#diff_menu_" + "${diffset_container_id}";
             $(diffMenuId).select2({
                 minimumResultsForSearch: -1,
@@ -1144,6 +1138,13 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                         _gettext('Expand all files'));
                 }
                 updateSticky()
+            };
+
+            // get stored diff mode and pre-enable it
+            if (templateContext.session_attrs.wide_diff_mode === "true") {
+                Rhodecode.comments.toggleWideMode(null);
+                $('.toggle-wide-diff').addClass('btn-active');
+                updateSticky();
             }
         });
     </script>
