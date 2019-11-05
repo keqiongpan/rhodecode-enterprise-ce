@@ -1110,8 +1110,8 @@ class PullRequestModel(BaseModel):
         pr_target_repo = pull_request_obj.target_repo
 
         pr_url = h.route_url('pullrequest_show',
-            repo_name=pr_target_repo.repo_name,
-            pull_request_id=pull_request_obj.pull_request_id,)
+                             repo_name=pr_target_repo.repo_name,
+                             pull_request_id=pull_request_obj.pull_request_id,)
 
         # set some variables for email notification
         pr_target_repo_url = h.route_url(

@@ -342,6 +342,8 @@ function registerRCRoutes() {
     pyroutes.register('gist_show_formatted', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s', ['gist_id', 'revision', 'format']);
     pyroutes.register('gist_show_formatted_path', '/_admin/gists/%(gist_id)s/%(revision)s/%(format)s/%(f_path)s', ['gist_id', 'revision', 'format', 'f_path']);
     pyroutes.register('debug_style_home', '/_admin/debug_style', []);
+    pyroutes.register('debug_style_email', '/_admin/debug_style/email/%(email_id)s', ['email_id']);
+    pyroutes.register('debug_style_email_plain_rendered', '/_admin/debug_style/email-rendered/%(email_id)s', ['email_id']);
     pyroutes.register('debug_style_template', '/_admin/debug_style/t/%(t_path)s', ['t_path']);
     pyroutes.register('apiv2', '/_admin/api', []);
     pyroutes.register('admin_settings_license', '/_admin/settings/license', []);

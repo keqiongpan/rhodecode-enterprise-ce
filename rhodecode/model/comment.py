@@ -359,7 +359,7 @@ class CommentsModel(BaseModel):
             kwargs.update({
                 'commit': commit_obj,
                 'commit_message': commit_obj.message,
-                'commit_target_repo': target_repo_url,
+                'commit_target_repo_url': target_repo_url,
                 'commit_comment_url': commit_comment_url,
             })
 
@@ -382,6 +382,11 @@ class CommentsModel(BaseModel):
                 pull_request_id=pull_request_obj.pull_request_id,
                 _anchor='comment-%s' % comment.comment_id)
 
+            pr_url = h.route_url(
+                'pullrequest_show',
+                repo_name=pr_target_repo.repo_name,
+                pull_request_id=pull_request_obj.pull_request_id, )
+
             # set some variables for email notification
             pr_target_repo_url = h.route_url(
                 'repo_summary', repo_name=pr_target_repo.repo_name)
@@ -393,10 +398,11 @@ class CommentsModel(BaseModel):
             kwargs.update({
                 'pull_request': pull_request_obj,
                 'pr_id': pull_request_obj.pull_request_id,
-                'pr_target_repo': pr_target_repo,
-                'pr_target_repo_url': pr_target_repo_url,
-                'pr_source_repo': pr_source_repo,
-                'pr_source_repo_url': pr_source_repo_url,
+                'pull_request_url': pr_url,
+                'pull_request_target_repo': pr_target_repo,
+                'pull_request_target_repo_url': pr_target_repo_url,
+                'pull_request_source_repo': pr_source_repo,
+                'pull_request_source_repo_url': pr_source_repo_url,
                 'pr_comment_url': pr_comment_url,
                 'pr_closing': closing_pr,
             })

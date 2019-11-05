@@ -52,6 +52,7 @@
     <div class="sidebar">
       <ul class="nav nav-pills nav-stacked">
           <li class="${'active' if c.active=='index' else ''}"><a href="${h.route_path('debug_style_home')}">${_('Index')}</a></li>
+          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('debug_style_template', t_path='emails.html')}">${_('Emails')}</a></li>
           <li class="${'active' if c.active=='typography' else ''}"><a href="${h.route_path('debug_style_template', t_path='typography.html')}">${_('Typography')}</a></li>
           <li class="${'active' if c.active=='forms' else ''}"><a href="${h.route_path('debug_style_template', t_path='forms.html')}">${_('Forms')}</a></li>
           <li class="${'active' if c.active=='buttons' else ''}"><a href="${h.route_path('debug_style_template', t_path='buttons.html')}">${_('Buttons')}</a></li>

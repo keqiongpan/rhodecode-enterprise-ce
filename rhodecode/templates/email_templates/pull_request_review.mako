@@ -2,19 +2,20 @@
 <%inherit file="base.mako"/>
 <%namespace name="base" file="base.mako"/>
 
+## EMAIL SUBJECT
 <%def name="subject()" filter="n,trim,whitespace_filter">
 <%
 data = {
-    'user': h.person(user),
+    'user': '@'+h.person(user),
     'pr_id': pull_request.pull_request_id,
     'pr_title': pull_request.title,
 }
 %>
 
-${_('%(user)s wants you to review pull request #%(pr_id)s: "%(pr_title)s"') % data |n}
+${_('{user} requested a pull request review. !{pr_id}: "{pr_title}"').format(**data) |n}
 </%def>
 
-
+## PLAINTEXT VERSION OF BODY
 <%def name="body_plaintext()" filter="n,trim">
 <%
 data = {
@@ -25,32 +26,36 @@ data = {
     'source_ref_name': pull_request.source_ref_parts.name,
     'target_ref_type': pull_request.target_ref_parts.type,
     'target_ref_name': pull_request.target_ref_parts.name,
-    'repo_url': pull_request_source_repo_url
+    'repo_url': pull_request_source_repo_url,
+    'source_repo': pull_request_source_repo.repo_name,
+    'target_repo': pull_request_target_repo.repo_name,
+    'source_repo_url': pull_request_source_repo_url,
+    'target_repo_url': pull_request_target_repo_url,
 }
 %>
-${self.subject()}
 
+${h.literal(_('Pull request !{pr_id}: `{pr_title}`').format(**data))}
 
-${h.literal(_('Pull request from %(source_ref_type)s:%(source_ref_name)s of %(repo_url)s into %(target_ref_type)s:%(target_ref_name)s') % data)}
+* ${h.literal(_('Commit flow: {source_ref_type}:{source_ref_name} of {source_repo_url} into {target_ref_type}:{target_ref_name} of {target_repo_url}').format(**data))}
 
-
-* ${_('Link')}: ${pull_request_url}
+* ${_('Pull Request link')}: ${pull_request_url}
 
 * ${_('Title')}: ${pull_request.title}
 
 * ${_('Description')}:
 
-${pull_request.description}
+${pull_request.description | trim}
 
 
 * ${_ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits) ) % {'num': len(pull_request_commits)}}:
 
 % for commit_id, message in pull_request_commits:
-        - ${h.short_id(commit_id)}
-          ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
+    - ${h.short_id(commit_id)}
+      ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
 
 % endfor
 
+---
 ${self.plaintext_footer()}
 </%def>
 <%
@@ -63,23 +68,77 @@ data = {
     'target_ref_type': pull_request.target_ref_parts.type,
     'target_ref_name': pull_request.target_ref_parts.name,
     'repo_url': pull_request_source_repo_url,
+    'source_repo': pull_request_source_repo.repo_name,
+    'target_repo': pull_request_target_repo.repo_name,
     'source_repo_url': h.link_to(pull_request_source_repo.repo_name, pull_request_source_repo_url),
-    'target_repo_url': h.link_to(pull_request_target_repo.repo_name, pull_request_target_repo_url)
+    'target_repo_url': h.link_to(pull_request_target_repo.repo_name, pull_request_target_repo_url),
 }
 %>
-<table style="text-align:left;vertical-align:middle;">
-    <tr><td colspan="2" style="width:100%;padding-bottom:15px;border-bottom:1px solid #dbd9da;"><h4><a href="${pull_request_url}" style="color:#427cc9;text-decoration:none;cursor:pointer">${_('%(user)s wants you to review pull request #%(pr_id)s: "%(pr_title)s".') % data }</a></h4></td></tr>
-    <tr><td style="padding-right:20px;padding-top:15px;">${_('Title')}</td><td style="padding-top:15px;">${pull_request.title}</td></tr>
-    <tr><td style="padding-right:20px;">${_('Source')}</td><td>${base.tag_button(pull_request.source_ref_parts.name)} ${h.literal(_('%(source_ref_type)s of %(source_repo_url)s') % data)}</td></tr>
-    <tr><td style="padding-right:20px;">${_('Target')}</td><td>${base.tag_button(pull_request.target_ref_parts.name)} ${h.literal(_('%(target_ref_type)s of %(target_repo_url)s') % data)}</td></tr>
-    <tr><td style="padding-right:20px;">${_('Description')}</td><td style="white-space:pre-wrap">${pull_request.description}</td></tr>
-    <tr><td style="padding-right:20px;">${_ungettext('%(num)s Commit', '%(num)s Commits', len(pull_request_commits)) % {'num': len(pull_request_commits)}}</td>
-        <td><ol style="margin:0 0 0 1em;padding:0;text-align:left;">
-            % for commit_id, message in pull_request_commits:
-            <li style="margin:0 0 1em;"><pre style="margin:0 0 .5em">${h.short_id(commit_id)}</pre>
-                ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
-            </li>
-            % endfor
-        </ol></td>
+
+<table style="text-align:left;vertical-align:middle;width: 100%">
+    <tr>
+    <td style="width:100%;border-bottom:1px solid #dbd9da;">
+
+        <h4 style="margin: 0">
+            <div style="margin-bottom: 4px; color:#7E7F7F">
+                @${h.person(user.username)}
+            </div>
+            ${_('requested a')}
+            <a href="${pull_request_url}" style="${base.link_css()}">
+            ${_('pull request review.').format(**data) }
+            </a>
+            <div style="margin-top: 10px"></div>
+            ${_('Pull request')} <code>!${data['pr_id']}: ${data['pr_title']}</code>
+        </h4>
+
+    </td>
+    </tr>
+
+</table>
+
+<table style="text-align:left;vertical-align:middle;width: 100%">
+    ## spacing def
+    <tr>
+        <td style="width: 130px"></td>
+        <td></td>
+    </tr>
+
+    <tr>
+        <td style="padding-right:20px;line-height:20px;">${_('Commit Flow')}:</td>
+        <td style="line-height:20px;">
+            ${base.tag_button('{}:{}'.format(data['source_ref_type'], pull_request.source_ref_parts.name))} ${_('of')} ${data['source_repo_url']}
+            &rarr;
+            ${base.tag_button('{}:{}'.format(data['target_ref_type'], pull_request.target_ref_parts.name))} ${_('of')}  ${data['target_repo_url']}
+        </td>
+    </tr>
+
+    <tr>
+        <td style="padding-right:20px;">${_('Pull request')}:</td>
+        <td>
+            <a href="${pull_request_url}" style="${base.link_css()}">
+            !${pull_request.pull_request_id}
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding-right:20px;">${_('Description')}:</td>
+        <td style="white-space:pre-wrap"><code>${pull_request.description | trim}</code></td>
+    </tr>
+    <tr>
+        <td style="padding-right:20px;">${_ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits)) % {'num': len(pull_request_commits)}}:</td>
+        <td></td>
+    </tr>
+
+    <tr>
+        <td colspan="2">
+            <ol style="margin:0 0 0 1em;padding:0;text-align:left;">
+                % for commit_id, message in pull_request_commits:
+                    <li style="margin:0 0 1em;">
+                        <pre style="margin:0 0 .5em"><a href="${h.route_path('repo_commit', repo_name=pull_request_source_repo.repo_name, commit_id=commit_id)}" style="${base.link_css()}">${h.short_id(commit_id)}</a></pre>
+                        ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
+                    </li>
+                % endfor
+            </ol>
+        </td>
     </tr>
 </table>

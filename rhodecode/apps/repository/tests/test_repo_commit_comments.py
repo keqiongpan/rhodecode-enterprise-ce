@@ -98,7 +98,7 @@ class TestRepoCommitCommentsView(TestController):
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
         author = notification.created_by_user.username_and_name
-        sbj = '{0} left a {1} on commit `{2}` in the {3} repository'.format(
+        sbj = '@{0} left a {1} on commit `{2}` in the `{3}` repository'.format(
             author, comment_type, h.show_id(commit), backend.repo_name)
         assert sbj == notification.subject
 
@@ -159,7 +159,7 @@ class TestRepoCommitCommentsView(TestController):
         assert comment.revision == commit_id
 
         author = notification.created_by_user.username_and_name
-        sbj = '{0} left a {1} on file `{2}` in commit `{3}` in the {4} repository'.format(
+        sbj = '@{0} left a {1} on file `{2}` in commit `{3}` in the `{4}` repository'.format(
             author, comment_type, f_path, h.show_id(commit), backend.repo_name)
 
         assert sbj == notification.subject
@@ -230,7 +230,7 @@ class TestRepoCommitCommentsView(TestController):
         assert notification.type_ == Notification.TYPE_CHANGESET_COMMENT
 
         author = notification.created_by_user.username_and_name
-        sbj = '[status: Approved] {0} left a note on commit `{1}` in the {2} repository'.format(
+        sbj = '[status: Approved] @{0} left a note on commit `{1}` in the `{2}` repository'.format(
             author, h.show_id(commit), backend.repo_name)
         assert sbj == notification.subject
 

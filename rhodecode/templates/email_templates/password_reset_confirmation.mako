@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="base.mako"/>
+<%namespace name="base" file="base.mako"/>
 
 <%def name="subject()" filter="n,trim,whitespace_filter">
 Your new RhodeCode password
@@ -7,14 +8,15 @@ Your new RhodeCode password
 
 ## plain text version of the email. Empty by default
 <%def name="body_plaintext()" filter="n,trim">
-Hi ${user.username},
+Hello ${user.username},
 
-Below is your new access password for RhodeCode.
+Below is your new access password for RhodeCode requested via password reset link.
 
-*If you didn't do this, please contact your RhodeCode administrator.*
+*If you did not request a password reset, please contact your RhodeCode administrator at: ${first_admin_email}.*
 
-password: ${new_password}
+new password: ${new_password}
 
+---
 ${self.plaintext_footer()}
 </%def>
 
@@ -22,8 +24,8 @@ ${self.plaintext_footer()}
 <p>
 Hello ${user.username},
 </p><p>
-Below is your new access password for RhodeCode.
-<br/>
-<strong>If you didn't request a new password, please contact your RhodeCode administrator.</strong>
+Below is your new access password for RhodeCode requested via password reset link.
+<br/><br/>
+<strong>If you did not request a password reset, please contact your RhodeCode administrator at: ${first_admin_email}.</strong>
 </p>
-<p>password: <pre>${new_password}</pre>
+<p>new password: <code>${new_password}</code>

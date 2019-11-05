@@ -612,7 +612,8 @@ class UserModel(BaseModel):
                     'password_reset_url': pwd_reset_url,
                     'user': user,
                     'email': user_email,
-                    'date': datetime.datetime.now()
+                    'date': datetime.datetime.now(),
+                    'first_admin_email': User.get_first_super_admin().email
                 }
 
                 (subject, headers, email_body,
@@ -670,7 +671,8 @@ class UserModel(BaseModel):
                 'new_password': new_passwd,
                 'user': user,
                 'email': user_email,
-                'date': datetime.datetime.now()
+                'date': datetime.datetime.now(),
+                'first_admin_email': User.get_first_super_admin().email
             }
 
             (subject, headers, email_body,

@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
 <%inherit file="base.mako"/>
+<%namespace name="base" file="base.mako"/>
 
 <%def name="subject()" filter="n,trim,whitespace_filter">
 RhodeCode Password reset
@@ -7,16 +8,18 @@ RhodeCode Password reset
 
 ## plain text version of the email. Empty by default
 <%def name="body_plaintext()" filter="n,trim">
-Hi ${user.username},
+Hello ${user.username},
 
-There was a request to reset your password using the email address ${email} on ${h.format_date(date)}
+On ${h.format_date(date)} there was a request to reset your password using the email address `${email}`
 
-*If you didn't do this, please contact your RhodeCode administrator.*
+*If you did not request a password reset, please contact your RhodeCode administrator at: ${first_admin_email}*
 
 You can continue, and generate new password by clicking following URL:
 ${password_reset_url}
 
 This link will be active for 10 minutes.
+
+---
 ${self.plaintext_footer()}
 </%def>
 
@@ -24,10 +27,11 @@ ${self.plaintext_footer()}
 <p>
 Hello ${user.username},
 </p><p>
-There was a request to reset your password using the email address ${email} on ${h.format_date(date)}
-<br/>
-<strong>If you did not request a password reset, please contact your RhodeCode administrator.</strong>
+On ${h.format_date(date)} there was a request to reset your password using the email address `${email}`
+<br/><br/>
+<strong>If you did not request a password reset, please contact your RhodeCode administrator at: ${first_admin_email}.</strong>
 </p><p>
-<a href="${password_reset_url}">${_('Generate new password here')}.</a>
-This link will be active for 10 minutes.
+You can continue, and generate new password by clicking following URL:<br/><br/>
+<a href="${password_reset_url}" style="${base.link_css()}">${password_reset_url}</a>
+<br/><br/>This link will be active for 10 minutes.
 </p>

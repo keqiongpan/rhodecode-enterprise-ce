@@ -467,7 +467,7 @@ class TestPullrequestsView(object):
             .filter(Notification.created_by == pull_request.author.user_id,
                     Notification.type_ == Notification.TYPE_PULL_REQUEST,
                     Notification.subject.contains(
-                        "wants you to review pull request #%s" % pull_request_id))
+                        "requested a pull request review. !%s" % pull_request_id))
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
@@ -549,11 +549,10 @@ class TestPullrequestsView(object):
         pull_request_id = pull_request.pull_request_id
         repo_name = pull_request.target_repo.scm_instance().name,
 
-        response = self.app.post(
-            route_path('pullrequest_merge',
-                repo_name=str(repo_name[0]),
-                pull_request_id=pull_request_id),
-            params={'csrf_token': csrf_token}).follow()
+        url = route_path('pullrequest_merge',
+                         repo_name=str(repo_name[0]),
+                         pull_request_id=pull_request_id)
+        response = self.app.post(url, params={'csrf_token': csrf_token}).follow()
 
         pull_request = PullRequest.get(pull_request_id)
 
@@ -735,12 +734,12 @@ class TestPullrequestsView(object):
         backend.pull_heads(source, heads=['change-rebased'])
 
         # update PR
-        self.app.post(
-            route_path('pullrequest_update',
-                       repo_name=target.repo_name,
-                       pull_request_id=pull_request_id),
-            params={'update_commits': 'true', 'csrf_token': csrf_token},
-            status=200)
+        url = route_path('pullrequest_update',
+                         repo_name=target.repo_name,
+                         pull_request_id=pull_request_id)
+        self.app.post(url,
+                      params={'update_commits': 'true', 'csrf_token': csrf_token},
+                      status=200)
 
         # check that we have now both revisions
         pull_request = PullRequest.get(pull_request_id)
@@ -801,12 +800,12 @@ class TestPullrequestsView(object):
         vcsrepo.run_git_command(['reset', '--soft', 'HEAD~2'])
 
         # update PR
-        self.app.post(
-            route_path('pullrequest_update',
-                repo_name=target.repo_name,
-                pull_request_id=pull_request_id),
-            params={'update_commits': 'true', 'csrf_token': csrf_token},
-            status=200)
+        url = route_path('pullrequest_update',
+                         repo_name=target.repo_name,
+                         pull_request_id=pull_request_id)
+        self.app.post(url,
+                      params={'update_commits': 'true', 'csrf_token': csrf_token},
+                      status=200)
 
         response = self.app.get(route_path('pullrequest_new', repo_name=target.repo_name))
         assert response.status_int == 200
@@ -961,12 +960,12 @@ class TestPullrequestsView(object):
         else:
             vcs.strip(pr_util.commit_ids['new-feature'])
 
-        response = self.app.post(
-            route_path('pullrequest_update',
-                repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=pull_request.pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token})
+        url = route_path('pullrequest_update',
+                         repo_name=pull_request.target_repo.repo_name,
+                         pull_request_id=pull_request.pull_request_id)
+        response = self.app.post(url,
+                                 params={'update_commits': 'true',
+                                         'csrf_token': csrf_token})
 
         assert response.status_int == 200
         assert response.body == 'true'
@@ -1208,14 +1207,11 @@ class TestPullrequestsControllerDelete(object):
 
 
 def assert_pull_request_status(pull_request, expected_status):
-    status = ChangesetStatusModel().calculated_review_status(
-        pull_request=pull_request)
+    status = ChangesetStatusModel().calculated_review_status(pull_request=pull_request)
     assert status == expected_status
 
 
 @pytest.mark.parametrize('route', ['pullrequest_new', 'pullrequest_create'])
 @pytest.mark.usefixtures("autologin_user")
 def test_forbidde_to_repo_summary_for_svn_repositories(backend_svn, app, route):
-    response = app.get(
-        route_path(route, repo_name=backend_svn.repo_name), status=404)
-
+    app.get(route_path(route, repo_name=backend_svn.repo_name), status=404)
