@@ -28,7 +28,7 @@
 
       <div class="fieldset collapsable-content" data-toggle="summary-details">
         <div class="left-label-summary-files">
-            <p>${_('File last commit')}</p>
+            <p>${_('File last commit')}:</p>
             <div class="right-label-summary">
               <code><a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.file_last_commit.raw_id)}">${h.show_id(c.file_last_commit)}</a></code>
             ${file_base.refs(c.file_last_commit)}
