@@ -416,7 +416,8 @@ class RepoCommitsView(RepoAppView):
         text = self.request.POST.get('text')
         renderer = self.request.POST.get('renderer') or 'rst'
         if text:
-            return h.render(text, renderer=renderer, mentions=True)
+            return h.render(text, renderer=renderer, mentions=True,
+                            repo_name=self.db_repo_name)
         return ''
 
     @LoginRequired()

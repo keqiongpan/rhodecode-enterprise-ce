@@ -166,7 +166,7 @@
                 <label>${_('Description')}:</label>
             </div>
             <div id="pr-desc" class="input">
-                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.renderer)}</div>
+                <div class="pr-description">${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name)}</div>
             </div>
             <div id="pr-desc-edit" class="input textarea editor" style="display: none;">
                 <input id="pr-renderer-input" type="hidden" name="description_renderer" value="${c.visual.default_renderer}">

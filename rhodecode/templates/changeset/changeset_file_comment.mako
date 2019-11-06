@@ -14,7 +14,6 @@
       <% outdated_at_ver = comment.older_than_version(getattr(c, 'at_version_num', None)) %>
   % endif
 
-
   <div class="comment
              ${'comment-inline' if inline else 'comment-general'}
              ${'comment-outdated' if outdated_at_ver else 'comment-current'}"
@@ -157,7 +156,7 @@
           </div>
       </div>
       <div class="text">
-          ${h.render(comment.text, renderer=comment.renderer, mentions=True)}
+          ${h.render(comment.text, renderer=comment.renderer, mentions=True, repo_name=getattr(c, 'repo_name', None))}
       </div>
 
   </div>
