@@ -296,7 +296,7 @@ class TestPullRequestModel(object):
         Session().commit()
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(
@@ -340,7 +340,7 @@ class TestPullRequestModel(object):
         assert pull_request.pull_request_state == PullRequest.STATE_CREATED
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(
@@ -379,7 +379,7 @@ class TestPullRequestModel(object):
         Session().commit()
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(

@@ -371,9 +371,9 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 <%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
     <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
       % if short:
-        #${pull_request_id}
+        !${pull_request_id}
       % else:
-        ${_('Pull request #%(pr_number)s') % {'pr_number': pull_request_id,}}
+        ${_('Pull request !{}').format(pull_request_id)}
       % endif
     </a>
 </%def>

@@ -68,9 +68,9 @@
                   % if comment.pull_request:
                       <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
                           % if comment.status_change:
-                              ${_('pull request #%s') % comment.pull_request.pull_request_id}:
+                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}:
                           % else:
-                              ${_('pull request #%s') % comment.pull_request.pull_request_id}
+                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}
                           % endif
                       </a>
                   % else:

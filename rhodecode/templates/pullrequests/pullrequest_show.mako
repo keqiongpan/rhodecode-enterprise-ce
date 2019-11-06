@@ -3,7 +3,7 @@
 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
 <%def name="title()">
-    ${_('%s Pull Request #%s') % (c.repo_name, c.pull_request.pull_request_id)}
+    ${_('{} Pull Request !{}').format(c.repo_name, c.pull_request.pull_request_id)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -45,7 +45,7 @@
       <div class="summary-details block-left">
         <% summary = lambda n:{False:'summary-short'}.get(n) %>
         <div class="pr-details-title">
-            <a href="${h.route_path('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request #%s') % c.pull_request.pull_request_id}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
+            <a href="${h.route_path('pull_requests_global', pull_request_id=c.pull_request.pull_request_id)}">${_('Pull request !{}').format(c.pull_request.pull_request_id)}</a> ${_('From')} ${h.format_date(c.pull_request.created_on)}
             %if c.allowed_to_update:
               <div id="delete_pullrequest" class="pull-right action_button ${'' if c.allowed_to_delete else 'disabled' }" style="clear:inherit;padding: 0">
                   % if c.allowed_to_delete:
