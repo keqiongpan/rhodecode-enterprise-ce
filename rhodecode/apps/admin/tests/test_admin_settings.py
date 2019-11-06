@@ -734,7 +734,6 @@ class TestAdminSettingsIssueTracker(object):
 
         post_url = route_path('admin_settings_issuetracker_delete')
         post_data = {
-            '_method': 'delete',
             'uid': uid,
             'csrf_token': csrf_token
         }

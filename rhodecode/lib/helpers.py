@@ -1627,6 +1627,11 @@ def _process_url_func(match_obj, repo_name, uid, entry,
             '%(pref)s<a class="tooltip %(cls)s" href="%(url)s" title="%(title)s">'
             '%(issue-prefix)s%(id-repr)s'
             '</a>')
+    elif link_format == 'html+hovercard':
+        tmpl = (
+            '%(pref)s<a class="tooltip-hovercard %(cls)s" href="%(url)s" data-hovercard-url="%(hovercard_url)s">'
+            '%(issue-prefix)s%(id-repr)s'
+            '</a>')
     elif link_format == 'rst':
         tmpl = '`%(issue-prefix)s%(id-repr)s <%(url)s>`_'
     elif link_format == 'markdown':
@@ -1647,6 +1652,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     # named regex variables
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
+    desc = string.Template(entry['desc']).safe_substitute(**named_vars)
 
     def quote_cleaner(input_str):
         """Remove quotes as it's HTML"""
@@ -1659,7 +1665,8 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
-        'title': entry['desc']
+        'title': desc,
+        'hovercard_url': ''
     }
     if return_raw_data:
         return {
@@ -1723,6 +1730,18 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         new_text = pattern.sub(url_func, new_text)
         log.debug('processed prefix:uid `%s`', uid)
 
+    # finally use global replace, eg !123 -> pr-link, those will not catch
+    # if already similar pattern exists
+    pr_entry = {
+        'pref': '!',
+        'url': '/_admin/pull-requests/${id}',
+        'desc': 'Pull Request !${id}'
+    }
+    pr_url_func = partial(
+        _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None)
+    new_text = re.compile(r'(?:(?:^!)|(?: !))(\d+)').sub(pr_url_func, new_text)
+    log.debug('processed !pr pattern')
+
     return new_text, issues_data
 
 
@@ -1734,24 +1753,24 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     :param commit_text:
     :param repository:
     """
-    def escaper(string):
-        return string.replace('<', '&lt;').replace('>', '&gt;')
+    def escaper(_text):
+        return _text.replace('<', '&lt;').replace('>', '&gt;')
 
-    newtext = escaper(commit_text)
+    new_text = escaper(commit_text)
 
     # extract http/https links and make them real urls
-    newtext = urlify_text(newtext, safe=False)
+    new_text = urlify_text(new_text, safe=False)
 
     # urlify commits - extract commit ids and make link out of them, if we have
     # the scope of repository present.
     if repository:
-        newtext = urlify_commits(newtext, repository)
+        new_text = urlify_commits(new_text, repository)
 
     # process issue tracker patterns
-    newtext, issues = process_patterns(newtext, repository or '',
-                                       active_entries=active_pattern_entries)
+    new_text, issues = process_patterns(new_text, repository or '',
+                                        active_entries=active_pattern_entries)
 
-    return literal(newtext)
+    return literal(new_text)
 
 
 def render_binary(repo_name, file_obj):

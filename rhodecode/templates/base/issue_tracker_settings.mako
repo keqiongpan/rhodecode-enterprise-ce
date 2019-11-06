@@ -60,7 +60,7 @@
                             <a class="edit_issuetracker_entry" href="">${_('Edit')}</a>
                         </span>
                         <span class="edit">
-                            ${h.hidden('uid', uid)}
+                            <input id="uid_${uid}" name="uid" type="hidden" value="${uid}">
                         </span>
                     </div>
                     <div  class="grid_delete">
@@ -93,11 +93,10 @@
 
         var delete_pattern = function(entry) {
           if (confirm("${_('Confirm to remove this pattern:')} "+$(entry).data('desc'))) {
-            var request = $.ajax({
+            $.ajax({
               type: "POST",
               url: "${delete_url}", 
               data: {
-                '_method': 'delete',
                 'csrf_token': CSRF_TOKEN,
                 'uid':$(entry).data('uid')
               },
@@ -182,7 +181,8 @@
                     <textarea id="test_pattern_data" >
 This commit fixes ticket #451.
 This is an example text for testing issue tracker patterns, add a pattern here and
-hit preview to see the link
+hit preview to see the link.
+Open a pull request !101 to contribute !
                     </textarea>
                 </div>
             </div>
@@ -190,7 +190,7 @@ hit preview to see the link
         <div class="test_pattern_preview">
             <div id="test_pattern" class="btn btn-small" >${_('Preview')}</div>
             <p>${_('Test Pattern Preview')}</p>
-            <div id="test_pattern_result"></div>
+            <div id="test_pattern_result" style="white-space: pre-wrap"></div>
         </div>
     </div>
 
