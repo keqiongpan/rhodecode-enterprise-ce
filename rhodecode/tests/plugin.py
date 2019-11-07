@@ -118,6 +118,20 @@ def pytest_collection_modifyitems(session, config, items):
         i for i in items if getattr(i.obj, '__test__', True)]
     items[:] = remaining
 
+    # NOTE(marcink): custom test ordering, db tests and vcstests are slowes and should
+    # be executed at the end for faster test feedback
+    def sorter(item):
+        pos = 0
+        key = item._nodeid
+        if key.startswith('rhodecode/tests/database'):
+            pos = 1
+        elif key.startswith('rhodecode/tests/vcs_operations'):
+            pos = 2
+
+        return pos
+
+    items.sort(key=sorter)
+
 
 def pytest_generate_tests(metafunc):
 
