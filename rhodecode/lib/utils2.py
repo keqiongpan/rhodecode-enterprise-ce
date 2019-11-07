@@ -629,9 +629,29 @@ def credentials_filter(uri):
     return ''.join(uri)
 
 
+def get_host_info(request):
+    """
+    Generate host info, to obtain full url e.g https://server.com
+    use this
+    `{scheme}://{netloc}`
+    """
+    if not request:
+        return {}
+
+    qualified_home_url = request.route_url('home')
+    parsed_url = urlobject.URLObject(qualified_home_url)
+    decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
+
+    return {
+        'scheme': parsed_url.scheme,
+        'netloc': parsed_url.netloc+decoded_path,
+        'hostname': parsed_url.hostname,
+    }
+
+
 def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
-    qualifed_home_url = request.route_url('home')
-    parsed_url = urlobject.URLObject(qualifed_home_url)
+    qualified_home_url = request.route_url('home')
+    parsed_url = urlobject.URLObject(qualified_home_url)
     decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
 
     args = {

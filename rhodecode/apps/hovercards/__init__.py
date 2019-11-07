@@ -30,6 +30,10 @@ def includeme(config):
         pattern='/_hovercard/user_group/{user_group_id}')
 
     config.add_route(
+        name='hovercard_pull_request',
+        pattern='/_hovercard/pull_request/{pull_request_id}')
+
+    config.add_route(
         name='hovercard_repo_commit',
         pattern='/_hovercard/commit/{repo_name:.*?[^/]}/{commit_id}', repo_route=True)
 

@@ -74,9 +74,10 @@ from webhelpers2.number import format_byte_size
 from rhodecode.lib.action_parser import action_parser
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
-from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
-    get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime, \
-    AttributeDict, safe_int, md5, md5_safe
+from rhodecode.lib.utils2 import (
+    str2bool, safe_unicode, safe_str,
+    get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime,
+    AttributeDict, safe_int, md5, md5_safe, get_host_info)
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
@@ -1632,10 +1633,10 @@ def _process_url_func(match_obj, repo_name, uid, entry,
             '%(pref)s<a class="tooltip-hovercard %(cls)s" href="%(url)s" data-hovercard-url="%(hovercard_url)s">'
             '%(issue-prefix)s%(id-repr)s'
             '</a>')
-    elif link_format == 'rst':
+    elif link_format in ['rst', 'rst+hovercard']:
         tmpl = '`%(issue-prefix)s%(id-repr)s <%(url)s>`_'
-    elif link_format == 'markdown':
-        tmpl = '[%(issue-prefix)s%(id-repr)s](%(url)s)'
+    elif link_format in ['markdown', 'markdown+hovercard']:
+        tmpl = '[%(pref)s%(issue-prefix)s%(id-repr)s](%(url)s)'
     else:
         raise ValueError('Bad link_format:{}'.format(link_format))
 
@@ -1648,11 +1649,23 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'repo': repo_name,
         'repo_name': repo_name_cleaned,
         'group_name': parent_group_name,
+        # set dummy keys so we always have them
+        'hostname': '',
+        'netloc': '',
+        'scheme': ''
     }
+
+    request = get_current_request()
+    if request:
+        # exposes, hostname, netloc, scheme
+        host_data = get_host_info(request)
+        named_vars.update(host_data)
+
     # named regex variables
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
     desc = string.Template(entry['desc']).safe_substitute(**named_vars)
+    hovercard_url = string.Template(entry.get('hovercard_url', '')).safe_substitute(**named_vars)
 
     def quote_cleaner(input_str):
         """Remove quotes as it's HTML"""
@@ -1666,8 +1679,9 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
         'title': desc,
-        'hovercard_url': ''
+        'hovercard_url': hovercard_url
     }
+
     if return_raw_data:
         return {
             'id': issue_id,
@@ -1690,7 +1704,8 @@ def get_active_pattern_entries(repo_name):
 
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
-    allowed_formats = ['html', 'rst', 'markdown']
+    allowed_formats = ['html', 'rst', 'markdown',
+                       'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
     if link_format not in allowed_formats:
         raise ValueError('Link format can be only one of:{} got {}'.format(
                          allowed_formats, link_format))
@@ -1732,13 +1747,16 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
 
     # finally use global replace, eg !123 -> pr-link, those will not catch
     # if already similar pattern exists
+    server_url = '${scheme}://${netloc}'
     pr_entry = {
         'pref': '!',
-        'url': '/_admin/pull-requests/${id}',
-        'desc': 'Pull Request !${id}'
+        'url': server_url + '/_admin/pull-requests/${id}',
+        'desc': 'Pull Request !${id}',
+        'hovercard_url': server_url + '/_hovercard/pull_request/${id}'
     }
     pr_url_func = partial(
-        _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None)
+        _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None,
+        link_format=link_format+'+hovercard')
     new_text = re.compile(r'(?:(?:^!)|(?: !))(\d+)').sub(pr_url_func, new_text)
     log.debug('processed !pr pattern')
 
@@ -2009,7 +2027,7 @@ def get_last_path_part(file_node):
 
 def route_url(*args, **kwargs):
     """
-    Wrapper around pyramids `route_url` (fully qualified url) function. 
+    Wrapper around pyramids `route_url` (fully qualified url) function.
     """
     req = get_current_request()
     return req.route_url(*args, **kwargs)

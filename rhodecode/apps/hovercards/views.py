@@ -35,7 +35,7 @@ from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
-    func, true, or_, case, in_filter_generator, Repository, RepoGroup, User, UserGroup)
+    func, true, or_, case, in_filter_generator, Repository, RepoGroup, User, UserGroup, PullRequest)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.scm import RepoGroupList, RepoList
@@ -69,6 +69,19 @@ class HoverCardsView(BaseAppView):
         c = self.load_default_context()
         user_group_id = self.request.matchdict['user_group_id']
         c.user_group = UserGroup.get_or_404(user_group_id)
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @view_config(
+        route_name='hovercard_pull_request', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_pull_request.mako')
+    def hovercard_pull_request(self):
+        c = self.load_default_context()
+        c.pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        perms = ['repository.read', 'repository.write', 'repository.admin']
+        c.can_view_pr = h.HasRepoPermissionAny(*perms)(
+            c.pull_request.target_repo.repo_name)
         return self._get_template_context(c)
 
 
