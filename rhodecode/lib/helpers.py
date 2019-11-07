@@ -1577,21 +1577,21 @@ def urlify_text(text_, safe=True):
     def url_func(match_obj):
         url_full = match_obj.groups()[0]
         return '<a href="%(url)s">%(url)s</a>' % ({'url': url_full})
-    _newtext = url_pat.sub(url_func, text_)
+    _new_text = url_pat.sub(url_func, text_)
     if safe:
-        return literal(_newtext)
-    return _newtext
+        return literal(_new_text)
+    return _new_text
 
 
-def urlify_commits(text_, repository):
+def urlify_commits(text_, repo_name):
     """
     Extract commit ids from text and make link from them
 
     :param text_:
-    :param repository: repo name to build the URL with
+    :param repo_name: repo name to build the URL with
     """
 
-    URL_PAT = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
+    url_pat = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
 
     def url_func(match_obj):
         commit_id = match_obj.groups()[1]
@@ -1599,20 +1599,24 @@ def urlify_commits(text_, repository):
         suf = match_obj.groups()[2]
 
         tmpl = (
-            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(pref)s<a class="tooltip-hovercard %(cls)s" href="%(url)s" data-hovercard-alt="%(hovercard_alt)s" data-hovercard-url="%(hovercard_url)s">'
             '%(commit_id)s</a>%(suf)s'
         )
         return tmpl % {
             'pref': pref,
             'cls': 'revision-link',
-            'url': route_url('repo_commit', repo_name=repository, commit_id=commit_id),
+            'url': route_url(
+                'repo_commit', repo_name=repo_name, commit_id=commit_id),
             'commit_id': commit_id,
-            'suf': suf
+            'suf': suf,
+            'hovercard_alt': 'Commit: {}'.format(commit_id),
+            'hovercard_url': route_url(
+                'hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)
         }
 
-    newtext = URL_PAT.sub(url_func, text_)
+    new_text = url_pat.sub(url_func, text_)
 
-    return newtext
+    return new_text
 
 
 def _process_url_func(match_obj, repo_name, uid, entry,
@@ -1767,9 +1771,6 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
-
-    :param commit_text:
-    :param repository:
     """
     def escaper(_text):
         return _text.replace('<', '&lt;').replace('>', '&gt;')

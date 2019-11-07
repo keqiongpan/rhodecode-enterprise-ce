@@ -178,11 +178,13 @@
         <div class="fields">
             <div class="field">
                 <div class='textarea-full'>
-                    <textarea id="test_pattern_data" >
+                    <textarea id="test_pattern_data" rows="10">
+This is an example text for testing issue tracker patterns.
 This commit fixes ticket #451.
-This is an example text for testing issue tracker patterns, add a pattern here and
-hit preview to see the link.
 Open a pull request !101 to contribute !
+Added tag v1.3.0 for commit 0f3b629be725
+
+Add a test pattern here and hit preview to see the link.
                     </textarea>
                 </div>
             </div>

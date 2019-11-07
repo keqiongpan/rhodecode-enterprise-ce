@@ -243,7 +243,7 @@ var tooltipActivate = function () {
     });
     var hovercardCache = {};
 
-    var loadHoverCard = function (url, callback) {
+    var loadHoverCard = function (url, altHovercard, callback) {
         var id = url;
 
         if (hovercardCache[id] !== undefined) {
@@ -257,7 +257,12 @@ var tooltipActivate = function () {
             callback(hovercardCache[id]);
             return true;
         }).fail(function (data, textStatus, errorThrown) {
-            var msg = "<p class='error-message'>Error while fetching hovercard.\nError code {0} ({1}).</p>".format(data.status,data.statusText);
+
+            if (parseInt(data.status) === 404) {
+                var msg = "<p>{0}</p>".format(altHovercard || "No Data exists for this hovercard");
+            } else {
+                var msg = "<p class='error-message'>Error while fetching hovercard.\nError code {0} ({1}).</p>".format(data.status,data.statusText);
+            }
             callback(msg);
             return false
         });
@@ -291,16 +296,17 @@ var tooltipActivate = function () {
             // we set a variable so the data is only loaded once via Ajax, not every time the tooltip opens
             if ($origin.data('loaded') !== true) {
                 var hovercardUrl = $origin.data('hovercardUrl');
+                var altHovercard =$origin.data('hovercardAlt');
 
                 if (hovercardUrl !== undefined && hovercardUrl !== "") {
-                    var loaded = loadHoverCard(hovercardUrl, function (data) {
+                    var loaded = loadHoverCard(hovercardUrl, altHovercard, function (data) {
                         instance.content(data);
                     })
                 } else {
                     if ($origin.data('hovercardAltHtml')) {
                         var data =  atob($origin.data('hovercardAltHtml'));
                     } else {
-                        var data = '<div style="white-space: pre-wrap">{0}</div>'.format($origin.data('hovercardAlt'))
+                        var data = '<div style="white-space: pre-wrap">{0}</div>'.format(altHovercard)
                     }
                     var loaded = true;
                     instance.content(data);

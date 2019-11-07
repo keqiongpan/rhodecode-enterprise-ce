@@ -539,11 +539,23 @@ def add_events_routes(config):
                      pattern='/{repo_name}/pull-request/{pull_request_id}')
     config.add_route(name='pull_requests_global',
                      pattern='/pull-request/{pull_request_id}')
+
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
-
     config.add_route(name='repo_files',
                      pattern='/{repo_name}/files/{commit_id}/{f_path}')
+
+    config.add_route(name='hovercard_user',
+                     pattern='/_hovercard/user/{user_id}')
+
+    config.add_route(name='hovercard_user_group',
+                     pattern='/_hovercard/user_group/{user_group_id}')
+
+    config.add_route(name='hovercard_pull_request',
+                     pattern='/_hovercard/pull_request/{pull_request_id}')
+
+    config.add_route(name='hovercard_repo_commit',
+                     pattern='/_hovercard/commit/{repo_name}/{commit_id}')
 
 
 def bootstrap_config(request):
