@@ -111,6 +111,7 @@ class NotificationModel(BaseModel):
 
         # add mentioned users into recipients
         final_recipients = set(recipients_objs).union(mention_recipients)
+
         notification = Notification.create(
             created_by=created_by_obj, subject=notification_subject,
             body=notification_body, recipients=final_recipients,

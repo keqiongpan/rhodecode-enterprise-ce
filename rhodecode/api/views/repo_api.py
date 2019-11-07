@@ -1550,7 +1550,7 @@ def lock(request, apiuser, repoid, locked=Optional(None),
 def comment_commit(
         request, apiuser, repoid, commit_id, message, status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
-        resolves_comment_id=Optional(None),
+        resolves_comment_id=Optional(None), extra_recipients=Optional([]),
         userid=Optional(OAttr('apiuser'))):
     """
     Set a commit comment, and optionally change the status of the commit.
@@ -1568,6 +1568,11 @@ def comment_commit(
     :type status: str
     :param comment_type: Comment type, one of: 'note', 'todo'
     :type comment_type: Optional(str), default: 'note'
+    :param resolves_comment_id: id of comment which this one will resolve
+    :type resolves_comment_id: Optional(int)
+    :param extra_recipients: list of user ids or usernames to add
+        notifications for this comment. Acts like a CC for notification
+    :type extra_recipients: Optional(list)
     :param userid: Set the user name of the comment creator.
     :type userid: Optional(str or int)
 
@@ -1604,6 +1609,7 @@ def comment_commit(
     status = Optional.extract(status)
     comment_type = Optional.extract(comment_type)
     resolves_comment_id = Optional.extract(resolves_comment_id)
+    extra_recipients = Optional.extract(extra_recipients)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
@@ -1632,7 +1638,8 @@ def comment_commit(
             renderer=renderer,
             comment_type=comment_type,
             resolves_comment_id=resolves_comment_id,
-            auth_user=apiuser
+            auth_user=apiuser,
+            extra_recipients=extra_recipients
         )
         if status:
             # also do a status change

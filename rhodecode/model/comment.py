@@ -232,7 +232,7 @@ class CommentsModel(BaseModel):
                f_path=None, line_no=None, status_change=None,
                status_change_type=None, comment_type=None,
                resolves_comment_id=None, closing_pr=False, send_email=True,
-               renderer=None, auth_user=None):
+               renderer=None, auth_user=None, extra_recipients=None):
         """
         Creates new comment for commit or pull request.
         IF status_change is not none this comment is associated with a
@@ -247,10 +247,13 @@ class CommentsModel(BaseModel):
         :param line_no:
         :param status_change: Label for status change
         :param comment_type: Type of comment
+        :param resolves_comment_id: id of comment which this one will resolve
         :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
         :param renderer: pick renderer for this comment
+        :param auth_user: current authenticated user calling this method
+        :param extra_recipients: list of extra users to be added to recipients
         """
 
         if not text:
@@ -406,6 +409,9 @@ class CommentsModel(BaseModel):
                 'pr_comment_url': pr_comment_url,
                 'pr_closing': closing_pr,
             })
+
+        recipients += [self._get_user(u) for u in (extra_recipients or [])]
+
         if send_email:
             # pre-generate the subject for notification itself
             (subject,
