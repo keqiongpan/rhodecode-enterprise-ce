@@ -684,6 +684,9 @@
             };
 
             closePullRequest = function (status) {
+                if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
+                  return false;
+                }
                 // inject closing flag
                 $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
                 $(generalCommentForm.statusChange).select2("val", status).trigger('change');
