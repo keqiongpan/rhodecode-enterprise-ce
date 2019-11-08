@@ -563,16 +563,17 @@
       ${comment.generate_comments(c.comments, include_pull_request=True, is_pull_request=True)}
 
       % if not c.pull_request.is_closed():
-        ## merge status, and merge action
-        <div class="pull-request-merge">
-            <%include file="/pullrequests/pullrequest_merge_checks.mako"/>
-        </div>
-
         ## main comment form and it status
         ${comment.comments(h.route_path('pullrequest_comment_create', repo_name=c.repo_name,
                                         pull_request_id=c.pull_request.pull_request_id),
                            c.pull_request_review_status,
                            is_pull_request=True, change_status=c.allowed_to_change_status)}
+
+        ## merge status, and merge action
+        <div class="pull-request-merge">
+            <%include file="/pullrequests/pullrequest_merge_checks.mako"/>
+        </div>
+
       %endif
 
       <script type="text/javascript">
