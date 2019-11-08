@@ -12,6 +12,7 @@ data = {
     'comment_file': comment_file,
     'comment_line': comment_line,
     'comment_type': comment_type,
+    'comment_id': comment_id,
 
     'pr_title': pull_request.title,
     'pr_id': pull_request.pull_request_id,
@@ -41,6 +42,7 @@ data = {
     'comment_file': comment_file,
     'comment_line': comment_line,
     'comment_type': comment_type,
+    'comment_id': comment_id,
 
     'pr_title': pull_request.title,
     'pr_id': pull_request.pull_request_id,
@@ -91,6 +93,7 @@ data = {
     'comment_file': comment_file,
     'comment_line': comment_line,
     'comment_type': comment_type,
+    'comment_id': comment_id,
     'renderer_type': renderer_type or 'plain',
 
     'pr_title': pull_request.title,
@@ -176,16 +179,22 @@ data = {
         </tr>
     % endif
 
-    <tr style="background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);background-position: bottom;background-size: 3px 1px;background-repeat: repeat-x;">
+    <tr style="border-bottom:1px solid #dbd9da;">
         <td colspan="2" style="padding-right:20px;">
             % if comment_type == 'todo':
-                ${_('`TODO` comment')}:
+                ${_('`TODO` number')} ${comment_id}:
             % else:
-                ${_('`Note` comment')}:
+                ${_('`Note` number')} ${comment_id}:
             % endif
         </td>
     </tr>
 
-    <td colspan="2" style="background: #F7F7F7">${h.render(comment_body, renderer=data['renderer_type'], mentions=True)}</td>
+    <tr>
+        <td colspan="2" style="background: #F7F7F7">${h.render(comment_body, renderer=data['renderer_type'], mentions=True)}</td>
+    </tr>
+
+    <tr>
+        <td><a href="${pr_comment_reply_url}">${_('Reply')}</a></td>
+        <td></td>
     </tr>
 </table>

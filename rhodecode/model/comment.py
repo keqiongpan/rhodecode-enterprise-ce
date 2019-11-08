@@ -339,7 +339,8 @@ class CommentsModel(BaseModel):
             'comment_body': text,
             'comment_file': f_path,
             'comment_line': line_no,
-            'comment_type': comment_type or 'note'
+            'comment_type': comment_type or 'note',
+            'comment_id': comment.comment_id
         }
 
         if commit_obj:
@@ -353,6 +354,9 @@ class CommentsModel(BaseModel):
             recipients += [cs_author]
 
             commit_comment_url = self.get_url(comment, request=request)
+            commit_comment_reply_url = self.get_url(
+                comment, request=request,
+                anchor='comment-{}/?/ReplyToComment'.format(comment.comment_id))
 
             target_repo_url = h.link_to(
                 repo.repo_name,
@@ -364,6 +368,7 @@ class CommentsModel(BaseModel):
                 'commit_message': commit_obj.message,
                 'commit_target_repo_url': target_repo_url,
                 'commit_comment_url': commit_comment_url,
+                'commit_comment_reply_url': commit_comment_reply_url
             })
 
         elif pull_request_obj:
@@ -379,11 +384,10 @@ class CommentsModel(BaseModel):
             pr_target_repo = pull_request_obj.target_repo
             pr_source_repo = pull_request_obj.source_repo
 
-            pr_comment_url = h.route_url(
-                'pullrequest_show',
-                repo_name=pr_target_repo.repo_name,
-                pull_request_id=pull_request_obj.pull_request_id,
-                _anchor='comment-%s' % comment.comment_id)
+            pr_comment_url = self.get_url(comment, request=request)
+            pr_comment_reply_url = self.get_url(
+                comment, request=request,
+                anchor='comment-{}/?/ReplyToComment'.format(comment.comment_id))
 
             pr_url = h.route_url(
                 'pullrequest_show',
@@ -407,6 +411,7 @@ class CommentsModel(BaseModel):
                 'pull_request_source_repo': pr_source_repo,
                 'pull_request_source_repo_url': pr_source_repo_url,
                 'pr_comment_url': pr_comment_url,
+                'pr_comment_reply_url': pr_comment_reply_url,
                 'pr_closing': closing_pr,
             })
 
@@ -505,24 +510,27 @@ class CommentsModel(BaseModel):
         q = q.order_by(ChangesetComment.created_on)
         return q.all()
 
-    def get_url(self, comment, request=None, permalink=False):
+    def get_url(self, comment, request=None, permalink=False, anchor=None):
         if not request:
             request = get_current_request()
 
         comment = self.__get_commit_comment(comment)
+        if anchor is None:
+            anchor = 'comment-{}'.format(comment.comment_id)
+
         if comment.pull_request:
             pull_request = comment.pull_request
             if permalink:
                 return request.route_url(
                     'pull_requests_global',
                     pull_request_id=pull_request.pull_request_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
             else:
                 return request.route_url(
                     'pullrequest_show',
                     repo_name=safe_str(pull_request.target_repo.repo_name),
                     pull_request_id=pull_request.pull_request_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
         else:
             repo = comment.repo
@@ -532,13 +540,13 @@ class CommentsModel(BaseModel):
                 return request.route_url(
                     'repo_commit', repo_name=safe_str(repo.repo_id),
                     commit_id=commit_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
             else:
                 return request.route_url(
                     'repo_commit', repo_name=safe_str(repo.repo_name),
                     commit_id=commit_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
     def get_comments(self, repo_id, revision=None, pull_request=None):
         """

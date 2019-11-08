@@ -115,12 +115,15 @@ def test_render_comment_subject_no_newlines(app, mention, email_type):
         'comment_file': 'test-file.py',
         'comment_line': 'n100',
         'comment_type': 'note',
+        'comment_id': 2048,
         'commit_comment_url': 'http://comment-url',
+        'commit_comment_reply_url': 'http://comment-url/#Reply',
         'instance_url': 'http://rc-instance',
         'comment_body': 'hello world',
         'mention': mention,
 
         'pr_comment_url': 'http://comment-url',
+        'pr_comment_reply_url': 'http://comment-url/#Reply',
         'pull_request': pr,
         'pull_request_commits': [],
 

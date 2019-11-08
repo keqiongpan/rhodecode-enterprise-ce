@@ -576,21 +576,6 @@
       %endif
 
       <script type="text/javascript">
-        if (location.hash) {
-          var result = splitDelimitedHash(location.hash);
-            var line = $('html').find(result.loc);
-            // show hidden comments if we use location.hash
-            if (line.hasClass('comment-general')) {
-                $(line).show();
-            } else if (line.hasClass('comment-inline')) {
-                $(line).show();
-                var $cb = $(line).closest('.cb');
-                $cb.removeClass('cb-collapsed')
-            }
-            if (line.length > 0){
-                offsetScroll(line, 70);
-            }
-        }
 
         versionController = new VersionController();
         versionController.init();
@@ -796,6 +781,7 @@
             ReviewerAutoComplete('#user');
 
         })
+
       </script>
 
   </div>

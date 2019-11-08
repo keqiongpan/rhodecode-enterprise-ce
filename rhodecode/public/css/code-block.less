@@ -302,11 +302,15 @@ table.code-difftable {
 
 
 // Comments
-
-div.comment:target {
+.comment-selected-hl {
     border-left: 6px solid @comment-highlight-color !important;
-    padding-left: 3px;
-    margin-left: -9px;
+    padding-left: 3px !important;
+    margin-left: -7px !important;
+}
+
+div.comment:target,
+div.comment-outdated:target {
+    .comment-selected-hl;
 }
 
 //TODO: anderson: can't get an absolute number out of anything, so had to put the

@@ -126,12 +126,13 @@ Check if we should use full-topic or mini-topic.
 
                 'pull_request_url': 'http://localhost/pr1',
                 'pr_comment_url': 'http://comment-url',
+                'pr_comment_reply_url': 'http://comment-url#reply',
 
                 'comment_file': None,
                 'comment_line': None,
                 'comment_type': 'note',
                 'comment_body': 'This is my comment body. *I like !*',
-
+                'comment_id': 2048,
                 'renderer_type': 'markdown',
                 'mention': True,
 
@@ -153,6 +154,7 @@ Check if we should use full-topic or mini-topic.
 
                 'pull_request_url': 'http://localhost/pr1',
                 'pr_comment_url': 'http://comment-url',
+                'pr_comment_reply_url': 'http://comment-url#reply',
 
                 'comment_type': 'todo',
                 'comment_file': None,
@@ -169,7 +171,7 @@ def db():
 ```
                 
                 ''',
-
+                'comment_id': 2048,
                 'renderer_type': 'markdown',
                 'mention': True,
 
@@ -192,6 +194,7 @@ def db():
                 'pull_request_url': 'http://localhost/pr1',
 
                 'pr_comment_url': 'http://comment-url',
+                'pr_comment_reply_url': 'http://comment-url#reply',
 
                 'comment_file': 'rhodecode/model/db.py',
                 'comment_line': 'o1210',
@@ -206,7 +209,7 @@ But please check this code::
 
 This should work better !
                 ''',
-
+                'comment_id': 2048,
                 'renderer_type': 'rst',
                 'mention': True,
 
@@ -224,7 +227,9 @@ This should work better !
                 'comment_file': None,
                 'comment_line': None,
                 'commit_comment_url': 'http://comment-url',
+                'commit_comment_reply_url': 'http://comment-url#reply',
                 'comment_body': 'This is my comment body. *I like !*',
+                'comment_id': 2048,
                 'renderer_type': 'markdown',
                 'mention': True,
             },
@@ -240,6 +245,7 @@ This should work better !
                 'comment_file': None,
                 'comment_line': None,
                 'commit_comment_url': 'http://comment-url',
+                'commit_comment_reply_url': 'http://comment-url#reply',
                 'comment_body': '''
 Hello **world**
 
@@ -248,6 +254,7 @@ This is a multiline comment :)
 - list
 - list2
                 ''',
+                'comment_id': 2048,
                 'renderer_type': 'markdown',
                 'mention': True,
             },
@@ -265,7 +272,9 @@ This is a multiline comment :)
                 'comment_line': 'n100',
 
                 'commit_comment_url': 'http://comment-url',
+                'commit_comment_reply_url': 'http://comment-url#reply',
                 'comment_body': 'This is my comment body. *I like !*',
+                'comment_id': 2048,
                 'renderer_type': 'markdown',
                 'mention': True,
             },

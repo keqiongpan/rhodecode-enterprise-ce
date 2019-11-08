@@ -534,15 +534,17 @@ $(document).ready(function() {
 
     if (location.hash) {
         var result = splitDelimitedHash(location.hash);
-        var loc  = result.loc;
+
+        var loc = result.loc;
+
         if (loc.length > 1) {
 
             var highlightable_line_tds = [];
 
             // source code line format
-            var page_highlights = loc.substring(
-                loc.indexOf('#') + 1).split('L');
+            var page_highlights = loc.substring(loc.indexOf('#') + 1).split('L');
 
+            // multi-line HL, for files
             if (page_highlights.length > 1) {
                 var highlight_ranges = page_highlights[1].split(",");
                 var h_lines = [];
@@ -556,8 +558,7 @@ $(document).ready(function() {
                                 h_lines.push(i);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         h_lines.push(parseInt(highlight_ranges[pos]));
                     }
                 }
@@ -569,24 +570,45 @@ $(document).ready(function() {
                 }
             }
 
-            // now check a direct id reference (diff page)
-            if ($(loc).length && $(loc).hasClass('cb-lineno')) {
+            // now check a direct id reference of line in diff / pull-request page)
+            if ($(loc).length > 0 && $(loc).hasClass('cb-lineno')) {
                 highlightable_line_tds.push($(loc));
             }
+
+            // mark diff lines as selected
             $.each(highlightable_line_tds, function (i, $td) {
                 $td.addClass('cb-line-selected'); // line number td
                 $td.prev().addClass('cb-line-selected'); // line data
                 $td.next().addClass('cb-line-selected'); // line content
             });
 
-            if (highlightable_line_tds.length) {
+            if (highlightable_line_tds.length > 0) {
                 var $first_line_td = highlightable_line_tds[0];
                 scrollToElement($first_line_td);
                 $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
                     td: $first_line_td,
                     remainder: result.remainder
                 });
+            } else {
+                // case for direct anchor to comments
+                var $line = $(loc);
+
+                if ($line.hasClass('comment-general')) {
+                    $line.show();
+                } else if ($line.hasClass('comment-inline')) {
+                    $line.show();
+                    var $cb = $line.closest('.cb');
+                    $cb.removeClass('cb-collapsed')
+                }
+                if ($line.length > 0) {
+                    $line.addClass('comment-selected-hl');
+                    offsetScroll($line, 70);
+                }
+                if (!$line.hasClass('comment-outdated') && result.remainder === '/ReplyToComment') {
+                    $line.nextAll('.cb-comment-add-button').trigger('click');
+                }
             }
+
         }
     }
     collapsableContent();

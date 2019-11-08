@@ -212,7 +212,6 @@
               }
           });
 
-
           // next links
           $('#child_link').on('click', function(e){
               // fetch via ajax what is going to be the next link, if we have
@@ -291,22 +290,11 @@
               }
           });
 
-          if (location.hash) {
-            var result = splitDelimitedHash(location.hash);
-            var line = $('html').find(result.loc);
-              if (line.length > 0){
-                  offsetScroll(line, 70);
-              }
-          }
-
           // browse tree @ revision
           $('#files_link').on('click', function(e){
               window.location = '${h.route_path('repo_files:default_path',repo_name=c.repo_name, commit_id=c.commit.raw_id)}';
               e.preventDefault();
           });
-
-          // inject comments into their proper positions
-          var file_comments = $('.inline-comment-placeholder');
 
       })
     </script>
