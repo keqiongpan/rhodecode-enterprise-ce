@@ -47,7 +47,7 @@ data = {
 }
 %>
 
-* ${_('Comment link')}: ${commit_comment_url}
+* ${('Inline' if comment_file else 'General')} ${_('Comment link')}: ${commit_comment_url}
 
 %if status_change:
 * ${_('Commit status')}: ${_('Status was changed to')}: *${status_change}*
@@ -152,9 +152,9 @@ data = {
     <tr style="border-bottom:1px solid #dbd9da;">
         <td colspan="2" style="padding-right:20px;">
             % if comment_type == 'todo':
-                ${_('`TODO` number')} ${comment_id}:
+                ${('Inline' if comment_file else 'General')} ${_('`TODO` number')} ${comment_id}:
             % else:
-                ${_('`Note` number')} ${comment_id}:
+                ${('Inline' if comment_file else 'General')} ${_('`Note` number')} ${comment_id}:
             % endif
         </td>
     </tr>

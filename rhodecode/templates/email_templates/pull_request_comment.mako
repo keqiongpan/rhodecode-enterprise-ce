@@ -61,7 +61,7 @@ ${h.literal(_('Pull request !{pr_id}: `{pr_title}`').format(**data))}
 
 * ${h.literal(_('Commit flow: {source_ref_type}:{source_ref_name} of {source_repo_url} into {target_ref_type}:{target_ref_name} of {target_repo_url}').format(**data))}
 
-* ${_('Comment link')}: ${pr_comment_url}
+* ${('Inline' if comment_file else 'General')} ${_('Comment link')}: ${pr_comment_url}
 
 %if status_change and not closing_pr:
 * ${_('{user} submitted pull request !{pr_id} status: *{status}*').format(**data)}
@@ -182,9 +182,9 @@ data = {
     <tr style="border-bottom:1px solid #dbd9da;">
         <td colspan="2" style="padding-right:20px;">
             % if comment_type == 'todo':
-                ${_('`TODO` number')} ${comment_id}:
+                ${('Inline' if comment_file else 'General')} ${_('`TODO` number')} ${comment_id}:
             % else:
-                ${_('`Note` number')} ${comment_id}:
+                ${('Inline' if comment_file else 'General')} ${_('`Note` number')} ${comment_id}:
             % endif
         </td>
     </tr>
