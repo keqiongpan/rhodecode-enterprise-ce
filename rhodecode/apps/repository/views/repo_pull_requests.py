@@ -76,28 +76,28 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if filter_type == 'awaiting_review':
             pull_requests = PullRequestModel().get_awaiting_review(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 statuses=statuses, offset=start, length=limit,
                 order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_review(
-                repo_name, source=source, statuses=statuses,
+                repo_name, search_q=search_q, source=source, statuses=statuses,
                 opened_by=opened_by)
         elif filter_type == 'awaiting_my_review':
             pull_requests = PullRequestModel().get_awaiting_my_review(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 user_id=self._rhodecode_user.user_id, statuses=statuses,
                 offset=start, length=limit, order_by=order_by,
                 order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_my_review(
-                repo_name, source=source, user_id=self._rhodecode_user.user_id,
+                repo_name, search_q=search_q, source=source, user_id=self._rhodecode_user.user_id,
                 statuses=statuses, opened_by=opened_by)
         else:
             pull_requests = PullRequestModel().get_all(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 statuses=statuses, offset=start, length=limit,
                 order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_all(
-                repo_name, source=source, statuses=statuses,
+                repo_name, search_q=search_q, source=source, statuses=statuses,
                 opened_by=opened_by)
 
         data = []

@@ -42,6 +42,20 @@
             </span>
         </li>
         % endif
+
+        <li>
+            <div class="grid-quick-filter">
+                <ul class="grid-filter-box">
+                    <li class="grid-filter-box-icon">
+                        <i class="icon-search"></i>
+                    </li>
+                    <li class="grid-filter-box-input">
+                        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
     </ul>
 
     </div>
@@ -54,7 +68,6 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-
     var $pullRequestListTable = $('#pull_request_list_table');
 
     // object list
@@ -114,6 +127,15 @@ $(document).ready(function() {
     $pullRequestListTable.on('preXhr.dt', function(e, settings, data){
         $pullRequestListTable.css('opacity', 0.3);
     });
+
+    // filter
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $pullRequestListTable.DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
 
 });
 

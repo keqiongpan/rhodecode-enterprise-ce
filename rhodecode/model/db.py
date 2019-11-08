@@ -37,7 +37,7 @@ import traceback
 import collections
 
 from sqlalchemy import (
-    or_, and_, not_, func, TypeDecorator, event,
+    or_, and_, not_, func, cast, TypeDecorator, event,
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType, BigInteger)

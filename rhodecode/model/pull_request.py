@@ -51,7 +51,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    or_, PullRequest, PullRequestReviewers, ChangesetStatus,
+    or_, String, cast, PullRequest, PullRequestReviewers, ChangesetStatus,
     PullRequestVersion, ChangesetComment, Repository, RepoReviewRule)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
@@ -137,14 +137,22 @@ class PullRequestModel(BaseModel):
     def get(self, pull_request):
         return self.__get_pull_request(pull_request)
 
-    def _prepare_get_all_query(self, repo_name, source=False, statuses=None,
-                               opened_by=None, order_by=None,
+    def _prepare_get_all_query(self, repo_name, search_q=None, source=False,
+                               statuses=None, opened_by=None, order_by=None,
                                order_dir='desc', only_created=False):
         repo = None
         if repo_name:
             repo = self._get_repo(repo_name)
 
         q = PullRequest.query()
+
+        if search_q:
+            like_expression = u'%{}%'.format(safe_unicode(search_q))
+            q = q.filter(or_(
+                cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                PullRequest.title.ilike(like_expression),
+                PullRequest.description.ilike(like_expression),
+            ))
 
         # source or target
         if repo and source:
@@ -179,28 +187,31 @@ class PullRequestModel(BaseModel):
 
         return q
 
-    def count_all(self, repo_name, source=False, statuses=None,
+    def count_all(self, repo_name, search_q=None, source=False, statuses=None,
                   opened_by=None):
         """
         Count the number of pull requests for a specific repository.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
         :returns: int number of pull requests
         """
         q = self._prepare_get_all_query(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by)
+            repo_name, search_q=search_q, source=source, statuses=statuses,
+            opened_by=opened_by)
 
         return q.count()
 
-    def get_all(self, repo_name, source=False, statuses=None, opened_by=None,
-                offset=0, length=None, order_by=None, order_dir='desc'):
+    def get_all(self, repo_name, search_q=None, source=False, statuses=None,
+                opened_by=None, offset=0, length=None, order_by=None, order_dir='desc'):
         """
         Get all pull requests for a specific repository.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
@@ -211,8 +222,8 @@ class PullRequestModel(BaseModel):
         :returns: list of pull requests
         """
         q = self._prepare_get_all_query(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by,
-            order_by=order_by, order_dir=order_dir)
+            repo_name, search_q=search_q, source=source, statuses=statuses,
+            opened_by=opened_by, order_by=order_by, order_dir=order_dir)
 
         if length:
             pull_requests = q.limit(length).offset(offset).all()
@@ -221,24 +232,25 @@ class PullRequestModel(BaseModel):
 
         return pull_requests
 
-    def count_awaiting_review(self, repo_name, source=False, statuses=None,
+    def count_awaiting_review(self, repo_name, search_q=None, source=False, statuses=None,
                               opened_by=None):
         """
         Count the number of pull requests for a specific repository that are
         awaiting review.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
         :returns: int number of pull requests
         """
         pull_requests = self.get_awaiting_review(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by)
+            repo_name, search_q=search_q, source=source, statuses=statuses, opened_by=opened_by)
 
         return len(pull_requests)
 
-    def get_awaiting_review(self, repo_name, source=False, statuses=None,
+    def get_awaiting_review(self, repo_name, search_q=None, source=False, statuses=None,
                             opened_by=None, offset=0, length=None,
                             order_by=None, order_dir='desc'):
         """
@@ -246,6 +258,7 @@ class PullRequestModel(BaseModel):
         review.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
@@ -256,8 +269,8 @@ class PullRequestModel(BaseModel):
         :returns: list of pull requests
         """
         pull_requests = self.get_all(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by,
-            order_by=order_by, order_dir=order_dir)
+            repo_name, search_q=search_q, source=source, statuses=statuses,
+            opened_by=opened_by, order_by=order_by, order_dir=order_dir)
 
         _filtered_pull_requests = []
         for pr in pull_requests:
@@ -270,13 +283,14 @@ class PullRequestModel(BaseModel):
         else:
             return _filtered_pull_requests
 
-    def count_awaiting_my_review(self, repo_name, source=False, statuses=None,
+    def count_awaiting_my_review(self, repo_name, search_q=None, source=False, statuses=None,
                                  opened_by=None, user_id=None):
         """
         Count the number of pull requests for a specific repository that are
         awaiting review from a specific user.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
@@ -284,12 +298,12 @@ class PullRequestModel(BaseModel):
         :returns: int number of pull requests
         """
         pull_requests = self.get_awaiting_my_review(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by,
-            user_id=user_id)
+            repo_name, search_q=search_q, source=source, statuses=statuses,
+            opened_by=opened_by, user_id=user_id)
 
         return len(pull_requests)
 
-    def get_awaiting_my_review(self, repo_name, source=False, statuses=None,
+    def get_awaiting_my_review(self, repo_name, search_q=None, source=False, statuses=None,
                                opened_by=None, user_id=None, offset=0,
                                length=None, order_by=None, order_dir='desc'):
         """
@@ -297,6 +311,7 @@ class PullRequestModel(BaseModel):
         review from a specific user.
 
         :param repo_name: target or source repo
+        :param search_q: filter by text
         :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
         :param opened_by: author user of the pull request
@@ -308,8 +323,8 @@ class PullRequestModel(BaseModel):
         :returns: list of pull requests
         """
         pull_requests = self.get_all(
-            repo_name, source=source, statuses=statuses, opened_by=opened_by,
-            order_by=order_by, order_dir=order_dir)
+            repo_name, search_q=search_q, source=source, statuses=statuses,
+            opened_by=opened_by, order_by=order_by, order_dir=order_dir)
 
         _my = PullRequestModel().get_not_reviewed(user_id)
         my_participation = []
