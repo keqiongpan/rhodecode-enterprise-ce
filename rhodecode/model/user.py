@@ -412,6 +412,10 @@ class UserModel(BaseModel):
             self.sa.flush()
 
             user_data = new_user.get_dict()
+            user_data.update({
+                'first_name': user_data.get('firstname'),
+                'last_name': user_data.get('lastname'),
+            })
             kwargs = {
                 # use SQLALCHEMY safe dump of user data
                 'user': AttributeDict(user_data),
