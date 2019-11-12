@@ -401,7 +401,7 @@ class TestLoginController(object):
         )  # This should be overridden
 
         assert_session_flash(
-            response, 'You have successfully registered with RhodeCode')
+            response, 'You have successfully registered with RhodeCode. You can log-in now.')
 
         ret = Session().query(User).filter(
             User.username == 'test_regular4').one()
