@@ -263,6 +263,7 @@ persistent sessions across nodes. Please generate other one then in this example
             gzip_types  text/css text/javascript text/xml text/plain text/x-component application/javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
             gzip_vary on;
             gzip_disable     "msie6";
+            expires 60d;
             #alias /home/rcdev/.rccontrol/community-1/static;
             alias /home/rcdev/.rccontrol/enterprise-1/static;
         }
