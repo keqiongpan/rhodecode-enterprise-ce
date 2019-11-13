@@ -57,11 +57,11 @@ data = {
 }
 %>
 
-${h.literal(_('Pull request !{pr_id}: `{pr_title}`').format(**data))}
+* ${_('Comment link')}: ${pr_comment_url}
+
+* ${_('Pull Request')}: !${pull_request.pull_request_id}
 
 * ${h.literal(_('Commit flow: {source_ref_type}:{source_ref_name} of {source_repo_url} into {target_ref_type}:{target_ref_name} of {target_repo_url}').format(**data))}
-
-* ${('Inline' if comment_file else 'General')} ${_('Comment link')}: ${pr_comment_url}
 
 %if status_change and not closing_pr:
 * ${_('{user} submitted pull request !{pr_id} status: *{status}*').format(**data)}
@@ -75,9 +75,9 @@ ${h.literal(_('Pull request !{pr_id}: `{pr_title}`').format(**data))}
 
 %endif
 % if comment_type == 'todo':
-${_('`TODO` comment')}:
+${('Inline' if comment_file else 'General')} ${_('`TODO` number')} ${comment_id}:
 % else:
-${_('`Note` comment')}:
+${('Inline' if comment_file else 'General')} ${_('`Note` number')} ${comment_id}:
 % endif
 
 ${comment_body |n, trim}
@@ -155,6 +155,14 @@ data = {
         </td>
     </tr>
     % endif
+    <tr>
+        <td style="padding-right:20px;">${_('Pull request')}:</td>
+        <td>
+            <a href="${pull_request_url}" style="${base.link_css()}">
+            !${pull_request.pull_request_id}
+            </a>
+        </td>
+    </tr>
 
     <tr>
         <td style="padding-right:20px;line-height:20px;">${_('Commit Flow')}:</td>
@@ -164,14 +172,7 @@ data = {
             ${base.tag_button('{}:{}'.format(data['target_ref_type'], pull_request.target_ref_parts.name))} ${_('of')}  ${data['target_repo_url']}
         </td>
     </tr>
-    <tr>
-        <td style="padding-right:20px;">${_('Pull request')}:</td>
-        <td>
-            <a href="${pull_request_url}" style="${base.link_css()}">
-            !${pull_request.pull_request_id}
-            </a>
-        </td>
-    </tr>
+
     % if comment_file:
         <tr>
             <td style="padding-right:20px;">${_('File')}:</td>

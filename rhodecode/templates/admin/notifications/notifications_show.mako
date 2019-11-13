@@ -27,8 +27,10 @@
     <div class="table">
       <div id="notification_${c.notification.notification_id}" class="main-content-full">
         <div class="notification-header">
+          <div class="pull-left">
           ${self.gravatar(c.notification.created_by_user.email, 30)}
-          <div class="desc">
+          </div>
+          <div class="desc pull-left">
               ${h.notification_description(c.notification, request)}
           </div>
           <div class="delete-notifications">

@@ -34,11 +34,9 @@ data = {
 }
 %>
 
-${h.literal(_('Pull request !{pr_id}: `{pr_title}`').format(**data))}
+* ${_('Pull Request link')}: ${pull_request_url}
 
 * ${h.literal(_('Commit flow: {source_ref_type}:{source_ref_name} of {source_repo_url} into {target_ref_type}:{target_ref_name} of {target_repo_url}').format(**data))}
-
-* ${_('Pull Request link')}: ${pull_request_url}
 
 * ${_('Title')}: ${pull_request.title}
 
@@ -104,6 +102,15 @@ data = {
     </tr>
 
     <tr>
+        <td style="padding-right:20px;">${_('Pull request')}:</td>
+        <td>
+            <a href="${pull_request_url}" style="${base.link_css()}">
+            !${pull_request.pull_request_id}
+            </a>
+        </td>
+    </tr>
+
+    <tr>
         <td style="padding-right:20px;line-height:20px;">${_('Commit Flow')}:</td>
         <td style="line-height:20px;">
             ${base.tag_button('{}:{}'.format(data['source_ref_type'], pull_request.source_ref_parts.name))} ${_('of')} ${data['source_repo_url']}
@@ -112,14 +119,6 @@ data = {
         </td>
     </tr>
 
-    <tr>
-        <td style="padding-right:20px;">${_('Pull request')}:</td>
-        <td>
-            <a href="${pull_request_url}" style="${base.link_css()}">
-            !${pull_request.pull_request_id}
-            </a>
-        </td>
-    </tr>
     <tr>
         <td style="padding-right:20px;">${_('Description')}:</td>
         <td style="white-space:pre-wrap"><code>${pull_request.description | trim}</code></td>

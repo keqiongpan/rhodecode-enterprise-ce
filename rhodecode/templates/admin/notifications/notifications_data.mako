@@ -13,10 +13,10 @@
             <div id="notification_${notification.notification.notification_id}" class="container ${'unread' if not notification.read else '' }">
             <div class="notification-header">
               <div class="desc ${'unread' if not notification.read else '' }">
-                <a href="${h.route_path('notifications_show', notification_id=notification.notification.notification_id)}">
                   ${base.gravatar(notification.notification.created_by_user.email, 16)}
-                  ${h.notification_description(notification.notification, request)}
-                </a>
+                  <a href="${h.route_path('notifications_show', notification_id=notification.notification.notification_id)}">
+                    ${h.notification_description(notification.notification, request)}
+                  </a>
               </div>
               <div class="delete-notifications">
                 <span onclick="deleteNotification(${notification.notification.notification_id})" class="delete-notification tooltip" title="${_('Delete')}"><i class="icon-delete"></i></span>

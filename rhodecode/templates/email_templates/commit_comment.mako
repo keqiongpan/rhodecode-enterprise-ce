@@ -47,7 +47,7 @@ data = {
 }
 %>
 
-* ${('Inline' if comment_file else 'General')} ${_('Comment link')}: ${commit_comment_url}
+* ${_('Comment link')}: ${commit_comment_url}
 
 %if status_change:
 * ${_('Commit status')}: ${_('Status was changed to')}: *${status_change}*
@@ -62,9 +62,9 @@ data = {
 
 %endif
 % if comment_type == 'todo':
-${_('`TODO` comment')}:
+${('Inline' if comment_file else 'General')} ${_('`TODO` number')} ${comment_id}:
 % else:
-${_('`Note` comment')}:
+${('Inline' if comment_file else 'General')} ${_('`Note` number')} ${comment_id}:
 % endif
 
 ${comment_body |n, trim}
