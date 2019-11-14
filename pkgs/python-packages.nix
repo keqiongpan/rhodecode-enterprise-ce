@@ -2052,11 +2052,11 @@ self: super: {
     };
   };
   "testpath" = super.buildPythonPackage {
-    name = "testpath-0.4.2";
+    name = "testpath-0.4.4";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/06/30/9a7e917066d851d8b4117e85794b5f14516419ea714a8a2681ec6aa8a981/testpath-0.4.2.tar.gz";
-      sha256 = "1y40hywscnnyb734pnzm55nd8r8kp1072bjxbil83gcd53cv755n";
+      url = "https://files.pythonhosted.org/packages/2c/b3/5d57205e896d8998d77ad12aa42ebce75cd97d8b9a97d00ba078c4c9ffeb/testpath-0.4.4.tar.gz";
+      sha256 = "0zpcmq22dz79ipvvsfnw1ykpjcaj6xyzy7ws77s5b5ql3hka7q30";
     };
     meta = {
       license = [  ];
