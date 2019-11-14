@@ -504,7 +504,7 @@
     ## create action
     <li>
        <a href="#create-actions" onclick="return false;" class="menulink childs">
-        <i class="icon-plus-circled"></i>
+        <i class="tooltip icon-plus-circled" title="${_('Create')}"></i>
        </a>
 
        <div class="action-menu submenu">
@@ -529,13 +529,13 @@
 
                 % if can_create_repos_in_group:
                     <li>
-                    <a href="${h.route_path('repo_new',_query=default_target_group)}">${_('New Repository')}</a>
+                    <a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('New Repository')}</a>
                     </li>
                 % endif
 
                 % if can_create_repo_groups_in_group:
                     <li>
-                        <a href="${h.route_path('repo_group_new',_query=default_target_group)}">${_(u'New Repository Group')}</a>
+                        <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'New Repository Group')}</a>
                     </li>
                 % endif
             % endif
