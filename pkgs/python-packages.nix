@@ -938,17 +938,6 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.bsd3 ];
     };
   };
-  "meld3" = super.buildPythonPackage {
-    name = "meld3-2.0.0";
-    doCheck = false;
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/00/3b/023446ddc1bf0b519c369cbe88269c30c6a64bd10af4817c73f560c302f7/meld3-2.0.0.tar.gz";
-      sha256 = "1fbyafwi0d54394hkmp65nf6vk0qm4kipf5z60pdp4244rvadz8y";
-    };
-    meta = {
-      license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
-    };
-  };
   "mistune" = super.buildPythonPackage {
     name = "mistune-0.8.4";
     doCheck = false;
@@ -2029,14 +2018,11 @@ self: super: {
     };
   };
   "supervisor" = super.buildPythonPackage {
-    name = "supervisor-4.0.3";
+    name = "supervisor-4.1.0";
     doCheck = false;
-    propagatedBuildInputs = [
-      self."meld3"
-    ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/97/48/f38bf70bd9282d1a18d591616557cc1a77a1c627d57dff66ead65c891dc8/supervisor-4.0.3.tar.gz";
-      sha256 = "17hla7mx6w5m5jzkkjxgqa8wpswqmfhbhf49f692hw78fg0ans7p";
+      url = "https://files.pythonhosted.org/packages/de/87/ee1ad8fa533a4b5f2c7623f4a2b585d3c1947af7bed8e65bc7772274320e/supervisor-4.1.0.tar.gz";
+      sha256 = "10q36sa1jqljyyyl7cif52akpygl5kmlqq9x91hmx53f8zh6zj1d";
     };
     meta = {
       license = [ { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
