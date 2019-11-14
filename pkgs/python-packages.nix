@@ -1599,14 +1599,14 @@ self: super: {
     };
   };
   "python-dateutil" = super.buildPythonPackage {
-    name = "python-dateutil-2.8.0";
+    name = "python-dateutil-2.8.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ad/99/5b2e99737edeb28c71bcbec5b5dda19d0d9ef3ca3e92e3e925e7c0bb364c/python-dateutil-2.8.0.tar.gz";
-      sha256 = "17nsfhy4xdz1khrfxa61vd7pmvd5z0wa3zb6v4gb4kfnykv0b668";
+      url = "https://files.pythonhosted.org/packages/be/ed/5bbc91f03fa4c839c4c7360375da77f9659af5f7086b7a7bdda65771c8e0/python-dateutil-2.8.1.tar.gz";
+      sha256 = "0g42w7k5007iv9dam6gnja2ry8ydwirh99mgdll35s12pyfzxsvk";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.asl20 { fullName = "Dual License"; } ];
