@@ -42,7 +42,7 @@ pycurl==7.43.0.3
 pycrypto==2.6.1
 pygments==2.4.2
 pyparsing==2.4.2
-pyramid-debugtoolbar==4.5.0
+pyramid-debugtoolbar==4.5.1
 pyramid-mako==1.1.0
 pyramid==1.10.4
 pyramid_mailer==0.15.1

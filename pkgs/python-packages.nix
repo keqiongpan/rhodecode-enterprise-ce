@@ -1426,7 +1426,7 @@ self: super: {
     };
   };
   "pyramid-debugtoolbar" = super.buildPythonPackage {
-    name = "pyramid-debugtoolbar-4.5";
+    name = "pyramid-debugtoolbar-4.5.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyramid"
@@ -1436,8 +1436,8 @@ self: super: {
       self."ipaddress"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/14/28/1f240239af340d19ee271ac62958158c79edb01a44ad8c9885508dd003d2/pyramid_debugtoolbar-4.5.tar.gz";
-      sha256 = "0x2p3409pnx66n6dx5vc0mk2r1cp1ydr8mp120w44r9pwcngbibl";
+      url = "https://files.pythonhosted.org/packages/88/21/74e7fa52edc74667e29403bd0cb4f2bb74dc4014711de313868001bf639f/pyramid_debugtoolbar-4.5.1.tar.gz";
+      sha256 = "0hgf6i1fzvq43m9vjdmb24nnv8fwp7sdzrx9bcwrgpy24n07am9a";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } pkgs.lib.licenses.bsdOriginal ];
