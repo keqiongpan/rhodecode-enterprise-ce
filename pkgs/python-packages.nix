@@ -22,14 +22,14 @@ self: super: {
     };
   };
   "amqp" = super.buildPythonPackage {
-    name = "amqp-2.5.1";
+    name = "amqp-2.5.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."vine"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b5/f5/70e364a1f5fbafc742c098ad88a064b801b0d69cf56bfad13be2c08be4e2/amqp-2.5.1.tar.gz";
-      sha256 = "0s2yxnnhhx9hww0n33yn22q6sgnbd6n2nw92050qv2qpc3i1ga8r";
+      url = "https://files.pythonhosted.org/packages/92/1d/433541994a5a69f4ad2fff39746ddbb0bdedb0ea0d85673eb0db68a7edd9/amqp-2.5.2.tar.gz";
+      sha256 = "13dhhfxjrqcjybnq4zahg92mydhpg2l76nxcmq7d560687wsxwbp";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -877,15 +877,15 @@ self: super: {
     };
   };
   "kombu" = super.buildPythonPackage {
-    name = "kombu-4.6.4";
+    name = "kombu-4.6.6";
     doCheck = false;
     propagatedBuildInputs = [
       self."amqp"
       self."importlib-metadata"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/52/f2/5a64fc850b0533d2daf09a523406e51e85a8b2a4a2bc87a922a8906ba2aa/kombu-4.6.4.tar.gz";
-      sha256 = "16w02mvkxchz7041yia4h8xmqavci88szk18ynxvw4chzcnk3w75";
+      url = "https://files.pythonhosted.org/packages/20/e6/bc2d9affba6138a1dc143f77fef253e9e08e238fa7c0688d917c09005e96/kombu-4.6.6.tar.gz";
+      sha256 = "11mxpcy8mg1l35bgbhba70v29bydr2hrhdbdlb4lg98m3m5vaq0p";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
