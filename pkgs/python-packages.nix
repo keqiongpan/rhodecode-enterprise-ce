@@ -362,7 +362,7 @@ self: super: {
     };
   };
   "deform" = super.buildPythonPackage {
-    name = "deform-2.0.7";
+    name = "deform-2.0.8";
     doCheck = false;
     propagatedBuildInputs = [
       self."chameleon"
@@ -373,8 +373,8 @@ self: super: {
       self."zope.deprecation"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/cf/a1/bc234527b8f181de9acd80e796483c00007658d1e32b7de78f1c2e004d9a/deform-2.0.7.tar.gz";
-      sha256 = "0jnpi0zr2hjvbmiz6nm33yqv976dn9lf51vhlzqc0i75xcr9rwig";
+      url = "https://files.pythonhosted.org/packages/21/d0/45fdf891a82722c02fc2da319cf2d1ae6b5abf9e470ad3762135a895a868/deform-2.0.8.tar.gz";
+      sha256 = "0wbjv98sib96649aqaygzxnrkclyy50qij2rha6fn1i4c86bfdl9";
     };
     meta = {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];

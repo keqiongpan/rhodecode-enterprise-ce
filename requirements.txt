@@ -14,7 +14,7 @@ https://code.rhodecode.com/upstream/configobj/artifacts/download/0-012de99a-b1e1
 cssselect==1.0.3
 cryptography==2.6.1
 decorator==4.1.2
-deform==2.0.7
+deform==2.0.8
 docutils==0.14.0
 dogpile.cache==0.9.0
 dogpile.core==0.4.1
