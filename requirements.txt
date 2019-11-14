@@ -84,7 +84,7 @@ zope.interface==4.6.0
 mysql-python==1.2.5
 pymysql==0.8.1
 pysqlite==2.8.3
-psycopg2==2.8.3
+psycopg2==2.8.4
 
 # IPYTHON RENDERING
 # entrypoints backport, pypi version doesn't support egg installs
