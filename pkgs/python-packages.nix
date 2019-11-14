@@ -1992,11 +1992,11 @@ self: super: {
     };
   };
   "sqlalchemy" = super.buildPythonPackage {
-    name = "sqlalchemy-1.3.8";
+    name = "sqlalchemy-1.3.11";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/fc/49/82d64d705ced344ba458197dadab30cfa745f9650ee22260ac2b275d288c/SQLAlchemy-1.3.8.tar.gz";
-      sha256 = "106digcgx7nwvykdvmnwf3vfxvfkdv6ykwk7sd325afklikgb3rg";
+      url = "https://files.pythonhosted.org/packages/34/5c/0e1d7ad0ca52544bb12f9cb8d5cc454af45821c92160ffedd38db0a317f6/SQLAlchemy-1.3.11.tar.gz";
+      sha256 = "12izpqqgy738ndn7qqn962qxi8qw2xb9vg2i880x12paklg599dg";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
