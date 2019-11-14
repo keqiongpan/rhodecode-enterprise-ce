@@ -2124,3 +2124,15 @@ def get_repo_view_type(request):
     }
 
     return route_to_view_type.get(route_name)
+
+
+def is_active(menu_entry, selected):
+    """
+    Returns active class for selecting menus in templates
+    <li class=${h.is_active('settings', current_active)}></li>
+    """
+    if not isinstance(menu_entry, list):
+        menu_entry = [menu_entry]
+
+    if selected in menu_entry:
+        return "active"

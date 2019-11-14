@@ -26,25 +26,25 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='profile' or c.active=='profile_edit' else ''}"><a href="${h.route_path('my_account_profile')}">${_('Profile')}</a></li>
-          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
-          <li class="${'active' if c.active=='password' else ''}"><a href="${h.route_path('my_account_password')}">${_('Password')}</a></li>
-          <li class="${'active' if c.active=='bookmarks' else ''}"><a href="${h.route_path('my_account_bookmarks')}">${_('Bookmarks')}</a></li>
-          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
-          <li class="${'active' if c.active in ['ssh_keys', 'ssh_keys_generate'] else ''}"><a href="${h.route_path('my_account_ssh_keys')}">${_('SSH Keys')}</a></li>
-          <li class="${'active' if c.active=='user_group_membership' else ''}"><a href="${h.route_path('my_account_user_group_membership')}">${_('User Group Membership')}</a></li>
+          <li class="${h.is_active(['profile', 'profile_edit'], c.active)}"><a href="${h.route_path('my_account_profile')}">${_('Profile')}</a></li>
+          <li class="${h.is_active('emails', c.active)}"><a href="${h.route_path('my_account_emails')}">${_('Emails')}</a></li>
+          <li class="${h.is_active('password', c.active)}"><a href="${h.route_path('my_account_password')}">${_('Password')}</a></li>
+          <li class="${h.is_active('bookmarks', c.active)}"><a href="${h.route_path('my_account_bookmarks')}">${_('Bookmarks')}</a></li>
+          <li class="${h.is_active('auth_tokens', c.active)}"><a href="${h.route_path('my_account_auth_tokens')}">${_('Auth Tokens')}</a></li>
+          <li class="${h.is_active(['ssh_keys', 'ssh_keys_generate'], c.active)}"><a href="${h.route_path('my_account_ssh_keys')}">${_('SSH Keys')}</a></li>
+          <li class="${h.is_active('user_group_membership', c.active)}"><a href="${h.route_path('my_account_user_group_membership')}">${_('User Group Membership')}</a></li>
 
           ## TODO: Find a better integration of oauth/saml views into navigation.
           <% my_account_external_url = h.route_path_or_none('my_account_external_identity') %>
           % if my_account_external_url:
-          <li class="${'active' if c.active=='external_identity' else ''}"><a href="${my_account_external_url}">${_('External Identities')}</a></li>
+          <li class="${h.is_active('external_identity', c.active)}"><a href="${my_account_external_url}">${_('External Identities')}</a></li>
           % endif
 
-          <li class="${'active' if c.active=='repos' else ''}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>
-          <li class="${'active' if c.active=='watched' else ''}"><a href="${h.route_path('my_account_watched')}">${_('Watched')}</a></li>
-          <li class="${'active' if c.active=='pullrequests' else ''}"><a href="${h.route_path('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
-          <li class="${'active' if c.active=='perms' else ''}"><a href="${h.route_path('my_account_perms')}">${_('Permissions')}</a></li>
-          <li class="${'active' if c.active=='my_notifications' else ''}"><a href="${h.route_path('my_account_notifications')}">${_('Live Notifications')}</a></li>
+          <li class="${h.is_active('repos', c.active)}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>
+          <li class="${h.is_active('watched', c.active)}"><a href="${h.route_path('my_account_watched')}">${_('Watched')}</a></li>
+          <li class="${h.is_active('pullrequests', c.active)}"><a href="${h.route_path('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
+          <li class="${h.is_active('perms', c.active)}"><a href="${h.route_path('my_account_perms')}">${_('Permissions')}</a></li>
+          <li class="${h.is_active('my_notifications', c.active)}"><a href="${h.route_path('my_account_notifications')}">${_('Live Notifications')}</a></li>
         </ul>
     </div>
 
