@@ -1231,11 +1231,11 @@ self: super: {
     };
   };
   "psutil" = super.buildPythonPackage {
-    name = "psutil-5.6.3";
+    name = "psutil-5.6.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/1c/ca/5b8c1fe032a458c2c4bcbe509d1401dca9dda35c7fc46b36bb81c2834740/psutil-5.6.3.tar.gz";
-      sha256 = "1wv31zly44qj0rp2acg58xbnc7bf6ffyadasq093l455q30qafl6";
+      url = "https://files.pythonhosted.org/packages/03/9a/95c4b3d0424426e5fd94b5302ff74cea44d5d4f53466e1228ac8e73e14b4/psutil-5.6.5.tar.gz";
+      sha256 = "0isil5jxwwd8awz54qk28rpgjg43i5l6yl70g40vxwa4r4m56lfh";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
