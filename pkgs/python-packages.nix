@@ -1844,6 +1844,7 @@ self: super: {
       self."nbconvert"
       self."nbformat"
       self."jupyter-client"
+      self."jupyter-core"
       self."alembic"
       self."invoke"
       self."bumpversion"
