@@ -153,14 +153,19 @@ class GistView(BaseAppView):
 
         data = dict(self.request.POST)
         data['filename'] = data.get('filename') or Gist.DEFAULT_FILENAME
+
         data['nodes'] = [{
             'filename': data['filename'],
             'content': data.get('content'),
             'mimetype': data.get('mimetype')  # None is autodetect
         }]
+        gist_type = {
+            'public': Gist.GIST_PUBLIC,
+            'private': Gist.GIST_PRIVATE
+        }.get(data.get('gist_type')) or Gist.GIST_PRIVATE
 
-        data['gist_type'] = (
-            Gist.GIST_PUBLIC if data.get('public') else Gist.GIST_PRIVATE)
+        data['gist_type'] = gist_type
+
         data['gist_acl_level'] = (
             data.get('gist_acl_level') or Gist.ACL_LEVEL_PRIVATE)
 

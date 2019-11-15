@@ -57,9 +57,28 @@
             </div>
 
             <div class="pull-right">
-            <i class="tooltip icon-info" title="${_('Secret gists are hidden from listing, but accessible to anyone who knows the url.')}"></i>
-            ${h.submit('private',_('Create Private Gist'),class_="btn")}
-            ${h.submit('public',_('Create Public Gist'),class_="btn")}
+                ##<i class="tooltip icon-info" title="${_('Secret gists are hidden from listing, but accessible to anyone who knows the url.')}"></i>
+
+                <div class="pull-right">
+                    ${h.submit('create',_('Create Gist'),class_="btn")}
+                </div>
+                <div class="rcform-element pull-right">
+                  <div class="fields gist-type-fields">
+                    <fieldset>
+                        <div class="gist-type-fields-wrapper">
+
+                        <input type="radio" id="private_gist" checked="" name="gist_type" value="private">
+                        <label for="private_gist">${_('Private Gist')}</label>
+                        <span class="tooltip label" title="${_('Private Gists are not listed and only accessible through their secret url.')}">${_('Private Gist')}</span>
+
+                        <input type="radio" id="public_gist" name="gist_type" value="public">
+                        <label for="public_gist">${_('Public Gist')}</label>
+                        <span class="tooltip label" title="${_('Public Gists are accessible to anyone and listed in Gists page.')}">${_('Public Gist')}</span>
+                        </div>
+                    </fieldset>
+                  </div>
+                </div>
+
             </div>
             ${h.end_form()}
         </div>
