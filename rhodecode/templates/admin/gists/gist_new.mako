@@ -34,7 +34,7 @@
                 <label for='lifetime'>${_('Gist lifetime')}</label>
                 ${h.dropdownmenu('lifetime', '', c.lifetime_options)}
 
-                <label for='acl_level'>${_('Gist access level')}</label>
+                <label for='acl_level'>${_('Private Gist access level')}</label>
                 ${h.dropdownmenu('gist_acl_level', '', c.acl_options)}
 
                 <textarea style="margin-top: 5px; border-color: #dbd9da" id="description" name="description" placeholder="${_('Gist description ...')}"></textarea>
@@ -57,6 +57,7 @@
             </div>
 
             <div class="pull-right">
+            <i class="tooltip icon-info" title="${_('Secret gists are hidden from listing, but accessible to anyone who knows the url.')}"></i>
             ${h.submit('private',_('Create Private Gist'),class_="btn")}
             ${h.submit('public',_('Create Public Gist'),class_="btn")}
             </div>
