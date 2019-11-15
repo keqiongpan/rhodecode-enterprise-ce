@@ -50,6 +50,10 @@ class RepositoryRequirementError(RepositoryError):
     pass
 
 
+class UnresolvedFilesInRepo(RepositoryError):
+    pass
+
+
 class VCSBackendNotSupportedError(VCSError):
     """
     Exception raised when VCSServer does not support requested backend

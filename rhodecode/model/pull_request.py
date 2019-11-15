@@ -1335,6 +1335,7 @@ class PullRequestModel(BaseModel):
         else:
             possible = pull_request.last_merge_status == MergeFailureReason.NONE
             metadata = {
+                'unresolved_files': '',
                 'target_ref': pull_request.target_ref_parts,
                 'source_ref': pull_request.source_ref_parts,
             }

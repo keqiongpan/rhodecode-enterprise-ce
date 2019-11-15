@@ -42,7 +42,7 @@ from rhodecode.lib.vcs.backends.git.diff import GitDiff
 from rhodecode.lib.vcs.backends.git.inmemory import GitInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError,
-    RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError)
+    RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError, UnresolvedFilesInRepo)
 
 
 SHA_PATTERN = re.compile(r'^[[0-9a-fA-F]{12}|[0-9a-fA-F]{40}]$')
@@ -826,9 +826,10 @@ class GitRepository(BaseRepository):
             return
 
         if self.is_empty():
-            # TODO(skreft): do somehting more robust in this case.
+            # TODO(skreft): do something more robust in this case.
             raise RepositoryError(
                 'Do not know how to merge into empty repositories yet')
+        unresolved = None
 
         # N.B.(skreft): the --no-ff option is used to enforce the creation of a
         # commit message. We also specify the user who is doing the merge.
@@ -839,9 +840,18 @@ class GitRepository(BaseRepository):
         try:
             output = self.run_git_command(cmd, fail_on_stderr=False)
         except RepositoryError:
+            files = self.run_git_command(['diff', '--name-only', '--diff-filter', 'U'],
+                                         fail_on_stderr=False)[0].splitlines()
+            # NOTE(marcink): we add U notation for consistent with HG backend output
+            unresolved = ['U {}'.format(f) for f in files]
+
             # Cleanup any merge leftovers
             self.run_git_command(['merge', '--abort'], fail_on_stderr=False)
-            raise
+
+            if unresolved:
+                raise UnresolvedFilesInRepo(unresolved)
+            else:
+                raise
 
     def _local_push(
             self, source_branch, repository_path, target_branch,
@@ -977,8 +987,11 @@ class GitRepository(BaseRepository):
             # the shadow repository.
             shadow_repo.set_refs('refs/heads/pr-merge', merge_commit_id)
             merge_ref = Reference('branch', 'pr-merge', merge_commit_id)
-        except RepositoryError:
+        except RepositoryError as e:
             log.exception('Failure when doing local merge on git shadow repo')
+            if isinstance(e, UnresolvedFilesInRepo):
+                metadata['unresolved_files'] = 'file: ' + (', file: '.join(e.args[0]))
+
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED
 

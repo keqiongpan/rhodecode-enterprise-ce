@@ -42,7 +42,7 @@ from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
-    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError)
+    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError, UnresolvedFilesInRepo)
 from rhodecode.lib.vcs.compat import configparser
 
 hexlify = binascii.hexlify
@@ -634,6 +634,7 @@ class MercurialRepository(BaseRepository):
             # In this case we should force a commit message
             return source_ref.commit_id, True
 
+        unresolved = None
         if use_rebase:
             try:
                 bookmark_name = 'rcbook%s%s' % (source_ref.commit_id,
@@ -644,17 +645,23 @@ class MercurialRepository(BaseRepository):
                 self._remote.invalidate_vcs_cache()
                 self._update(bookmark_name, clean=True)
                 return self._identify(), True
-            except RepositoryError:
+            except RepositoryError as e:
                 # The rebase-abort may raise another exception which 'hides'
                 # the original one, therefore we log it here.
                 log.exception('Error while rebasing shadow repo during merge.')
+                if 'unresolved conflicts' in e.message:
+                    unresolved = self._remote.get_unresolved_files()
+                    log.debug('unresolved files: %s', unresolved)
 
                 # Cleanup any rebase leftovers
                 self._remote.invalidate_vcs_cache()
                 self._remote.rebase(abort=True)
                 self._remote.invalidate_vcs_cache()
                 self._remote.update(clean=True)
-                raise
+                if unresolved:
+                    raise UnresolvedFilesInRepo(unresolved)
+                else:
+                    raise
         else:
             try:
                 self._remote.merge(source_ref.commit_id)
@@ -664,10 +671,20 @@ class MercurialRepository(BaseRepository):
                     username=safe_str('%s <%s>' % (user_name, user_email)))
                 self._remote.invalidate_vcs_cache()
                 return self._identify(), True
-            except RepositoryError:
+            except RepositoryError as e:
+                # The merge-abort may raise another exception which 'hides'
+                # the original one, therefore we log it here.
+                log.exception('Error while merging shadow repo during merge.')
+                if 'unresolved merge conflicts' in e.message:
+                    unresolved = self._remote.get_unresolved_files()
+                    log.debug('unresolved files: %s', unresolved)
+
                 # Cleanup any merge leftovers
                 self._remote.update(clean=True)
-                raise
+                if unresolved:
+                    raise UnresolvedFilesInRepo(unresolved)
+                else:
+                    raise
 
     def _local_close(self, target_ref, user_name, user_email,
                      source_ref, close_message=''):
@@ -810,8 +827,11 @@ class MercurialRepository(BaseRepository):
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
                 needs_push = False
-            except RepositoryError:
+            except RepositoryError as e:
                 log.exception('Failure when doing local merge on hg shadow repo')
+                if isinstance(e, UnresolvedFilesInRepo):
+                    metadata['unresolved_files'] = 'file: ' + (', file: '.join(e.args[0]))
+
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
                 needs_push = False

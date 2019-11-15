@@ -153,7 +153,7 @@ class MergeResponse(object):
             u'This pull request cannot be merged because of an unhandled exception. '
             u'{exception}'),
         MergeFailureReason.MERGE_FAILED: lazy_ugettext(
-            u'This pull request cannot be merged because of merge conflicts.'),
+            u'This pull request cannot be merged because of merge conflicts. {unresolved_files}'),
         MergeFailureReason.PUSH_FAILED: lazy_ugettext(
             u'This pull request could not be merged because push to '
             u'target:`{target}@{merge_commit}` failed.'),

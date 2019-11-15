@@ -191,7 +191,8 @@ class TestPullRequestModel(object):
 
     def test_merge_status_known_failure(self, pull_request):
         self.merge_mock.return_value = MergeResponse(
-            False, False, None, MergeFailureReason.MERGE_FAILED)
+            False, False, None, MergeFailureReason.MERGE_FAILED,
+            metadata={'unresolved_files': 'file1'})
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
@@ -199,7 +200,7 @@ class TestPullRequestModel(object):
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg == 'This pull request cannot be merged because of merge conflicts.'
+        assert msg == 'This pull request cannot be merged because of merge conflicts. file1'
         self.merge_mock.assert_called_with(
             self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
@@ -209,13 +210,12 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
-        assert (
-            pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED)
+        assert pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg == 'This pull request cannot be merged because of merge conflicts.'
+        assert msg == 'This pull request cannot be merged because of merge conflicts. '
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
@@ -518,7 +518,7 @@ def test_outdated_comments(
     (MergeFailureReason.UNKNOWN,
      'This pull request cannot be merged because of an unhandled exception. CRASH'),
     (MergeFailureReason.MERGE_FAILED,
-     'This pull request cannot be merged because of merge conflicts.'),
+     'This pull request cannot be merged because of merge conflicts. CONFLICT_FILE'),
     (MergeFailureReason.PUSH_FAILED,
      'This pull request could not be merged because push to target:`some-repo@merge_commit` failed.'),
     (MergeFailureReason.TARGET_IS_NOT_HEAD,
@@ -540,13 +540,15 @@ def test_outdated_comments(
 def test_merge_response_message(mr_type, expected_msg):
     merge_ref = Reference('type', 'ref_name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
     metadata = {
+        'unresolved_files': 'CONFLICT_FILE',
         'exception': "CRASH",
         'target': 'some-repo',
         'merge_commit': 'merge_commit',
         'target_ref': merge_ref,
         'source_ref': merge_ref,
         'heads': ','.join(['a', 'b', 'c']),
-        'locked_by': 'user:123'}
+        'locked_by': 'user:123'
+    }
 
     merge_response = MergeResponse(True, True, merge_ref, mr_type, metadata=metadata)
     assert merge_response.merge_status_message == expected_msg
