@@ -338,8 +338,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 </%def>
 
 <%def name="gist_type(gist_type)">
-    %if gist_type != 'public':
-      <div class="tag">${_('Private')}</div>
+    %if gist_type == 'public':
+        <span class="tag tag-gist-public disabled">${_('Public Gist')}</span>
+    %else:
+        <span class="tag tag-gist-private disabled">${_('Private Gist')}</span>
     %endif
 </%def>
 
