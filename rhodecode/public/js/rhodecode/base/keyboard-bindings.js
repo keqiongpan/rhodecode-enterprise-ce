@@ -119,6 +119,10 @@ function setRCMouseBindings(repoName, repoLandingRev) {
                     'f_path': ''
                 });
         });
+        Mousetrap.bind(['g p'], function(e) {
+            window.location = pyroutes.url(
+                'pullrequest_show_all', {'repo_name': repoName});
+        });
         Mousetrap.bind(['g o'], function(e) {
             window.location = pyroutes.url(
                 'edit_repo', {'repo_name': repoName});
