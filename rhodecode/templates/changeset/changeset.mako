@@ -37,7 +37,7 @@
               rc_user = h.discover_user(c.commit.author_email)
           %>
           <div class="left-content-avatar">
-            ${base.gravatar(c.commit.author_email, 30, tooltip=True, user=rc_user)}
+            ${base.gravatar(c.commit.author_email, 30, tooltip=(True if rc_user else False), user=rc_user)}
           </div>
 
           <div class="left-content-message">

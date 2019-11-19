@@ -4,9 +4,11 @@
 <div class="summary">
   <div class="fieldset">
     <div class="left-content">
-
+      <%
+        rc_user = h.discover_user(c.commit.author_email)
+      %>
       <div class="left-content-avatar">
-        ${base.gravatar(c.file_last_commit.author_email, 30)}
+        ${base.gravatar(c.file_last_commit.author_email, 30, tooltip=(True if rc_user else False), user=rc_user)}
       </div>
 
       <div class="left-content-message">
