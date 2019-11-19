@@ -261,7 +261,7 @@ class TestPullrequestsView(object):
             True, True, '', MergeFailureReason.MISSING_TARGET_REF,
             metadata={'target_ref': PullRequest.unicode_to_reference(unicode_reference)})
         response.assert_response().element_contains(
-            'span[data-role="merge-message"]', merge_resp.merge_status_message)
+            'div[data-role="merge-message"]', merge_resp.merge_status_message)
 
     def test_comment_and_close_pull_request_custom_message_approved(
             self, pr_util, csrf_token, xhr_header):

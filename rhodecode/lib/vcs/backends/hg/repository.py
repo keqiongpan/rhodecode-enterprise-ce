@@ -830,7 +830,7 @@ class MercurialRepository(BaseRepository):
             except RepositoryError as e:
                 log.exception('Failure when doing local merge on hg shadow repo')
                 if isinstance(e, UnresolvedFilesInRepo):
-                    metadata['unresolved_files'] = 'file: ' + (', file: '.join(e.args[0]))
+                    metadata['unresolved_files'] = '\n* conflict: ' + ('\n * conflict: '.join(e.args[0]))
 
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED

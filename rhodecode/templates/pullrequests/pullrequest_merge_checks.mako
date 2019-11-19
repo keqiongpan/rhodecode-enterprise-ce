@@ -18,14 +18,14 @@
         % for pr_check_key, pr_check_details in c.pr_merge_errors.items():
             <% pr_check_type = pr_check_details['error_type'] %>
             <li>
-                <span class="merge-message ${pr_check_type}" data-role="merge-message">
-                    - ${pr_check_details['message']}
+                <div class="merge-message ${pr_check_type}" data-role="merge-message">
+                    <span style="white-space: pre-line">- ${pr_check_details['message']}</span>
                     % if pr_check_key == 'todo':
                         % for co in pr_check_details['details']:
                             <a class="permalink" href="#comment-${co.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'), 0, ${h.json.dumps(co.outdated)})"> #${co.comment_id}</a>${'' if loop.last else ','}
                         % endfor
                     % endif
-                </span>
+                </div>
             </li>
         % endfor
     </ul>
