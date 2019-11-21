@@ -1829,7 +1829,6 @@ self: super: {
       self."venusian"
       self."weberror"
       self."webhelpers2"
-      self."webhelpers"
       self."webob"
       self."whoosh"
       self."wsgiref"
@@ -2210,20 +2209,6 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
-    };
-  };
-  "webhelpers" = super.buildPythonPackage {
-    name = "webhelpers-1.3";
-    doCheck = false;
-    propagatedBuildInputs = [
-      self."markupsafe"
-    ];
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ee/68/4d07672821d514184357f1552f2dad923324f597e722de3b016ca4f7844f/WebHelpers-1.3.tar.gz";
-      sha256 = "10x5i82qdkrvyw18gsybwggfhfpl869siaab89vnndi9x62g51pa";
-    };
-    meta = {
-      license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
   "webhelpers2" = super.buildPythonPackage {

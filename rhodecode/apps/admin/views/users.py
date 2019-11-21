@@ -44,6 +44,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
+from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib.utils2 import safe_int, safe_unicode, AttributeDict
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.forms import (
@@ -1228,13 +1229,16 @@ class UsersView(UserAppView):
         filter_term = self.request.GET.get('filter')
         user_log = UserModel().get_user_log(c.user, filter_term)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             if filter_term:
-                kw['filter'] = filter_term
-            return self.request.current_route_path(_query=kw)
+                query_params['filter'] = filter_term
+            return self.request.current_route_path(_query=query_params)
 
-        c.audit_logs = h.Page(
-            user_log, page=p, items_per_page=10, url=url_generator)
+        c.audit_logs = SqlPage(
+            user_log, page=p, items_per_page=10, url_maker=url_generator)
         c.filter_term = filter_term
         return self._get_template_context(c)
 

@@ -188,7 +188,7 @@
     </table>
     <div class="integrations-paginator">
       <div class="pagination-wh pagination-left">
-      ${c.integrations_list.pager('$link_previous ~2~ $link_next')}
+      ${c.integrations_list.render()}
       </div>
     </div>
   </div>

@@ -56,11 +56,11 @@ class RepoSummaryView(RepoAppView):
         p = safe_int(self.request.GET.get('page'), 1)
         size = safe_int(self.request.GET.get('size'), 10)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
             query_params = {
+                'page': page_num,
                 'size': size
             }
-            query_params.update(kw)
             return h.route_path(
                 'repo_summary_commits',
                 repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
@@ -73,7 +73,7 @@ class RepoSummaryView(RepoAppView):
             collection = self.rhodecode_vcs_repo
 
         c.repo_commits = h.RepoPage(
-            collection, page=p, items_per_page=size, url=url_generator)
+            collection, page=p, items_per_page=size, url_maker=url_generator)
         page_ids = [x.raw_id for x in c.repo_commits]
         c.comments = self.db_repo.get_comments(page_ids)
         c.statuses = self.db_repo.statuses(page_ids)

@@ -37,7 +37,9 @@
          <span><a id="refresh" href="${h.route_path('journal')}"><i class="icon-refresh"></i></a></span>
        </li>
        <li>
-         <span><a href="${h.route_path('journal_atom', _query=dict(auth_token=c.rhodecode_user.feed_token))}"><i class="icon-rss-sign"></i></a></span>
+         <span>
+             <a href="${h.route_path('journal_atom', _query=dict(auth_token=c.rhodecode_user.feed_token))}" title="RSS Feed" class="btn btn-sm"><i class="icon-rss-sign"></i>RSS</a>
+         </span>
        </li>
      </ul>
     </div>
@@ -45,14 +47,6 @@
 </div>
 
 <script type="text/javascript">
-
-$('#j_filter').autoGrowInput();
-$(document).on('pjax:success',function(){
-  show_more_event();
-});
-$(document).pjax(
-    '#refresh', '#journal',
-    {url: "${request.current_route_path(_query=dict(filter=c.search_term))}", push: false});
-
+    $('#j_filter').autoGrowInput();
 </script>
 </%def>

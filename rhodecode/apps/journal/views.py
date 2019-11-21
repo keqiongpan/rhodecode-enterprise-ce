@@ -34,7 +34,7 @@ from rhodecode.model.db import (
     or_, joinedload, Repository, UserLog, UserFollowing, User, UserApiKeys)
 from rhodecode.model.meta import Session
 import rhodecode.lib.helpers as h
-from rhodecode.lib.helpers import Page
+from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, HasRepoPermissionAny
 from rhodecode.lib.utils2 import safe_int, AttributeDict, md5_safe
@@ -232,15 +232,15 @@ class JournalView(BaseAppView):
 
         journal = self._get_journal_data(following, c.search_term)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
             query_params = {
+                'page': page_num,
                 'filter': c.search_term
             }
-            query_params.update(kw)
             return self.request.current_route_path(_query=query_params)
 
-        c.journal_pager = Page(
-            journal, page=p, items_per_page=20, url=url_generator)
+        c.journal_pager = SqlPage(
+            journal, page=p, items_per_page=20, url_maker=url_generator)
         c.journal_day_aggreagate = self._get_daily_aggregate(c.journal_pager)
 
         c.journal_data = render(
@@ -333,13 +333,14 @@ class JournalView(BaseAppView):
 
         journal = self._get_journal_data(c.following, c.search_term)
 
-        def url_generator(**kw):
-            query_params = {}
-            query_params.update(kw)
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             return self.request.current_route_path(_query=query_params)
 
-        c.journal_pager = Page(
-            journal, page=p, items_per_page=20, url=url_generator)
+        c.journal_pager = SqlPage(
+            journal, page=p, items_per_page=20, url_maker=url_generator)
         c.journal_day_aggreagate = self._get_daily_aggregate(c.journal_pager)
 
         c.journal_data = render(

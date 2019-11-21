@@ -63,7 +63,7 @@
 
 %if c.cur_query:
 <div class="pagination-wh pagination-left">
-    ${c.formatted_results.pager('$link_previous ~2~ $link_next')}
+    ${c.formatted_results.render()}
 </div>
 %endif
 

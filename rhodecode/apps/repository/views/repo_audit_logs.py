@@ -22,6 +22,7 @@ import logging
 from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
+from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
 from rhodecode.lib.utils2 import safe_int
@@ -33,8 +34,6 @@ log = logging.getLogger(__name__)
 class AuditLogsView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
@@ -54,12 +53,15 @@ class AuditLogsView(RepoAppView):
         filter_term = self.request.GET.get('filter')
         user_log = RepoModel().get_repo_log(c.db_repo, filter_term)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             if filter_term:
-                kw['filter'] = filter_term
-            return self.request.current_route_path(_query=kw)
+                query_params['filter'] = filter_term
+            return self.request.current_route_path(_query=query_params)
 
-        c.audit_logs = h.Page(
-            user_log, page=p, items_per_page=10, url=url_generator)
+        c.audit_logs = SqlPage(
+            user_log, page=p, items_per_page=10, url_maker=url_generator)
         c.filter_term = filter_term
         return self._get_template_context(c)

@@ -34,7 +34,7 @@
 
         <div class="notification-paginator">
             <div class="pagination-wh pagination-left">
-                ${c.notifications.pager('$link_previous ~2~ $link_next')}
+                ${c.notifications.render()}
             </div>
         </div>
 

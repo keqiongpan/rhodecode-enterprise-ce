@@ -107,7 +107,7 @@
 </script>
 
 <div class="pagination-wh pagination-left">
-${c.repo_commits.pager('$link_previous ~2~ $link_next')}
+${c.repo_commits.render()}
 </div>
 %else:
 

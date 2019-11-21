@@ -130,7 +130,7 @@
               </div>
             </div>
             <div class="pagination-wh pagination-left">
-            ${c.pagination.pager('$link_previous ~2~ $link_next')}
+            ${c.pagination.render()}
             </div>
             <div id="commit-counter" data-total=${c.total_cs} class="pull-right">
                 ${_ungettext('showing %d out of %d commit', 'showing %d out of %d commits', c.showing_commits) % (c.showing_commits, c.total_cs)}

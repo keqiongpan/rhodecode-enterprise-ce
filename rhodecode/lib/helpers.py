@@ -75,7 +75,7 @@ from webhelpers2.html.tags import (
 from webhelpers2.number import format_byte_size
 
 from rhodecode.lib.action_parser import action_parser
-from rhodecode.lib.paginate import Page
+from rhodecode.lib.pagination import Page, RepoPage, SqlPage
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
 from rhodecode.lib.utils2 import (
@@ -1307,94 +1307,6 @@ def gravatar_url(email_address, size=30, request=None):
         return tmpl
     else:
         return initials_gravatar(email_address, '', '', size=size)
-
-
-
-
-#==============================================================================
-# REPO PAGER, PAGER FOR REPOSITORY
-#==============================================================================
-class RepoPage(Page):
-
-    def __init__(self, collection, page=1, items_per_page=20,
-                 item_count=None, url=None, **kwargs):
-
-        """Create a "RepoPage" instance. special pager for paging
-        repository
-        """
-        self._url_generator = url
-
-        # Safe the kwargs class-wide so they can be used in the pager() method
-        self.kwargs = kwargs
-
-        # Save a reference to the collection
-        self.original_collection = collection
-
-        self.collection = collection
-
-        # The self.page is the number of the current page.
-        # The first page has the number 1!
-        try:
-            self.page = int(page)  # make it int() if we get it as a string
-        except (ValueError, TypeError):
-            self.page = 1
-
-        self.items_per_page = items_per_page
-
-        # Unless the user tells us how many items the collections has
-        # we calculate that ourselves.
-        if item_count is not None:
-            self.item_count = item_count
-        else:
-            self.item_count = len(self.collection)
-
-        # Compute the number of the first and last available page
-        if self.item_count > 0:
-            self.first_page = 1
-            self.page_count = int(math.ceil(float(self.item_count) /
-                                            self.items_per_page))
-            self.last_page = self.first_page + self.page_count - 1
-
-            # Make sure that the requested page number is the range of
-            # valid pages
-            if self.page > self.last_page:
-                self.page = self.last_page
-            elif self.page < self.first_page:
-                self.page = self.first_page
-
-            # Note: the number of items on this page can be less than
-            #       items_per_page if the last page is not full
-            self.first_item = max(0, (self.item_count) - (self.page *
-                                                          items_per_page))
-            self.last_item = ((self.item_count - 1) - items_per_page *
-                              (self.page - 1))
-
-            self.items = list(self.collection[self.first_item:self.last_item + 1])
-
-            # Links to previous and next page
-            if self.page > self.first_page:
-                self.previous_page = self.page - 1
-            else:
-                self.previous_page = None
-
-            if self.page < self.last_page:
-                self.next_page = self.page + 1
-            else:
-                self.next_page = None
-
-        # No items available
-        else:
-            self.first_page = None
-            self.page_count = 0
-            self.last_page = None
-            self.first_item = None
-            self.last_item = None
-            self.previous_page = None
-            self.next_page = None
-            self.items = []
-
-        # This is a subclass of the 'list' type. Initialise the list now.
-        list.__init__(self, reversed(self.items))
 
 
 def breadcrumb_repo_link(repo):

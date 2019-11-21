@@ -28,7 +28,7 @@ from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
 
 from rhodecode.lib import helpers as h
-from rhodecode.lib.helpers import Page
+from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.db import Notification
 from rhodecode.model.notification import NotificationModel
@@ -74,13 +74,16 @@ class MyAccountNotificationsView(BaseAppView):
 
         p = safe_int(self.request.GET.get('page', 1), 1)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             _query = self.request.GET.mixed()
-            _query.update(kw)
-            return self.request.current_route_path(_query=_query)
+            query_params.update(_query)
+            return self.request.current_route_path(_query=query_params)
 
-        c.notifications = Page(notifications, page=p, items_per_page=10,
-                               url=url_generator)
+        c.notifications = SqlPage(notifications, page=p, items_per_page=10,
+                                  url_maker=url_generator)
 
         c.unread_type = 'unread'
         c.all_type = 'all'

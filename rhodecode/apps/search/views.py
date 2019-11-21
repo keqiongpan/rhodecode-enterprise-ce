@@ -59,11 +59,19 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     except validation_schema.Invalid as e:
         errors = e.children
 
-    def url_generator(**kw):
+    def url_generator(page_num):
         q = urllib.quote(safe_str(search_query))
-        return update_params(
-            "?q=%s&type=%s&max_lines=%s&sort=%s" % (
-                q, safe_str(search_type), search_max_lines, search_sort), **kw)
+
+        query_params = {
+            'page': page_num,
+            'q': q,
+            'type': safe_str(search_type),
+            'max_lines': search_max_lines,
+            'sort': search_sort
+        }
+
+        return '?' + urllib.urlencode(query_params)
+
 
     c = tmpl_context
     search_query = search_params.get('search_query')
@@ -82,7 +90,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
             formatted_results = Page(
                 search_result['results'], page=requested_page,
                 item_count=search_result['count'],
-                items_per_page=page_limit, url=url_generator)
+                items_per_page=page_limit, url_maker=url_generator)
         finally:
             searcher.cleanup()
 
@@ -100,7 +108,6 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.perm_user = c.auth_user
     c.repo_name = repo_name
     c.repo_group_name = repo_group_name
-    c.url_generator = url_generator
     c.errors = errors
     c.formatted_results = formatted_results
     c.runtime = execution_time

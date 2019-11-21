@@ -62,7 +62,7 @@
 </table>
 
 <div class="pagination-wh pagination-left">
-${c.audit_logs.pager('$link_previous ~2~ $link_next')}
+${c.audit_logs.render()}
 </div>
 %else:
     ${_('No actions yet')}

@@ -65,11 +65,11 @@
 
     <%
     if c.sort.startswith('asc:'):
-        return c.url_generator(sort='desc:{}'.format(field_name))
+        return h.current_route_path(request, sort='desc:{}'.format(field_name))
     elif c.sort.startswith('desc:'):
-        return c.url_generator(sort='asc:{}'.format(field_name))
+        return h.current_route_path(request, sort='asc:{}'.format(field_name))
 
-    return c.url_generator(sort='asc:{}'.format(field_name))
+    return h.current_route_path(request, sort='asc:{}'.format(field_name))
     %>
 </%def>
 

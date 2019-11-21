@@ -625,8 +625,9 @@ ul#context-pages {
     top: 95px;
 }
 
-.dataTables_paginate, .pagination-wh {
-    text-align: left;
+.dataTables_paginate,
+.pagination-wh {
+    text-align: center;
     display: inline-block;
     border-left: 1px solid @grey5;
     float: none;
@@ -638,10 +639,15 @@ ul#context-pages {
         display: inline-block;
         padding: @menupadding/4 @menupadding;
         border: 1px solid @grey5;
-        border-left: 0;
+        margin-left: -1px;
         color: @grey2;
         cursor: pointer;
         float: left;
+        font-weight: 600;
+        white-space: nowrap;
+        vertical-align: middle;
+        user-select: none;
+        min-width: 15px;
 
         &:hover {
             color: @rcdarkblue;
