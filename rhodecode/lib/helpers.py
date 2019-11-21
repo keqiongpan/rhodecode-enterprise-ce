@@ -53,25 +53,29 @@ from pygments.lexers import (
 
 from pyramid.threadlocal import get_current_request
 
-from webhelpers.html import literal, HTML, escape
-from webhelpers.html.tools import *
-from webhelpers.html.builder import make_tag
-from webhelpers.html.tags import auto_discovery_link, checkbox, css_classes, \
-    end_form, file, form as wh_form, hidden, image, javascript_link, link_to, \
-    link_to_if, link_to_unless, ol, required_legend, select, stylesheet_link, \
-    submit, text, password, textarea, title, ul, xml_declaration, radio
-from webhelpers.html.tools import auto_link, button_to, highlight, \
-    js_obfuscate, mail_to, strip_links, strip_tags, tag_re
-from webhelpers.text import chop_at, collapse, convert_accented_entities, \
-    convert_misc_entities, lchop, plural, rchop, remove_formatting, \
-    replace_whitespace, urlify, truncate, wrap_paragraphs
-from webhelpers.date import time_ago_in_words
-from webhelpers.paginate import Page as _Page
-from webhelpers.html.tags import _set_input_attrs, _set_id_attr, \
-    convert_boolean_attrs, NotGiven, _make_safe_id_component
+from webhelpers2.html import literal, HTML, escape
+from webhelpers2.html._autolink import _auto_link_urls
+from webhelpers2.html.tools import (
+    button_to, highlight, js_obfuscate, strip_links, strip_tags)
+
+from webhelpers2.text import (
+    chop_at, collapse, convert_accented_entities,
+    convert_misc_entities, lchop, plural, rchop, remove_formatting,
+    replace_whitespace, urlify, truncate, wrap_paragraphs)
+from webhelpers2.date import time_ago_in_words
+
+from webhelpers2.html.tags import (
+    _input, NotGiven, _make_safe_id_component as safeid,
+    form as insecure_form,
+    auto_discovery_link, checkbox, end_form, file,
+    hidden, image, javascript_link, link_to, link_to_if, link_to_unless, ol,
+    select as raw_select, stylesheet_link, submit, text, password, textarea,
+    ul, radio, Options)
+
 from webhelpers2.number import format_byte_size
 
 from rhodecode.lib.action_parser import action_parser
+from rhodecode.lib.paginate import Page
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
 from rhodecode.lib.utils2 import (
@@ -162,17 +166,42 @@ def shorter(text, size=20, prefix=False):
     return text
 
 
-def _reset(name, value=None, id=NotGiven, type="reset", **attrs):
+def reset(name, value=None, id=NotGiven, type="reset", **attrs):
     """
     Reset button
     """
-    _set_input_attrs(attrs, type, name, value)
-    _set_id_attr(attrs, id, name)
-    convert_boolean_attrs(attrs, ["disabled"])
-    return HTML.input(**attrs)
+    return _input(type, name, value, id, attrs)
 
-reset = _reset
-safeid = _make_safe_id_component
+
+def select(name, selected_values, options, id=NotGiven, **attrs):
+
+    if isinstance(options, (list, tuple)):
+        options_iter = options
+        # Handle old value,label lists ... where value also can be value,label lists
+        options = Options()
+        for opt in options_iter:
+            if isinstance(opt, tuple) and len(opt) == 2:
+                value, label = opt
+            elif isinstance(opt, basestring):
+                value = label = opt
+            else:
+                raise ValueError('invalid select option type %r' % type(opt))
+
+            if isinstance(value, (list, tuple)):
+                option_group = options.add_optgroup(label)
+                for opt2 in value:
+                    if isinstance(opt2, tuple) and len(opt2) == 2:
+                        group_value, group_label = opt
+                    elif isinstance(opt2, basestring):
+                        group_value = group_label = opt2
+                    else:
+                        raise ValueError('invalid select option type %r' % type(opt2))
+
+                    option_group.add_option(group_label, group_value)
+            else:
+                options.add_option(label, value)
+
+    return raw_select(name, selected_values, options, id=id, **attrs)
 
 
 def branding(name, length=40):
@@ -1280,145 +1309,6 @@ def gravatar_url(email_address, size=30, request=None):
         return initials_gravatar(email_address, '', '', size=size)
 
 
-class Page(_Page):
-    """
-    Custom pager to match rendering style with paginator
-    """
-
-    def _get_pos(self, cur_page, max_page, items):
-        edge = (items / 2) + 1
-        if (cur_page <= edge):
-            radius = max(items / 2, items - cur_page)
-        elif (max_page - cur_page) < edge:
-            radius = (items - 1) - (max_page - cur_page)
-        else:
-            radius = items / 2
-
-        left = max(1, (cur_page - (radius)))
-        right = min(max_page, cur_page + (radius))
-        return left, cur_page, right
-
-    def _range(self, regexp_match):
-        """
-        Return range of linked pages (e.g. '1 2 [3] 4 5 6 7 8').
-
-        Arguments:
-
-        regexp_match
-            A "re" (regular expressions) match object containing the
-            radius of linked pages around the current page in
-            regexp_match.group(1) as a string
-
-        This function is supposed to be called as a callable in
-        re.sub.
-
-        """
-        radius = int(regexp_match.group(1))
-
-        # Compute the first and last page number within the radius
-        # e.g. '1 .. 5 6 [7] 8 9 .. 12'
-        # -> leftmost_page  = 5
-        # -> rightmost_page = 9
-        leftmost_page, _cur, rightmost_page = self._get_pos(self.page,
-                                                            self.last_page,
-                                                            (radius * 2) + 1)
-        nav_items = []
-
-        # Create a link to the first page (unless we are on the first page
-        # or there would be no need to insert '..' spacers)
-        if self.page != self.first_page and self.first_page < leftmost_page:
-            nav_items.append(self._pagerlink(self.first_page, self.first_page))
-
-        # Insert dots if there are pages between the first page
-        # and the currently displayed page range
-        if leftmost_page - self.first_page > 1:
-            # Wrap in a SPAN tag if nolink_attr is set
-            text = '..'
-            if self.dotdot_attr:
-                text = HTML.span(c=text, **self.dotdot_attr)
-            nav_items.append(text)
-
-        for thispage in xrange(leftmost_page, rightmost_page + 1):
-            # Hilight the current page number and do not use a link
-            if thispage == self.page:
-                text = '%s' % (thispage,)
-                # Wrap in a SPAN tag if nolink_attr is set
-                if self.curpage_attr:
-                    text = HTML.span(c=text, **self.curpage_attr)
-                nav_items.append(text)
-            # Otherwise create just a link to that page
-            else:
-                text = '%s' % (thispage,)
-                nav_items.append(self._pagerlink(thispage, text))
-
-        # Insert dots if there are pages between the displayed
-        # page numbers and the end of the page range
-        if self.last_page - rightmost_page > 1:
-            text = '..'
-            # Wrap in a SPAN tag if nolink_attr is set
-            if self.dotdot_attr:
-                text = HTML.span(c=text, **self.dotdot_attr)
-            nav_items.append(text)
-
-        # Create a link to the very last page (unless we are on the last
-        # page or there would be no need to insert '..' spacers)
-        if self.page != self.last_page and rightmost_page < self.last_page:
-            nav_items.append(self._pagerlink(self.last_page, self.last_page))
-
-        ## prerender links
-        #_page_link = url.current()
-        #nav_items.append(literal('<link rel="prerender" href="%s?page=%s">' % (_page_link, str(int(self.page)+1))))
-        #nav_items.append(literal('<link rel="prefetch" href="%s?page=%s">' % (_page_link, str(int(self.page)+1))))
-        return self.separator.join(nav_items)
-
-    def pager(self, format='~2~', page_param='page', partial_param='partial',
-        show_if_single_page=False, separator=' ', onclick=None,
-        symbol_first='<<', symbol_last='>>',
-        symbol_previous='<', symbol_next='>',
-        link_attr={'class': 'pager_link', 'rel': 'prerender'},
-        curpage_attr={'class': 'pager_curpage'},
-        dotdot_attr={'class': 'pager_dotdot'}, **kwargs):
-
-        self.curpage_attr = curpage_attr
-        self.separator = separator
-        self.pager_kwargs = kwargs
-        self.page_param = page_param
-        self.partial_param = partial_param
-        self.onclick = onclick
-        self.link_attr = link_attr
-        self.dotdot_attr = dotdot_attr
-
-        # Don't show navigator if there is no more than one page
-        if self.page_count == 0 or (self.page_count == 1 and not show_if_single_page):
-            return ''
-
-        from string import Template
-        # Replace ~...~ in token format by range of pages
-        result = re.sub(r'~(\d+)~', self._range, format)
-
-        # Interpolate '%' variables
-        result = Template(result).safe_substitute({
-            'first_page': self.first_page,
-            'last_page': self.last_page,
-            'page': self.page,
-            'page_count': self.page_count,
-            'items_per_page': self.items_per_page,
-            'first_item': self.first_item,
-            'last_item': self.last_item,
-            'item_count': self.item_count,
-            'link_first': self.page > self.first_page and \
-                    self._pagerlink(self.first_page, symbol_first) or '',
-            'link_last': self.page < self.last_page and \
-                    self._pagerlink(self.last_page, symbol_last) or '',
-            'link_previous': self.previous_page and \
-                    self._pagerlink(self.previous_page, symbol_previous) \
-                    or HTML.span(symbol_previous, class_="pg-previous disabled"),
-            'link_next': self.next_page and \
-                    self._pagerlink(self.next_page, symbol_next) \
-                    or HTML.span(symbol_next, class_="pg-next disabled")
-        })
-
-        return literal(result)
 
 
 #==============================================================================
@@ -1564,11 +1454,9 @@ def format_byte_size_binary(file_size):
     return formatted_size
 
 
-def urlify_text(text_, safe=True):
+def urlify_text(text_, safe=True, **href_attrs):
     """
-    Extrac urls from text and make html links out of them
-
-    :param text_:
+    Extract urls from text and make html links out of them
     """
 
     url_pat = re.compile(r'''(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@#.&+]'''
@@ -1576,8 +1464,13 @@ def urlify_text(text_, safe=True):
 
     def url_func(match_obj):
         url_full = match_obj.groups()[0]
-        return '<a href="%(url)s">%(url)s</a>' % ({'url': url_full})
+        a_options = dict(href_attrs)
+        a_options['href'] = url_full
+        a_text = url_full
+        return HTML.tag("a", a_text, **a_options)
+
     _new_text = url_pat.sub(url_func, text_)
+
     if safe:
         return literal(_new_text)
     return _new_text
@@ -1939,7 +1832,7 @@ def form(url, method='post', needs_csrf_token=True, **attrs):
             'CSRF token. If the endpoint does not require such token you can ' +
             'explicitly set the parameter needs_csrf_token to false.')
 
-    return wh_form(url, method=method, **attrs)
+    return insecure_form(url, method=method, **attrs)
 
 
 def secure_form(form_url, method="POST", multipart=False, **attrs):
@@ -1961,7 +1854,6 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
         over POST.
 
     """
-    from webhelpers.pylonslib.secure_form import insecure_form
 
     if 'request' in attrs:
         session = attrs['request'].session
@@ -1970,12 +1862,12 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
         raise ValueError(
             'Calling this form requires request= to be passed as argument')
 
-    form = insecure_form(form_url, method, multipart, **attrs)
+    _form = insecure_form(form_url, method, multipart, **attrs)
     token = literal(
-        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
-        csrf_token_key, csrf_token_key, get_csrf_token(session)))
+        '<input type="hidden" name="{}" value="{}">'.format(
+            csrf_token_key, get_csrf_token(session)))
 
-    return literal("%s\n%s" % (form, token))
+    return literal("%s\n%s" % (_form, token))
 
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):

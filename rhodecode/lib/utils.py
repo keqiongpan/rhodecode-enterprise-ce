@@ -39,7 +39,7 @@ from os.path import join as jn
 
 import paste
 import pkg_resources
-from webhelpers.text import collapse, remove_formatting, strip_tags
+from webhelpers2.text import collapse, remove_formatting
 from mako import exceptions
 from pyramid.threadlocal import get_current_registry
 from rhodecode.lib.request import Request

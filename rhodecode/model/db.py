@@ -52,7 +52,7 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 from zope.cachedescriptors.property import Lazy as LazyProperty
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
-from webhelpers.text import collapse, remove_formatting
+from webhelpers2.text import remove_formatting
 
 from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance
@@ -2675,7 +2675,7 @@ class RepoGroup(Base, BaseModel):
 
     @classmethod
     def _generate_choice(cls, repo_group):
-        from webhelpers.html import literal as _literal
+        from webhelpers2.html import literal as _literal
         _name = lambda k: _literal(cls.CHOICES_SEPARATOR.join(k))
         return repo_group.group_id, _name(repo_group.full_path_splitted)
 

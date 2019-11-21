@@ -29,11 +29,14 @@ from rhodecode.tests import no_newline_id_generator
 
 
 @pytest.mark.parametrize('url, expected_url', [
-    ('http://rc.rc/test', '<a href="http://rc.rc/test">http://rc.rc/test</a>'),
-    ('http://rc.rc/@foo', '<a href="http://rc.rc/@foo">http://rc.rc/@foo</a>'),
-    ('http://rc.rc/!foo', '<a href="http://rc.rc/!foo">http://rc.rc/!foo</a>'),
-    ('http://rc.rc/&foo', '<a href="http://rc.rc/&foo">http://rc.rc/&foo</a>'),
-    ('http://rc.rc/#foo', '<a href="http://rc.rc/#foo">http://rc.rc/#foo</a>'),
+    ('http://rc.com', '<a href="http://rc.com">http://rc.com</a>'),
+    ('http://rc.com/test', '<a href="http://rc.com/test">http://rc.com/test</a>'),
+    ('http://rc.com/!foo', '<a href="http://rc.com/!foo">http://rc.com/!foo</a>'),
+    ('http://rc.com/&foo', '<a href="http://rc.com/&amp;foo">http://rc.com/&amp;foo</a>'),
+    ('http://rc.com/?foo-1&bar=1', '<a href="http://rc.com/?foo-1&amp;bar=1">http://rc.com/?foo-1&amp;bar=1</a>'),
+    ('http://rc.com?foo-1&bar=1', '<a href="http://rc.com?foo-1&amp;bar=1">http://rc.com?foo-1&amp;bar=1</a>'),
+    ('http://rc.com/#foo', '<a href="http://rc.com/#foo">http://rc.com/#foo</a>'),
+    ('http://rc.com/@foo', '<a href="http://rc.com/@foo">http://rc.com/@foo</a>'),
 ])
 def test_urlify_text(url, expected_url):
     assert helpers.urlify_text(url) == expected_url

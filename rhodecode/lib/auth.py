@@ -1540,11 +1540,10 @@ class CSRFRequired(object):
     http://en.wikipedia.org/wiki/Cross-site_request_forgery for more
     information).
 
-    For use with the ``webhelpers.secure_form`` helper functions.
+    For use with the ``secure_form`` helper functions.
 
     """
-    def __init__(self, token=csrf_token_key, header='X-CSRF-Token',
-        except_methods=None):
+    def __init__(self, token=csrf_token_key, header='X-CSRF-Token', except_methods=None):
         self.token = token
         self.header = header
         self.except_methods = except_methods or []

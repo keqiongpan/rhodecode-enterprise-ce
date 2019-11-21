@@ -21,13 +21,13 @@
 import deform
 import logging
 import peppercorn
-import webhelpers.paginate
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPNotFound
 
 from rhodecode.integrations import integration_type_registry
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps._base.navigation import navigation_list
+from rhodecode.lib.paginate import PageURL
 from rhodecode.lib.auth import (
     LoginRequired, CSRFRequired, HasPermissionAnyDecorator,
     HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)
@@ -219,8 +219,7 @@ class IntegrationSettingsViewBase(BaseAppView):
             key=lambda x: getattr(x[1], sort_field),
             reverse=(sort_dir == 'desc'))
 
-        page_url = webhelpers.paginate.PageURL(
-            self.request.path, self.request.GET)
+        page_url = PageURL(self.request.path, self.request.GET)
         page = safe_int(self.request.GET.get('page', 1), 1)
 
         integrations = h.Page(

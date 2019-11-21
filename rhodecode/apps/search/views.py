@@ -21,7 +21,7 @@
 import logging
 import urllib
 from pyramid.view import view_config
-from webhelpers.util import update_params
+from webhelpers2.html.tools import update_params
 
 from rhodecode.apps._base import BaseAppView, RepoAppView, RepoGroupAppView
 from rhodecode.lib.auth import (

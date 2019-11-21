@@ -43,7 +43,7 @@ import psutil
 import logging
 import socket
 
-from webhelpers.number import format_byte_size
+from webhelpers2.number import format_byte_size
 
 logging.basicConfig(level=logging.DEBUG)
 
