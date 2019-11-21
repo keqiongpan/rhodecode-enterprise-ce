@@ -398,11 +398,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 
 <%def name="repo_artifact_uid(repo_name, file_uid)">
     <code>${h.shorter(file_uid, size=24, prefix=True)}</code>
-    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
 </%def>
 
 <%def name="repo_artifact_sha256(artifact_sha256)">
-    <div class="code">${h.shorter(artifact_sha256, 12)}<i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${artifact_sha256}" title="${_('Copy the sha256 ({})').format(artifact_sha256)}"></i></div>
+    <div class="code">${h.shorter(artifact_sha256, 12)}</div>
 </%def>
 
 <%def name="repo_artifact_actions(repo_name, file_store_id, file_uid)">
