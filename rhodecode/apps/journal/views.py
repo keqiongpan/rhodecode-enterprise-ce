@@ -22,7 +22,7 @@
 import logging
 import itertools
 
-from webhelpers.feedgenerator import Atom1Feed, Rss201rev2Feed
+
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPBadRequest
@@ -38,6 +38,7 @@ from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, HasRepoPermissionAny
 from rhodecode.lib.utils2 import safe_int, AttributeDict, md5_safe
+from rhodecode.lib.feedgenerator.feedgenerator import Atom1Feed, Rss201rev2Feed
 from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
@@ -166,7 +167,7 @@ class JournalView(BaseAppView):
                 description=desc)
 
         response = Response(feed.writeString('utf-8'))
-        response.content_type = feed.mime_type
+        response.content_type = feed.content_type
         return response
 
     def _rss_feed(self, repos, search_term, public=True):
@@ -212,7 +213,7 @@ class JournalView(BaseAppView):
                 description=desc)
 
         response = Response(feed.writeString('utf-8'))
-        response.content_type = feed.mime_type
+        response.content_type = feed.content_type
         return response
 
     @LoginRequired()

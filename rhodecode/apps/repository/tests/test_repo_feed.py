@@ -41,7 +41,7 @@ def route_path(name, params=None, **kwargs):
 class TestFeedView(TestController):
 
     @pytest.mark.parametrize("feed_type,response_types,content_type",[
-        ('rss', ['<rss version="2.0">'],
+        ('rss', ['<rss version="2.0"'],
          "application/rss+xml"),
         ('atom', ['xmlns="http://www.w3.org/2005/Atom"', 'xml:lang="en-us"'],
          "application/atom+xml"),
