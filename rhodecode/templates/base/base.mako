@@ -708,6 +708,10 @@
             <div class="main_filter_input_box">
                 <ul class="searchItems">
 
+                    <li class="searchTag searchTagIcon">
+                        <i class="icon-search"></i>
+                    </li>
+
                     % if c.template_context['search_context']['repo_id']:
                         <li class="searchTag searchTagFilter searchTagHidable" >
                         ##<a href="${h.route_path('search_repo',repo_name=c.template_context['search_context']['repo_name'])}">
@@ -1026,7 +1030,13 @@
                     alert("Error during search.\nError code: {0}".format(textStatus));
                     window.location = '';
                 }
-            }
+            },
+            onSearchStart: function (params) {
+                $('.searchTag.searchTagIcon').html('<i class="icon-spin animate-spin"></i>')
+            },
+            onSearchComplete: function (query, suggestions) {
+                $('.searchTag.searchTagIcon').html('<i class="icon-search"></i>')
+            },
         });
 
         showMainFilterBox = function () {
