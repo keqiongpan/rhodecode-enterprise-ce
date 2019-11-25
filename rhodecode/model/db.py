@@ -4002,6 +4002,14 @@ class _PullRequestBase(BaseModel):
     def reviewer_data_json(self):
         return json.dumps(self.reviewer_data)
 
+    @property
+    def work_in_progress(self):
+        """checks if pull request is work in progress by checking the title"""
+        title = self.title.upper()
+        if re.match(r'^(\[WIP\]\s*|WIP:\s*|WIP\s+)', title):
+            return True
+        return False
+
     @hybrid_property
     def description_safe(self):
         from rhodecode.lib import helpers as h

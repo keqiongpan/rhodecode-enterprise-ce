@@ -1614,6 +1614,7 @@ class MergeCheck(object):
     PERM_CHECK = 'perm'
     REVIEW_CHECK = 'review'
     MERGE_CHECK = 'merge'
+    WIP_CHECK = 'wip'
 
     def __init__(self):
         self.review_status = None
@@ -1637,6 +1638,15 @@ class MergeCheck(object):
                  force_shadow_repo_refresh=False):
         _ = translator
         merge_check = cls()
+
+        # title has WIP:
+        if pull_request.work_in_progress:
+            log.debug("MergeCheck: cannot merge, title has wip: marker.")
+
+            msg = _('WIP marker in title prevents from accidental merge.')
+            merge_check.push_error('error', msg, cls.WIP_CHECK, pull_request.title)
+            if fail_early:
+                return merge_check
 
         # permissions to merge
         user_allowed_to_merge = PullRequestModel().check_user_merge(

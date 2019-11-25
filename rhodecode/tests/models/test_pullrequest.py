@@ -402,7 +402,7 @@ class TestPullRequestModel(object):
         assert pull_request.merge_rev is None
 
     def test_get_commit_ids(self, pull_request):
-        # The PR has been not merget yet, so expect an exception
+        # The PR has been not merged yet, so expect an exception
         with pytest.raises(ValueError):
             PullRequestModel()._get_commit_ids(pull_request)
 
@@ -432,6 +432,20 @@ class TestPullRequestModel(object):
             target='target-dummy',
         )
         assert type(title) == unicode
+
+    @pytest.mark.parametrize('title, has_wip', [
+        ('hello', False),
+        ('hello wip', False),
+        ('hello wip: xxx', False),
+        ('[wip] hello', True),
+        ('[wip] hello', True),
+        ('wip: hello', True),
+        ('wip hello', True),
+
+    ])
+    def test_wip_title_marker(self, pull_request, title, has_wip):
+        pull_request.title = title
+        assert pull_request.work_in_progress == has_wip
 
 
 @pytest.mark.usefixtures('config_stub')
