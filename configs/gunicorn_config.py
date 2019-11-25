@@ -13,9 +13,10 @@ available post the .ini config.
 
 """
 
-import math
 import gc
+import os
 import sys
+import math
 import time
 import threading
 import traceback
@@ -32,30 +33,6 @@ errorlog = '-'
 accesslog = '-'
 loglevel = 'info'
 
-# SECURITY
-
-# The maximum size of HTTP request line in bytes.
-# 0 for unlimited
-limit_request_line = 0
-
-# Limit the number of HTTP headers fields in a request.
-# By default this value is 100 and can't be larger than 32768.
-limit_request_fields = 32768
-
-# Limit the allowed size of an HTTP request header field.
-# Value is a positive number or 0.
-# Setting it to 0 will allow unlimited header field sizes.
-limit_request_field_size = 0
-
-# Timeout for graceful workers restart.
-# After receiving a restart signal, workers have this much time to finish
-# serving requests. Workers still alive after the timeout (starting from the
-# receipt of the restart signal) are force killed.
-graceful_timeout = 60 * 60
-
-# The number of seconds to wait for requests on a Keep-Alive connection.
-# Generally set in the 1-5 seconds range.
-keepalive = 2
 
 # SERVER MECHANICS
 # None == system temp dir
@@ -70,15 +47,6 @@ access_log_format = (
 # self adjust workers based on CPU count
 # workers = get_workers()
 
-# n * 1024 * 0124 == n MBs, 0 = memory monitoring is disabled
-MAX_MEMORY_USAGE = 0 * 1024 * 1024
-
-# How often in seconds to check for memory usage
-MEMORY_USAGE_CHECK_INTERVAL = 30
-
-# If a gc brings us back below this threshold, we can avoid termination.
-MEMORY_USAGE_RECOVERY_THRESHOLD = MAX_MEMORY_USAGE * 0.8
-
 
 def _get_process_rss(pid=None):
     try:
@@ -92,8 +60,22 @@ def _get_process_rss(pid=None):
         return None
 
 
-def _time_with_offset():
-    return time.time() - random.randint(0, MEMORY_USAGE_CHECK_INTERVAL/2.0)
+def _get_config(ini_path):
+
+    try:
+        import configparser
+    except ImportError:
+        import ConfigParser as configparser
+    try:
+        config = configparser.ConfigParser()
+        config.read(ini_path)
+        return config
+    except Exception:
+        return None
+
+
+def _time_with_offset(memory_usage_check_interval):
+    return time.time() - random.randint(0, memory_usage_check_interval/2.0)
 
 
 def pre_fork(server, worker):
@@ -101,10 +83,37 @@ def pre_fork(server, worker):
 
 
 def post_fork(server, worker):
-    server.log.info("<%s> WORKER spawned", worker.pid)
+
+    # memory spec defaults
+    _memory_max_usage = 0
+    _memory_usage_check_interval = 60
+    _memory_usage_recovery_threshold = 0.8
+
+    ini_path = os.path.abspath(server.cfg.paste)
+    conf = _get_config(ini_path)
+    if conf and 'server:main' in conf:
+        section = conf['server:main']
+
+        if section.get('memory_max_usage'):
+            _memory_max_usage = int(section.get('memory_max_usage'))
+        if section.get('memory_usage_check_interval'):
+            _memory_usage_check_interval = int(section.get('memory_usage_check_interval'))
+        if section.get('memory_usage_recovery_threshold'):
+            _memory_usage_recovery_threshold = float(section.get('memory_usage_recovery_threshold'))
+
+    worker._memory_max_usage = _memory_max_usage
+    worker._memory_usage_check_interval = _memory_usage_check_interval
+    worker._memory_usage_recovery_threshold = _memory_usage_recovery_threshold
+
     # register memory last check time, with some random offset so we don't recycle all
     # at once
-    worker._last_memory_check_time = _time_with_offset()
+    worker._last_memory_check_time = _time_with_offset(_memory_usage_check_interval)
+
+    if _memory_max_usage:
+        server.log.info("[%-10s] WORKER spawned with max memory set at %s", worker.pid,
+                        _format_data_size(_memory_max_usage))
+    else:
+        server.log.info("[%-10s] WORKER spawned", worker.pid)
 
 
 def pre_exec(server):
@@ -173,32 +182,35 @@ def _format_data_size(size, unit="B", precision=1, binary=True):
 
 
 def _check_memory_usage(worker):
-
-    if not MAX_MEMORY_USAGE:
+    memory_max_usage = worker._memory_max_usage
+    if not memory_max_usage:
         return
 
+    memory_usage_check_interval = worker._memory_usage_check_interval
+    memory_usage_recovery_threshold = memory_max_usage * worker._memory_usage_recovery_threshold
+
     elapsed = time.time() - worker._last_memory_check_time
-    if elapsed > MEMORY_USAGE_CHECK_INTERVAL:
+    if elapsed > memory_usage_check_interval:
         mem_usage = _get_process_rss()
-        if mem_usage and mem_usage > MAX_MEMORY_USAGE:
+        if mem_usage and mem_usage > memory_max_usage:
             worker.log.info(
                 "memory usage %s > %s, forcing gc",
-                _format_data_size(mem_usage), _format_data_size(MAX_MEMORY_USAGE))
+                _format_data_size(mem_usage), _format_data_size(memory_max_usage))
             # Try to clean it up by forcing a full collection.
             gc.collect()
             mem_usage = _get_process_rss()
-            if mem_usage > MEMORY_USAGE_RECOVERY_THRESHOLD:
+            if mem_usage > memory_usage_recovery_threshold:
                 # Didn't clean up enough, we'll have to terminate.
                 worker.log.warning(
                     "memory usage %s > %s after gc, quitting",
-                    _format_data_size(mem_usage), _format_data_size(MAX_MEMORY_USAGE))
+                    _format_data_size(mem_usage), _format_data_size(memory_max_usage))
                 # This will cause worker to auto-restart itself
                 worker.alive = False
         worker._last_memory_check_time = time.time()
 
 
 def worker_int(worker):
-    worker.log.info("[<%-10s>] worker received INT or QUIT signal", worker.pid)
+    worker.log.info("[%-10s] worker received INT or QUIT signal", worker.pid)
 
     # get traceback info, on worker crash
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
@@ -214,15 +226,15 @@ def worker_int(worker):
 
 
 def worker_abort(worker):
-    worker.log.info("[<%-10s>] worker received SIGABRT signal", worker.pid)
+    worker.log.info("[%-10s] worker received SIGABRT signal", worker.pid)
 
 
 def worker_exit(server, worker):
-    worker.log.info("[<%-10s>] worker exit", worker.pid)
+    worker.log.info("[%-10s] worker exit", worker.pid)
 
 
 def child_exit(server, worker):
-    worker.log.info("[<%-10s>] worker child exit", worker.pid)
+    worker.log.info("[%-10s] worker child exit", worker.pid)
 
 
 def pre_request(worker, req):
