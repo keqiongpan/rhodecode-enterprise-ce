@@ -889,6 +889,7 @@
             var searchType = data['type'];
             var searchSubType = data['subtype'];
             var valueDisplay = data['value_display'];
+            var valueIcon = data['value_icon'];
 
             var pattern = '(' + escapeRegExChars(value) + ')';
 
@@ -906,7 +907,12 @@
             }
             // full text search/hints
             else if (searchType === 'search') {
-                icon += '<i class="icon-more"></i> ';
+                if (valueIcon === undefined) {
+                    icon += '<i class="icon-more"></i> ';
+                } else {
+                    icon += valueIcon + ' ';
+                }
+
                 if (searchSubType !== undefined && searchSubType == 'repo') {
                     valueDisplay += '<div class="pull-right tag">repository</div>';
                 }
