@@ -64,12 +64,13 @@
     %if c.readme_data:
     <div id="readme" class="anchor">
     <div class="box">
-        <div class="title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
-            <h3 class="breadcrumbs">
+        <div class="readme-title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
+            <div>
+                <i class="icon-file-text"></i>
                 <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_rev[1],f_path=c.readme_file)}">
                     ${c.readme_file}
                 </a>
-            </h3>
+            </div>
         </div>
         <div class="readme codeblock">
           <div class="readme_box">
