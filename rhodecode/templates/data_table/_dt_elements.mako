@@ -370,8 +370,12 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     <i class="icon-comment"></i> ${comments_nr}
 </%def>
 
-<%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
+<%def name="pullrequest_name(pull_request_id, is_wip, target_repo_name, short=False)">
     <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
+      % if is_wip:
+          <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
+      % endif
+
       % if short:
         !${pull_request_id}
       % else:
