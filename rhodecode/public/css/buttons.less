@@ -249,6 +249,54 @@ input[type="button"] {
 
 }
 
+
+.btn-group-actions {
+    position: relative;
+    z-index: 100;
+
+    &:not(.open) .btn-action-switcher-container {
+        display: none;
+    }
+}
+
+
+.btn-action-switcher-container{
+  position: absolute;
+  top: 30px;
+  left: 0px;
+}
+
+.btn-action-switcher {
+    display: block;
+    position: relative;
+    z-index: 300;
+    min-width: 240px;
+    max-width: 500px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid @grey4;
+    border-radius: 3px;
+    box-shadow: @dropdown-shadow;
+
+    li {
+        display: block;
+        text-align: left;
+        list-style: none;
+        padding: 5px 10px;
+    }
+
+    li .action-help-block {
+        font-size: 10px;
+        line-height: normal;
+        color: @grey4;
+    }
+
+}
+
 .btn-link {
     background: transparent;
     border: none;

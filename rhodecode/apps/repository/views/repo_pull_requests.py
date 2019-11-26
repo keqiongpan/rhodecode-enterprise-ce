@@ -1051,12 +1051,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _ = self.request.translate
 
         self.load_default_context()
+        redirect_url = None
 
         if pull_request.is_closed():
             log.debug('update: forbidden because pull request is closed')
             msg = _(u'Cannot update closed pull requests.')
             h.flash(msg, category='error')
-            return True
+            return {'response': True,
+                    'redirect_url': redirect_url}
 
         if pull_request.pull_request_state != PullRequest.STATE_CREATED:
             log.debug('update: forbidden because pull request is in state %s',
@@ -1065,13 +1067,15 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
                                                       pull_request.pull_request_state)
             h.flash(msg, category='error')
-            return True
+            return {'response': True,
+                    'redirect_url': redirect_url}
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
         if allowed_to_update:
             controls = peppercorn.parse(self.request.POST.items())
+            force_refresh = str2bool(self.request.POST.get('force_refresh'))
 
             if 'review_members' in controls:
                 self._update_reviewers(
@@ -1079,11 +1083,18 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     pull_request.reviewer_data)
             elif str2bool(self.request.POST.get('update_commits', 'false')):
                 self._update_commits(pull_request)
+                if force_refresh:
+                    redirect_url = h.route_path(
+                        'pullrequest_show', repo_name=self.db_repo_name,
+                        pull_request_id=pull_request.pull_request_id,
+                        _query={"force_refresh": 1})
             elif str2bool(self.request.POST.get('edit_pull_request', 'false')):
                 self._edit_pull_request(pull_request)
             else:
                 raise HTTPBadRequest()
-            return True
+
+            return {'response': True,
+                    'redirect_url': redirect_url}
         raise HTTPForbidden()
 
     def _edit_pull_request(self, pull_request):

@@ -968,7 +968,7 @@ class TestPullrequestsView(object):
                                          'csrf_token': csrf_token})
 
         assert response.status_int == 200
-        assert response.body == 'true'
+        assert response.body == '{"response": true, "redirect_url": null}'
 
         # Make sure that after update, it won't raise 500 errors
         response = self.app.get(route_path(

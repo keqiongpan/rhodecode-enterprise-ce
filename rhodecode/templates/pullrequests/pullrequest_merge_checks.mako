@@ -68,8 +68,6 @@
 
           <div class="pull-request-merge-refresh">
               <a href="#refreshChecks" onclick="refreshMergeChecks(); return false;">${_('refresh checks')}</a>
-              /
-              <a class="tooltip" title="Force refresh of the merge workspace in case current status seems wrong." href="${h.route_path('pullrequest_show', repo_name=c.repo_name, pull_request_id=c.pull_request.pull_request_id,_query={"force_refresh":1})}">forced recheck</a>
           </div>
 
         </div>

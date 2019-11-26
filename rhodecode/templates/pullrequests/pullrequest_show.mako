@@ -405,7 +405,30 @@
 
                     <div class="pull-right">
                         % if c.allowed_to_update and not c.pull_request.is_closed():
-                          <a id="update_commits" class="btn btn-primary no-margin pull-right">${_('Update commits')}</a>
+
+                            <div class="btn-group btn-group-actions">
+                                <a id="update_commits" class="btn btn-primary no-margin" onclick="updateController.updateCommits(this); return false">
+                                    ${_('Update commits')}
+                                </a>
+
+                                <a id="update_commits_switcher" class="btn btn-primary" style="margin-left: -1px" data-toggle="dropdown" aria-pressed="false" role="button">
+                                    <i class="icon-down"></i>
+                                </a>
+
+                                <div class="btn-action-switcher-container" id="update-commits-switcher">
+                                    <ul class="btn-action-switcher" role="menu">
+                                        <li>
+                                            <a href="#forceUpdate" onclick="updateController.forceUpdateCommits(this); return false">
+                                                ${_('Force update commits')}
+                                            </a>
+                                            <div class="action-help-block">
+                                               ${_('Update commits and force refresh this pull request.')}
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
                         % else:
                           <a class="tooltip btn disabled pull-right" disabled="disabled" title="${_('Update is disabled for current view')}">${_('Update commits')}</a>
                         % endif
@@ -584,6 +607,8 @@
         reviewersController = new ReviewersController();
         commitsController = new CommitsController();
 
+        updateController = new UpdatePrController();
+
         $(function(){
 
             // custom code mirror
@@ -746,17 +771,7 @@
                     "${c.repo_name}", "${c.pull_request.pull_request_id}");
             });
 
-            $('#update_commits').on('click', function(e){
-                var isDisabled = !$(e.currentTarget).attr('disabled');
-                $(e.currentTarget).attr('disabled', 'disabled');
-                $(e.currentTarget).addClass('disabled');
-                $(e.currentTarget).removeClass('btn-primary');
-                $(e.currentTarget).text(_gettext('Updating...'));
-                if(isDisabled){
-                    updateCommits(
-                        "${c.repo_name}", "${c.pull_request.pull_request_id}");
-                }
-            });
+
             // fixing issue with caches on firefox
             $('#update_commits').removeAttr("disabled");
 
