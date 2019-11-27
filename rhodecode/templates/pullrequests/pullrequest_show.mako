@@ -10,14 +10,17 @@
 </%def>
 
 <%def name="breadcrumbs_links()">
-    <span id="pr-title">
-    ${c.pull_request.title}
-    %if c.pull_request.is_closed():
-        (${_('Closed')})
-    %endif
-    </span>
+    <%
+    pr_title = c.pull_request.title
+    if c.pull_request.is_closed():
+        pr_title = '[{}] {}'.format(_('Closed'), pr_title)
+    %>
+
+    <div id="pr-title">
+        <input class="pr-title-input large disabled" disabled="disabled" name="pullrequest_title" type="text" value="${pr_title}">
+    </div>
     <div id="pr-title-edit" class="input" style="display: none;">
-        ${h.text('pullrequest_title', id_="pr-title-input", class_="large", value=c.pull_request.title)}
+        <input class="pr-title-input large" id="pr-title-input" name="pullrequest_title" type="text" value="${c.pull_request.title}">
     </div>
 </%def>
 
@@ -151,7 +154,7 @@
             <div class="input">
               %if c.pull_request_review_status:
                 <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-                <span class="changeset-status-lbl tooltip">
+                <span class="changeset-status-lbl">
                   %if c.pull_request.is_closed():
                       ${_('Closed')},
                   %endif
@@ -208,13 +211,13 @@
                                     </code>
                                </td>
                                <td>
-                                   <input ${'checked="checked"' if c.from_version_num == ver_pr else ''} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
-                                   <input ${'checked="checked"' if c.at_version_num == ver_pr else ''} class="compare-radio-button" type="radio" name="ver_target" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                                   <input ${('checked="checked"' if c.from_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                                   <input ${('checked="checked"' if c.at_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_target" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
                                </td>
                                <td>
                                 <% review_status = c.review_versions[ver_pr].status if ver_pr in c.review_versions else 'not_reviewed' %>
                                 <i class="tooltip icon-circle review-status-${review_status}" title="${_('Your review status at this version')}"></i>
-                                </div>
+
                                </td>
                                <td>
                                    % if c.at_version_num != ver_pr:
@@ -350,8 +353,17 @@
         </div>
       </div>
   </div>
+
   <div class="box">
-      ##DIFF
+
+  % if c.state_progressing:
+    <h2 style="text-align: center">
+        ${_('Cannot show diff when pull request state is changing. Current progress state')}: <span class="tag tag-merge-state-${c.pull_request.state}">${c.pull_request.state}</span>
+    </h2>
+
+  % else:
+
+      ## Diffs rendered here
       <div class="table" >
           <div id="changeset_compare_view_content">
               ##CS
@@ -599,7 +611,10 @@
 
       %endif
 
-      <script type="text/javascript">
+   % endif
+  </div>
+
+<script type="text/javascript">
 
         versionController = new VersionController();
         versionController.init();
@@ -802,8 +817,6 @@
         })
 
       </script>
-
-  </div>
 </div>
 
 </%def>

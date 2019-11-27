@@ -114,9 +114,6 @@ $(document).ready(function() {
           if (data['closed']) {
               $(row).addClass('closed');
           }
-          if (data['state'] !== 'created') {
-              $(row).addClass('state-' + data['state']);
-          }
       }
     });
 

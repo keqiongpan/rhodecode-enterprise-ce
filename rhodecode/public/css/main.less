@@ -414,16 +414,28 @@ ul.auth_plugins {
 }
 
 
-#pr-title-input {
-  width: 72%;
+.pr-title-input {
+  width: 80%;
   font-size: 1em;
-  margin: 0;
-  padding: 0 0 0 @padding/4;
+  margin:  0 0 4px 0;
+  padding: 0;
   line-height: 1.7em;
   color: @text-color;
   letter-spacing: .02em;
   font-weight: @text-bold-weight;
   font-family: @text-bold;
+
+  &:hover {
+    box-shadow: none;
+  }
+}
+
+#pr-title {
+  input {
+    border: 1px transparent;
+    color: black;
+    opacity: 1
+  }
 }
 
 #pullrequest_title {

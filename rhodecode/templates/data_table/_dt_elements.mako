@@ -370,16 +370,21 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     <i class="icon-comment"></i> ${comments_nr}
 </%def>
 
-<%def name="pullrequest_name(pull_request_id, is_wip, target_repo_name, short=False)">
+<%def name="pullrequest_name(pull_request_id, state, is_wip, target_repo_name, short=False)">
     <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
-      % if is_wip:
-          <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
-      % endif
 
       % if short:
         !${pull_request_id}
       % else:
         ${_('Pull request !{}').format(pull_request_id)}
+      % endif
+
+      % if state not in ['created']:
+          <span class="tag tag-merge-state-${state} tooltip" title="Pull request state is changing">${state}</span>
+      % endif
+
+      % if is_wip:
+          <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
       % endif
     </a>
 </%def>

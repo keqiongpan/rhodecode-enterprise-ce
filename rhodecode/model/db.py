@@ -4225,6 +4225,9 @@ class PullRequest(Base, _PullRequestBase):
             def is_closed(self):
                 return pull_request_obj.is_closed()
 
+            def is_state_changing(self):
+                return pull_request_obj.is_state_changing()
+
             @property
             def pull_request_version_id(self):
                 return getattr(pull_request_obj, 'pull_request_version_id', None)
@@ -4255,6 +4258,9 @@ class PullRequest(Base, _PullRequestBase):
 
     def is_closed(self):
         return self.status == self.STATUS_CLOSED
+
+    def is_state_changing(self):
+        return self.pull_request_state != PullRequest.STATE_CREATED
 
     def __json__(self):
         return {
@@ -4312,6 +4318,9 @@ class PullRequestVersion(Base, _PullRequestBase):
     def is_closed(self):
         # calculate from original
         return self.pull_request.status == self.STATUS_CLOSED
+
+    def is_state_changing(self):
+        return self.pull_request.pull_request_state != PullRequest.STATE_CREATED
 
     def calculated_review_status(self):
         return self.pull_request.calculated_review_status()

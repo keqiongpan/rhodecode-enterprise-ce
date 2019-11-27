@@ -47,10 +47,10 @@ $(document).ready(function() {
           pageLength: ${c.visual.dashboard_items},
           order: [[ 2, "desc" ]],
           columns: [
-             { data: {"_": "status",
-                      "sort": "status"}, title: "", className: "td-status", orderable: false},
              { data: {"_": "target_repo",
                       "sort": "target_repo"}, title: "${_('Target Repo')}", className: "td-targetrepo", orderable: false},
+             { data: {"_": "status",
+                      "sort": "status"}, title: "", className: "td-status", orderable: false},
              { data: {"_": "name",
                       "sort": "name_raw"}, title: "${_('Id')}", className: "td-componentname", "type": "num" },
              { data: {"_": "title",
@@ -77,9 +77,6 @@ $(document).ready(function() {
               }
               if (data['owned']) {
                 $(row).addClass('owned');
-              }
-              if (data['state'] !== 'created') {
-                  $(row).addClass('state-' + data['state']);
               }
           }
         });

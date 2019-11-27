@@ -108,8 +108,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             data.append({
                 'name': _render('pullrequest_name',
-                                pr.pull_request_id, pr.work_in_progress,
-                                pr.target_repo.repo_name),
+                                pr.pull_request_id, pr.pull_request_state,
+                                pr.work_in_progress, pr.target_repo.repo_name),
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
@@ -273,15 +273,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
         pull_request_id = pull_request.pull_request_id
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
-            log.debug('show: forbidden because pull request is in state %s',
-                      pull_request.pull_request_state)
-            msg = _(u'Cannot show pull requests in state other than `{}`. '
-                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
-                                                      pull_request.pull_request_state)
-            h.flash(msg, category='error')
-            raise HTTPFound(h.route_path('pullrequest_show_all',
-                                         repo_name=self.db_repo_name))
+        c.state_progressing = pull_request.is_state_changing()
 
         version = self.request.GET.get('version')
         from_version = self.request.GET.get('from_version') or version
@@ -1061,15 +1053,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             return {'response': True,
                     'redirect_url': redirect_url}
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
-            log.debug('update: forbidden because pull request is in state %s',
-                      pull_request.pull_request_state)
-            msg = _(u'Cannot update pull requests in state other than `{}`. '
-                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
-                                                      pull_request.pull_request_state)
-            h.flash(msg, category='error')
-            return {'response': True,
-                    'redirect_url': redirect_url}
+        is_state_changing = pull_request.is_state_changing()
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
@@ -1083,6 +1067,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     pull_request, controls['review_members'],
                     pull_request.reviewer_data)
             elif str2bool(self.request.POST.get('update_commits', 'false')):
+                if is_state_changing:
+                    log.debug('commits update: forbidden because pull request is in state %s',
+                              pull_request.pull_request_state)
+                    msg = _(u'Cannot update pull requests commits in state other than `{}`. '
+                            u'Current state is: `{}`').format(
+                        PullRequest.STATE_CREATED, pull_request.pull_request_state)
+                    h.flash(msg, category='error')
+                    return {'response': True,
+                            'redirect_url': redirect_url}
+
                 self._update_commits(pull_request)
                 if force_refresh:
                     redirect_url = h.route_path(
@@ -1182,7 +1176,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
         _ = self.request.translate
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+        if pull_request.is_state_changing():
             log.debug('show: forbidden because pull request is in state %s',
                       pull_request.pull_request_state)
             msg = _(u'Cannot merge pull requests in state other than `{}`. '
