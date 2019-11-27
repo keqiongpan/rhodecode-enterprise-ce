@@ -167,9 +167,9 @@ data = {
     <tr>
         <td style="padding-right:20px;line-height:20px;">${_('Commit Flow')}:</td>
         <td style="line-height:20px;">
-            ${base.tag_button('{}:{}'.format(data['source_ref_type'], pull_request.source_ref_parts.name))} ${_('of')} ${data['source_repo_url']}
+            <code>${'{}:{}'.format(data['source_ref_type'], pull_request.source_ref_parts.name)}</code> ${_('of')} ${data['source_repo_url']}
             &rarr;
-            ${base.tag_button('{}:{}'.format(data['target_ref_type'], pull_request.target_ref_parts.name))} ${_('of')}  ${data['target_repo_url']}
+            <code>${'{}:{}'.format(data['target_ref_type'], pull_request.target_ref_parts.name)}</code> ${_('of')}  ${data['target_repo_url']}
         </td>
     </tr>
 
