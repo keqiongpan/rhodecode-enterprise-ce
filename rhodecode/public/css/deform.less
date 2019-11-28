@@ -11,18 +11,20 @@
   }
 
   .control-label {
-    width: 200px;
+    width: 220px;
     padding: 10px 0px;
     float: left;
   }
   .control-inputs {
-    width: 400px;
+    min-width: 400px;
     float: left;
   }
-  .form-group .radio, .form-group .checkbox {
+  .form-group .radio,
+  .form-group .checkbox {
       position: relative;
       display: block;
-      /* margin-bottom: 10px; */
+      padding: 10px 0;
+      margin-bottom: 0;
   }
 
   .form-group {
@@ -49,6 +51,10 @@
   .form-control.readonly {
     background: #eeeeee;
     cursor: not-allowed;
+  }
+
+  .alert {
+    margin: 10px 0;
   }
 
   .error-block {
@@ -87,7 +93,7 @@
   }
 
   .form-control.select2-container {
-    height: 40px;
+
   }
 
   .deform-full-field-sequence.control-inputs {
