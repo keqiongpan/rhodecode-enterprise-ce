@@ -31,7 +31,6 @@ def get_workers():
 # GLOBAL
 errorlog = '-'
 accesslog = '-'
-loglevel = 'info'
 
 
 # SERVER MECHANICS
