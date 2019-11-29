@@ -207,7 +207,7 @@ def safe_int(val, default=None):
     return val
 
 
-def safe_unicode(str_, from_encoding=None):
+def safe_unicode(str_, from_encoding=None, use_chardet=False):
     """
     safe unicode function. Does few trick to turn str_ into unicode
 
@@ -240,17 +240,19 @@ def safe_unicode(str_, from_encoding=None):
         except UnicodeDecodeError:
             pass
 
-    try:
-        import chardet
-        encoding = chardet.detect(str_)['encoding']
-        if encoding is None:
-            raise Exception()
-        return str_.decode(encoding)
-    except (ImportError, UnicodeDecodeError, Exception):
+    if use_chardet:
+        try:
+            import chardet
+            encoding = chardet.detect(str_)['encoding']
+            if encoding is None:
+                raise Exception()
+            return str_.decode(encoding)
+        except (ImportError, UnicodeDecodeError, Exception):
+            return unicode(str_, from_encoding[0], 'replace')
+    else:
         return unicode(str_, from_encoding[0], 'replace')
 
-
-def safe_str(unicode_, to_encoding=None):
+def safe_str(unicode_, to_encoding=None, use_chardet=False):
     """
     safe str function. Does few trick to turn unicode_ into string
 
@@ -283,14 +285,17 @@ def safe_str(unicode_, to_encoding=None):
         except UnicodeEncodeError:
             pass
 
-    try:
-        import chardet
-        encoding = chardet.detect(unicode_)['encoding']
-        if encoding is None:
-            raise UnicodeEncodeError()
+    if use_chardet:
+        try:
+            import chardet
+            encoding = chardet.detect(unicode_)['encoding']
+            if encoding is None:
+                raise UnicodeEncodeError()
 
-        return unicode_.encode(encoding)
-    except (ImportError, UnicodeEncodeError):
+            return unicode_.encode(encoding)
+        except (ImportError, UnicodeEncodeError):
+            return unicode_.encode(to_encoding[0], 'replace')
+    else:
         return unicode_.encode(to_encoding[0], 'replace')
 
 
