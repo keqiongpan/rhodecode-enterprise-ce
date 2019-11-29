@@ -266,7 +266,6 @@ def includeme(config):
         config.include('rhodecode.integrations')
 
     if load_all:
-        from rhodecode.authentication import discover_legacy_plugins
         # load CE authentication plugins
         config.include('rhodecode.authentication.plugins.auth_crowd')
         config.include('rhodecode.authentication.plugins.auth_headers')
@@ -277,7 +276,9 @@ def includeme(config):
         config.include('rhodecode.authentication.plugins.auth_token')
 
         # Auto discover authentication plugins and include their configuration.
-        discover_legacy_plugins(config)
+        if asbool(settings.get('auth_plugin.import_legacy_plugins', 'true')):
+            from rhodecode.authentication import discover_legacy_plugins
+            discover_legacy_plugins(config)
 
     # apps
     if load_all:
