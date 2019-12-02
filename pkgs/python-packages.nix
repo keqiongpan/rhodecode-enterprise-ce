@@ -74,11 +74,11 @@ self: super: {
     };
   };
   "attrs" = super.buildPythonPackage {
-    name = "attrs-19.1.0";
+    name = "attrs-19.3.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/cc/d9/931a24cc5394f19383fbbe3e1147a0291276afa43a0dc3ed0d6cd9fda813/attrs-19.1.0.tar.gz";
-      sha256 = "16g33zr5f449lqc5wgvzpknxryfzrfsxcr6kpgxwn7l5fkv71f7h";
+      url = "https://files.pythonhosted.org/packages/98/c3/2c227e66b5e896e15ccdae2e00bbc69aa46e9a8ce8869cc5fa96310bf612/attrs-19.3.0.tar.gz";
+      sha256 = "0wky4h28n7xnr6xv69p9z6kv8bzn50d10c3drmd9ds8gawbcxdzp";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -286,11 +286,11 @@ self: super: {
     };
   };
   "contextlib2" = super.buildPythonPackage {
-    name = "contextlib2-0.6.0";
+    name = "contextlib2-0.6.0.post1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f0/08/ac376929b2c51e2d5fd4b9fa1f72eca0162c990edc526bdd3b16449323ad/contextlib2-0.6.0.tar.gz";
-      sha256 = "1lvy0xvh5kkx0cmv2y8rpxjrg909q920k05x7m8srjkpcxrsm5vi";
+      url = "https://files.pythonhosted.org/packages/02/54/669207eb72e3d8ae8b38aa1f0703ee87a0e9f88f30d3c0a47bebdb6de242/contextlib2-0.6.0.post1.tar.gz";
+      sha256 = "0bhnr2ac7wy5l85ji909gyljyk85n92w8pdvslmrvc8qih4r1x01";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];
@@ -1191,14 +1191,14 @@ self: super: {
     };
   };
   "pluggy" = super.buildPythonPackage {
-    name = "pluggy-0.13.0";
+    name = "pluggy-0.13.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."importlib-metadata"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/d7/9d/ae82a5facf2dd89f557a33ad18eb68e5ac7b7a75cf52bf6a208f29077ecf/pluggy-0.13.0.tar.gz";
-      sha256 = "0d4gsvb4kjqhiqqi4bbsdp7s1xlyl5phibcw1q1mrpd65xia2pzs";
+      url = "https://files.pythonhosted.org/packages/f8/04/7a8542bed4b16a65c2714bf76cf5a0b026157da7f75e87cc88774aa10b14/pluggy-0.13.1.tar.gz";
+      sha256 = "1c35qyhvy27q9ih9n899f3h4sdnpgq027dbiilly2qb5cvgarchm";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1290,11 +1290,11 @@ self: super: {
     };
   };
   "pyasn1" = super.buildPythonPackage {
-    name = "pyasn1-0.4.7";
+    name = "pyasn1-0.4.8";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/ca/f8/2a60a2c88a97558bdd289b6dc9eb75b00bd90ff34155d681ba6dbbcb46b2/pyasn1-0.4.7.tar.gz";
-      sha256 = "0146ryp4g09ycy8p3l2vigmgfg42n4gb8whgg8cysrhxr9b56jd9";
+      url = "https://files.pythonhosted.org/packages/a4/db/fffec68299e6d7bad3d504147f9094830b704527a7fc098b721d38cc7fa7/pyasn1-0.4.8.tar.gz";
+      sha256 = "1fnhbi3rmk47l9851gbik0flfr64vs5j0hbqx24cafjap6gprxxf";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -1381,11 +1381,11 @@ self: super: {
     };
   };
   "pyparsing" = super.buildPythonPackage {
-    name = "pyparsing-2.4.2";
+    name = "pyparsing-2.4.5";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7e/24/eaa8d7003aee23eda270099eeec754d7bf4399f75c6a011ef948304f66a2/pyparsing-2.4.2.tar.gz";
-      sha256 = "106xmhd2xn5bv6blsbqaa6wciwcq2c9i1pq1riw6s83y76wsg63g";
+      url = "https://files.pythonhosted.org/packages/00/32/8076fa13e832bb4dcff379f18f228e5a53412be0631808b9ca2610c0f566/pyparsing-2.4.5.tar.gz";
+      sha256 = "0fk8gsybiw1gm146mkjdjvaajwh20xwvpv4j7syh2zrnpq0j19jc";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
@@ -1937,11 +1937,11 @@ self: super: {
     };
   };
   "setuptools" = super.buildPythonPackage {
-    name = "setuptools-41.6.0";
+    name = "setuptools-42.0.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/11/0a/7f13ef5cd932a107cd4c0f3ebc9d831d9b78e1a0e8c98a098ca17b1d7d97/setuptools-41.6.0.zip";
-      sha256 = "08nplghlnlb4qkhb9hp1lqqqlnh1qingdj8fi6w6rlfwj6rn3yka";
+      url = "https://files.pythonhosted.org/packages/f7/b6/5b98441b6749ea1db1e41e5e6e7a93cbdd7ffd45e11fe1b22d45884bc777/setuptools-42.0.2.zip";
+      sha256 = "0h5rsh8cpq9mh6kzr5xgcmyqyl8ym5r6i9m6g770k1vw1l4p5cy5";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

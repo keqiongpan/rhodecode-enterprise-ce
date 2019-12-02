@@ -1,20 +1,21 @@
 # contains not directly required libraries we want to pin the version.
 
 atomicwrites==1.3.0
-attrs==19.1.0
+attrs==19.3.0
 asn1crypto==0.24.0
 billiard==3.6.1.0
 cffi==1.12.3
 chameleon==2.24
 configparser==4.0.2
-contextlib2==0.6.0
+contextlib2==0.6.0.post1
 ecdsa==0.13.2
 gnureadline==6.3.8
 hupper==1.9.1
 ipaddress==1.0.23
+importlib-metadata==0.23
 jinja2==2.9.6
 jsonschema==2.6.0
-pluggy==0.13.0
+pluggy==0.13.1
 pyasn1-modules==0.2.6
 pyramid-jinja2==2.7
 scandir==1.10.0
