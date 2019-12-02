@@ -726,7 +726,7 @@ class TestAdminSettingsIssueTracker(object):
             IssueTrackerSettingsModel().delete_entries(self.uid)
 
     def test_delete_issuetracker_pattern(
-            self, autologin_user, backend, csrf_token, settings_util):
+            self, autologin_user, backend, csrf_token, settings_util, xhr_header):
         pattern = 'issuetracker_pat'
         uid = md5(pattern)
         settings_util.create_rhodecode_setting(
@@ -737,6 +737,6 @@ class TestAdminSettingsIssueTracker(object):
             'uid': uid,
             'csrf_token': csrf_token
         }
-        self.app.post(post_url, post_data, status=302)
+        self.app.post(post_url, post_data, extra_environ=xhr_header, status=200)
         settings = SettingsModel().get_all_settings()
         assert 'rhodecode_%s%s' % (self.SHORT_PATTERN_KEY, uid) not in settings

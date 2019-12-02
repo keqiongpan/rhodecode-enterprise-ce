@@ -518,7 +518,7 @@ class AdminSettingsView(BaseAppView):
     @CSRFRequired()
     @view_config(
         route_name='admin_settings_issuetracker_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
+        renderer='json_ext', xhr=True)
     def settings_issuetracker_delete(self):
         _ = self.request.translate
         self.load_default_context()
@@ -528,8 +528,11 @@ class AdminSettingsView(BaseAppView):
         except Exception:
             log.exception('Failed to delete issue tracker setting %s', uid)
             raise HTTPNotFound()
-        h.flash(_('Removed issue tracker entry'), category='success')
-        raise HTTPFound(h.route_path('admin_settings_issuetracker'))
+
+        SettingsModel().invalidate_settings_cache()
+        h.flash(_('Removed issue tracker entry.'), category='success')
+
+        return {'deleted': uid}
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

@@ -5,24 +5,101 @@
 ##    ${its.issue_tracker_settings_test(test_url)}
 
 <%def name="issue_tracker_settings_table(patterns, form_url, delete_url)">
+<%
+# Name/desc, pattern, issue prefix
+examples = [
+    (
+    ' ',
+    ' ',
+    ' ',
+    ' '
+    ),
+
+    (
+    'Redmine',
+    '(^#|\s#)(?P<issue_id>\d+)',
+    'https://myissueserver.com/${repo}/issue/${issue_id}',
+    ''
+    ),
+
+    (
+    'Redmine - Alternative',
+    '(?:issue-)(\d+)',
+    'https://myissueserver.com/redmine/issue/${id}',
+    ''
+    ),
+
+    (
+    'Redmine - Wiki',
+    '(?:wiki-)([a-zA-Z0-9]+)',
+    'http://example.org/projects/${repo_name}/wiki/${id}',
+    'wiki-'
+    ),
+
+    (
+    'JIRA - All tickets',
+    '(^|\s\w+-\d+)',
+    'https://myjira.com/browse/${id}',
+    ''
+    ),
+
+    (
+    'JIRA - Project (JRA)',
+    '(?:(^|\s)(?P<issue_id>(?:JRA-|JRA-)(?:\d+)))',
+    'https://myjira.com/${issue_id}',
+    ''
+    ),
+
+    (
+    'Confluence WIKI',
+    '(?:conf-)([A-Z0-9]+)',
+    'https://example.atlassian.net/display/wiki/${id}/${repo_name}',
+    'CONF-',
+    ),
+
+    (
+    'Pivotal Tracker',
+    '(?:pivot-)(?<project_id>\d+)-(?<story>\d+)',
+    'https://www.pivotaltracker.com/s/projects/${project_id}/stories/${story}',
+    'PIV-',
+    ),
+
+    (
+    'Trello',
+    '(?:trello-)(?<card_id>[a-zA-Z0-9]+)',
+    'https://trello.com/example.com/${card_id}',
+    'TRELLO-',
+    ),
+]
+%>
+
     <table class="rctable issuetracker">
       <tr>
           <th>${_('Description')}</th>
           <th>${_('Pattern')}</th>
           <th>${_('Url')}</th>
-          <th>${_('Prefix')}</th>
+          <th>${_('Extra Prefix')}</th>
           <th ></th>
       </tr>
-      <tr>
-          <td class="td-description issue-tracker-example">Example</td>
-          <td class="td-regex issue-tracker-example">${'(?:#)(?P<issue_id>\d+)'}</td>
-          <td class="td-url issue-tracker-example">${'https://myissueserver.com/${repo}/issue/${issue_id}'}</td>
-          <td class="td-prefix issue-tracker-example">#</td>
-          <td class="issue-tracker-example"><a href="${h.route_url('enterprise_issue_tracker_settings')}" target="_blank">${_('Read more')}</a></td>
-      </tr>
+        % for name, pat, url, pref in examples:
+        <tr class="it-examples" style="${'' if loop.index == 0 else 'display:none'}">
+          <td class="td-issue-tracker-name issue-tracker-example">${name}</td>
+          <td class="td-regex issue-tracker-example">${pat}</td>
+          <td class="td-url issue-tracker-example">${url}</td>
+          <td class="td-prefix issue-tracker-example">${pref}</td>
+          <td>
+              % if loop.index == 0:
+              <a href="#showMore" onclick="$('.it-examples').toggle(); return false">${_('show examples')}</a>
+              % else:
+              <a href="#copyToInput" onclick="copyToInput(this, '${h.json.dumps(name)}', '${h.json.dumps(pat)}', '${h.json.dumps(url)}', '${h.json.dumps(pref)}'); return false">copy to input</a>
+              % endif
+          </td>
+        </tr>
+        % endfor
+
       %for uid, entry in patterns:
         <tr id="entry_${uid}">
-                <td class="td-description issuetracker_desc">
+                <td class="td-issue-tracker-name issuetracker_desc">
                     <span class="entry">
                         ${entry.desc}
                     </span>
@@ -30,7 +107,7 @@
                         ${h.text('new_pattern_description_'+uid, class_='medium-inline', value=entry.desc or '')}
                     </span>
                 </td>
-                <td class="td-regex issuetracker_pat">
+                <td class="td-issue-tracker-regex issuetracker_pat">
                     <span class="entry">
                         ${entry.pat}
                     </span>
@@ -95,13 +172,13 @@
           if (confirm("${_('Confirm to remove this pattern:')} "+$(entry).data('desc'))) {
             $.ajax({
               type: "POST",
-              url: "${delete_url}", 
+              url: "${delete_url}",
               data: {
                 'csrf_token': CSRF_TOKEN,
                 'uid':$(entry).data('uid')
               },
               success: function(){
-                location.reload();
+                window.location.reload();
               },
               error: function(data, textStatus, errorThrown){
                   alert("Error while deleting entry.\nError code {0} ({1}). URL: {2}".format(data.status,data.statusText,$(entry)[0].url));
@@ -137,6 +214,24 @@
         $('#add_pattern').on('click', function(e) {
             addNewPatternInput();
         });
+
+        var copied = false;
+        copyToInput = function (elem, name, pat, url, pref) {
+            if (copied === false) {
+                addNewPatternInput();
+                copied = true;
+            }
+            $(elem).hide();
+            var load = function(text){
+                return text.replace(/["]/g, "")
+            };
+            $('#description_1').val(load(name));
+            $('#pattern_1').val(load(pat));
+            $('#url_1').val(load(url));
+            $('#prefix_1').val(load(pref));
+
+        }
+
     </script>    
 </%def>
 
@@ -144,12 +239,12 @@
   <table id="add-row-tmpl" style="display: none;">
     <tbody>
     <tr class="new_pattern">
-        <td class="td-description issuetracker_desc">
+        <td class="td-issue-tracker-name issuetracker_desc">
           <span class="entry">
-                    <input class="medium-inline" id="description_##UUID##" name="new_pattern_description_##UUID##" value="##DESCRIPTION##" type="text">
+                <input class="medium-inline" id="description_##UUID##" name="new_pattern_description_##UUID##" value="##DESCRIPTION##" type="text">
           </span>
         </td>
-        <td class="td-regex issuetracker_pat">
+        <td class="td-issue-tracker-regex issuetracker_pat">
           <span class="entry">
                     <input class="medium-inline" id="pattern_##UUID##" name="new_pattern_pattern_##UUID##" placeholder="Pattern" 
                     value="##PATTERN##" type="text">
@@ -178,9 +273,14 @@
         <div class="fields">
             <div class="field">
                 <div class='textarea-full'>
-                    <textarea id="test_pattern_data" rows="10">
+                    <textarea id="test_pattern_data" rows="12">
 This is an example text for testing issue tracker patterns.
-This commit fixes ticket #451.
+This commit fixes ticket #451 and ticket #910.
+Following tickets will get mentioned:
+#123
+#456
+JRA-123
+JRA-456
 Open a pull request !101 to contribute !
 Added tag v1.3.0 for commit 0f3b629be725
 

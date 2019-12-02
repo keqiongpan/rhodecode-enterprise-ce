@@ -38,44 +38,39 @@ default one. See the instructions in :ref:`repo-it`
 
 .. _issue-tr-eg-ref:
 
+
 Jira Integration
 ----------------
 
-* Regex = ``(?:^#|\s#)(\w+-\d+)``
-* URL = ``https://myissueserver.com/browse/${id}``
-* Issue Prefix = ``#``
+Please check examples in the view for configuration the issue trackers.
+
 
 Confluence (Wiki)
 -----------------
 
-* Regex = ``(?:conf-)([A-Z0-9]+)``
-* URL = ``https://example.atlassian.net/display/wiki/${id}/${repo_name}``
-* issue prefix = ``CONF-``
+Please check examples in the view for configuration the issue trackers.
+
 
 Redmine Integration
 -------------------
 
-* Regex = ``(issue-+\d+)``
-* URL = ``https://myissueserver.com/redmine/issue/${id}``
-* Issue Prefix = ``issue-``
+Please check examples in the view for configuration the issue trackers.
 
-Redmine (wiki)
---------------
 
-* Regex = ``(?:wiki-)([a-zA-Z0-9]+)``
-* URL = ``https://example.com/redmine/projects/wiki/${repo_name}``
-* Issue prefix = ``Issue-``
+Redmine wiki Integration
+------------------------
+
+Please check examples in the view for configuration the issue trackers.
+
 
 Pivotal Tracker
 ---------------
 
-* Regex = ``(?:pivot-)(?<project_id>\d+)-(?<story>\d+)``
-* URL = ``https://www.pivotaltracker.com/s/projects/${project_id}/stories/${story}``
-* Issue prefix = ``Piv-``
+Please check examples in the view for configuration the issue trackers.
+
 
 Trello
 ------
 
-* Regex = ``(?:trello-)(?<card_id>[a-zA-Z0-9]+)``
-* URL = ``https://trello.com/example.com/${card_id}``
-* Issue prefix = ``Trello-``
+Please check examples in the view for configuration the issue trackers.
+
