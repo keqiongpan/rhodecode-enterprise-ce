@@ -22,6 +22,7 @@ import re
 import logging
 import collections
 
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView, RepoAppView
@@ -33,6 +34,7 @@ from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.ext_json import json
+from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
     func, true, or_, case, in_filter_generator, Repository, RepoGroup, User, UserGroup, PullRequest)
@@ -99,5 +101,9 @@ class HoverCardsRepoView(RepoAppView):
         c = self.load_default_context()
         commit_id = self.request.matchdict['commit_id']
         pre_load = ['author', 'branch', 'date', 'message']
-        c.commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id, pre_load=pre_load)
+        try:
+            c.commit = self.rhodecode_vcs_repo.get_commit(commit_id=commit_id, pre_load=pre_load)
+        except CommitDoesNotExistError:
+            raise HTTPNotFound()
+
         return self._get_template_context(c)
