@@ -115,6 +115,7 @@ def store_exception(exc_id, exc_info, prefix=global_prefix):
         exc_type_name, exc_traceback = _prepare_exception(exc_info)
         _store_exception(exc_id=exc_id, exc_type_name=exc_type_name,
                          exc_traceback=exc_traceback, prefix=prefix)
+        return exc_id, exc_type_name
     except Exception:
         log.exception('Failed to store exception `%s` information', exc_id)
         # there's no way this can fail, it will crash server badly if it does.
