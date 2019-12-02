@@ -188,6 +188,17 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "certifi" = super.buildPythonPackage {
+    name = "certifi-2019.11.28";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/41/bf/9d214a5af07debc6acf7f3f257265618f1db242a3f8e49a9b516f24523a6/certifi-2019.11.28.tar.gz";
+      sha256 = "07qg6864bk4qxa8akr967amlmsq9v310hp039mcpjx6dliylrdi5";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mpl20 { fullName = "Mozilla Public License 2.0 (MPL 2.0)"; } ];
+    };
+  };
   "cffi" = super.buildPythonPackage {
     name = "cffi-1.12.3";
     doCheck = false;
@@ -231,6 +242,17 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  "chardet" = super.buildPythonPackage {
+    name = "chardet-3.0.4";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/fc/bb/a5768c230f9ddb03acc9ef3f0d4a3cf93462473795d18e9535498c8f929d/chardet-3.0.4.tar.gz";
+      sha256 = "1bpalpia6r5x1kknbk11p1fzph56fmmnp405ds8icksd3knr5aw4";
+    };
+    meta = {
+      license = [ { fullName = "LGPL"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
     };
   };
   "click" = super.buildPythonPackage {
@@ -675,6 +697,17 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
+    };
+  };
+  "idna" = super.buildPythonPackage {
+    name = "idna-2.8";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/ad/13/eb56951b6f7950cadb579ca166e448ba77f9d24efc03edd7e55fa57d04b7/idna-2.8.tar.gz";
+      sha256 = "01rlkigdxg17sf9yar1jl8n18ls59367wqh59hnawlyg53vb6my3";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal { fullName = "BSD-like"; } ];
     };
   };
   "importlib-metadata" = super.buildPythonPackage {
@@ -1729,11 +1762,17 @@ self: super: {
     };
   };
   "requests" = super.buildPythonPackage {
-    name = "requests-2.9.1";
+    name = "requests-2.22.0";
     doCheck = false;
+    propagatedBuildInputs = [
+      self."chardet"
+      self."idna"
+      self."urllib3"
+      self."certifi"
+    ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f9/6d/07c44fb1ebe04d069459a189e7dab9e4abfe9432adcd4477367c25332748/requests-2.9.1.tar.gz";
-      sha256 = "0zsqrzlybf25xscgi7ja4s48y2abf9wvjkn47wh984qgs1fq2xy5";
+      url = "https://files.pythonhosted.org/packages/01/62/ddcf76d1d19885e8579acb1b1df26a852b03472c0e46d2b959a714c90608/requests-2.22.0.tar.gz";
+      sha256 = "1d5ybh11jr5sm7xp6mz8fyc7vrp4syifds91m7sj60xalal0gq0i";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
@@ -1875,7 +1914,7 @@ self: super: {
     };
   };
   "rhodecode-tools" = super.buildPythonPackage {
-    name = "rhodecode-tools-1.3.0";
+    name = "rhodecode-tools-1.4.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."click"
@@ -1892,8 +1931,8 @@ self: super: {
       self."elasticsearch1-dsl"
     ];
     src = fetchurl {
-      url = "https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-2e546668-61c4-42b2-ae03-7850a2dbb846.tar.gz?sha256=0938220f33264b0514dc63207ce1f77e38b1b1fd93fd4f68d34243ab62ecc853";
-      sha256 = "0ly8xiianhs2sdl4zzckznqv2f3yyzhpq833vha0ajr66c7j4f09";
+      url = "https://code.rhodecode.com/rhodecode-tools-ce/artifacts/download/0-ed54e749-2ef5-4bc7-ae7f-7900e3c2aa15.tar.gz?sha256=76f024bad3a1e55fdb3d64f13f5b77ff21a12fee699918de2110fe21effd5a3a";
+      sha256 = "0fjszppj3zhh47g1i6b9xqps28gzfxdkzwb47pdmzrd1sfx29w3n";
     };
     meta = {
       license = [ { fullName = "Apache 2.0 and Proprietary"; } ];
@@ -2118,11 +2157,11 @@ self: super: {
     };
   };
   "urllib3" = super.buildPythonPackage {
-    name = "urllib3-1.24.1";
+    name = "urllib3-1.25.2";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/b1/53/37d82ab391393565f2f831b8eedbffd57db5a718216f82f1a8b4d381a1c1/urllib3-1.24.1.tar.gz";
-      sha256 = "08lwd9f3hqznyf32vnzwvp87pchx062nkbgyrf67rwlkgj0jk5fy";
+      url = "https://files.pythonhosted.org/packages/9a/8b/ea6d2beb2da6e331e9857d0a60b79ed4f72dcbc4e2c7f2d2521b0480fda2/urllib3-1.25.2.tar.gz";
+      sha256 = "1nq2k4pss1ihsjh02r41sqpjpm5rfqkjfysyq7g7n2i1p7c66c55";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
