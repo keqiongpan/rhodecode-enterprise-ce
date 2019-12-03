@@ -348,7 +348,7 @@ class GitCommit(base.BaseCommit):
                     "Cannot find one of parents' directories for a given "
                     "path: %s" % path)
 
-            if type_ == 'link':
+            if type_ in ['link', 'commit']:
                 url = self._get_submodule_url(path)
                 node = SubModuleNode(path, url=url, commit=tree_id,
                                      alias=self.repository.alias)
