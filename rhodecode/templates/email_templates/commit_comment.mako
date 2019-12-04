@@ -94,17 +94,17 @@ data = {
     <td style="width:100%;border-bottom:1px solid #dbd9da;">
 
         <h4 style="margin: 0">
-            <div style="margin-bottom: 4px; color:#7E7F7F">
-                @${h.person(user.username)}
+            <div style="margin-bottom: 4px">
+                <span style="color:#7E7F7F">@${h.person(user.username)}</span>
+                ${_('left a')}
+                <a href="${commit_comment_url}" style="${base.link_css()}">
+                    % if comment_file:
+                        ${_('{comment_type} on file `{comment_file}` in commit.').format(**data)}
+                    % else:
+                        ${_('{comment_type} on commit.').format(**data) |n}
+                    % endif
+                </a>
             </div>
-            ${_('left a')}
-            <a href="${commit_comment_url}" style="${base.link_css()}">
-                % if comment_file:
-                    ${_('{comment_type} on file `{comment_file}` in commit.').format(**data)}
-                % else:
-                    ${_('{comment_type} on commit.').format(**data) |n}
-                % endif
-            </a>
             <div style="margin-top: 10px"></div>
             ${_('Commit')} <code>${data['commit_id']}</code> ${_('of repository')}: ${data['repo_name']}
         </h4>
