@@ -87,6 +87,59 @@ def test_render_pr_email(app, user_admin):
     assert subject == '@test_admin (RhodeCode Admin) requested a pull request review. !200: "Example Pull Request"'
 
 
+def test_render_pr_update_email(app, user_admin):
+    ref = collections.namedtuple(
+        'Ref', 'name, type')('fxies123', 'book')
+
+    pr = collections.namedtuple('PullRequest',
+        'pull_request_id, title, description, source_ref_parts, source_ref_name, target_ref_parts, target_ref_name')(
+        200, 'Example Pull Request', 'Desc of PR', ref, 'bookmark', ref, 'Branch')
+
+    source_repo = target_repo = collections.namedtuple(
+        'Repo', 'type, repo_name')('hg', 'pull_request_1')
+
+    commit_changes = AttributeDict({
+        'added': ['aaaaaaabbbbb', 'cccccccddddddd'],
+        'removed': ['eeeeeeeeeee'],
+    })
+    file_changes = AttributeDict({
+        'added': ['a/file1.md', 'file2.py'],
+        'modified': ['b/modified_file.rst'],
+        'removed': ['.idea'],
+    })
+
+    kwargs = {
+        'updating_user': User.get_first_super_admin(),
+
+        'pull_request': pr,
+        'pull_request_commits': [],
+
+        'pull_request_target_repo': target_repo,
+        'pull_request_target_repo_url': 'x',
+
+        'pull_request_source_repo': source_repo,
+        'pull_request_source_repo_url': 'x',
+
+        'pull_request_url': 'http://localhost/pr1',
+
+        'pr_comment_url': 'http://comment-url',
+        'pr_comment_reply_url': 'http://comment-url#reply',
+        'ancestor_commit_id': 'f39bd443',
+        'added_commits': commit_changes.added,
+        'removed_commits': commit_changes.removed,
+        'changed_files': (file_changes.added + file_changes.modified + file_changes.removed),
+        'added_files': file_changes.added,
+        'modified_files': file_changes.modified,
+        'removed_files': file_changes.removed,
+    }
+
+    subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
+        EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **kwargs)
+
+    # subject
+    assert subject == '@test_admin (RhodeCode Admin) updated pull request. !200: "Example Pull Request"'
+
+
 @pytest.mark.parametrize('mention', [
     True,
     False

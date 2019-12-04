@@ -65,9 +65,19 @@ log = logging.getLogger(__name__)
 
 # Data structure to hold the response data when updating commits during a pull
 # request update.
-UpdateResponse = collections.namedtuple('UpdateResponse', [
-    'executed', 'reason', 'new', 'old', 'changes',
-    'source_changed', 'target_changed'])
+class UpdateResponse(object):
+
+    def __init__(self, executed, reason, new, old, common_ancestor_id,
+                 commit_changes, source_changed, target_changed):
+
+        self.executed = executed
+        self.reason = reason
+        self.new = new
+        self.old = old
+        self.common_ancestor_id = common_ancestor_id
+        self.changes = commit_changes
+        self.source_changed = source_changed
+        self.target_changed = target_changed
 
 
 class PullRequestModel(BaseModel):
@@ -672,11 +682,13 @@ class PullRequestModel(BaseModel):
         source_ref_type = pull_request.source_ref_parts.type
         return source_ref_type in self.REF_TYPES
 
-    def update_commits(self, pull_request):
+    def update_commits(self, pull_request, updating_user):
         """
         Get the updated list of commits for the pull request
         and return the new pull request version and the list
         of commits processed by this update action
+
+        updating_user is the user_object who triggered the update
         """
         pull_request = self.__get_pull_request(pull_request)
         source_ref_type = pull_request.source_ref_parts.type
@@ -693,7 +705,7 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.WRONG_REF_TYPE,
-                old=pull_request, new=None, changes=None,
+                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
 
         # source repo
@@ -705,7 +717,7 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
-                old=pull_request, new=None, changes=None,
+                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
 
         source_changed = source_ref_id != source_commit.raw_id
@@ -719,7 +731,7 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, changes=None,
+                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
         target_changed = target_ref_id != target_commit.raw_id
 
@@ -728,7 +740,7 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.NO_CHANGE,
-                old=pull_request, new=None, changes=None,
+                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=target_changed, target_changed=source_changed)
 
         change_in_found = 'target repo' if target_changed else 'source repo'
@@ -759,7 +771,7 @@ class PullRequestModel(BaseModel):
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, changes=None,
+                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=source_changed, target_changed=target_changed)
 
         # re-compute commit ids
@@ -769,13 +781,13 @@ class PullRequestModel(BaseModel):
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)
 
-        ancestor = source_repo.get_common_ancestor(
+        ancestor_commit_id = source_repo.get_common_ancestor(
             source_commit.raw_id, target_commit.raw_id, target_repo)
 
         pull_request.source_ref = '%s:%s:%s' % (
             source_ref_type, source_ref_name, source_commit.raw_id)
         pull_request.target_ref = '%s:%s:%s' % (
-            target_ref_type, target_ref_name, ancestor)
+            target_ref_type, target_ref_name, ancestor_commit_id)
 
         pull_request.revisions = [
             commit.raw_id for commit in reversed(commit_ranges)]
@@ -787,7 +799,7 @@ class PullRequestModel(BaseModel):
             pull_request, pull_request_version)
 
         # calculate commit and file changes
-        changes = self._calculate_commit_id_changes(
+        commit_changes = self._calculate_commit_id_changes(
             old_commit_ids, new_commit_ids)
         file_changes = self._calculate_file_changes(
             old_diff_data, new_diff_data)
@@ -797,23 +809,23 @@ class PullRequestModel(BaseModel):
             pull_request, old_diff_data=old_diff_data,
             new_diff_data=new_diff_data)
 
-        commit_changes = (changes.added or changes.removed)
+        valid_commit_changes = (commit_changes.added or commit_changes.removed)
         file_node_changes = (
             file_changes.added or file_changes.modified or file_changes.removed)
-        pr_has_changes = commit_changes or file_node_changes
+        pr_has_changes = valid_commit_changes or file_node_changes
 
         # Add an automatic comment to the pull request, in case
         # anything has changed
         if pr_has_changes:
             update_comment = CommentsModel().create(
-                text=self._render_update_message(changes, file_changes),
+                text=self._render_update_message(ancestor_commit_id, commit_changes, file_changes),
                 repo=pull_request.target_repo,
                 user=pull_request.author,
                 pull_request=pull_request,
                 send_email=False, renderer=DEFAULT_COMMENTS_RENDERER)
 
             # Update status to "Under Review" for added commits
-            for commit_id in changes.added:
+            for commit_id in commit_changes.added:
                 ChangesetStatusModel().set_status(
                     repo=pull_request.source_repo,
                     status=ChangesetStatus.STATUS_UNDER_REVIEW,
@@ -822,10 +834,19 @@ class PullRequestModel(BaseModel):
                     pull_request=pull_request,
                     revision=commit_id)
 
+            # send update email to users
+            try:
+                self.notify_users(pull_request=pull_request, updating_user=updating_user,
+                                  ancestor_commit_id=ancestor_commit_id,
+                                  commit_changes=commit_changes,
+                                  file_changes=file_changes)
+            except Exception:
+                log.exception('Failed to send email notification to users')
+
         log.debug(
             'Updated pull request %s, added_ids: %s, common_ids: %s, '
             'removed_ids: %s', pull_request.pull_request_id,
-            changes.added, changes.common, changes.removed)
+            commit_changes.added, commit_changes.common, commit_changes.removed)
         log.debug(
             'Updated pull request with the following file changes: %s',
             file_changes)
@@ -841,7 +862,8 @@ class PullRequestModel(BaseModel):
 
         return UpdateResponse(
             executed=True, reason=UpdateFailureReason.NONE,
-            old=pull_request, new=pull_request_version, changes=changes,
+            old=pull_request, new=pull_request_version,
+            common_ancestor_id=ancestor_commit_id, commit_changes=commit_changes,
             source_changed=source_changed, target_changed=target_changed)
 
     def _create_version_from_snapshot(self, pull_request):
@@ -963,12 +985,13 @@ class PullRequestModel(BaseModel):
 
         return FileChangeTuple(added_files, modified_files, removed_files)
 
-    def _render_update_message(self, changes, file_changes):
+    def _render_update_message(self, ancestor_commit_id, changes, file_changes):
         """
         render the message using DEFAULT_COMMENTS_RENDERER (RST renderer),
         so it's always looking the same disregarding on which default
         renderer system is using.
 
+        :param ancestor_commit_id: ancestor raw_id
         :param changes: changes named tuple
         :param file_changes: file changes named tuple
 
@@ -987,6 +1010,7 @@ class PullRequestModel(BaseModel):
             'added_files': file_changes.added,
             'modified_files': file_changes.modified,
             'removed_files': file_changes.removed,
+            'ancestor_commit_id': ancestor_commit_id
         }
         renderer = RstTemplateRenderer()
         return renderer.render('pull_request_update.mako', **params)
@@ -1168,6 +1192,75 @@ class PullRequestModel(BaseModel):
             notification_type=notification_type,
             recipients=recipients,
             email_kwargs=kwargs,
+        )
+
+    def notify_users(self, pull_request, updating_user, ancestor_commit_id,
+                     commit_changes, file_changes):
+
+        updating_user_id = updating_user.user_id
+        reviewers = set([x.user.user_id for x in pull_request.reviewers])
+        # NOTE(marcink): send notification to all other users except to
+        # person who updated the PR
+        recipients = reviewers.difference(set([updating_user_id]))
+
+        log.debug('Notify following recipients about pull-request update %s', recipients)
+
+        pull_request_obj = pull_request
+
+        # send email about the update
+        changed_files = (
+                file_changes.added + file_changes.modified + file_changes.removed)
+
+        pr_source_repo = pull_request_obj.source_repo
+        pr_target_repo = pull_request_obj.target_repo
+
+        pr_url = h.route_url('pullrequest_show',
+                             repo_name=pr_target_repo.repo_name,
+                             pull_request_id=pull_request_obj.pull_request_id,)
+
+        # set some variables for email notification
+        pr_target_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_target_repo.repo_name)
+
+        pr_source_repo_url = h.route_url(
+            'repo_summary', repo_name=pr_source_repo.repo_name)
+
+        email_kwargs = {
+            'date': datetime.datetime.now(),
+            'updating_user': updating_user,
+
+            'pull_request': pull_request_obj,
+
+            'pull_request_target_repo': pr_target_repo,
+            'pull_request_target_repo_url': pr_target_repo_url,
+
+            'pull_request_source_repo': pr_source_repo,
+            'pull_request_source_repo_url': pr_source_repo_url,
+
+            'pull_request_url': pr_url,
+
+            'ancestor_commit_id': ancestor_commit_id,
+            'added_commits': commit_changes.added,
+            'removed_commits': commit_changes.removed,
+            'changed_files': changed_files,
+            'added_files': file_changes.added,
+            'modified_files': file_changes.modified,
+            'removed_files': file_changes.removed,
+        }
+
+        (subject,
+         _h, _e,  # we don't care about those
+         body_plaintext) = EmailNotificationModel().render_email(
+            EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **email_kwargs)
+
+        # create notification objects, and emails
+        NotificationModel().create(
+            created_by=updating_user,
+            notification_subject=subject,
+            notification_body=body_plaintext,
+            notification_type=EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE,
+            recipients=recipients,
+            email_kwargs=email_kwargs,
         )
 
     def delete(self, pull_request, user):

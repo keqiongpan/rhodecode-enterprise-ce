@@ -895,7 +895,9 @@ def update_pull_request(
 
         with pull_request.set_state(PullRequest.STATE_UPDATING):
             if PullRequestModel().has_valid_update_type(pull_request):
-                update_response = PullRequestModel().update_commits(pull_request)
+                db_user = apiuser.get_instance()
+                update_response = PullRequestModel().update_commits(
+                    pull_request, db_user)
                 commit_changes = update_response.changes or commit_changes
             Session().commit()
 

@@ -1047,7 +1047,7 @@ class PRTestUtility(object):
     def add_one_commit(self, head=None):
         self.update_source_repository(head=head)
         old_commit_ids = set(self.pull_request.revisions)
-        PullRequestModel().update_commits(self.pull_request)
+        PullRequestModel().update_commits(self.pull_request, self.pull_request.author)
         commit_ids = set(self.pull_request.revisions)
         new_commit_ids = commit_ids - old_commit_ids
         assert len(new_commit_ids) == 1
@@ -1066,7 +1066,7 @@ class PRTestUtility(object):
             kwargs = {}
         source_vcs.strip(removed_commit_id, **kwargs)
 
-        PullRequestModel().update_commits(self.pull_request)
+        PullRequestModel().update_commits(self.pull_request, self.pull_request.author)
         assert len(self.pull_request.revisions) == 1
         return removed_commit_id
 

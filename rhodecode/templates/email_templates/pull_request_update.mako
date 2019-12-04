@@ -6,20 +6,20 @@
 <%def name="subject()" filter="n,trim,whitespace_filter">
 <%
 data = {
-    'user': '@'+h.person(user),
+    'updating_user': '@'+h.person(updating_user),
     'pr_id': pull_request.pull_request_id,
     'pr_title': pull_request.title,
 }
 %>
 
-${_('{user} requested a pull request review. !{pr_id}: "{pr_title}"').format(**data) |n}
+${_('{updating_user} updated pull request. !{pr_id}: "{pr_title}"').format(**data) |n}
 </%def>
 
 ## PLAINTEXT VERSION OF BODY
 <%def name="body_plaintext()" filter="n,trim">
 <%
 data = {
-    'user': h.person(user),
+    'updating_user': h.person(updating_user),
     'pr_id': pull_request.pull_request_id,
     'pr_title': pull_request.title,
     'source_ref_type': pull_request.source_ref_parts.type,
@@ -44,21 +44,33 @@ data = {
 
 ${pull_request.description | trim}
 
+* Changed commits:
 
-* ${_ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits) ) % {'num': len(pull_request_commits)}}:
+ - Added: ${len(added_commits)}
+ - Removed: ${len(removed_commits)}
 
-% for commit_id, message in pull_request_commits:
-    - ${h.short_id(commit_id)}
-      ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
+* Changed files:
 
-% endfor
+%if not changed_files:
+ No file changes found
+%else:
+%for file_name in added_files:
+ - A `${file_name}`
+%endfor
+%for file_name in modified_files:
+ - M `${file_name}`
+%endfor
+%for file_name in removed_files:
+ - R `${file_name}`
+%endfor
+%endif
 
 ---
 ${self.plaintext_footer()}
 </%def>
 <%
 data = {
-    'user': h.person(user),
+    'updating_user': h.person(updating_user),
     'pr_id': pull_request.pull_request_id,
     'pr_title': pull_request.title,
     'source_ref_type': pull_request.source_ref_parts.type,
@@ -79,10 +91,10 @@ data = {
 
         <h4 style="margin: 0">
             <div style="margin-bottom: 4px">
-                <span style="color:#7E7F7F">@${h.person(user.username)}</span>
-                ${_('requested a')}
+                <span style="color:#7E7F7F">@${h.person(updating_user.username)}</span>
+                ${_('updated')}
                 <a href="${pull_request_url}" style="${base.link_css()}">
-                ${_('pull request review.').format(**data) }
+                ${_('pull request.').format(**data) }
                 </a>
             </div>
             <div style="margin-top: 10px"></div>
@@ -124,20 +136,29 @@ data = {
         <td style="white-space:pre-wrap"><code>${pull_request.description | trim}</code></td>
     </tr>
     <tr>
-        <td style="padding-right:20px;">${_ungettext('Commit (%(num)s)', 'Commits (%(num)s)', len(pull_request_commits)) % {'num': len(pull_request_commits)}}:</td>
-        <td></td>
-    </tr>
+        <td style="padding-right:20px;">${_('Changes')}:</td>
+        <td style="white-space:pre-line">\
+            <strong>Changed commits:</strong>
 
-    <tr>
-        <td colspan="2">
-            <ol style="margin:0 0 0 1em;padding:0;text-align:left;">
-                % for commit_id, message in pull_request_commits:
-                    <li style="margin:0 0 1em;">
-                        <pre style="margin:0 0 .5em"><a href="${h.route_path('repo_commit', repo_name=pull_request_source_repo.repo_name, commit_id=commit_id)}" style="${base.link_css()}">${h.short_id(commit_id)}</a></pre>
-                        ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
-                    </li>
-                % endfor
-            </ol>
+             - Added: ${len(added_commits)}
+             - Removed: ${len(removed_commits)}
+
+            <strong>Changed files:</strong>
+
+            %if not changed_files:
+             No file changes found
+            %else:
+            %for file_name in added_files:
+             - A <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
+            %endfor
+            %for file_name in modified_files:
+             - M <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
+            %endfor
+            %for file_name in removed_files:
+             - R <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
+            %endfor
+            %endif
         </td>
     </tr>
+
 </table>

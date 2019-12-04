@@ -1117,7 +1117,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _ = self.request.translate
 
         with pull_request.set_state(PullRequest.STATE_UPDATING):
-            resp = PullRequestModel().update_commits(pull_request)
+            resp = PullRequestModel().update_commits(
+                pull_request, self._rhodecode_db_user)
 
         if resp.executed:
 

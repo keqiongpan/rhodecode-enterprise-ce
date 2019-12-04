@@ -78,7 +78,16 @@ Check if we should use full-topic or mini-topic.
         target_repo = AttributeDict(repo_name='repo_group/target_repo')
         source_repo = AttributeDict(repo_name='repo_group/source_repo')
         user = User.get_by_username(self.request.GET.get('user')) or self._rhodecode_db_user
-
+        # file/commit changes for PR update
+        commit_changes = AttributeDict({
+            'added': ['aaaaaaabbbbb', 'cccccccddddddd'],
+            'removed': ['eeeeeeeeeee'],
+        })
+        file_changes = AttributeDict({
+            'added': ['a/file1.md', 'file2.py'],
+            'modified': ['b/modified_file.rst'],
+            'removed': ['.idea'],
+        })
         email_kwargs = {
             'test': {},
             'message': {
@@ -87,7 +96,6 @@ Check if we should use full-topic or mini-topic.
             'email_test': {
                 'user': user,
                 'date': datetime.datetime.now(),
-                'rhodecode_version': c.rhodecode_version
             },
             'password_reset': {
                 'password_reset_url': 'http://example.com/reset-rhodecode-password/token',
@@ -215,6 +223,35 @@ This should work better !
 
             },
 
+            'pull_request_update': {
+                'updating_user': user,
+
+                'status_change': None,
+                'status_change_type': None,
+
+                'pull_request': pr,
+                'pull_request_commits': [],
+
+                'pull_request_target_repo': target_repo,
+                'pull_request_target_repo_url': 'http://target-repo/url',
+
+                'pull_request_source_repo': source_repo,
+                'pull_request_source_repo_url': 'http://source-repo/url',
+
+                'pull_request_url': 'http://localhost/pr1',
+
+                # update comment links
+                'pr_comment_url': 'http://comment-url',
+                'pr_comment_reply_url': 'http://comment-url#reply',
+                'ancestor_commit_id': 'f39bd443',
+                'added_commits': commit_changes.added,
+                'removed_commits': commit_changes.removed,
+                'changed_files': (file_changes.added + file_changes.modified + file_changes.removed),
+                'added_files': file_changes.added,
+                'modified_files': file_changes.modified,
+                'removed_files': file_changes.removed,
+            },
+
             'cs_comment': {
                 'user': user,
                 'commit': AttributeDict(idx=123, raw_id='a'*40, message='Commit message'),
@@ -338,6 +375,8 @@ users: description edit fixes
 
             'pull_request_comment+file': {},
             'pull_request_comment+status': {},
+
+            'pull_request_update': {},
         }
         c.email_types.update(EmailNotificationModel.email_types)
 

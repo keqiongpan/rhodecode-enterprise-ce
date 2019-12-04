@@ -293,6 +293,7 @@ class EmailNotificationModel(BaseModel):
     TYPE_REGISTRATION = Notification.TYPE_REGISTRATION
     TYPE_PULL_REQUEST = Notification.TYPE_PULL_REQUEST
     TYPE_PULL_REQUEST_COMMENT = Notification.TYPE_PULL_REQUEST_COMMENT
+    TYPE_PULL_REQUEST_UPDATE = Notification.TYPE_PULL_REQUEST_UPDATE
     TYPE_MAIN = Notification.TYPE_MESSAGE
 
     TYPE_PASSWORD_RESET = 'password_reset'
@@ -319,6 +320,8 @@ class EmailNotificationModel(BaseModel):
             'rhodecode:templates/email_templates/pull_request_review.mako',
         TYPE_PULL_REQUEST_COMMENT:
             'rhodecode:templates/email_templates/pull_request_comment.mako',
+        TYPE_PULL_REQUEST_UPDATE:
+            'rhodecode:templates/email_templates/pull_request_update.mako',
     }
 
     def __init__(self):
@@ -341,6 +344,7 @@ class EmailNotificationModel(BaseModel):
         """
 
         kwargs['rhodecode_instance_name'] = self.rhodecode_instance_name
+        kwargs['rhodecode_version'] = rhodecode.__version__
         instance_url = h.route_url('home')
         _kwargs = {
             'instance_url': instance_url,

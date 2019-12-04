@@ -821,7 +821,7 @@ def is_svn_without_proxy(repository):
 
 def discover_user(author):
     """
-    Tries to discover RhodeCode User based on the autho string. Author string
+    Tries to discover RhodeCode User based on the author string. Author string
     is typically `FirstName LastName <email@address.com>`
     """
 
@@ -1015,10 +1015,11 @@ def bool2icon(value, show_at_false=True):
 #==============================================================================
 # PERMS
 #==============================================================================
-from rhodecode.lib.auth import HasPermissionAny, HasPermissionAll, \
-HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll, \
-HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token, \
-csrf_token_key
+from rhodecode.lib.auth import (
+    HasPermissionAny, HasPermissionAll,
+    HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll,
+    HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token,
+    csrf_token_key, AuthUser)
 
 
 #==============================================================================

@@ -814,7 +814,7 @@ def test_update_writes_snapshot_into_pull_request_version(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that it has a version entry now
     assert len(model.get_versions(pull_request)) == 1
@@ -823,7 +823,7 @@ def test_update_writes_snapshot_into_pull_request_version(pr_util, config_stub):
 def test_update_skips_new_version_if_unchanged(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     model = PullRequestModel()
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that it still has no versions
     assert len(model.get_versions(pull_request)) == 0
@@ -835,7 +835,7 @@ def test_update_assigns_comments_to_the_new_version(pr_util, config_stub):
     comment = pr_util.create_comment()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that the comment is linked to the pr version now
     assert comment.pull_request_version == model.get_versions(pull_request)[0]
@@ -847,8 +847,9 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util, con
     pr_util.update_source_repository()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    update_response = model.update_commits(pull_request, pull_request.author)
 
+    commit_id = update_response.common_ancestor_id
     # Expect to find a new comment about the change
     expected_message = textwrap.dedent(
         """\
@@ -863,10 +864,10 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util, con
             * :removed:`0 removed`
 
           Changed files:
-            * `A file_2 <#a_c--92ed3b5f07b4>`_
+            * `A file_2 <#a_c-{}-92ed3b5f07b4>`_
 
         .. |under_review| replace:: *"Under Review"*"""
-    )
+    ).format(commit_id[:12])
     pull_request_comments = sorted(
         pull_request.comments, key=lambda c: c.modified_at)
     update_comment = pull_request_comments[-1]
