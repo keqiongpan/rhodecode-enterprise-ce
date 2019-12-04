@@ -649,7 +649,7 @@ class MercurialRepository(BaseRepository):
                 # The rebase-abort may raise another exception which 'hides'
                 # the original one, therefore we log it here.
                 log.exception('Error while rebasing shadow repo during merge.')
-                if 'unresolved conflicts' in e.message:
+                if 'unresolved conflicts' in safe_str(e):
                     unresolved = self._remote.get_unresolved_files()
                     log.debug('unresolved files: %s', unresolved)
 
@@ -675,7 +675,7 @@ class MercurialRepository(BaseRepository):
                 # The merge-abort may raise another exception which 'hides'
                 # the original one, therefore we log it here.
                 log.exception('Error while merging shadow repo during merge.')
-                if 'unresolved merge conflicts' in e.message:
+                if 'unresolved merge conflicts' in safe_str(e):
                     unresolved = self._remote.get_unresolved_files()
                     log.debug('unresolved files: %s', unresolved)
 
