@@ -56,7 +56,7 @@
              </div>
 
             <div class="buttons">
-              ${h.submit('save',_('Save'),class_="btn")}
+              ${h.submit('save',_('Create User Group'),class_="btn")}
             </div>
         </div>
     </div>

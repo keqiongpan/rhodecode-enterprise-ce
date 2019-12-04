@@ -94,7 +94,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             </div>
         </div>
         <div class="buttons">
-          ${h.submit('save',_('Save'),class_="btn")}
+          ${h.submit('save',_('Create Repository'),class_="btn")}
         </div>
     </div>
 </div>
