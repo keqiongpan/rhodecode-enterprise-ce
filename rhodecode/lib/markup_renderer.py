@@ -53,6 +53,8 @@ class CustomHTMLTranslator(writers.html4css1.HTMLTranslator):
     Custom HTML Translator used for sandboxing potential
     JS injections in ref links
     """
+    def visit_literal_block(self, node):
+        self.body.append(self.starttag(node, 'pre', CLASS='codehilite literal-block'))
 
     def visit_reference(self, node):
         if 'refuri' in node.attributes:
@@ -423,7 +425,10 @@ class MarkupRenderer(object):
                  cls.RESTRUCTUREDTEXT_DISALLOWED_DIRECTIVES])
 
             docutils_settings.update({
-                'input_encoding': 'unicode', 'report_level': 4})
+                'input_encoding': 'unicode',
+                'report_level': 4,
+                'syntax_highlight': 'short',
+            })
 
             for k, v in docutils_settings.iteritems():
                 directives.register_directive(k, v)
