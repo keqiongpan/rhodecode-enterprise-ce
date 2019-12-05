@@ -191,7 +191,7 @@ def select(name, selected_values, options, id=NotGiven, **attrs):
                 option_group = options.add_optgroup(label)
                 for opt2 in value:
                     if isinstance(opt2, tuple) and len(opt2) == 2:
-                        group_value, group_label = opt
+                        group_value, group_label = opt2
                     elif isinstance(opt2, basestring):
                         group_value = group_label = opt2
                     else:
