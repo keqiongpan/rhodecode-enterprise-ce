@@ -56,9 +56,7 @@
                 </div>
             </div>
 
-            <div class="pull-right">
-                ##<i class="tooltip icon-info" title="${_('Secret gists are hidden from listing, but accessible to anyone who knows the url.')}"></i>
-
+            <div class="pull-left">
                 <div class="pull-right">
                     ${h.submit('create',_('Create Gist'),class_="btn")}
                 </div>
