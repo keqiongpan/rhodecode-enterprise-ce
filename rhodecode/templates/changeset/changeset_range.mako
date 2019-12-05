@@ -83,17 +83,14 @@
         <div id="changeset_compare_view_content">
     <div class="pull-left">
       <div class="btn-group">
-          <a
-              class="btn"
-              href="#"
-              onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
-          </a>
-          <a
-              class="btn"
-              href="#"
-              onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+          <a class="${('collapsed' if c.collapse_all_commits else '')}" href="#expand-commits" onclick="toggleCommitExpand(this); return false" data-toggle-commits-cnt=${len(c.commit_ranges)} >
+              % if c.collapse_all_commits:
+                <i class="icon-plus-squared-alt icon-no-margin"></i>
+                ${_ungettext('Expand {} commit', 'Expand {} commits', len(c.commit_ranges)).format(len(c.commit_ranges))}
+              % else:
+                <i class="icon-minus-squared-alt icon-no-margin"></i>
+                ${_ungettext('Collapse {} commit', 'Collapse {} commits', len(c.commit_ranges)).format(len(c.commit_ranges))}
+              % endif
           </a>
       </div>
     </div>

@@ -617,7 +617,7 @@ class TestFilesDiff(object):
             })
         # use redirect since this is OLD view redirecting to compare page
         response = response.follow()
-        response.mustcontain('Expand 1 commit')
+        response.mustcontain('Collapse 1 commit')
         file_changes = (1, 0, 0)
 
         compare_page = ComparePage(response)

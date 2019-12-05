@@ -1140,6 +1140,32 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 updateSticky()
             };
 
+            toggleCommitExpand = function (el) {
+                var $el = $(el);
+                var commits = $el.data('toggleCommitsCnt');
+                var collapseMsg = _ngettext('Collapse {0} commit', 'Collapse {0} commits', commits).format(commits);
+                var expandMsg = _ngettext('Expand {0} commit', 'Expand {0} commits', commits).format(commits);
+
+                if ($el.hasClass('collapsed')) {
+                    $('.compare_select').show();
+                    $('.compare_select_hidden').hide();
+
+                    $el.removeClass('collapsed');
+                    $el.html(
+                        '<i class="icon-minus-squared-alt icon-no-margin"></i>' +
+                       collapseMsg);
+                }
+                else {
+                    $('.compare_select').hide();
+                    $('.compare_select_hidden').show();
+                    $el.addClass('collapsed');
+                    $el.html(
+                        '<i class="icon-plus-squared-alt icon-no-margin"></i>' +
+                        expandMsg);
+                }
+                updateSticky();
+            };
+
             // get stored diff mode and pre-enable it
             if (templateContext.session_attrs.wide_diff_mode === "true") {
                 Rhodecode.comments.toggleWideMode(null);

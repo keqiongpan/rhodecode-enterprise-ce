@@ -82,7 +82,7 @@ class TestSideBySideDiff(object):
 
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(*file_changes)
-        response.mustcontain('Expand 1 commit')
+        response.mustcontain('Collapse 1 commit')
 
     def test_diff_sidebyside_two_commits(self, app, backend):
         commit_id_range = {
@@ -122,7 +122,33 @@ class TestSideBySideDiff(object):
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(*file_changes)
 
-        response.mustcontain('Expand 2 commits')
+        response.mustcontain('Collapse 2 commits')
+
+    def test_diff_sidebyside_collapsed_commits(self, app, backend_svn):
+        commit_id_range = {
+
+            'svn': {
+                'commits': ['330',
+                            '337'],
+
+            },
+        }
+
+        commit_info = commit_id_range['svn']
+        commit2, commit1 = commit_info['commits']
+
+        response = self.app.get(route_path(
+            'repo_compare',
+            repo_name=backend_svn.repo_name,
+            source_ref_type='rev',
+            source_ref=commit2,
+            target_repo=backend_svn.repo_name,
+            target_ref_type='rev',
+            target_ref=commit1,
+            params=dict(target_repo=backend_svn.repo_name, diffmode='sidebyside')
+        ))
+
+        response.mustcontain('Expand 7 commits')
 
     @pytest.mark.xfail(reason='GIT does not handle empty commit compare correct (missing 1 commit)')
     def test_diff_side_by_side_from_0_commit(self, app, backend, backend_stub):
@@ -149,7 +175,7 @@ class TestSideBySideDiff(object):
             params=dict(diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 2 commits')
+        response.mustcontain('Collapse 2 commits')
         response.mustcontain('123 file changed')
 
         response.mustcontain(
@@ -183,7 +209,7 @@ class TestSideBySideDiff(object):
             params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 2 commits')
+        response.mustcontain('Collapse 2 commits')
         response.mustcontain('1 file changed')
 
         response.mustcontain(
@@ -215,7 +241,7 @@ class TestSideBySideDiff(object):
             params=dict(f_path=f_path, target_repo=repo.repo_name, diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 2 commits')
+        response.mustcontain('Collapse 2 commits')
         response.mustcontain('1 file changed')
 
         response.mustcontain(
@@ -259,7 +285,7 @@ class TestSideBySideDiff(object):
             params=dict(f_path=f_path, target_repo=backend.repo_name, diffmode='sidebyside')
         ))
 
-        response.mustcontain('Expand 2 commits')
+        response.mustcontain('Collapse 2 commits')
 
         compare_page = ComparePage(response)
         compare_page.contains_change_summary(*file_changes)
