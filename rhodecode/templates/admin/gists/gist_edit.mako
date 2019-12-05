@@ -95,7 +95,7 @@
             %endfor
             <input type="hidden" name="__end__" />
 
-            <div class="pull-right">
+            <div class="pull-left">
             ${h.submit('update',_('Update Gist'),class_="btn btn-success")}
             <a class="btn" href="${h.route_path('gist_show', gist_id=c.gist.gist_access_id)}">${_('Cancel')}</a>
             </div>
