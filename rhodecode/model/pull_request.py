@@ -970,8 +970,13 @@ class PullRequestModel(BaseModel):
 
             old_hash = old_files.get(new_filename)
             if not old_hash:
-                # file is not present in old diff, means it's added
-                added_files.append(new_filename)
+                # file is not present in old diff, we have to figure out from parsed diff
+                # operation ADD/REMOVE
+                operations_dict = diff_data['stats']['ops']
+                if diffs.DEL_FILENODE in operations_dict:
+                    removed_files.append(new_filename)
+                else:
+                    added_files.append(new_filename)
             else:
                 if new_hash != old_hash:
                     modified_files.append(new_filename)
