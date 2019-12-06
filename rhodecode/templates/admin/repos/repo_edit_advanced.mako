@@ -142,7 +142,7 @@
             % endif
         </table>
 
-        <a href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
+        <a class="btn btn-primary" href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
            onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
             ${_('Update Hooks')}
         </a>
@@ -159,9 +159,8 @@
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
         <div class="field">
-            <button class="btn btn-small btn-danger" type="submit"
+            <button class="btn btn-small btn-warning" type="submit"
                     onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
-                <i class="icon-remove"></i>
                 ${_('Archive this repository')}
             </button>
         </div>
@@ -217,7 +216,6 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
-                <i class="icon-remove"></i>
                 ${_('Delete this repository')}
             </button>
         </div>
