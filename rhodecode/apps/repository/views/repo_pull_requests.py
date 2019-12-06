@@ -487,7 +487,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             log.debug('Failed to get shadow repo', exc_info=True)
         # try first the existing source_repo, and then shadow
         # repo if we can obtain one
-        commits_source_repo = source_scm or shadow_scm
+        commits_source_repo = source_scm
+        if shadow_scm:
+            commits_source_repo = shadow_scm
 
         c.commits_source_repo = commits_source_repo
         c.ancestor = None  # set it to None, to hide it from PR view
@@ -617,7 +619,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         diffset = cached_diff['diff']
                     else:
                         diffset = self._get_range_diffset(
-                            source_scm, source_repo,
+                            commits_source_repo, source_repo,
                             commit1, commit2, diff_limit, file_limit,
                             c.fulldiff, ign_whitespace_lcl, context_lcl
                         )
