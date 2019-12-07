@@ -391,8 +391,12 @@ form.comment-form {
         display: inline-block;
     }
 
+    .status_box {
+        margin-left: 10px;
+    }
+
     .action-buttons {
-        float: right;
+        float: left;
         display: inline-block;
     }
 
@@ -521,7 +525,7 @@ form.comment-form {
 }
 
 .comment-area {
-    padding: 8px 12px;
+    padding: 6px 8px;
     border: 1px solid @grey5;
     .border-radius(@border-radius);
 
@@ -529,6 +533,14 @@ form.comment-form {
         padding: 1px 0px 0px 6px;
     }
 
+}
+
+comment-area-text {
+    color: @grey3;
+}
+
+.comment-area-header {
+    height: 35px;
 }
 
 .comment-area-header .nav-links {
@@ -550,7 +562,7 @@ form.comment-form {
     border: 1px dashed white;
     border-radius: @border-radius;
     margin-top: -10px;
-
+    line-height: 30px;
     &.dz-drag-hover {
         border-color: @grey3;
     }
@@ -605,7 +617,13 @@ form.comment-form {
 }
 
 .toolbar-text {
-    float: left;
-    font-size: 12px;
+    float: right;
+    font-size: 11px;
+    color: @grey4;
+    text-align: right;
+
+    a {
+        color: @grey4;
+    }
 }
 

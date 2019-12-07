@@ -309,25 +309,28 @@
 <%def name="comment_form(form_type, form_id='', lineno_id='{1}', review_statuses=None, form_extras=None)">
 
   ## comment injected based on assumption that user is logged in
-  <form ${'id="{}"'.format(form_id) if form_id else '' |n} action="#" method="GET">
+  <form ${('id="{}"'.format(form_id) if form_id else '') |n} action="#" method="GET">
 
     <div class="comment-area">
         <div class="comment-area-header">
-            <ul class="nav-links clearfix">
-                <li class="active">
-                    <a href="#edit-btn" tabindex="-1" id="edit-btn_${lineno_id}">${_('Write')}</a>
-                </li>
-                <li class="">
-                    <a href="#preview-btn" tabindex="-1" id="preview-btn_${lineno_id}">${_('Preview')}</a>
-                </li>
-                <li class="pull-right">
-                    <select class="comment-type" id="comment_type_${lineno_id}" name="comment_type">
-                        % for val in c.visual.comment_types:
-                            <option value="${val}">${val.upper()}</option>
-                        % endfor
-                    </select>
-                </li>
-            </ul>
+            <div class="pull-left">
+                <ul class="nav-links clearfix">
+                    <li class="active">
+                        <a href="#edit-btn" tabindex="-1" id="edit-btn_${lineno_id}">${_('Write')}</a>
+                    </li>
+                    <li class="">
+                        <a href="#preview-btn" tabindex="-1" id="preview-btn_${lineno_id}">${_('Preview')}</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="pull-right">
+                <span class="comment-area-text">${_('Mark as')}:</span>
+                <select class="comment-type" id="comment_type_${lineno_id}" name="comment_type">
+                    % for val in c.visual.comment_types:
+                        <option value="${val}">${val.upper()}</option>
+                    % endfor
+                </select>
+            </div>
         </div>
 
         <div class="comment-area-write" style="display: block;">
@@ -341,14 +344,6 @@
 
         <div class="comment-area-footer comment-attachment-uploader">
             <div class="toolbar">
-                <div class="toolbar-text">
-                  ${(_('Comments parsed using %s syntax with %s, and %s actions support.') % (
-                           ('<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper())),
-                           ('<span class="tooltip" title="%s">@mention</span>' % _('Use @username inside this text to send notification to this RhodeCode user')),
-                           ('<span class="tooltip" title="%s">`/`</span>' % _('Start typing with / for certain actions to be triggered via text box.'))
-                       )
-                    )|n}
-                </div>
 
                 <div class="comment-attachment-text">
                     <div class="dropzone-text">
@@ -372,6 +367,32 @@
 
     <div class="comment-footer">
 
+        ## inject extra inputs into the form
+        % if form_extras and isinstance(form_extras, (list, tuple)):
+            <div id="comment_form_extras">
+                % for form_ex_el in form_extras:
+                    ${form_ex_el|n}
+                % endfor
+            </div>
+        % endif
+
+        <div class="action-buttons">
+            % if form_type != 'inline':
+                <div class="action-buttons-extra"></div>
+            % endif
+
+            <input class="btn btn-success comment-button-input" id="save_${lineno_id}" name="save" type="submit" value="${_('Comment')}">
+
+            ## inline for has a file, and line-number together with cancel hide button.
+            % if form_type == 'inline':
+                <input type="hidden" name="f_path" value="{0}">
+                <input type="hidden" name="line" value="${lineno_id}">
+                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+                ${_('Cancel')}
+                </button>
+            % endif
+        </div>
+
         % if review_statuses:
         <div class="status_box">
           <select id="change_status_${lineno_id}" name="changeset_status">
@@ -386,31 +407,13 @@
         </div>
         % endif
 
-        ## inject extra inputs into the form
-        % if form_extras and isinstance(form_extras, (list, tuple)):
-            <div id="comment_form_extras">
-                % for form_ex_el in form_extras:
-                    ${form_ex_el|n}
-                % endfor
-            </div>
-        % endif
-
-        <div class="action-buttons">
-            ## inline for has a file, and line-number together with cancel hide button.
-            % if form_type == 'inline':
-                <input type="hidden" name="f_path" value="{0}">
-                <input type="hidden" name="line" value="${lineno_id}">
-                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-                ${_('Cancel')}
-                </button>
-            % endif
-
-            % if form_type != 'inline':
-                <div class="action-buttons-extra"></div>
-            % endif
-
-            ${h.submit('save', _('Comment'), class_='btn btn-success comment-button-input')}
-
+        <div class="toolbar-text">
+            <% renderer_url = '<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper()) %>
+            ${_('Comments parsed using {} syntax.').format(renderer_url)|n} <br/>
+            <span class="tooltip" title="${_('Use @username inside this text to send notification to this RhodeCode user')}">@mention</span>
+            ${_('and')}
+            <span class="tooltip" title="${_('Start typing with / for certain actions to be triggered via text box.')}">`/` autocomplete</span>
+            ${_('actions supported.')}
         </div>
     </div>
 
