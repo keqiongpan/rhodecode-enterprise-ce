@@ -450,8 +450,25 @@ def test_clone_url_generator(tmpl, repo_name, overrides, prefix, expected):
     clone_url = get_clone_url(
         request=RequestStub(),
         uri_tmpl=tmpl,
-        repo_name=repo_name, repo_id=23, **overrides)
+        repo_name=repo_name, repo_id=23, repo_type='hg', **overrides)
     assert clone_url == expected
+
+
+def test_clone_url_svn_ssh_generator():
+    from rhodecode.lib.utils2 import get_clone_url
+
+    class RequestStub(object):
+        def request_url(self, name):
+            return 'http://vps1:8000'
+
+        def route_url(self, name):
+            return self.request_url(name)
+
+    clone_url = get_clone_url(
+        request=RequestStub(),
+        uri_tmpl=Repository.DEFAULT_CLONE_URI_SSH,
+        repo_name='svn-test', repo_id=23, repo_type='svn', **{'sys_user': 'rcdev'})
+    assert clone_url == 'svn+ssh://rcdev@vps1/svn-test'
 
 
 idx = 0

@@ -654,7 +654,7 @@ def get_host_info(request):
     }
 
 
-def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
+def get_clone_url(request, uri_tmpl, repo_name, repo_id, repo_type, **override):
     qualified_home_url = request.route_url('home')
     parsed_url = urlobject.URLObject(qualified_home_url)
     decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
@@ -668,13 +668,18 @@ def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
         'hostname': parsed_url.hostname,
         'prefix': decoded_path,
         'repo': repo_name,
-        'repoid': str(repo_id)
+        'repoid': str(repo_id),
+        'repo_type': repo_type
     }
     args.update(override)
     args['user'] = urllib.quote(safe_str(args['user']))
 
     for k, v in args.items():
         uri_tmpl = uri_tmpl.replace('{%s}' % k, v)
+
+    # special case for SVN clone url
+    if repo_type == 'svn':
+        uri_tmpl = uri_tmpl.replace('ssh://', 'svn+ssh://')
 
     # remove leading @ sign if it's present. Case of empty user
     url_obj = urlobject.URLObject(uri_tmpl)

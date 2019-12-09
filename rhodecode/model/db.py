@@ -2297,9 +2297,11 @@ class Repository(Base, BaseModel):
                 rc_config = request.call_context.rc_config
             else:
                 rc_config = SettingsModel().get_all_settings(cache=True)
+
             if ssh:
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_ssh_tmpl') or self.DEFAULT_CLONE_URI_SSH
+
             else:
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
@@ -2307,7 +2309,9 @@ class Repository(Base, BaseModel):
         return get_clone_url(request=request,
                              uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,
-                             repo_id=self.repo_id, **override)
+                             repo_id=self.repo_id,
+                             repo_type=self.repo_type,
+                             **override)
 
     def set_state(self, state):
         self.repo_state = state
