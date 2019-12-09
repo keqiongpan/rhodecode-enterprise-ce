@@ -298,8 +298,9 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}
 .CodeMirror-gutter,
 .CodeMirror-gutters,
 .CodeMirror-linenumber {
-  -moz-box-sizing: content-box;
-  box-sizing: content-box;
+  /* RhodeCode added !important, to fix diffs rule */
+  -moz-box-sizing: content-box !important;
+  box-sizing: content-box !important;
 }
 
 .CodeMirror-measure {
