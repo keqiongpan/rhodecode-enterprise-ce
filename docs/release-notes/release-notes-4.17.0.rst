@@ -62,7 +62,7 @@ Performance
 Fixes
 ^^^^^
 
-- hHooks: fixed more unicode problems with new pull-request link generator.
+- Hooks: fixed more unicode problems with new pull-request link generator.
 - Mercurial: fix ssh-server support for mercurial custom options.
 - Pull requests: updated metadata information for failed merges with multiple heads.
 - Pull requests: calculate ancestor in the same way as creation mode.
