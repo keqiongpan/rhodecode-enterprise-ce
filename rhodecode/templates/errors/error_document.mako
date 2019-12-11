@@ -81,7 +81,7 @@
                 <p>
                 <strong>Exception ID: <code><a href="${c.exception_id_url}">${c.exception_id}</a></code> </strong> <br/>
 
-                Super Admins can see detailed traceback information from this exception by checking the below Exception ID.<br/>
+                Super-admins can see detailed traceback information from this exception by checking the below Exception ID.<br/>
                 Please include the above link for further details of this exception.
                 </p>
             </div>

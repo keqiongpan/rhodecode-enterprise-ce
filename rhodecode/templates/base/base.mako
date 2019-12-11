@@ -91,7 +91,7 @@
         <div class="title-content">
           <div class="title-main">
             % if c.is_super_admin:
-                ${_('Super Admin Panel')}
+                ${_('Super-admin Panel')}
             % else:
                 ${_('Delegated Admin Panel')}
             % endif
@@ -101,7 +101,7 @@
 
     <ul id="context-pages" class="navigation horizontal-list">
 
-        ## super admin case
+        ## super-admin case
         % if c.is_super_admin:
           <li class="${h.is_active('audit_logs', active)}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
           <li class="${h.is_active('repositories', active)}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>

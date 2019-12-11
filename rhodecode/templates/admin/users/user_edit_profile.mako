@@ -106,7 +106,7 @@
             </div>
             <div class="field">
                <div class="label-text">
-                    ${_('Super Admin')}:
+                    ${_('Super-admin')}:
                </div>
                <div class="input user-checkbox">
                     ${h.checkbox('admin',value=True)}

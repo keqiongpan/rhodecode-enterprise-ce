@@ -30,7 +30,7 @@
                             <span class="user">
                                 ${h.link_to_user(_user.username)}
                                 %if getattr(_user, 'admin_row', None):
-                                    (${_('super admin')})
+                                    (${_('super-admin')})
                                 %endif
                                 %if getattr(_user, 'owner_row', None):
                                     (${_('owner')})
