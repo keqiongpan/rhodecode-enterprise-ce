@@ -22,7 +22,7 @@ import logging
 
 from whoosh.qparser.default import QueryParser, query
 from whoosh.qparser.dateparse import DateParserPlugin
-from whoosh.fields import (TEXT, Schema, DATETIME)
+from whoosh.fields import (TEXT, Schema, DATETIME, KEYWORD)
 from sqlalchemy.sql.expression import or_, and_, not_, func
 
 from rhodecode.model.db import UserLog
@@ -30,11 +30,12 @@ from rhodecode.lib.utils2 import remove_prefix, remove_suffix, safe_unicode
 
 # JOURNAL SCHEMA used only to generate queries in journal. We use whoosh
 # querylang to build sql queries and filter journals
-JOURNAL_SCHEMA = Schema(
-    username=TEXT(),
+AUDIT_LOG_SCHEMA = Schema(
+    username=KEYWORD(),
+    repository=KEYWORD(),
+
     date=DATETIME(),
     action=TEXT(),
-    repository=TEXT(),
     ip=TEXT(),
 )
 
@@ -52,7 +53,7 @@ def user_log_filter(user_log, search_term):
     log.debug('Initial search term: %r', search_term)
     qry = None
     if search_term:
-        qp = QueryParser('repository', schema=JOURNAL_SCHEMA)
+        qp = QueryParser('repository', schema=AUDIT_LOG_SCHEMA)
         qp.add_plugin(DateParserPlugin())
         qry = qp.parse(safe_unicode(search_term))
         log.debug('Filtering using parsed query %r', qry)
