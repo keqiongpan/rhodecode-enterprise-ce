@@ -101,12 +101,11 @@ class TestPullrequestsView(object):
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
 
-        assert pull_request.target_ref_parts.type in response
-        assert pull_request.target_ref_parts.name in response
-        target_clone_url = pull_request.target_repo.clone_url()
-        assert target_clone_url in response
+        response.mustcontain(pull_request.target_ref_parts.type)
+        response.mustcontain(pull_request.target_ref_parts.name)
 
-        assert 'class="pull-request-merge"' in response
+        response.mustcontain('class="pull-request-merge"')
+
         if pr_merge_enabled:
             response.mustcontain('Pull request reviewer approval is pending')
         else:
@@ -536,9 +535,9 @@ class TestPullrequestsView(object):
 
         # Check generated diff contents
         response = response.follow()
-        assert 'content_of_ancestor' not in response.body
-        assert 'content_of_ancestor-child' not in response.body
-        assert 'content_of_change' in response.body
+        response.mustcontain(no=['content_of_ancestor'])
+        response.mustcontain(no=['content_of_ancestor-child'])
+        response.mustcontain('content_of_change')
 
     def test_merge_pull_request_enabled(self, pr_util, csrf_token):
         # Clear any previous calls to rcextensions
@@ -689,8 +688,8 @@ class TestPullrequestsView(object):
                        pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
-        assert 'Pull request updated to' in response.body
-        assert 'with 1 added, 0 removed commits.' in response.body
+        response.mustcontain('Pull request updated to')
+        response.mustcontain('with 1 added, 0 removed commits.')
 
         # check that we have now both revisions
         pull_request = PullRequest.get(pull_request_id)
@@ -752,8 +751,8 @@ class TestPullrequestsView(object):
                        repo_name=target.repo_name,
                        pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
-        assert 'Pull request updated to' in response.body
-        assert 'with 1 added, 1 removed commits.' in response.body
+        response.mustcontain('Pull request updated to')
+        response.mustcontain('with 1 added, 1 removed commits.')
 
     def test_update_target_revision_with_removal_of_1_commit_git(self, backend_git, csrf_token):
         backend = backend_git
@@ -994,12 +993,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        origin_children = origin.getchildren()
-        assert len(origin_children) == 1
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        target_children = target.getchildren()
-        assert len(target_children) == 1
+        source = response.assert_response().get_element('.pr-source-info')
+        source_parent = source.getparent()
+        assert len(source_parent) == 1
+
+        target = response.assert_response().get_element('.pr-target-info')
+        target_parent = target.getparent()
+        assert len(target_parent) == 1
 
         expected_origin_link = route_path(
             'repo_commits',
@@ -1009,10 +1009,8 @@ class TestPullrequestsView(object):
             'repo_commits',
             repo_name=pull_request.target_repo.scm_instance().name,
             params=dict(branch='target'))
-        assert origin_children[0].attrib['href'] == expected_origin_link
-        assert origin_children[0].text == 'branch: origin'
-        assert target_children[0].attrib['href'] == expected_target_link
-        assert target_children[0].text == 'branch: target'
+        assert source_parent.attrib['href'] == expected_origin_link
+        assert target_parent.attrib['href'] == expected_target_link
 
     def test_bookmark_is_not_a_link(self, pr_util):
         pull_request = pr_util.create_pull_request()
@@ -1027,13 +1025,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        assert origin.text.strip() == 'bookmark: origin'
-        assert origin.getchildren() == []
+        source = response.assert_response().get_element('.pr-source-info')
+        assert source.text.strip() == 'bookmark:origin'
+        assert source.getparent().attrib.get('href') is None
 
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        assert target.text.strip() == 'bookmark: target'
-        assert target.getchildren() == []
+        target = response.assert_response().get_element('.pr-target-info')
+        assert target.text.strip() == 'bookmark:target'
+        assert target.getparent().attrib.get('href') is None
 
     def test_tag_is_not_a_link(self, pr_util):
         pull_request = pr_util.create_pull_request()
@@ -1048,13 +1046,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        assert origin.text.strip() == 'tag: origin'
-        assert origin.getchildren() == []
+        source = response.assert_response().get_element('.pr-source-info')
+        assert source.text.strip() == 'tag:origin'
+        assert source.getparent().attrib.get('href') is None
 
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        assert target.text.strip() == 'tag: target'
-        assert target.getchildren() == []
+        target = response.assert_response().get_element('.pr-target-info')
+        assert target.text.strip() == 'tag:target'
+        assert target.getparent().attrib.get('href') is None
 
     @pytest.mark.parametrize('mergeable', [True, False])
     def test_shadow_repository_link(

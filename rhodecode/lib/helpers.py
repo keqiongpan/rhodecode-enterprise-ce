@@ -726,7 +726,7 @@ import tzlocal
 local_timezone = tzlocal.get_localzone()
 
 
-def age_component(datetime_iso, value=None, time_is_local=False):
+def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
     title = value or format_date(datetime_iso)
     tzinfo = '+00:00'
 
@@ -740,9 +740,11 @@ def age_component(datetime_iso, value=None, time_is_local=False):
         tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
 
     return literal(
-        '<time class="timeago tooltip" '
-        'title="{1}{2}" datetime="{0}{2}">{1}</time>'.format(
-            datetime_iso, title, tzinfo))
+        '<time class="timeago {cls}" title="{tt_title}" datetime="{dt}{tzinfo}">{title}</time>'.format(
+            cls='tooltip' if tooltip else '',
+            tt_title=('{title}{tzinfo}'.format(title=title, tzinfo=tzinfo)) if tooltip else '',
+            title=title, dt=datetime_iso, tzinfo=tzinfo
+        ))
 
 
 def _shorten_commit_id(commit_id, commit_len=None):

@@ -558,6 +558,21 @@ VersionController = function () {
         }
 
         return false
+    };
+
+    this.toggleElement = function (elem, target) {
+        var $elem = $(elem);
+        var $target = $(target);
+
+        if ($target.is(':visible')) {
+            $target.hide();
+            $elem.html($elem.data('toggleOn'))
+        } else {
+            $target.show();
+            $elem.html($elem.data('toggleOff'))
+        }
+
+        return false
     }
 
 };

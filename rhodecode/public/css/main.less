@@ -379,8 +379,9 @@ ul.auth_plugins {
   font-family: @text-bold;
 }
 
-.pr-origininfo, .pr-targetinfo {
+.pr-commit-flow  {
     position: relative;
+    font-weight: 600;
 
     .tag {
         display: inline-block;
@@ -413,7 +414,6 @@ ul.auth_plugins {
     padding: 0 0;
 }
 
-
 .pr-title-input {
   width: 80%;
   font-size: 1em;
@@ -438,6 +438,19 @@ ul.auth_plugins {
   }
 }
 
+.pr-title-closed-tag {
+    font-size: 16px;
+}
+
+#pr-desc {
+  padding: 10px 0;
+
+  .markdown-block {
+    padding: 0;
+    margin-bottom: -30px;
+  }
+}
+
 #pullrequest_title {
     width: 100%;
     box-sizing: border-box;
@@ -449,6 +462,31 @@ ul.auth_plugins {
     padding: @padding-large-vertical @padding-large-vertical @padding-large-vertical 0;
     text-align: left;
     overflow: hidden;
+}
+
+.pr-details-title {
+    height: 16px
+}
+
+.pr-details-title-author-pref {
+    padding-right: 10px
+}
+
+.label-pr-detail {
+  display: table-cell;
+  width: 120px;
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+  padding-right: 7.5px;
+}
+
+.source-details ul {
+  padding: 10px 16px;
+}
+
+.source-details-action {
+  color: @grey4;
+  font-size: 11px
 }
 
 .pr-submit-button {
@@ -467,6 +505,15 @@ ul.auth_plugins {
 
 .pr-description-label {
     vertical-align: top;
+}
+
+#close_edit_pullrequest {
+    padding-left: 1em
+}
+
+#delete_pullrequest {
+    clear: inherit;
+    padding: 0
 }
 
 .perms_section_head {
@@ -1880,9 +1927,10 @@ BIN_FILENODE = 7
 
 .pr-versions {
     font-size: 1.1em;
+    padding: 7.5px;
 
     table {
-      padding: 0px 5px;
+
     }
 
     td {
