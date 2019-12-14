@@ -261,6 +261,10 @@ class NotificationModel(BaseModel):
                 _('%(user)s opened new pull request %(date_or_age)s'),
                 _('%(user)s opened new pull request at %(date_or_age)s'),
                 ],
+            notification.TYPE_PULL_REQUEST_UPDATE: [
+                _('%(user)s updated pull request %(date_or_age)s'),
+                _('%(user)s updated pull request at %(date_or_age)s'),
+            ],
             notification.TYPE_PULL_REQUEST_COMMENT: [
                 _('%(user)s commented on pull request %(date_or_age)s'),
                 _('%(user)s commented on pull request at %(date_or_age)s'),
