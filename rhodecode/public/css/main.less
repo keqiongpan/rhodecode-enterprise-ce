@@ -434,7 +434,8 @@ ul.auth_plugins {
   input {
     border: 1px transparent;
     color: black;
-    opacity: 1
+    opacity: 1;
+    background: #fff;
   }
 }
 
@@ -507,13 +508,21 @@ ul.auth_plugins {
     vertical-align: top;
 }
 
+#open_edit_pullrequest {
+  padding: 0;
+}
+
 #close_edit_pullrequest {
-    padding-left: 1em
+
 }
 
 #delete_pullrequest {
     clear: inherit;
-    padding: 0
+
+  form {
+      display: inline;
+  }
+
 }
 
 .perms_section_head {
@@ -820,6 +829,11 @@ label {
         padding: 0 0 0 .17em;
         line-height: 1em;
     }
+
+    & + .no-margin {
+      margin: 0
+    }
+
 }
 
 .user-inline-data {
@@ -836,7 +850,7 @@ label {
     max-width: 200px;
     min-height: (@gravatar-size + @border-thickness * 2); // account for border
     display: block;
-    padding: 0 0 0 (@gravatar-size  + @basefontsize/2 + @border-thickness * 2);
+    padding: 0 0 0 (@gravatar-size  + @basefontsize/4);
 
 
     .gravatar {
@@ -1566,12 +1580,50 @@ table.integrations {
     }
 }
 .pr-details-content {
-    margin-top: @textmargin;
-    margin-bottom: @textmargin;
+    margin-top: @textmargin - 5;
+    margin-bottom: @textmargin - 5;
 }
 
 .pr-reviewer-rules {
    padding: 10px 0px 20px 0px;
+}
+
+.todo-resolved {
+  text-decoration: line-through;
+}
+
+.todo-table {
+  width: 100%;
+
+  td {
+    padding: 5px 0px;
+  }
+
+  .td-todo-number {
+    text-align: left;
+    white-space: nowrap;
+    width: 15%;
+  }
+
+  .td-todo-gravatar {
+    width: 5%;
+
+    img {
+      margin: -3px 0;
+    }
+  }
+
+}
+
+.todo-comment-text-wrapper {
+  display: inline-grid;
+}
+
+.todo-comment-text {
+  margin-left: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .group_members {

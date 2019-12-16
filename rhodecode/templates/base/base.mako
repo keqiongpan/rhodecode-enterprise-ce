@@ -198,7 +198,7 @@
 
 </%def>
 
-<%def name="gravatar(email, size=16, tooltip=False, tooltip_alt=None, user=None)">
+<%def name="gravatar(email, size=16, tooltip=False, tooltip_alt=None, user=None, extra_class=None)">
   <%
     if size > 16:
         gravatar_class = ['gravatar','gravatar-large']
@@ -210,7 +210,8 @@
 
     if tooltip:
         gravatar_class += ['tooltip-hovercard']
-
+    if extra_class:
+        gravatar_class += extra_class
     if tooltip and user:
         if user.username == h.DEFAULT_USER:
             gravatar_class.pop(-1)

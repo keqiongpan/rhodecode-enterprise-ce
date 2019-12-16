@@ -59,19 +59,22 @@
         </div>
 
         %if c.allowed_to_update:
-          <div id="delete_pullrequest" class="pull-right action_button ${('' if c.allowed_to_delete else 'disabled' )}" >
-              % if c.allowed_to_delete:
-                  ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), request=request)}
-                      ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete'),
-                    class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
-                  ${h.end_form()}
-              % else:
-                ${_('Delete')}
-              % endif
+          <div class="pull-right">
+              <div id="edit_pull_request" class="action_button pr-save" style="display: none;">${_('Update title & description')}</div>
+              <div id="delete_pullrequest" class="action_button pr-save ${('' if c.allowed_to_delete else 'disabled' )}" style="display: none;">
+                  % if c.allowed_to_delete:
+                      ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), request=request)}
+                          ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete pull request'),
+                        class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
+                      ${h.end_form()}
+                  % else:
+                    <span class="tooltip" title="${_('Not allowed to delete this pull request')}">${_('Delete pull request')}</span>
+                  % endif
+              </div>
+              <div id="open_edit_pullrequest" class="action_button">${_('Edit')}</div>
+              <div id="close_edit_pullrequest" class="action_button" style="display: none;">${_('Cancel')}</div>
           </div>
-          <div id="open_edit_pullrequest" class="pull-right action_button">${_('Edit')}</div>
-          <div id="close_edit_pullrequest" class="pull-right action_button" style="display: none;">${_('Cancel')}</div>
-          <div id="edit_pull_request" class="pull-right action_button pr-save" style="display: none;">${_('Save Changes')}</div>
+
         %endif
     </div>
 
@@ -266,7 +269,7 @@
                    </tr>
                </table>
            % else:
-               <div class="input">
+               <div>
                ${_('Pull request versions not available')}.
                </div>
            % endif
@@ -350,20 +353,82 @@
         %endif
     </div>
 
-##     ## TODOs will be listed here
-##     <div class="reviewers-title block-right">
-##       <div class="pr-details-title">
-##           ${_('TODOs')}
-##       </div>
-##     </div>
-##     <div class="block-right pr-details-content reviewers">
-##         <ul class="group_members">
-##           <li>
-##             XXXX
-##           </li>
-##         </ul>
-##     </div>
-##   </div>
+    ## TODOs will be listed here
+    <div class="reviewers-title block-right">
+      <div class="pr-details-title">
+          ## Only show unresolved, that is only what matters
+          TODO Comments - ${len(c.unresolved_comments)} / ${(len(c.unresolved_comments) + len(c.resolved_comments))}
+
+          % if not c.at_version:
+              % if c.resolved_comments:
+                  <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.unresolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
+              % else:
+                  <span class="block-right last-item noselect">Show resolved</span>
+              % endif
+          % endif
+      </div>
+    </div>
+    <div class="block-right pr-details-content reviewers">
+
+        <table class="todo-table">
+              <%
+                def sorter(entry):
+                    user_id = entry.author.user_id
+                    resolved = '1' if entry.resolved else '0'
+                    if user_id == c.rhodecode_user.user_id:
+                        # own comments first
+                        user_id = 0
+                    return '{}_{}_{}'.format(resolved, user_id, str(entry.comment_id).zfill(100))
+              %>
+
+          % if c.at_version:
+              <tr>
+                <td class="unresolved-todo-text">${_('unresolved TODOs unavailable in this view')}.</td>
+              </tr>
+          % else:
+              % for todo_comment in sorted(c.unresolved_comments + c.resolved_comments, key=sorter):
+                  <% resolved = todo_comment.resolved %>
+                  % if inline:
+                      <% outdated_at_ver = todo_comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
+                  % else:
+                      <% outdated_at_ver = todo_comment.older_than_version(getattr(c, 'at_version_num', None)) %>
+                  % endif
+
+                  <tr ${('class="unresolved-todo" style="display: none"' if resolved else '') |n}>
+
+                      <td class="td-todo-number">
+                          % if resolved:
+                              <a class="permalink todo-resolved tooltip" title="${_('Resolved by comment #{}').format(todo_comment.resolved.comment_id)}" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
+                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
+                          % else:
+                              <a class="permalink" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
+                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
+                          % endif
+                      </td>
+                      <td class="td-todo-gravatar">
+                          ${base.gravatar(todo_comment.author.email, 16, user=todo_comment.author, tooltip=True, extra_class=['no-margin'])}
+                      </td>
+                      <td class="todo-comment-text-wrapper">
+                          <div class="todo-comment-text">
+                            <code>${h.chop_at_smart(todo_comment.text, '\n', suffix_if_chopped='...')}</code>
+                          </div>
+                      </td>
+
+                  </tr>
+              % endfor
+
+              % if len(c.unresolved_comments) == 0:
+                  <tr>
+                    <td class="unresolved-todo-text">${_('No unresolved TODOs')}.</td>
+                  </tr>
+              % endif
+
+          % endif
+
+        </table>
+
+    </div>
+  </div>
 
   </div>
 
@@ -561,7 +626,7 @@
                               disable_new_comments=True,
                               deleted_files_comments=c.deleted_files_comments,
                               inline_comments=c.inline_comments,
-                              pull_request_menu=pr_menu_data)}
+                              pull_request_menu=pr_menu_data, show_todos=False)}
                         % endfor
                     % else:
                         ${cbdiffs.render_diffset(
@@ -570,7 +635,7 @@
                           disable_new_comments=not c.allowed_to_comment,
                           deleted_files_comments=c.deleted_files_comments,
                           inline_comments=c.inline_comments,
-                          pull_request_menu=pr_menu_data)}
+                          pull_request_menu=pr_menu_data, show_todos=False)}
                     % endif
 
                 </div>

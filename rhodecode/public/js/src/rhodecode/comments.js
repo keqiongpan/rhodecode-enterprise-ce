@@ -511,14 +511,16 @@ var CommentsController = function() {
         node = $('comment-current')
       }
     }
+
     $wrapper = $(node).closest('div.comment');
-    $comment = $(node).closest(klass);
-    $comments = $(klass);
 
     // show hidden comment when referenced.
     if (!$wrapper.is(':visible')){
         $wrapper.show();
     }
+
+    $comment = $(node).closest(klass);
+    $comments = $(klass);
 
     $('.comment-selected').removeClass('comment-selected');
 
@@ -629,7 +631,7 @@ var CommentsController = function() {
       var cm = commentForm.getCmInstance();
 
       if (resolvesCommentId){
-        var placeholderText = _gettext('Leave a comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
+        var placeholderText = _gettext('Leave a resolution comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
       }
 
       setTimeout(function() {

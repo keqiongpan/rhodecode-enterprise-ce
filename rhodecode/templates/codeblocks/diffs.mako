@@ -50,7 +50,10 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     inline_comments=None,
 
     # additional menu for PRs
-    pull_request_menu=None
+    pull_request_menu=None,
+
+    # show/hide todo next to comments
+    show_todos=True,
 
 )">
 
@@ -128,12 +131,12 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         </div>
 
         ## todos
-        % if getattr(c, 'at_version', None):
+        % if show_todos and getattr(c, 'at_version', None):
         <div class="pull-right">
             <i class="icon-flag-filled" style="color: #949494">TODOs:</i>
              ${_('not available in this view')}
         </div>
-        % else:
+        % elif show_todos:
         <div class="pull-right">
             <div class="comments-number" style="padding-left: 10px">
                 % if hasattr(c, 'unresolved_comments') and hasattr(c, 'resolved_comments'):
@@ -310,7 +313,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     <td colspan="3"></td>
                     <td>
                         <div>
-                        ${_('Unmatched inline comments below')}
+                        ${_('Unmatched/outdated inline comments below')}
                         </div>
                     </td>
                 </tr>
@@ -329,13 +332,13 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     <td colspan="2"></td>
                     <td class="cb-line">
                         <div>
-                        ${_('Unmatched inline comments below')}
+                        ${_('Unmatched/outdated inline comments below')}
                         </div>
                     </td>
                     <td colspan="2"></td>
                     <td class="cb-line">
                         <div>
-                        ${_('Unmatched comments below')}
+                        ${_('Unmatched/outdated comments below')}
                         </div>
                     </td>
                 </tr>
