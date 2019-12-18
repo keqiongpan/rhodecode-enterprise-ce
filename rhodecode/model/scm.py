@@ -126,7 +126,7 @@ class _PermCheckIterator(object):
         self.obj_list = obj_list
         self.obj_attr = obj_attr
         self.perm_set = perm_set
-        self.perm_checker = perm_checker
+        self.perm_checker = perm_checker(*self.perm_set)
         self.extra_kwargs = extra_kwargs or {}
 
     def __len__(self):
@@ -136,11 +136,10 @@ class _PermCheckIterator(object):
         return '<%s (%s)>' % (self.__class__.__name__, self.__len__())
 
     def __iter__(self):
-        checker = self.perm_checker(*self.perm_set)
         for db_obj in self.obj_list:
             # check permission at this level
             name = getattr(db_obj, self.obj_attr, None)
-            if not checker(name, self.__class__.__name__, **self.extra_kwargs):
+            if not self.perm_checker(name, self.__class__.__name__, **self.extra_kwargs):
                 continue
 
             yield db_obj
