@@ -357,7 +357,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
             repo_list = Repository.get_all_repos(
                 user_id=self._rhodecode_user.user_id)
             repo_list = RepoList(repo_list, perm_set=[
-                'repository.read', 'repository.write', 'repository.admin'])
+                'repository.read', 'repository.write', 'repository.admin'],
+                                 extra_kwargs=dict(user=self._rhodecode_user))
 
         repos_data = RepoModel().get_repos_as_dict(
             repo_list=repo_list, admin=admin, short_name=False)
