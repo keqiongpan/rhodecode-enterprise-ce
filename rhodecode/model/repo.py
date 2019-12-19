@@ -43,12 +43,11 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    _hash_key, joinedload, or_, Repository, UserRepoToPerm, UserGroupRepoToPerm,
+    _hash_key, func, case, joinedload, or_, in_filter_generator,
+    Session, Repository, UserRepoToPerm, UserGroupRepoToPerm,
     UserRepoGroupToPerm, UserGroupRepoGroupToPerm, User, Permission,
     Statistics, UserGroup, RepoGroup, RepositoryField, UserLog)
-
 from rhodecode.model.settings import VcsSettingsModel
-
 
 log = logging.getLogger(__name__)
 
@@ -249,26 +248,29 @@ class RepoModel(BaseModel):
 
         repos_data = []
         for repo in repo_list:
-            cs_cache = repo.changeset_cache
+            # NOTE(marcink): because we use only raw column we need to load it like that
+            changeset_cache = Repository._load_changeset_cache(
+                repo.repo_id, repo._changeset_cache)
+            last_commit_change = Repository._load_commit_change(changeset_cache)
+
             row = {
                 "menu": quick_menu(repo.repo_name),
 
                 "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
                                  repo.private, repo.archived, repo.fork),
                 "name_raw": repo.repo_name.lower(),
+                "desc": desc(repo.description),
 
-                "last_change": last_change(repo.last_commit_change),
-                "last_change_raw": datetime_to_time(repo.last_commit_change),
+                "last_change": last_change(last_commit_change),
+                "last_change_raw": datetime_to_time(last_commit_change),
 
-                "last_changeset": last_rev(repo.repo_name, cs_cache),
-                "last_changeset_raw": cs_cache.get('revision'),
+                "last_changeset": last_rev(repo.repo_name, changeset_cache),
+                "last_changeset_raw": changeset_cache.get('revision'),
 
-                "desc": desc(repo.description_safe),
-                "owner": user_profile(repo.user.username),
+                "owner": user_profile(repo.User.username),
 
                 "state": state(repo.repo_state),
                 "rss": rss_lnk(repo.repo_name),
-
                 "atom": atom_lnk(repo.repo_name),
             }
             if admin:

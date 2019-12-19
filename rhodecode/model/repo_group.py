@@ -36,8 +36,8 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (_hash_key,
-    RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
+from rhodecode.model.db import (_hash_key, func, or_, in_filter_generator,
+    Session, RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
@@ -698,6 +698,8 @@ class RepoGroupModel(BaseModel):
         for repo_group in repo_groups:
             repo_group.update_commit_cache()
 
+
+
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
@@ -721,11 +723,6 @@ class RepoGroupModel(BaseModel):
                 last_change = last_change + datetime.timedelta(seconds=utc_offset)
             return _render("last_change", last_change)
 
-        def last_rev(repo_name, cs_cache):
-            return _render('revision', repo_name, cs_cache.get('revision'),
-                           cs_cache.get('raw_id'), cs_cache.get('author'),
-                           cs_cache.get('message'), cs_cache.get('date'))
-
         def desc(desc, personal):
             return _render(
                 'repo_group_desc', desc, personal, c.visual.stylify_metatags)
@@ -742,22 +739,24 @@ class RepoGroupModel(BaseModel):
 
         repo_group_data = []
         for group in repo_group_list:
-            cs_cache = group.changeset_cache
-            last_repo_name = cs_cache.get('source_repo_name')
-
+            # NOTE(marcink): because we use only raw column we need to load it like that
+            changeset_cache = RepoGroup._load_changeset_cache(
+                '', group._changeset_cache)
+            last_commit_change = RepoGroup._load_commit_change(changeset_cache)
             row = {
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "last_change": last_change(group.last_commit_change),
-                "last_change_raw": datetime_to_time(group.last_commit_change),
+
+                "last_change": last_change(last_commit_change),
+                "last_change_raw": datetime_to_time(last_commit_change),
 
                 "last_changeset": "",
                 "last_changeset_raw": "",
 
-                "desc": desc(group.description_safe, group.personal),
+                "desc": desc(group.group_description, group.personal),
                 "top_level_repos": 0,
-                "owner": user_profile(group.user.username)
+                "owner": user_profile(group.User.username)
             }
             if admin:
                 repo_count = group.repositories.count()
