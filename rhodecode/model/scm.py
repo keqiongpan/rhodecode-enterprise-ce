@@ -138,7 +138,8 @@ class _PermCheckIterator(object):
     def __iter__(self):
         for db_obj in self.obj_list:
             # check permission at this level
-            name = getattr(db_obj, self.obj_attr, None)
+            # NOTE(marcink): the __dict__.get() is ~4x faster then getattr()
+            name = db_obj.__dict__.get(self.obj_attr, None)
             if not self.perm_checker(name, self.__class__.__name__, **self.extra_kwargs):
                 continue
 
@@ -153,7 +154,7 @@ class RepoList(_PermCheckIterator):
 
         super(RepoList, self).__init__(
             obj_list=db_repo_list,
-            obj_attr='repo_name', perm_set=perm_set,
+            obj_attr='_repo_name', perm_set=perm_set,
             perm_checker=HasRepoPermissionAny,
             extra_kwargs=extra_kwargs)
 
@@ -166,7 +167,7 @@ class RepoGroupList(_PermCheckIterator):
 
         super(RepoGroupList, self).__init__(
             obj_list=db_repo_group_list,
-            obj_attr='group_name', perm_set=perm_set,
+            obj_attr='_group_name', perm_set=perm_set,
             perm_checker=HasRepoGroupPermissionAny,
             extra_kwargs=extra_kwargs)
 
