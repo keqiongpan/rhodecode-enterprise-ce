@@ -113,7 +113,12 @@ class HomeView(BaseAppView, DataGridAppView):
             ['repository.read', 'repository.write', 'repository.admin'],
             cache=False, name_filter=name_contains) or [-1]
 
-        query = Repository.query()\
+        query = Session().query(
+                Repository.repo_name,
+                Repository.repo_id,
+                Repository.repo_type,
+                Repository.private,
+            )\
             .filter(Repository.archived.isnot(true()))\
             .filter(or_(
                 # generate multiple IN to fix limitation problems
@@ -159,7 +164,10 @@ class HomeView(BaseAppView, DataGridAppView):
             ['group.read', 'group.write', 'group.admin'],
             cache=False, name_filter=name_contains) or [-1]
 
-        query = RepoGroup.query()\
+        query = Session().query(
+                RepoGroup.group_id,
+                RepoGroup.group_name,
+            )\
             .filter(or_(
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(RepoGroup.group_id, allowed_ids)
