@@ -528,6 +528,8 @@ def add_events_routes(config):
     from rhodecode.apps._base import ADMIN_PREFIX
 
     config.add_route(name='home', pattern='/')
+    config.add_route(name='main_page_repos_data', pattern='/_home_repos')
+    config.add_route(name='main_page_repo_groups_data', pattern='/_home_repo_groups')
 
     config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
     config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')

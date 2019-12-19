@@ -44,6 +44,14 @@ def includeme(config):
         pattern='/')
 
     config.add_route(
+        name='main_page_repos_data',
+        pattern='/_home_repos')
+
+    config.add_route(
+        name='main_page_repo_groups_data',
+        pattern='/_home_repo_groups')
+
+    config.add_route(
         name='user_autocomplete_data',
         pattern='/_users')
 

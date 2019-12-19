@@ -281,6 +281,87 @@ class RepoModel(BaseModel):
 
         return repos_data
 
+    def get_repos_data_table(
+            self, draw, start, limit,
+            search_q, order_by, order_dir,
+            auth_user, repo_group_id):
+        from rhodecode.model.scm import RepoList
+
+        _perms = ['repository.read', 'repository.write', 'repository.admin']
+
+        repos = Repository.query() \
+            .filter(Repository.group_id == repo_group_id) \
+            .all()
+        auth_repo_list = RepoList(
+            repos, perm_set=_perms,
+            extra_kwargs=dict(user=auth_user))
+
+        allowed_ids = [-1]
+        for repo in auth_repo_list:
+            allowed_ids.append(repo.repo_id)
+
+        repos_data_total_count = Repository.query() \
+            .filter(Repository.group_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .count()
+
+        base_q = Session.query(
+            Repository.repo_id,
+            Repository.repo_name,
+            Repository.description,
+            Repository.repo_type,
+            Repository.repo_state,
+            Repository.private,
+            Repository.archived,
+            Repository.fork,
+            Repository.updated_on,
+            Repository._changeset_cache,
+            User,
+            ) \
+            .filter(Repository.group_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .join(User, User.user_id == Repository.user_id) \
+            .group_by(Repository, User)
+
+        repos_data_total_filtered_count = base_q.count()
+
+        sort_defined = False
+        if order_by == 'repo_name':
+            sort_col = func.lower(Repository.repo_name)
+            sort_defined = True
+        elif order_by == 'user_username':
+            sort_col = User.username
+        else:
+            sort_col = getattr(Repository, order_by, None)
+
+        if sort_defined or sort_col:
+            if order_dir == 'asc':
+                sort_col = sort_col.asc()
+            else:
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        repos_list = base_q.all()
+
+        repos_data = RepoModel().get_repos_as_dict(
+            repo_list=repos_list, admin=False)
+
+        data = ({
+            'draw': draw,
+            'data': repos_data,
+            'recordsTotal': repos_data_total_count,
+            'recordsFiltered': repos_data_total_filtered_count,
+        })
+        return data
+
     def _get_defaults(self, repo_name):
         """
         Gets information about repository, and returns a dict for

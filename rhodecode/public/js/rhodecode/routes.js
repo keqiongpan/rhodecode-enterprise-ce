@@ -150,6 +150,8 @@ function registerRCRoutes() {
     pyroutes.register('reset_password', '/_admin/password_reset', []);
     pyroutes.register('reset_password_confirmation', '/_admin/password_reset_confirmation', []);
     pyroutes.register('home', '/', []);
+    pyroutes.register('main_page_repos_data', '/_home_repos', []);
+    pyroutes.register('main_page_repo_groups_data', '/_home_repo_groups', []);
     pyroutes.register('user_autocomplete_data', '/_users', []);
     pyroutes.register('user_group_autocomplete_data', '/_user_groups', []);
     pyroutes.register('repo_list_data', '/_repos', []);

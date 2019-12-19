@@ -775,6 +775,84 @@ class RepoGroupModel(BaseModel):
 
         return repo_group_data
 
+    def get_repo_groups_data_table(
+            self, draw, start, limit,
+            search_q, order_by, order_dir,
+            auth_user, repo_group_id):
+        from rhodecode.model.scm import RepoGroupList
+
+        _perms = ['group.read', 'group.write', 'group.admin']
+        repo_groups = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .all()
+        auth_repo_group_list = RepoGroupList(
+            repo_groups, perm_set=_perms,
+            extra_kwargs=dict(user=auth_user))
+
+        allowed_ids = [-1]
+        for repo_group in auth_repo_group_list:
+            allowed_ids.append(repo_group.group_id)
+
+        repo_groups_data_total_count = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(RepoGroup.group_id, allowed_ids))
+            ) \
+            .count()
+
+        base_q = Session.query(
+            RepoGroup.group_name,
+            RepoGroup.group_name_hash,
+            RepoGroup.group_description,
+            RepoGroup.group_id,
+            RepoGroup.personal,
+            RepoGroup.updated_on,
+            RepoGroup._changeset_cache,
+            User,
+            ) \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(RepoGroup.group_id, allowed_ids))
+            ) \
+            .join(User, User.user_id == RepoGroup.user_id) \
+            .group_by(RepoGroup, User)
+
+        repo_groups_data_total_filtered_count = base_q.count()
+
+        sort_defined = False
+
+        if order_by == 'group_name':
+            sort_col = func.lower(RepoGroup.group_name)
+            sort_defined = True
+        elif order_by == 'user_username':
+            sort_col = User.username
+        else:
+            sort_col = getattr(RepoGroup, order_by, None)
+
+        if sort_defined or sort_col:
+            if order_dir == 'asc':
+                sort_col = sort_col.asc()
+            else:
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        repo_group_list = base_q.all()
+
+        repo_groups_data = RepoGroupModel().get_repo_groups_as_dict(
+            repo_group_list=repo_group_list, admin=False)
+
+        data = ({
+            'draw': draw,
+            'data': repo_groups_data,
+            'recordsTotal': repo_groups_data_total_count,
+            'recordsFiltered': repo_groups_data_total_filtered_count,
+        })
+        return data
+
     def _get_defaults(self, repo_group_name):
         repo_group = RepoGroup.get_by_group_name(repo_group_name)
 
