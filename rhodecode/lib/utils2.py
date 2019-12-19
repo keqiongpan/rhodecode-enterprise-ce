@@ -370,7 +370,7 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
     use_ping_connection = asbool(configuration.pop('sqlalchemy.db1.ping_connection', None))
-    debug = asbool(configuration.get('debug'))
+    debug = asbool(configuration.pop('sqlalchemy.db1.debug_query', None))
 
     engine = sqlalchemy.engine_from_config(configuration, prefix, **kwargs)
 
