@@ -685,9 +685,9 @@ class HomeView(BaseAppView, DataGridAppView):
 
     def _main_page_repo_groups_data(self, repo_group_id):
         column_map = {
-            'name_raw': 'group_name_hash',
+            'name': 'group_name_hash',
             'desc': 'group_description',
-            'last_change_raw': 'updated_on',
+            'last_change': 'updated_on',
             'owner': 'user_username',
         }
         draw, start, limit = self._extract_chunk(self.request)
@@ -700,9 +700,9 @@ class HomeView(BaseAppView, DataGridAppView):
 
     def _main_page_repos_data(self, repo_group_id):
         column_map = {
-            'name_raw': 'repo_name',
+            'name': 'repo_name',
             'desc': 'description',
-            'last_change_raw': 'updated_on',
+            'last_change': 'updated_on',
             'owner': 'user_username',
         }
         draw, start, limit = self._extract_chunk(self.request)

@@ -749,7 +749,6 @@ class RepoGroupModel(BaseModel):
                 "name_raw": group.group_name,
 
                 "last_change": last_change(last_commit_change),
-                "last_change_raw": datetime_to_time(last_commit_change),
 
                 "last_changeset": "",
                 "last_changeset_raw": "",

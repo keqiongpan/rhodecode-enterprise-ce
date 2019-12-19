@@ -111,9 +111,9 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     def repo_group_list_data(self):
         self.load_default_context()
         column_map = {
-            'name_raw': 'group_name_hash',
+            'name': 'group_name_hash',
             'desc': 'group_description',
-            'last_change_raw': 'updated_on',
+            'last_change': 'updated_on',
             'top_level_repos': 'repos_total',
             'owner': 'user_username',
         }
@@ -223,9 +223,8 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
             row = {
                 "menu": quick_menu(repo_gr.group_name),
                 "name": repo_group_lnk(repo_gr.group_name),
-                "name_raw": repo_gr.group_name,
+
                 "last_change": last_change(repo_gr.updated_on),
-                "last_change_raw": datetime_to_time(repo_gr.updated_on),
 
                 "last_changeset": "",
                 "last_changeset_raw": "",

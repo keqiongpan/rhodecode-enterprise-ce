@@ -58,10 +58,12 @@
                 {
                     data: {
                         "_": "name",
-                        "sort": "name_raw"
+                        "sort": "name"
                     }, title: "${_('Name')}", className: "truncate-wrap td-grid-name"
                 },
-                {data: 'menu', "bSortable": false, className: "quick_repo_menu"},
+                {
+                    data: 'menu', "bSortable": false, className: "quick_repo_menu"
+                },
                 {
                     data: {
                         "_": "desc",
@@ -71,7 +73,7 @@
                 {
                     data: {
                         "_": "last_change",
-                        "sort": "last_change_raw",
+                        "sort": "last_change",
                         "type": Number
                     }, title: "${_('Last Change')}", className: "td-time"
                 },
@@ -80,7 +82,7 @@
                         "_": "last_changeset",
                         "sort": "last_changeset_raw",
                         "type": Number
-                    }, title: "", className: "td-hash"
+                    }, title: "", className: "td-hash", orderable: false
                 },
                 {
                     data: {
@@ -147,7 +149,7 @@
                 {
                     data: {
                         "_": "name",
-                        "sort": "name_raw"
+                        "sort": "name"
                     }, title: "${_('Name')}", className: "truncate-wrap td-grid-name"
                 },
                 {
@@ -162,16 +164,16 @@
                 {
                     data: {
                         "_": "last_change",
-                        "sort": "last_change_raw",
+                        "sort": "last_change",
                         "type": Number
-                    }, title: "${_('Last Change')}", className: "td-time", orderable: false
+                    }, title: "${_('Last Change')}", className: "td-time"
                 },
                 {
                     data: {
                         "_": "last_changeset",
                         "sort": "last_changeset_raw",
                         "type": Number
-                    }, title: "${_('Commit')}", className: "td-hash"
+                    }, title: "${_('Commit')}", className: "td-hash", orderable: false
                 },
                  {
                     data: {

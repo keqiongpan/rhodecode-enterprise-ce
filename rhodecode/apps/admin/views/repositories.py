@@ -81,9 +81,9 @@ class AdminReposView(BaseAppView, DataGridAppView):
     def repository_list_data(self):
         self.load_default_context()
         column_map = {
-            'name_raw': 'repo_name',
+            'name': 'repo_name',
             'desc': 'description',
-            'last_change_raw': 'updated_on',
+            'last_change': 'updated_on',
             'owner': 'user_username',
         }
         draw, start, limit = self._extract_chunk(self.request)

@@ -72,7 +72,7 @@ $(document).ready(function() {
             {
                 data: {
                     "_": "name",
-                    "sort": "name_raw"
+                    "sort": "name"
                 }, title: "${_('Name')}", className: "td-componentname"
             },
             {
@@ -86,7 +86,7 @@ $(document).ready(function() {
             {
                 data: {
                     "_": "last_change",
-                    "sort": "last_change_raw",
+                    "sort": "last_change",
                     "type": Number
                 }, title: "${_('Last Change')}", className: "td-time"
             },

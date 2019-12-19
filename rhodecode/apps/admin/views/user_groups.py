@@ -171,7 +171,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         for user_gr in auth_user_group_list:
             row = {
                 "users_group_name": user_group_name(user_gr.users_group_name),
-                "name_raw": h.escape(user_gr.users_group_name),
                 "description": h.escape(user_gr.user_group_description),
                 "members": user_gr.member_count,
                 # NOTE(marcink): because of advanced query we

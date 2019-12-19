@@ -251,18 +251,16 @@ class RepoModel(BaseModel):
             # NOTE(marcink): because we use only raw column we need to load it like that
             changeset_cache = Repository._load_changeset_cache(
                 repo.repo_id, repo._changeset_cache)
-            last_commit_change = Repository._load_commit_change(changeset_cache)
 
             row = {
                 "menu": quick_menu(repo.repo_name),
 
                 "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
                                  repo.private, repo.archived, repo.fork),
-                "name_raw": repo.repo_name.lower(),
+
                 "desc": desc(repo.description),
 
-                "last_change": last_change(last_commit_change),
-                "last_change_raw": datetime_to_time(last_commit_change),
+                "last_change": last_change(repo.updated_on),
 
                 "last_changeset": last_rev(repo.repo_name, changeset_cache),
                 "last_changeset_raw": changeset_cache.get('revision'),
