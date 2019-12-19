@@ -23,7 +23,7 @@
 
     <div class="title">
         <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-        <span id="repo_count">0</span> ${_('repositories')}
+        <span id="repo_count"></span>
 
         <ul class="links">
         %if c.can_create_repo:
@@ -36,68 +36,112 @@
     <div id="repos_list_wrap">
         <table id="repo_list_table" class="display"></table>
     </div>
+
 </div>
 
 <script>
 $(document).ready(function() {
-
-    var get_datatable_count = function(){
-      var api = $('#repo_list_table').dataTable().api();
-      $('#repo_count').text(api.page.info().recordsDisplay);
-    };
-
+    var $repoListTable = $('#repo_list_table');
 
     // repo list
-    $('#repo_list_table').DataTable({
-      data: ${c.data|n},
-      dom: 'rtp',
-      pageLength: ${c.visual.admin_grid_items},
-      order: [[ 0, "asc" ]],
-      columns: [
-         { data: {"_": "name",
-                  "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname" },
-         { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
-         { data: {"_": "desc",
-                  "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
-         { data: {"_": "last_change",
-                  "sort": "last_change_raw",
-                  "type": Number}, title: "${_('Last Change')}", className: "td-time" },
-         { data: {"_": "last_changeset",
-                  "sort": "last_changeset_raw",
-                  "type": Number}, title: "${_('Commit')}", className: "td-commit" },
-         { data: {"_": "owner",
-                  "sort": "owner"}, title: "${_('Owner')}", className: "td-user" },
-         { data: {"_": "state",
-                  "sort": "state"}, title: "${_('State')}", className: "td-tags td-state" },
-         { data: {"_": "action",
-                  "sort": "action"}, title: "${_('Action')}", className: "td-action", orderable: false }
-      ],
-      language: {
+    $repoListTable.DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            "url": "${h.route_path('repos_data')}",
+            "dataSrc": function (json) {
+                var filteredCount = json.recordsFiltered;
+                var total = json.recordsTotal;
+
+                var _text = _gettext(
+                        "{0} of {1} repositories").format(
+                        filteredCount, total);
+
+                if (total === filteredCount) {
+                    _text = _gettext("{0} repositories").format(total);
+                }
+                $('#repo_count').text(_text);
+
+                return json.data;
+            },
+        },
+        dom: 'rtp',
+        pageLength: ${c.visual.admin_grid_items},
+        order: [[ 0, "asc" ]],
+        columns: [
+            {
+                data: {
+                    "_": "name",
+                    "sort": "name_raw"
+                }, title: "${_('Name')}", className: "td-componentname"
+            },
+            {
+                data: 'menu', "bSortable": false, className: "quick_repo_menu"},
+            {
+                data: {
+                    "_": "desc",
+                    "sort": "desc"
+                }, title: "${_('Description')}", className: "td-description"
+            },
+            {
+                data: {
+                    "_": "last_change",
+                    "sort": "last_change_raw",
+                    "type": Number
+                }, title: "${_('Last Change')}", className: "td-time"
+            },
+            {
+                data: {
+                    "_": "last_changeset",
+                    "sort": "last_changeset_raw",
+                    "type": Number
+                }, title: "${_('Commit')}", className: "td-commit", orderable: false
+            },
+            {
+                data: {
+                    "_": "owner",
+                    "sort": "owner"
+                }, title: "${_('Owner')}", className: "td-user"
+            },
+            {
+                data: {
+                    "_": "state",
+                    "sort": "state"
+                }, title: "${_('State')}", className: "td-tags td-state"
+            },
+            {
+                data: {
+                    "_": "action",
+                    "sort": "action"
+                }, title: "${_('Action')}", className: "td-action", orderable: false
+            }
+        ],
+        language: {
           paginate: DEFAULT_GRID_PAGINATION,
-          emptyTable:_gettext("No repositories available yet.")
-      },
-      "initComplete": function( settings, json ) {
-          get_datatable_count();
-          quick_repo_menu();
-      }
+          sProcessing: _gettext('loading...'),
+          emptyTable:_gettext("No repositories present.")
+        },
+        "initComplete": function( settings, json ) {
+            quick_repo_menu();
+        }
     });
 
-    // update the counter when doing search
-    $('#repo_list_table').on( 'search.dt', function (e,settings) {
-      get_datatable_count();
+    $repoListTable.on('xhr.dt', function(e, settings, json, xhr){
+        $repoListTable.css('opacity', 1);
     });
 
-    // filter, filter both grids
-    $('#q_filter').on( 'keyup', function () {
-      var repo_api = $('#repo_list_table').dataTable().api();
-      repo_api
-        .columns(0)
-        .search(this.value)
-        .draw();
+    $repoListTable.on('preXhr.dt', function(e, settings, data){
+        $repoListTable.css('opacity', 0.3);
     });
 
-    // refilter table if page load via back button
-    $("#q_filter").trigger('keyup');
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $repoListTable.DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
+
   });
 
 </script>

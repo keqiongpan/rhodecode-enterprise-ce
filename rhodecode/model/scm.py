@@ -149,8 +149,7 @@ class RepoList(_PermCheckIterator):
 
     def __init__(self, db_repo_list, perm_set=None, extra_kwargs=None):
         if not perm_set:
-            perm_set = [
-                'repository.read', 'repository.write', 'repository.admin']
+            perm_set = ['repository.read', 'repository.write', 'repository.admin']
 
         super(RepoList, self).__init__(
             obj_list=db_repo_list,

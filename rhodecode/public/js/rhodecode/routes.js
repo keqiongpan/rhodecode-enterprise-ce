@@ -133,6 +133,7 @@ function registerRCRoutes() {
     pyroutes.register('user_groups_new', '/_admin/user_groups/new', []);
     pyroutes.register('user_groups_create', '/_admin/user_groups/create', []);
     pyroutes.register('repos', '/_admin/repos', []);
+    pyroutes.register('repos_data', '/_admin/repos_data', []);
     pyroutes.register('repo_new', '/_admin/repos/new', []);
     pyroutes.register('repo_create', '/_admin/repos/create', []);
     pyroutes.register('repo_groups', '/_admin/repo_groups', []);

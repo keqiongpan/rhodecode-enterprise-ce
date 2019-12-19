@@ -278,7 +278,7 @@
                     <td class="td-tags">
                       %if hasattr(permissions[section], 'perm_origin_stack'):
                          <div>
-                         %for i, (perm, origin) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
+                         %for i, (perm, origin, obj_id) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
                          <% _css_class =  i > 0 and 'perm_overriden' or '' %>
                          % if i > 0:
                              <div style="color: #979797">

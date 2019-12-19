@@ -99,12 +99,8 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
         def user_profile(username):
             return _render('user_profile', username)
 
-        auth_user_group_list = UserGroupList(
-            UserGroup.query().all(), perm_set=['usergroup.admin'])
-
-        allowed_ids = [-1]
-        for user_group in auth_user_group_list:
-                allowed_ids.append(user_group.users_group_id)
+        _perms = ['usergroup.admin']
+        allowed_ids = [-1] + self._rhodecode_user.user_group_acl_ids_from_stack(_perms)
 
         user_groups_data_total_count = UserGroup.query()\
             .filter(or_(

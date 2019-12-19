@@ -65,7 +65,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         # and display only those we have ADMIN right
         groups_with_admin_rights = RepoGroupList(
             RepoGroup.query().all(),
-            perm_set=['group.admin'])
+            perm_set=['group.admin'], extra_kwargs=dict(user=self._rhodecode_user))
         c.repo_groups = RepoGroup.groups_choices(
             groups=groups_with_admin_rights,
             show_empty_group=allow_empty_group)
@@ -150,12 +150,8 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         def user_profile(username):
             return _render('user_profile', username)
 
-        auth_repo_group_list = RepoGroupList(
-            RepoGroup.query().all(), perm_set=['group.admin'])
-
-        allowed_ids = [-1]
-        for repo_group in auth_repo_group_list:
-                allowed_ids.append(repo_group.group_id)
+        _perms = ['group.admin']
+        allowed_ids = [-1] + self._rhodecode_user.repo_group_acl_ids_from_stack(_perms)
 
         repo_groups_data_total_count = RepoGroup.query()\
             .filter(or_(

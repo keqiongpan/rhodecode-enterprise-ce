@@ -23,7 +23,7 @@
 
     <div class="title">
         <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-        <span id="repo_group_count">0</span> ${_('repository groups')}
+        <span id="repo_group_count"></span>
 
         <ul class="links">
         %if c.can_create_repo_group:
@@ -108,6 +108,7 @@ $(document).ready(function() {
             ).draw();
         })
     );
+
 });
 
 </script>

@@ -1646,7 +1646,7 @@ class Repository(Base, BaseModel):
         primary_key=True)
     _repo_name = Column(
         "repo_name", Text(), nullable=False, default=None)
-    _repo_name_hash = Column(
+    repo_name_hash = Column(
         "repo_name_hash", String(255), nullable=False, unique=True)
     repo_state = Column("repo_state", String(255), nullable=True)
 
@@ -1772,21 +1772,25 @@ class Repository(Base, BaseModel):
         else:
             self._locked = None
 
-    @hybrid_property
-    def changeset_cache(self):
+    @classmethod
+    def _load_changeset_cache(cls, repo_id, changeset_cache_raw):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         dummy = EmptyCommit().__json__()
-        if not self._changeset_cache:
-            dummy['source_repo_id'] = self.repo_id
+        if not changeset_cache_raw:
+            dummy['source_repo_id'] = repo_id
             return json.loads(json.dumps(dummy))
 
         try:
-            return json.loads(self._changeset_cache)
+            return json.loads(changeset_cache_raw)
         except TypeError:
             return dummy
         except Exception:
             log.error(traceback.format_exc())
             return dummy
+
+    @hybrid_property
+    def changeset_cache(self):
+        return self._load_changeset_cache(self.repo_id, self._changeset_cache)
 
     @changeset_cache.setter
     def changeset_cache(self, val):
@@ -1802,7 +1806,7 @@ class Repository(Base, BaseModel):
     @repo_name.setter
     def repo_name(self, value):
         self._repo_name = value
-        self._repo_name_hash = hashlib.sha1(safe_str(value)).hexdigest()
+        self.repo_name_hash = hashlib.sha1(safe_str(value)).hexdigest()
 
     @classmethod
     def normalize_repo_name(cls, repo_name):
@@ -2239,15 +2243,19 @@ class Repository(Base, BaseModel):
     def last_commit_cache_update_diff(self):
         return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
 
-    @property
-    def last_commit_change(self):
+    @classmethod
+    def _load_commit_change(cls, last_commit_cache):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
-        date_latest = self.changeset_cache.get('date', empty_date)
+        date_latest = last_commit_cache.get('date', empty_date)
         try:
             return parse_datetime(date_latest)
         except Exception:
             return empty_date
+
+    @property
+    def last_commit_change(self):
+        return self._load_commit_change(self.changeset_cache)
 
     @property
     def last_db_change(self):
@@ -2598,8 +2606,7 @@ class RepoGroup(Base, BaseModel):
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
     personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
-    _changeset_cache = Column(
-        "changeset_cache", LargeBinary(), nullable=True)  # JSON data
+    _changeset_cache = Column("changeset_cache", LargeBinary(), nullable=True)  # JSON data
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -2627,21 +2634,25 @@ class RepoGroup(Base, BaseModel):
         self._group_name = value
         self.group_name_hash = self.hash_repo_group_name(value)
 
-    @hybrid_property
-    def changeset_cache(self):
+    @classmethod
+    def _load_changeset_cache(cls, repo_id, changeset_cache_raw):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         dummy = EmptyCommit().__json__()
-        if not self._changeset_cache:
-            dummy['source_repo_id'] = ''
+        if not changeset_cache_raw:
+            dummy['source_repo_id'] = repo_id
             return json.loads(json.dumps(dummy))
 
         try:
-            return json.loads(self._changeset_cache)
+            return json.loads(changeset_cache_raw)
         except TypeError:
             return dummy
         except Exception:
             log.error(traceback.format_exc())
             return dummy
+
+    @hybrid_property
+    def changeset_cache(self):
+        return self._load_changeset_cache('', self._changeset_cache)
 
     @changeset_cache.setter
     def changeset_cache(self, val):
@@ -2745,7 +2756,7 @@ class RepoGroup(Base, BaseModel):
         return q.all()
 
     @property
-    def parents(self, parents_recursion_limit = 10):
+    def parents(self, parents_recursion_limit=10):
         groups = []
         if self.parent_group is None:
             return groups
@@ -2771,15 +2782,19 @@ class RepoGroup(Base, BaseModel):
     def last_commit_cache_update_diff(self):
         return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
 
-    @property
-    def last_commit_change(self):
+    @classmethod
+    def _load_commit_change(cls, last_commit_cache):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
-        date_latest = self.changeset_cache.get('date', empty_date)
+        date_latest = last_commit_cache.get('date', empty_date)
         try:
             return parse_datetime(date_latest)
         except Exception:
             return empty_date
+
+    @property
+    def last_commit_change(self):
+        return self._load_commit_change(self.changeset_cache)
 
     @property
     def last_db_change(self):

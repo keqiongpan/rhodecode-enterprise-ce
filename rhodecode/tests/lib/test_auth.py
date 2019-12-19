@@ -35,29 +35,29 @@ from rhodecode.model.user_group import UserGroupModel
 
 def test_perm_origin_dict():
     pod = auth.PermOriginDict()
-    pod['thing'] = 'read', 'default'
+    pod['thing'] = 'read', 'default', 1
     assert pod['thing'] == 'read'
 
     assert pod.perm_origin_stack == {
-        'thing': [('read', 'default')]}
+        'thing': [('read', 'default', 1)]}
 
-    pod['thing'] = 'write', 'admin'
+    pod['thing'] = 'write', 'admin', 1
     assert pod['thing'] == 'write'
 
     assert pod.perm_origin_stack == {
-        'thing': [('read', 'default'), ('write', 'admin')]}
+        'thing': [('read', 'default', 1), ('write', 'admin', 1)]}
 
-    pod['other'] = 'write', 'default'
-
-    assert pod.perm_origin_stack == {
-        'other': [('write', 'default')],
-        'thing': [('read', 'default'), ('write', 'admin')]}
-
-    pod['other'] = 'none', 'override'
+    pod['other'] = 'write', 'default', 8
 
     assert pod.perm_origin_stack == {
-        'other': [('write', 'default'), ('none', 'override')],
-        'thing': [('read', 'default'), ('write', 'admin')]}
+        'other': [('write', 'default', 8)],
+        'thing': [('read', 'default', 1), ('write', 'admin', 1)]}
+
+    pod['other'] = 'none', 'override', 8
+
+    assert pod.perm_origin_stack == {
+        'other': [('write', 'default', 8), ('none', 'override', 8)],
+        'thing': [('read', 'default', 1), ('write', 'admin', 1)]}
 
     with pytest.raises(ValueError):
         pod['thing'] = 'read'
