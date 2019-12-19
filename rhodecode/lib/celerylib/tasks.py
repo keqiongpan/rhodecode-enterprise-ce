@@ -341,3 +341,9 @@ def beat_check(*args, **kwargs):
     log = get_logger(beat_check)
     log.info('Got args: %r and kwargs %r', args, kwargs)
     return time.time()
+
+
+@async_task(ignore_result=True)
+def sync_repo_groups_last_update(*args, **kwargs):
+    from rhodecode.model.repo_group import RepoGroupModel
+    return RepoGroupModel().update_commit_cache()
