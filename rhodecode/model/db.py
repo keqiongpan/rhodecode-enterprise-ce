@@ -5151,13 +5151,19 @@ class UserBookmark(Base, BaseModel):
             .filter(UserBookmark.position == position).scalar()
 
     @classmethod
-    def get_bookmarks_for_user(cls, user_id):
-        return cls.query() \
+    def get_bookmarks_for_user(cls, user_id, cache=True):
+        bookmarks = cls.query() \
             .filter(UserBookmark.user_id == user_id) \
             .options(joinedload(UserBookmark.repository)) \
             .options(joinedload(UserBookmark.repository_group)) \
-            .order_by(UserBookmark.position.asc()) \
-            .all()
+            .order_by(UserBookmark.position.asc())
+
+        if cache:
+            bookmarks = bookmarks.options(
+                FromCache("sql_cache_short", "get_user_{}_bookmarks".format(user_id))
+            )
+
+        return bookmarks.all()
 
     def __unicode__(self):
         return u'<UserBookmark(%s @ %r)>' % (self.position, self.redirect_url)

@@ -398,12 +398,14 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def my_account_bookmarks(self):
         c = self.load_default_context()
         c.active = 'bookmarks'
+        c.bookmark_items = UserBookmark.get_bookmarks_for_user(
+            self._rhodecode_db_user.user_id, cache=False)
         return self._get_template_context(c)
 
     def _process_bookmark_entry(self, entry, user_id):
         position = safe_int(entry.get('position'))
         cur_position = safe_int(entry.get('cur_position'))
-        if position is None or cur_position is None:
+        if position is None:
             return
 
         # check if this is an existing entry
