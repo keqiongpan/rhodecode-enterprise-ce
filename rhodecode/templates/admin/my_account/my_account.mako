@@ -40,8 +40,8 @@
           <li class="${h.is_active('external_identity', c.active)}"><a href="${my_account_external_url}">${_('External Identities')}</a></li>
           % endif
 
-          <li class="${h.is_active('repos', c.active)}"><a href="${h.route_path('my_account_repos')}">${_('Repositories')}</a></li>
-          <li class="${h.is_active('watched', c.active)}"><a href="${h.route_path('my_account_watched')}">${_('Watched')}</a></li>
+          <li class="${h.is_active('repos', c.active)}"><a href="${h.route_path('my_account_repos')}">${_('Owned Repositories')}</a></li>
+          <li class="${h.is_active('watched', c.active)}"><a href="${h.route_path('my_account_watched')}">${_('Watched Repositories')}</a></li>
           <li class="${h.is_active('pullrequests', c.active)}"><a href="${h.route_path('my_account_pullrequests')}">${_('Pull Requests')}</a></li>
           <li class="${h.is_active('perms', c.active)}"><a href="${h.route_path('my_account_perms')}">${_('Permissions')}</a></li>
           <li class="${h.is_active('my_notifications', c.active)}"><a href="${h.route_path('my_account_notifications')}">${_('Live Notifications')}</a></li>

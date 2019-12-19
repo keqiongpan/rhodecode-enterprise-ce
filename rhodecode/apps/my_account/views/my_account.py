@@ -33,22 +33,21 @@ from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, \
-    HasRepoPermissionAny, HasRepoGroupPermissionAny
+from rhodecode.lib.auth import (
+    LoginRequired, NotAnonymous, CSRFRequired,
+    HasRepoPermissionAny, HasRepoGroupPermissionAny, AuthUser)
 from rhodecode.lib.channelstream import (
     channelstream_request, ChannelstreamException)
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    IntegrityError, joinedload,
+    IntegrityError, or_, in_filter_generator,
     Repository, UserEmailMap, UserApiKeys, UserFollowing,
     PullRequest, UserBookmark, RepoGroup)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.validation_schema.schemas import user_schema
 
@@ -345,23 +344,59 @@ class MyAccountView(BaseAppView, DataGridAppView):
                             'You should see a new live message now.'}
 
     def _load_my_repos_data(self, watched=False):
-        if watched:
-            admin = False
-            follows_repos = Session().query(UserFollowing)\
-                .filter(UserFollowing.user_id == self._rhodecode_user.user_id)\
-                .options(joinedload(UserFollowing.follows_repository))\
-                .all()
-            repo_list = [x.follows_repository for x in follows_repos]
-        else:
-            admin = True
-            repo_list = Repository.get_all_repos(
-                user_id=self._rhodecode_user.user_id)
-            repo_list = RepoList(repo_list, perm_set=[
-                'repository.read', 'repository.write', 'repository.admin'],
-                                 extra_kwargs=dict(user=self._rhodecode_user))
 
-        repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin, short_name=False)
+        allowed_ids = [-1] + self._rhodecode_user.repo_acl_ids_from_stack(AuthUser.repo_read_perms)
+
+        if watched:
+            # repos user watch
+            repo_list = Session().query(
+                    Repository
+                ) \
+                .join(
+                    (UserFollowing, UserFollowing.follows_repo_id == Repository.repo_id)
+                ) \
+                .filter(
+                    UserFollowing.user_id == self._rhodecode_user.user_id
+                ) \
+                .filter(or_(
+                    # generate multiple IN to fix limitation problems
+                    *in_filter_generator(Repository.repo_id, allowed_ids))
+                ) \
+                .order_by(Repository.repo_name) \
+                .all()
+
+        else:
+            # repos user is owner of
+            repo_list = Session().query(
+                    Repository
+                ) \
+                .filter(
+                    Repository.user_id == self._rhodecode_user.user_id
+                ) \
+                .filter(or_(
+                    # generate multiple IN to fix limitation problems
+                    *in_filter_generator(Repository.repo_id, allowed_ids))
+                ) \
+                .order_by(Repository.repo_name) \
+                .all()
+
+        _render = self.request.get_partial_renderer(
+            'rhodecode:templates/data_table/_dt_elements.mako')
+
+        def repo_lnk(name, rtype, rstate, private, archived, fork_of):
+            return _render('repo_name', name, rtype, rstate, private, archived, fork_of,
+                           short_name=False, admin=False)
+
+        repos_data = []
+        for repo in repo_list:
+            row = {
+                "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
+                                 repo.private, repo.archived, repo.fork),
+                "name_raw": repo.repo_name.lower(),
+            }
+
+            repos_data.append(row)
+
         # json used to render the grid
         return json.dumps(repos_data)
 

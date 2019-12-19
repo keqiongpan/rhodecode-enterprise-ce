@@ -1051,6 +1051,8 @@ class AuthUser(object):
     anonymous access is enabled and if so, it returns default user as logged in
     """
     GLOBAL_PERMS = [x[0] for x in Permission.PERMS]
+    repo_read_perms = ['repository.read', 'repository.admin', 'repository.write']
+    repo_group_read_perms = ['group.read', 'group.write', 'group.admin']
 
     def __init__(self, user_id=None, api_key=None, username=None, ip_addr=None):
 
