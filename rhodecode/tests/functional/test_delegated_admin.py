@@ -33,6 +33,8 @@ def route_path(name, params=None, **kwargs):
         'admin_home': ADMIN_PREFIX,
         'repos':
             ADMIN_PREFIX + '/repos',
+        'repos_data':
+            ADMIN_PREFIX + '/repos_data',
         'repo_groups':
             ADMIN_PREFIX + '/repo_groups',
         'repo_groups_data':
@@ -62,8 +64,9 @@ class TestAdminDelegatedUser(TestController):
         # user doesn't have any access to resources so main admin page should 404
         self.app.get(route_path('admin_home'), status=404)
 
-        response = self.app.get(route_path('repos'), status=200)
-        response.mustcontain('data: []')
+        response = self.app.get(route_path('repos_data'),
+                                status=200, extra_environ=xhr_header)
+        assert response.json['data'] == []
 
         response = self.app.get(route_path('repo_groups_data'),
                                 status=200, extra_environ=xhr_header)
@@ -97,16 +100,17 @@ class TestAdminDelegatedUser(TestController):
         assert_response.element_contains('td.delegated-admin-user-groups', '1')
 
         # admin interfaces have visible elements
-        response = self.app.get(route_path('repos'), status=200)
-        response.mustcontain('"name_raw": "{}"'.format(repo_name))
+        response = self.app.get(route_path('repos_data'),
+                                extra_environ=xhr_header, status=200)
+        response.mustcontain('<a href=\\"/{}\\">'.format(repo_name))
 
         response = self.app.get(route_path('repo_groups_data'),
                                 extra_environ=xhr_header, status=200)
-        response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
+        response.mustcontain('<a href=\\"/{}\\">'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
                                 extra_environ=xhr_header, status=200)
-        response.mustcontain('"name_raw": "{}"'.format(user_group_name))
+        response.mustcontain('<a href=\\"/_profile_user_group/{}\\">'.format(user_group_name))
 
     def test_regular_user_can_see_admin_interfaces_if_admin_perm(
             self, user_util, xhr_header):
@@ -140,13 +144,14 @@ class TestAdminDelegatedUser(TestController):
         assert_response.element_contains('td.delegated-admin-user-groups', '1')
 
         # admin interfaces have visible elements
-        response = self.app.get(route_path('repos'), status=200)
-        response.mustcontain('"name_raw": "{}"'.format(repo_name))
+        response = self.app.get(route_path('repos_data'),
+                                extra_environ=xhr_header, status=200)
+        response.mustcontain('<a href=\\"/{}\\">'.format(repo_name))
 
         response = self.app.get(route_path('repo_groups_data'),
                                 extra_environ=xhr_header, status=200)
-        response.mustcontain('"name_raw": "{}"'.format(repo_group_name))
+        response.mustcontain('<a href=\\"/{}\\">'.format(repo_group_name))
 
         response = self.app.get(route_path('user_groups_data'),
                                 extra_environ=xhr_header, status=200)
-        response.mustcontain('"name_raw": "{}"'.format(user_group_name))
+        response.mustcontain('<a href=\\"/_profile_user_group/{}\\">'.format(user_group_name))

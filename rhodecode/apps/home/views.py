@@ -29,7 +29,7 @@ from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired,
-    HasRepoGroupPermissionAny)
+    HasRepoGroupPermissionAny, AuthUser)
 from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
@@ -723,7 +723,7 @@ class HomeView(BaseAppView, DataGridAppView):
 
         if repo_group_id:
             group = RepoGroup.get_or_404(repo_group_id)
-            _perms = ['group.read', 'group.write', 'group.admin']
+            _perms = AuthUser.repo_group_read_perms
             if not HasRepoGroupPermissionAny(*_perms)(
                     group.group_name, 'user is allowed to list repo group children'):
                 raise HTTPNotFound()
@@ -740,7 +740,7 @@ class HomeView(BaseAppView, DataGridAppView):
 
         if repo_group_id:
             group = RepoGroup.get_or_404(repo_group_id)
-            _perms = ['group.read', 'group.write', 'group.admin']
+            _perms = AuthUser.repo_group_read_perms
             if not HasRepoGroupPermissionAny(*_perms)(
                     group.group_name, 'user is allowed to list repo group children'):
                 raise HTTPNotFound()
@@ -748,8 +748,7 @@ class HomeView(BaseAppView, DataGridAppView):
         return self._main_page_repos_data(repo_group_id)
 
     @LoginRequired()
-    @HasRepoGroupPermissionAnyDecorator(
-        'group.read', 'group.write', 'group.admin')
+    @HasRepoGroupPermissionAnyDecorator(*AuthUser.repo_group_read_perms)
     @view_config(
         route_name='repo_group_home', request_method='GET',
         renderer='rhodecode:templates/index_repo_group.mako')

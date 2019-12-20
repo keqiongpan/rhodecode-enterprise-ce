@@ -84,7 +84,7 @@ class TestAdminRepositoryGroups(object):
         fixture.create_repo_group('test_repo_group')
         response = self.app.get(route_path(
             'repo_groups_data'), extra_environ=xhr_header)
-        response.mustcontain('"name_raw": "test_repo_group"')
+        response.mustcontain('<a href=\\"/{}/_edit\\" title=\\"Edit\\">Edit</a>'.format('test_repo_group'))
         fixture.destroy_repo_group('test_repo_group')
 
     def test_new(self, autologin_user):

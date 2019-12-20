@@ -546,6 +546,7 @@ class TestAdminUsersView(TestController):
         usr = user_util.create_user(auto_cleanup=False)
         username = usr.username
         fixture.create_repo(obj_name, cur_user=usr.username)
+        Session().commit()
 
         new_user = Session().query(User)\
             .filter(User.username == username).one()

@@ -22,7 +22,7 @@
 import pytest
 
 import rhodecode
-from rhodecode.model.db import Repository
+from rhodecode.model.db import Repository, RepoGroup, User
 from rhodecode.model.meta import Session
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
@@ -37,6 +37,8 @@ fixture = Fixture()
 def route_path(name, **kwargs):
     return {
         'home': '/',
+        'main_page_repos_data': '/_home_repos',
+        'main_page_repo_groups_data': '/_home_repo_groups',
         'repo_group_home': '/{repo_group_name}'
     }[name].format(**kwargs)
 
@@ -49,9 +51,40 @@ class TestHomeController(TestController):
         # if global permission is set
         response.mustcontain('New Repository')
 
+    def test_index_grid_repos(self, xhr_header):
+        self.log_user()
+        response = self.app.get(route_path('main_page_repos_data'), extra_environ=xhr_header)
         # search for objects inside the JavaScript JSON
-        for repo in Repository.getAll():
-            response.mustcontain('"name_raw": "%s"' % repo.repo_name)
+        for obj in Repository.getAll():
+            response.mustcontain('<a href=\\"/{}\\">'.format(obj.repo_name))
+
+    def test_index_grid_repo_groups(self, xhr_header):
+        self.log_user()
+        response = self.app.get(route_path('main_page_repo_groups_data'),
+                                extra_environ=xhr_header,)
+
+        # search for objects inside the JavaScript JSON
+        for obj in RepoGroup.getAll():
+            response.mustcontain('<a href=\\"/{}\\">'.format(obj.group_name))
+
+    def test_index_grid_repo_groups_without_access(self, xhr_header, user_util):
+        user = user_util.create_user(password='qweqwe')
+        group_ok = user_util.create_repo_group(owner=user)
+        group_id_ok = group_ok.group_id
+
+        group_forbidden = user_util.create_repo_group(owner=User.get_first_super_admin())
+        group_id_forbidden = group_forbidden.group_id
+
+        user_util.grant_user_permission_to_repo_group(group_forbidden, user, 'group.none')
+        self.log_user(user.username, 'qweqwe')
+
+        self.app.get(route_path('main_page_repo_groups_data'),
+                     extra_environ=xhr_header,
+                     params={'repo_group_id': group_id_ok}, status=200)
+
+        self.app.get(route_path('main_page_repo_groups_data'),
+                     extra_environ=xhr_header,
+                     params={'repo_group_id': group_id_forbidden}, status=404)
 
     def test_index_contains_statics_with_ver(self):
         from rhodecode.lib.base import calculate_version_hash
@@ -64,9 +97,9 @@ class TestHomeController(TestController):
         response.mustcontain('style.css?ver={0}'.format(rhodecode_version_hash))
         response.mustcontain('scripts.min.js?ver={0}'.format(rhodecode_version_hash))
 
-    def test_index_contains_backend_specific_details(self, backend):
+    def test_index_contains_backend_specific_details(self, backend, xhr_header):
         self.log_user()
-        response = self.app.get(route_path('home'))
+        response = self.app.get(route_path('main_page_repos_data'), extra_environ=xhr_header)
         tip = backend.repo.get_commit().raw_id
 
         # html in javascript variable:
@@ -81,25 +114,44 @@ class TestHomeController(TestController):
             response = self.app.get(route_path('home'), status=302)
             assert 'login' in response.location
 
-    def test_index_page_on_groups(self, autologin_user, repo_group):
-        response = self.app.get(route_path('repo_group_home', repo_group_name='gr1'))
-        response.mustcontain("gr1/repo_in_group")
+    def test_index_page_on_groups_with_wrong_group_id(self, autologin_user, xhr_header):
+        group_id = 918123
+        self.app.get(
+            route_path('main_page_repo_groups_data'),
+            params={'repo_group_id': group_id},
+            status=404, extra_environ=xhr_header)
 
-    def test_index_page_on_group_with_trailing_slash(
-            self, autologin_user, repo_group):
-        response = self.app.get(route_path('repo_group_home', repo_group_name='gr1') + '/')
-        response.mustcontain("gr1/repo_in_group")
+    def test_index_page_on_groups(self, autologin_user, user_util, xhr_header):
+        gr = user_util.create_repo_group()
+        repo = user_util.create_repo(parent=gr)
+        repo_name = repo.repo_name
+        group_id = gr.group_id
 
-    @pytest.fixture(scope='class')
-    def repo_group(self, request):
-        gr = fixture.create_repo_group('gr1')
-        fixture.create_repo(name='gr1/repo_in_group', repo_group=gr)
+        response = self.app.get(route_path(
+            'repo_group_home', repo_group_name=gr.group_name))
+        response.mustcontain('d.repo_group_id = {}'.format(group_id))
 
-        @request.addfinalizer
-        def cleanup():
-            RepoModel().delete('gr1/repo_in_group')
-            RepoGroupModel().delete(repo_group='gr1', force_delete=True)
-            Session().commit()
+        response = self.app.get(
+            route_path('main_page_repos_data'),
+            params={'repo_group_id': group_id},
+            extra_environ=xhr_header,)
+        response.mustcontain(repo_name)
+
+    def test_index_page_on_group_with_trailing_slash(self, autologin_user, user_util, xhr_header):
+        gr = user_util.create_repo_group()
+        repo = user_util.create_repo(parent=gr)
+        repo_name = repo.repo_name
+        group_id = gr.group_id
+
+        response = self.app.get(route_path(
+            'repo_group_home', repo_group_name=gr.group_name+'/'))
+        response.mustcontain('d.repo_group_id = {}'.format(group_id))
+
+        response = self.app.get(
+            route_path('main_page_repos_data'),
+            params={'repo_group_id': group_id},
+            extra_environ=xhr_header, )
+        response.mustcontain(repo_name)
 
     @pytest.mark.parametrize("name, state", [
         ('Disabled', False),
