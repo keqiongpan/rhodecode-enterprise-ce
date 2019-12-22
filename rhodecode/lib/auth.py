@@ -1053,6 +1053,7 @@ class AuthUser(object):
     GLOBAL_PERMS = [x[0] for x in Permission.PERMS]
     repo_read_perms = ['repository.read', 'repository.admin', 'repository.write']
     repo_group_read_perms = ['group.read', 'group.write', 'group.admin']
+    user_group_read_perms = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
 
     def __init__(self, user_id=None, api_key=None, username=None, ip_addr=None):
 
@@ -1292,7 +1293,7 @@ class AuthUser(object):
 
     def repo_acl_ids_from_stack(self, perms=None, prefix_filter=None, cache=False):
         if not perms:
-            perms = ['repository.read', 'repository.write', 'repository.admin']
+            perms = AuthUser.repo_read_perms
         allowed_ids = []
         for k, stack_data in self.permissions['repositories'].perm_origin_stack.items():
             perm, origin, obj_id = stack_data[-1]  # last item is the current permission
@@ -1310,7 +1311,7 @@ class AuthUser(object):
         """
         from rhodecode.model.scm import RepoList
         if not perms:
-            perms = ['repository.read', 'repository.write', 'repository.admin']
+            perms = AuthUser.repo_read_perms
 
         def _cached_repo_acl(user_id, perm_def, _name_filter):
             qry = Repository.query()
@@ -1326,7 +1327,7 @@ class AuthUser(object):
 
     def repo_group_acl_ids_from_stack(self, perms=None, prefix_filter=None, cache=False):
         if not perms:
-            perms = ['group.read', 'group.write', 'group.admin']
+            perms = AuthUser.repo_group_read_perms
         allowed_ids = []
         for k, stack_data in self.permissions['repositories_groups'].perm_origin_stack.items():
             perm, origin, obj_id = stack_data[-1]  # last item is the current permission
@@ -1344,7 +1345,7 @@ class AuthUser(object):
         """
         from rhodecode.model.scm import RepoGroupList
         if not perms:
-            perms = ['group.read', 'group.write', 'group.admin']
+            perms = AuthUser.repo_group_read_perms
 
         def _cached_repo_group_acl(user_id, perm_def, _name_filter):
             qry = RepoGroup.query()
@@ -1360,7 +1361,7 @@ class AuthUser(object):
 
     def user_group_acl_ids_from_stack(self, perms=None, cache=False):
         if not perms:
-            perms = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
+            perms = AuthUser.user_group_read_perms
         allowed_ids = []
         for k, stack_data in self.permissions['user_groups'].perm_origin_stack.items():
             perm, origin, obj_id = stack_data[-1]  # last item is the current permission
@@ -1376,7 +1377,7 @@ class AuthUser(object):
         """
         from rhodecode.model.scm import UserGroupList
         if not perms:
-            perms = ['usergroup.read', 'usergroup.write', 'usergroup.admin']
+            perms = AuthUser.user_group_read_perms
 
         def _cached_user_group_acl(user_id, perm_def, name_filter):
             qry = UserGroup.query()
