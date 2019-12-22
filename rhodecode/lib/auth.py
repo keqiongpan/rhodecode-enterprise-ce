@@ -1230,7 +1230,7 @@ class AuthUser(object):
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
                                                condition=cache_on)
-        def compute_perm_tree(cache_name,
+        def compute_perm_tree(cache_name, cache_ver,
                 user_id, scope, user_is_admin,user_inherit_default_permissions,
                 explicit, algo, calculate_super_admin):
             return _cached_perms_data(
@@ -1239,7 +1239,7 @@ class AuthUser(object):
 
         start = time.time()
         result = compute_perm_tree(
-            'permissions', user_id, scope, user_is_admin,
+            'permissions', 'v1', user_id, scope, user_is_admin,
              user_inherit_default_permissions, explicit, algo,
              calculate_super_admin)
 
