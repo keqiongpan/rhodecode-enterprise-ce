@@ -911,6 +911,10 @@ class SqlalchemyOrmWrapper(object):
         return self.collection[range]
 
     def __len__(self):
+        # support empty types, without actually making a query.
+        if self.collection is None or self.collection == []:
+            return 0
+
         # Count the number of objects in an sqlalchemy.orm.query.Query object
         return self.collection.count()
 
