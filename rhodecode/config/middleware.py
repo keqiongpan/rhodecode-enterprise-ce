@@ -428,9 +428,7 @@ def sanitize_settings_and_apply_defaults(global_config, settings):
             settings['beaker.session.url'] = 'redis://' + raw_url
 
     # Default includes, possible to change as a user
-    pyramid_includes = settings.setdefault('pyramid.includes', [
-        'rhodecode.lib.middleware.request_wrapper',
-    ])
+    pyramid_includes = settings.setdefault('pyramid.includes', [])
     log.debug(
         "Using the following pyramid.includes: %s",
         pyramid_includes)

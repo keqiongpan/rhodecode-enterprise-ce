@@ -38,6 +38,7 @@ class RequestWrapperTween(object):
 
     def __call__(self, request):
         start = time.time()
+        log.debug('Starting request time measurement')
         try:
             response = self.handler(request)
         finally:
