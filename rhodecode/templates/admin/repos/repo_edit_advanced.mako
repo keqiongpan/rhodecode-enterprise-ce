@@ -8,6 +8,7 @@
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
     (_('Cached Commit id'), lambda: h.link_to(c.rhodecode_db_repo.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.changeset_cache.get('raw_id'))), '', ''),
     (_('Cached Commit date'), c.rhodecode_db_repo.changeset_cache.get('date'), '', ''),
+    (_('Cached Commit data'), lambda: h.link_to('refresh now', h.current_route_path(request, update_commit_cache=1)), '', ''),
     (_('Attached scoped tokens'), len(c.rhodecode_db_repo.scoped_tokens), '', [x.user for x in c.rhodecode_db_repo.scoped_tokens]),
     (_('Pull requests source'), len(c.rhodecode_db_repo.pull_requests_source), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.source_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_source]),
     (_('Pull requests target'), len(c.rhodecode_db_repo.pull_requests_target), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.target_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_target]),

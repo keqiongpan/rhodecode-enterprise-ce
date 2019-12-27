@@ -60,6 +60,7 @@ class RepoSettingsView(RepoAppView):
         route_name='edit_repo_advanced', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced(self):
+        _ = self.request.translate
         c = self.load_default_context()
         c.active = 'advanced'
 
@@ -69,6 +70,11 @@ class RepoSettingsView(RepoAppView):
             .filter(UserFollowing.follows_repository == self.db_repo).scalar()
 
         c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
+
+        # update commit cache if GET flag is present
+        if self.request.GET.get('update_commit_cache'):
+            self.db_repo.update_commit_cache()
+            h.flash(_('updated commit cache'), category='success')
 
         return self._get_template_context(c)
 
