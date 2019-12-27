@@ -35,7 +35,8 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.model.db import Session, IntegrityError, Repository, User, true
+from rhodecode.model.db import (
+    Session, IntegrityError, true, Repository, RepoGroup, User)
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
@@ -344,6 +345,21 @@ def beat_check(*args, **kwargs):
 
 
 @async_task(ignore_result=True)
-def sync_repo_groups_last_update(*args, **kwargs):
-    from rhodecode.model.repo_group import RepoGroupModel
-    return RepoGroupModel().update_commit_cache()
+def sync_last_update(*args, **kwargs):
+
+    skip_repos = kwargs.get('skip_repos')
+    if not skip_repos:
+        repos = Repository.query() \
+            .order_by(Repository.group_id.asc())
+
+        for repo in repos:
+            repo.update_commit_cache()
+
+    skip_groups = kwargs.get('skip_groups')
+    if not skip_groups:
+        repo_groups = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == None)
+
+        for root_gr in repo_groups:
+            for repo_gr in reversed(root_gr.recursive_groups()):
+                repo_gr.update_commit_cache()
