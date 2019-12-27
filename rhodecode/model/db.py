@@ -55,7 +55,7 @@ from pyramid.threadlocal import get_current_request
 from webhelpers2.text import remove_formatting
 
 from rhodecode.translation import _
-from rhodecode.lib.vcs import get_vcs_instance
+from rhodecode.lib.vcs import get_vcs_instance, VCSError
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
@@ -2359,7 +2359,8 @@ class Repository(Base, BaseModel):
 
     def update_commit_cache(self, cs_cache=None, config=None):
         """
-        Update cache of last commit for repository, keys should be::
+        Update cache of last commit for repository
+        cache_keys should be::
 
             source_repo_id
             short_id
@@ -2373,11 +2374,17 @@ class Repository(Base, BaseModel):
 
         """
         from rhodecode.lib.vcs.backends.base import BaseChangeset
+        from rhodecode.lib.vcs.utils.helpers import parse_datetime
+        empty_date = datetime.datetime.fromtimestamp(0)
+
         if cs_cache is None:
             # use no-cache version here
-            scm_repo = self.scm_instance(cache=False, config=config)
-
+            try:
+                scm_repo = self.scm_instance(cache=False, config=config)
+            except VCSError:
+                scm_repo = None
             empty = scm_repo is None or scm_repo.is_empty()
+
             if not empty:
                 cs_cache = scm_repo.get_commit(
                     pre_load=["author", "date", "message", "parents", "branch"])
@@ -2395,33 +2402,39 @@ class Repository(Base, BaseModel):
 
         # check if we have maybe already latest cached revision
         if is_outdated(cs_cache) or not self.changeset_cache:
-            _default = datetime.datetime.utcnow()
-            last_change = cs_cache.get('date') or _default
+            _current_datetime = datetime.datetime.utcnow()
+            last_change = cs_cache.get('date') or _current_datetime
             # we check if last update is newer than the new value
             # if yes, we use the current timestamp instead. Imagine you get
             # old commit pushed 1y ago, we'd set last update 1y to ago.
             last_change_timestamp = datetime_to_time(last_change)
             current_timestamp = datetime_to_time(last_change)
-            if last_change_timestamp > current_timestamp:
-                cs_cache['date'] = _default
+            if last_change_timestamp > current_timestamp and not empty:
+                cs_cache['date'] = _current_datetime
 
+            _date_latest = parse_datetime(cs_cache.get('date') or empty_date)
             cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
             self.updated_on = last_change
             Session().add(self)
             Session().commit()
 
-            log.debug('updated repo `%s` with new commit cache %s',
-                      self.repo_name, cs_cache)
         else:
-            cs_cache = self.changeset_cache
+            if empty:
+                cs_cache = EmptyCommit().__json__()
+            else:
+                cs_cache = self.changeset_cache
+
+            _date_latest = parse_datetime(cs_cache.get('date') or empty_date)
+
             cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
+            self.updated_on = _date_latest
             Session().add(self)
             Session().commit()
 
-            log.debug('Skipping update_commit_cache for repo:`%s` '
-                      'commit already with latest changes', self.repo_name)
+        log.debug('updated repo `%s` with new commit cache %s, and last update_date: %s',
+                  self.repo_name, cs_cache, _date_latest)
 
     @property
     def tip(self):
@@ -2886,7 +2899,8 @@ class RepoGroup(Base, BaseModel):
 
     def update_commit_cache(self, config=None):
         """
-        Update cache of last changeset for newest repository inside this group, keys should be::
+        Update cache of last commit for newest repository inside this repository group.
+        cache_keys should be::
 
             source_repo_id
             short_id
@@ -2899,50 +2913,37 @@ class RepoGroup(Base, BaseModel):
 
         """
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
-
-        def repo_groups_and_repos():
-            all_entries = OrderedDefaultDict(list)
-
-            def _get_members(root_gr, pos=0):
-
-                for repo in root_gr.repositories:
-                    all_entries[root_gr].append(repo)
-
-                # fill in all parent positions
-                for parent_group in root_gr.parents:
-                    all_entries[parent_group].extend(all_entries[root_gr])
-
-                children_groups = root_gr.children.all()
-                if children_groups:
-                    for cnt, gr in enumerate(children_groups, 1):
-                        _get_members(gr, pos=pos+cnt)
-
-            _get_members(root_gr=self)
-            return all_entries
-
         empty_date = datetime.datetime.fromtimestamp(0)
-        for repo_group, repos in repo_groups_and_repos().items():
 
-            latest_repo_cs_cache = {}
-            _date_latest = empty_date
-            for repo in repos:
-                repo_cs_cache = repo.changeset_cache
-                date_latest = latest_repo_cs_cache.get('date', empty_date)
-                date_current = repo_cs_cache.get('date', empty_date)
-                current_timestamp = datetime_to_time(parse_datetime(date_latest))
-                if current_timestamp < datetime_to_time(parse_datetime(date_current)):
-                    latest_repo_cs_cache = repo_cs_cache
-                    latest_repo_cs_cache['source_repo_id'] = repo.repo_id
-                    _date_latest = parse_datetime(latest_repo_cs_cache['date'])
+        def repo_groups_and_repos(root_gr):
+            for _repo in root_gr.repositories:
+                yield _repo
+            for child_group in root_gr.children.all():
+                yield child_group
 
-            latest_repo_cs_cache['updated_on'] = time.time()
-            repo_group.changeset_cache = latest_repo_cs_cache
-            repo_group.updated_on = _date_latest
-            Session().add(repo_group)
-            Session().commit()
+        latest_repo_cs_cache = {}
+        for obj in repo_groups_and_repos(self):
+            repo_cs_cache = obj.changeset_cache
+            date_latest = latest_repo_cs_cache.get('date', empty_date)
+            date_current = repo_cs_cache.get('date', empty_date)
+            current_timestamp = datetime_to_time(parse_datetime(date_latest))
+            if current_timestamp < datetime_to_time(parse_datetime(date_current)):
+                latest_repo_cs_cache = repo_cs_cache
+                if hasattr(obj, 'repo_id'):
+                    latest_repo_cs_cache['source_repo_id'] = obj.repo_id
+                else:
+                    latest_repo_cs_cache['source_repo_id'] = repo_cs_cache.get('source_repo_id')
 
-            log.debug('updated repo group `%s` with new commit cache %s',
-                      repo_group.group_name, latest_repo_cs_cache)
+        _date_latest = parse_datetime(latest_repo_cs_cache.get('date') or empty_date)
+
+        latest_repo_cs_cache['updated_on'] = time.time()
+        self.changeset_cache = latest_repo_cs_cache
+        self.updated_on = _date_latest
+        Session().add(self)
+        Session().commit()
+
+        log.debug('updated repo group `%s` with new commit cache %s, and last update_date: %s',
+                  self.group_name, latest_repo_cs_cache, _date_latest)
 
     def permissions(self, with_admins=True, with_owner=True,
                     expand_from_user_groups=False):
