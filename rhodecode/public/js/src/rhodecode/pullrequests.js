@@ -75,12 +75,13 @@ var getTitleAndDescription = function(sourceRef, elements, limit) {
   var desc = '';
 
   $.each($(elements).get().reverse().slice(0, limit), function(idx, value) {
-      var rawMessage = $(value).find('td.td-description .message').data('messageRaw');
+      var rawMessage = $(value).find('td.td-description .message').data('messageRaw').toString();
       desc += '- ' + rawMessage.split('\n')[0].replace(/\n+$/, "") + '\n';
   });
   // only 1 commit, use commit message as title
   if (elements.length === 1) {
-      title = $(elements[0]).find('td.td-description .message').data('messageRaw').split('\n')[0];
+      var rawMessage = $(elements[0]).find('td.td-description .message').data('messageRaw').toString();
+      title = rawMessage.split('\n')[0];
   }
   else {
       // use reference name
