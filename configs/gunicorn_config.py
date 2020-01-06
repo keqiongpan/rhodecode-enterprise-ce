@@ -66,7 +66,7 @@ def _get_config(ini_path):
     except ImportError:
         import ConfigParser as configparser
     try:
-        config = configparser.ConfigParser()
+        config = configparser.RawConfigParser()
         config.read(ini_path)
         return config
     except Exception:
@@ -90,15 +90,18 @@ def post_fork(server, worker):
 
     ini_path = os.path.abspath(server.cfg.paste)
     conf = _get_config(ini_path)
-    if conf and 'server:main' in conf:
-        section = conf['server:main']
 
-        if section.get('memory_max_usage'):
-            _memory_max_usage = int(section.get('memory_max_usage'))
-        if section.get('memory_usage_check_interval'):
-            _memory_usage_check_interval = int(section.get('memory_usage_check_interval'))
-        if section.get('memory_usage_recovery_threshold'):
-            _memory_usage_recovery_threshold = float(section.get('memory_usage_recovery_threshold'))
+    section = 'server:main'
+    if conf and conf.has_section(section):
+
+        if conf.has_option(section, 'memory_max_usage'):
+            _memory_max_usage = conf.getint(section, 'memory_max_usage')
+
+        if conf.has_option(section, 'memory_usage_check_interval'):
+            _memory_usage_check_interval = conf.getint(section, 'memory_usage_check_interval')
+
+        if conf.has_option(section, 'memory_usage_recovery_threshold'):
+            _memory_usage_recovery_threshold = conf.getfloat(section, 'memory_usage_recovery_threshold')
 
     worker._memory_max_usage = _memory_max_usage
     worker._memory_usage_check_interval = _memory_usage_check_interval
