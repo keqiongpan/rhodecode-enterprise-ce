@@ -53,9 +53,8 @@ New Features
 - Pull requests: closing a pull-request without a merge requires additional confirmation now.
 - Pull requests: merge checks will now show which files caused conflicts and are blocking the merge.
 - Emails: updated all generated emails design and cleanup the data fields they expose.
-    * more consistent UI for all types of emails
-    * improved formatting of plaintext emails
-    * emails: added reply link to comment type emails for quicker response action.
+  a) More consistent UI for all types of emails. b) Improved formatting of plaintext emails
+  c) Added reply link to comment type emails for quicker response action.
 
 
 General
@@ -221,7 +220,8 @@ Upgrade notes
 
 - New memory monitoring for Gunicorn workers. Starting from 4.18 release a option was added
   to limit the maximum amount of memory used by a worker.
-  Please review new settings for memory management in both rhodecode.ini and vcsserver.ini:
+  Please review new settings in `[server:main]` section for memory management in both
+  rhodecode.ini and vcsserver.ini::
 
     ; Maximum memory usage that each worker can use before it will receive a
     ; graceful restart signal 0 = memory monitoring is disabled
