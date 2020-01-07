@@ -39,7 +39,7 @@ close_pull_request
 comment_pull_request 
 --------------------
 
-.. py:function:: comment_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Comment on the pull request specified with the `pullrequestid`,
    in the |repo| specified by the `repoid`, and optionally change the
@@ -63,6 +63,11 @@ comment_pull_request
    :type status: str
    :param comment_type: Comment type, one of: 'note', 'todo'
    :type comment_type: Optional(str), default: 'note'
+   :param resolves_comment_id: id of comment which this one will resolve
+   :type resolves_comment_id: Optional(int)
+   :param extra_recipients: list of user ids or usernames to add
+       notifications for this comment. Acts like a CC for notification
+   :type extra_recipients: Optional(list)
    :param userid: Comment on the pull request as this user
    :type userid: Optional(str or int)
 
@@ -126,7 +131,7 @@ create_pull_request
 get_pull_request 
 ----------------
 
-.. py:function:: get_pull_request(apiuser, pullrequestid, repoid=<Optional:None>)
+.. py:function:: get_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, merge_state=<Optional:False>)
 
    Get a pull request based on the given ID.
 
@@ -137,6 +142,9 @@ get_pull_request
    :type repoid: str or int
    :param pullrequestid: ID of the requested pull request.
    :type pullrequestid: int
+   :param merge_state: Optional calculate merge state for each repository.
+       This could result in longer time to fetch the data
+   :type merge_state: bool
 
    Example output:
 
@@ -250,7 +258,7 @@ get_pull_request_comments
 get_pull_requests 
 -----------------
 
-.. py:function:: get_pull_requests(apiuser, repoid, status=<Optional:'new'>, merge_state=<Optional:True>)
+.. py:function:: get_pull_requests(apiuser, repoid, status=<Optional:'new'>, merge_state=<Optional:False>)
 
    Get all pull requests from the repository specified in `repoid`.
 

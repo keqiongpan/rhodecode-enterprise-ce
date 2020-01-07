@@ -28,7 +28,7 @@ add_field_to_repo
 comment_commit 
 --------------
 
-.. py:function:: comment_commit(apiuser, repoid, commit_id, message, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_commit(apiuser, repoid, commit_id, message, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>)
 
    Set a commit comment, and optionally change the status of the commit.
 
@@ -45,6 +45,11 @@ comment_commit
    :type status: str
    :param comment_type: Comment type, one of: 'note', 'todo'
    :type comment_type: Optional(str), default: 'note'
+   :param resolves_comment_id: id of comment which this one will resolve
+   :type resolves_comment_id: Optional(int)
+   :param extra_recipients: list of user ids or usernames to add
+       notifications for this comment. Acts like a CC for notification
+   :type extra_recipients: Optional(list)
    :param userid: Set the user name of the comment creator.
    :type userid: Optional(str or int)
 
@@ -66,7 +71,7 @@ comment_commit
 create_repo 
 -----------
 
-.. py:function:: create_repo(apiuser, repo_name, repo_type, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, copy_permissions=<Optional:False>)
+.. py:function:: create_repo(apiuser, repo_name, repo_type, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, copy_permissions=<Optional:False>)
 
    Creates a repository.
 
@@ -97,7 +102,7 @@ create_repo
    :type clone_uri: str
    :param push_uri: set push_uri
    :type push_uri: str
-   :param landing_rev: <rev_type>:<rev>
+   :param landing_rev: <rev_type>:<rev>, e.g branch:default, book:dev, rev:abcd
    :type landing_rev: str
    :param enable_locking:
    :type enable_locking: bool
@@ -169,7 +174,7 @@ delete_repo
 fork_repo 
 ---------
 
-.. py:function:: fork_repo(apiuser, repoid, fork_name, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, copy_permissions=<Optional:False>)
+.. py:function:: fork_repo(apiuser, repoid, fork_name, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, landing_rev=<Optional:None>, copy_permissions=<Optional:False>)
 
    Creates a fork of the specified |repo|.
 
@@ -198,7 +203,7 @@ fork_repo
    :type copy_permissions: bool
    :param private: Make the fork private. The default is False.
    :type private: bool
-   :param landing_rev: Set the landing revision. The default is tip.
+   :param landing_rev: Set the landing revision. E.g branch:default, book:dev, rev:abcd
 
    Example output:
 
@@ -1085,7 +1090,7 @@ strip
 update_repo 
 -----------
 
-.. py:function:: update_repo(apiuser, repoid, repo_name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:'rev:tip'>, fork_of=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
+.. py:function:: update_repo(apiuser, repoid, repo_name=<Optional:None>, owner=<Optional:<OptionalAttr:apiuser>>, description=<Optional:''>, private=<Optional:False>, clone_uri=<Optional:None>, push_uri=<Optional:None>, landing_rev=<Optional:None>, fork_of=<Optional:None>, enable_statistics=<Optional:False>, enable_locking=<Optional:False>, enable_downloads=<Optional:False>, fields=<Optional:''>)
 
    Updates a repository with the given information.
 
@@ -1117,7 +1122,7 @@ update_repo
    :type private: bool
    :param clone_uri: Update the |repo| clone URI.
    :type clone_uri: str
-   :param landing_rev: Set the |repo| landing revision. Default is ``rev:tip``.
+   :param landing_rev: Set the |repo| landing revision. e.g branch:default, book:dev, rev:abcd
    :type landing_rev: str
    :param enable_statistics: Enable statistics on the |repo|, (True | False).
    :type enable_statistics: bool

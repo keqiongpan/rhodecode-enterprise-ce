@@ -6,7 +6,7 @@ user methods
 create_user 
 -----------
 
-.. py:function:: create_user(apiuser, username, email, password=<Optional:''>, firstname=<Optional:''>, lastname=<Optional:''>, active=<Optional:True>, admin=<Optional:False>, extern_name=<Optional:'rhodecode'>, extern_type=<Optional:'rhodecode'>, force_password_change=<Optional:False>, create_personal_repo_group=<Optional:None>)
+.. py:function:: create_user(apiuser, username, email, password=<Optional:''>, firstname=<Optional:''>, lastname=<Optional:''>, description=<Optional:''>, active=<Optional:True>, admin=<Optional:False>, extern_name=<Optional:'rhodecode'>, extern_type=<Optional:'rhodecode'>, force_password_change=<Optional:False>, create_personal_repo_group=<Optional:None>)
 
    Creates a new user and returns the new user object.
 
@@ -27,6 +27,8 @@ create_user
    :type firstname: Optional(str)
    :param lastname: Set the new user surname.
    :type lastname: Optional(str)
+   :param description: Set user description, or short bio. Metatags are allowed.
+   :type description: Optional(str)
    :param active: Set the user as active.
    :type active: Optional(``True`` | ``False``)
    :param admin: Give the new user admin rights.
@@ -155,6 +157,7 @@ get_user
            "extern_name": "rhodecode",
            "extern_type": "rhodecode",
            "firstname": "username",
+           "description": "user description",
            "ip_addresses": [],
            "language": null,
            "last_login": "Timestamp",
@@ -268,7 +271,7 @@ get_users
 update_user 
 -----------
 
-.. py:function:: update_user(apiuser, userid, username=<Optional:None>, email=<Optional:None>, password=<Optional:None>, firstname=<Optional:None>, lastname=<Optional:None>, active=<Optional:None>, admin=<Optional:None>, extern_type=<Optional:None>, extern_name=<Optional:None>)
+.. py:function:: update_user(apiuser, userid, username=<Optional:None>, email=<Optional:None>, password=<Optional:None>, firstname=<Optional:None>, lastname=<Optional:None>, description=<Optional:None>, active=<Optional:None>, admin=<Optional:None>, extern_type=<Optional:None>, extern_name=<Optional:None>)
 
    Updates the details for the specified user, if that user exists.
 
@@ -291,6 +294,8 @@ update_user
    :type firstname: Optional(str)
    :param lastname: Set the new surname.
    :type lastname: Optional(str)
+   :param description: Set user description, or short bio. Metatags are allowed.
+   :type description: Optional(str)
    :param active: Set the new user as active.
    :type active: Optional(``True`` | ``False``)
    :param admin: Give the user admin rights.
