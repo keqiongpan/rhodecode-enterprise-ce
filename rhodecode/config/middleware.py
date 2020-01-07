@@ -576,7 +576,6 @@ def _sanitize_vcs_settings(settings):
     _string_setting(settings, 'vcs.hooks.host', '127.0.0.1')
     _string_setting(settings, 'vcs.scm_app_implementation', 'http')
     _string_setting(settings, 'vcs.server', '')
-    _string_setting(settings, 'vcs.server.log_level', 'debug')
     _string_setting(settings, 'vcs.server.protocol', 'http')
     _bool_setting(settings, 'startup.import_repos', 'false')
     _bool_setting(settings, 'vcs.hooks.direct_calls', 'false')

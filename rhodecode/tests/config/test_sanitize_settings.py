@@ -119,7 +119,6 @@ class TestSanitizeVcsSettings(object):
         ('vcs.hooks.host', '127.0.0.1'),
         ('vcs.scm_app_implementation', 'http'),
         ('vcs.server', ''),
-        ('vcs.server.log_level', 'debug'),
         ('vcs.server.protocol', 'http'),
     ]
 
