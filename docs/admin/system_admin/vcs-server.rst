@@ -110,35 +110,39 @@ match, for example:
 
 .. _vcs-server-maintain:
 
-VCS Server Memory Optimization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+VCS Server Cache Optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To optimize the VCS server to manage the cache and memory usage efficiently, you need to
-configure the following options in the
-:file:`/home/{user}/.rccontrol/{vcsserver-id}/vcsserver.ini` file. Once
-configured, restart the VCS Server. By default we use an optimal settings, but in certain
-conditions tunning expiration_time and max_size can affect memory usage and performance
+To optimize the VCS server to manage the cache and memory usage efficiently, it's recommended to
+configure the Redis backend for VCSServer caches.
+Once configured, restart the VCS Server.
+
+Make sure Redis is installed and running.
+Open :file:`/home/{user}/.rccontrol/{vcsserver-id}/vcsserver.ini`
+file and ensure the below settings for `repo_object` type cache are set:
 
 .. code-block:: ini
 
-    ## cache region for storing repo_objects cache
-    rc_cache.repo_object.backend = dogpile.cache.rc.memory_lru
+    ; ensure the default file based cache is *commented out*
+    ##rc_cache.repo_object.backend = dogpile.cache.rc.file_namespace
+    ##rc_cache.repo_object.expiration_time = 2592000
 
-    ## cache auto-expires after N seconds, setting this to 0 disabled cache
-    rc_cache.repo_object.expiration_time = 300
+    ; `repo_object` cache settings for vcs methods for repositories
+    rc_cache.repo_object.backend = dogpile.cache.rc.redis_msgpack
 
-    ## max size of LRU, old values will be discarded if the size of cache reaches max_size
-    ## Sets the maximum number of items stored in the cache, before the cache
-    ## starts to be cleared.
+    ; cache auto-expires after N seconds
+    ; Examples: 86400 (1Day), 604800 (7Days), 1209600 (14Days), 2592000 (30days), 7776000 (90Days)
+    rc_cache.repo_object.expiration_time = 2592000
 
-    ## As a general rule of thumb, running this value at 120 resulted in a
-    ## 5GB cache. Running it at 240 resulted in a 9GB cache. Your results
-    ## will differ based on usage patterns and |repo| sizes.
+    ; redis_expiration_time needs to be greater then expiration_time
+    rc_cache.repo_object.arguments.redis_expiration_time = 3592000
 
-    ## Tweaking this value to run at a fairly constant memory load on your
-    ## server will help performance.
-
-    rc_cache.repo_object.max_size = 120
+    rc_cache.repo_object.arguments.host = localhost
+    rc_cache.repo_object.arguments.port = 6379
+    rc_cache.repo_object.arguments.db = 5
+    rc_cache.repo_object.arguments.socket_timeout = 30
+    ; more Redis options: https://dogpilecache.sqlalchemy.org/en/latest/api.html#redis-backends
+    rc_cache.repo_object.arguments.distributed_lock = true
 
 
 To clear the cache completely, you can restart the VCS Server.
@@ -190,25 +194,6 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     \port <int>
         Set the port number on which the VCS Server will be available.
 
-    \locale <locale_utf>
-        Set the locale the VCS Server expects.
-
-    \workers <int>
-        Set the number of process workers.Recommended
-        value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
-
-    \max_requests <int>
-        The maximum number of requests a worker will process before restarting.
-        Any value greater than zero will limit the number of requests a work
-        will process before automatically restarting. This is a simple method
-        to help limit the damage of memory leaks.
-
-    \max_requests_jitter <int>
-        The maximum jitter to add to the max_requests setting.
-        The jitter causes the restart per worker to be randomized by
-        randint(0, max_requests_jitter). This is intended to stagger worker
-        restarts to avoid all workers restarting at the same time.
-
 
 .. note::
 
@@ -216,39 +201,94 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
 
 .. code-block:: ini
 
-    ################################################################################
-    # RhodeCode VCSServer with HTTP Backend - configuration                        #
-    #                                                                              #
-    ################################################################################
-
+    ; #################################
+    ; RHODECODE VCSSERVER CONFIGURATION
+    ; #################################
 
     [server:main]
-    ## COMMON ##
+    ; COMMON HOST/IP CONFIG
     host = 127.0.0.1
     port = 10002
 
-    ##########################
-    ## GUNICORN WSGI SERVER ##
-    ##########################
-    ## run with gunicorn --log-config vcsserver.ini --paste vcsserver.ini
+    ; ###########################
+    ; GUNICORN APPLICATION SERVER
+    ; ###########################
+
+    ; run with gunicorn --log-config rhodecode.ini --paste rhodecode.ini
+
+    ; Module to use, this setting shouldn't be changed
     use = egg:gunicorn#main
-    ## Sets the number of process workers. Recommended
-    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
-    workers = 3
-    ## process name
+
+    ; Sets the number of process workers. More workers means more concurrent connections
+    ; RhodeCode can handle at the same time. Each additional worker also it increases
+    ; memory usage as each has it's own set of caches.
+    ; Recommended value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers, but no more
+    ; than 8-10 unless for really big deployments .e.g 700-1000 users.
+    ; `instance_id = *` must be set in the [app:main] section below (which is the default)
+    ; when using more than 1 worker.
+    workers = 6
+
+    ; Gunicorn access log level
+    loglevel = info
+
+    ; Process name visible in process list
     proc_name = rhodecode_vcsserver
-    ## type of worker class, one of sync, gevent
-    ## recommended for bigger setup is using of of other than sync one
+
+    ; Type of worker class, one of sync, gevent
+    ; currently `sync` is the only option allowed.
     worker_class = sync
-    ## The maximum number of simultaneous clients. Valid only for Gevent
-    #worker_connections = 10
-    ## max number of requests that worker will handle before being gracefully
-    ## restarted, could prevent memory leaks
+
+    ; The maximum number of simultaneous clients. Valid only for gevent
+    worker_connections = 10
+
+    ; Max number of requests that worker will handle before being gracefully restarted.
+    ; Prevents memory leaks, jitter adds variability so not all workers are restarted at once.
     max_requests = 1000
     max_requests_jitter = 30
-    ## amount of time a worker can spend with handling a request before it
-    ## gets killed and restarted. Set to 6hrs
+
+    ; Amount of time a worker can spend with handling a request before it
+    ; gets killed and restarted. By default set to 21600 (6hrs)
+    ; Examples: 1800 (30min), 3600 (1hr), 7200 (2hr), 43200 (12h)
     timeout = 21600
+
+    ; The maximum size of HTTP request line in bytes.
+    ; 0 for unlimited
+    limit_request_line = 0
+
+    ; Limit the number of HTTP headers fields in a request.
+    ; By default this value is 100 and can't be larger than 32768.
+    limit_request_fields = 32768
+
+    ; Limit the allowed size of an HTTP request header field.
+    ; Value is a positive number or 0.
+    ; Setting it to 0 will allow unlimited header field sizes.
+    limit_request_field_size = 0
+
+    ; Timeout for graceful workers restart.
+    ; After receiving a restart signal, workers have this much time to finish
+    ; serving requests. Workers still alive after the timeout (starting from the
+    ; receipt of the restart signal) are force killed.
+    ; Examples: 1800 (30min), 3600 (1hr), 7200 (2hr), 43200 (12h)
+    graceful_timeout = 3600
+
+    # The number of seconds to wait for requests on a Keep-Alive connection.
+    # Generally set in the 1-5 seconds range.
+    keepalive = 2
+
+    ; Maximum memory usage that each worker can use before it will receive a
+    ; graceful restart signal 0 = memory monitoring is disabled
+    ; Examples: 268435456 (256MB), 536870912 (512MB)
+    ; 1073741824 (1GB), 2147483648 (2GB), 4294967296 (4GB)
+    memory_max_usage = 1073741824
+
+    ; How often in seconds to check for memory usage for each gunicorn worker
+    memory_usage_check_interval = 60
+
+    ; Threshold value for which we don't recycle worker if GarbageCollection
+    ; frees up enough resources. Before each restart we try to run GC on worker
+    ; in case we get enough free memory after that, restart will not happen.
+    memory_usage_recovery_threshold = 0.8
+
 
     [app:main]
     use = egg:rhodecode-vcsserver
@@ -256,23 +296,44 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     pyramid.default_locale_name = en
     pyramid.includes =
 
-    ## default locale used by VCS systems
+    ; default locale used by VCS systems
     locale = en_US.UTF-8
 
-    # cache regions, please don't change
-    beaker.cache.regions = repo_object
-    beaker.cache.repo_object.type = memorylru
-    beaker.cache.repo_object.max_items = 100
-    # cache auto-expires after N seconds
-    beaker.cache.repo_object.expire = 300
-    beaker.cache.repo_object.enabled = true
+    ; #############
+    ; DOGPILE CACHE
+    ; #############
 
+    ; Default cache dir for caches. Putting this into a ramdisk can boost performance.
+    ; eg. /tmpfs/data_ramdisk, however this directory might require large amount of space
+    cache_dir = %(here)s/data
 
-    ################################
-    ### LOGGING CONFIGURATION   ####
-    ################################
+    ; **********************************************************
+    ; `repo_object` cache with redis backend
+    ; recommended for larger instance, or for better performance
+    ; **********************************************************
+
+    ; `repo_object` cache settings for vcs methods for repositories
+    rc_cache.repo_object.backend = dogpile.cache.rc.redis_msgpack
+
+    ; cache auto-expires after N seconds
+    ; Examples: 86400 (1Day), 604800 (7Days), 1209600 (14Days), 2592000 (30days), 7776000 (90Days)
+    rc_cache.repo_object.expiration_time = 2592000
+
+    ; redis_expiration_time needs to be greater then expiration_time
+    rc_cache.repo_object.arguments.redis_expiration_time = 3592000
+
+    rc_cache.repo_object.arguments.host = localhost
+    rc_cache.repo_object.arguments.port = 6379
+    rc_cache.repo_object.arguments.db = 5
+    rc_cache.repo_object.arguments.socket_timeout = 30
+    ; more Redis options: https://dogpilecache.sqlalchemy.org/en/latest/api.html#redis-backends
+    rc_cache.repo_object.arguments.distributed_lock = true
+
+    ; #####################
+    ; LOGGING CONFIGURATION
+    ; #####################
     [loggers]
-    keys = root, vcsserver, beaker
+    keys = root, vcsserver
 
     [handlers]
     keys = console
@@ -280,9 +341,9 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     [formatters]
     keys = generic
 
-    #############
-    ## LOGGERS ##
-    #############
+    ; #######
+    ; LOGGERS
+    ; #######
     [logger_root]
     level = NOTSET
     handlers = console
@@ -293,29 +354,23 @@ For a more detailed explanation of the logger levers, see :ref:`debug-mode`.
     qualname = vcsserver
     propagate = 1
 
-    [logger_beaker]
-    level = DEBUG
-    handlers =
-    qualname = beaker
-    propagate = 1
 
-
-    ##############
-    ## HANDLERS ##
-    ##############
+    ; ########
+    ; HANDLERS
+    ; ########
 
     [handler_console]
     class = StreamHandler
-    args = (sys.stderr,)
-    level = DEBUG
+    args = (sys.stderr, )
+    level = INFO
     formatter = generic
 
-    ################
-    ## FORMATTERS ##
-    ################
+    ; ##########
+    ; FORMATTERS
+    ; ##########
 
     [formatter_generic]
-    format = %(asctime)s.%(msecs)03d %(levelname)-5.5s [%(name)s] %(message)s
+    format = %(asctime)s.%(msecs)03d [%(process)d] %(levelname)-5.5s [%(name)s] %(message)s
     datefmt = %Y-%m-%d %H:%M:%S
 
 

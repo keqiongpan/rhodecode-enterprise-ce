@@ -25,26 +25,22 @@ To do this, use the following steps:
 
 .. code-block:: ini
 
-    use = egg:gunicorn#main
-    ## Sets the number of process workers. You must set `instance_id = *`
-    ## when this option is set to more than one worker, recommended
-    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
-    ## The `instance_id = *` must be set in the [app:main] section below
-    workers = 4
-    ## process name
-    proc_name = rhodecode
-    ## type of worker class, one of sync, gevent
-    ## recommended for bigger setup is using of of other than sync one
-    worker_class = sync
-    ## The maximum number of simultaneous clients. Valid only for Gevent
-    #worker_connections = 10
-    ## max number of requests that worker will handle before being gracefully
-    ## restarted, could prevent memory leaks
-    max_requests = 1000
-    max_requests_jitter = 30
-    ## amount of time a worker can spend with handling a request tuning-change-lfs-dir.before it
-    ## gets killed and restarted. Set to 6hrs
-    timeout = 21600
+    ; Sets the number of process workers. More workers means more concurrent connections
+    ; RhodeCode can handle at the same time. Each additional worker also it increases
+    ; memory usage as each has it's own set of caches.
+    ; Recommended value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers, but no more
+    ; than 8-10 unless for really big deployments .e.g 700-1000 users.
+    ; `instance_id = *` must be set in the [app:main] section below (which is the default)
+    ; when using more than 1 worker.
+    workers = 6
+
+    ; Type of worker class, one of `sync`, `gevent`
+    ; Use `gevent` for rhodecode
+    worker_class = gevent
+
+    ; The maximum number of simultaneous clients per worker. Valid only for gevent
+    worker_connections = 10
+
 
 3. In the ``[app:main]`` section, set the ``instance_id`` property to ``*``.
 
@@ -63,24 +59,19 @@ To do this, use the following steps:
 
 .. code-block:: ini
 
-    ## run with gunicorn --log-config vcsserver.ini --paste vcsserver.ini
-    use = egg:gunicorn#main
-    ## Sets the number of process workers. Recommended
-    ## value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers
-    workers = 4
-    ## process name
-    proc_name = rhodecode_vcsserver
-    ## type of worker class, currently `sync` is the only option allowed.
+    ; Sets the number of process workers. More workers means more concurrent connections
+    ; RhodeCode can handle at the same time. Each additional worker also it increases
+    ; memory usage as each has it's own set of caches.
+    ; Recommended value is (2 * NUMBER_OF_CPUS + 1), eg 2CPU = 5 workers, but no more
+    ; than 8-10 unless for really big deployments .e.g 700-1000 users.
+    ; `instance_id = *` must be set in the [app:main] section below (which is the default)
+    ; when using more than 1 worker.
+    workers = 8
+
+    ; Type of worker class, one of `sync`, `gevent`
+    ; Use `sync` for vcsserver
     worker_class = sync
-    ## The maximum number of simultaneous clients. Valid only for Gevent
-    #worker_connections = 10
-    ## max number of requests that worker will handle before being gracefully
-    ## restarted, could prevent memory leaks
-    max_requests = 1000
-    max_requests_jitter = 30
-    ## amount of time a worker can spend with handling a request before it
-    ## gets killed and restarted. Set to 6hrs
-    timeout = 21600
+
 
 6. Save your changes.
 7. Restart your |RCE| instances, using the following command:
@@ -109,17 +100,18 @@ To enable `Gevent` on |RCE| do the following:
 
 .. code-block:: ini
 
-    ## type of worker class, one of sync, gevent
-    ## recommended for bigger setup is using of of other than sync one
+    ; Type of worker class, one of `sync`, `gevent`
+    ; Use `gevent` for rhodecode
     worker_class = gevent
-    ## The maximum number of simultaneous clients. Valid only for Gevent
+
+    ; The maximum number of simultaneous clients per worker. Valid only for gevent
     worker_connections = 30
 
 
 .. note::
 
     `Gevent` is currently only supported for Enterprise/Community instances.
-    VCSServer doesn't yet support gevent.
+    VCSServer doesn't support gevent.
 
 
 
