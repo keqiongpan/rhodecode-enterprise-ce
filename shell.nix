@@ -6,6 +6,7 @@
 , doCheck ? false
 , sourcesOverrides ? {}
 , doDevelopInstall ? true
+, doReleaseInstall ? false
 }:
 
 let
@@ -69,11 +70,12 @@ in enterprise-ce.override (attrs: {
   # Add dependencies which are useful for the development environment.
   buildInputs =
     attrs.buildInputs ++
-    (with ce-pythonPackages; [
-      bumpversion
-      invoke
-      ipdb
-    ]);
+    (with ce-pythonPackages;
+      [ ipdb ]
+      ++ pkgs.lib.lists.optionals doReleaseInstall (
+        [invoke bumpversion]
+      )
+    );
 
   # place to inject some required libs from develop installs
   propagatedBuildInputs =
