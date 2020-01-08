@@ -120,7 +120,7 @@ class TestMergePullRequest(object):
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
             .filter(UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-2].action == 'repo.pull_request.merge'
         assert journal[-1].action == 'repo.pull_request.close'
@@ -221,7 +221,7 @@ class TestMergePullRequest(object):
         journal = UserLog.query() \
             .filter(UserLog.user_id == merge_user_id) \
             .filter(UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-2].action == 'repo.pull_request.merge'
         assert journal[-1].action == 'repo.pull_request.close'

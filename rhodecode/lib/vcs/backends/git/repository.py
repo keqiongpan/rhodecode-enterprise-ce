@@ -25,15 +25,14 @@ GIT repository module
 import logging
 import os
 import re
-import time
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
     utcdate_fromtimestamp, makedate, date_astimestamp)
 from rhodecode.lib.utils import safe_unicode, safe_str
+from rhodecode.lib.utils2 import CachedProperty
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
@@ -43,7 +42,7 @@ from rhodecode.lib.vcs.backends.git.diff import GitDiff
 from rhodecode.lib.vcs.backends.git.inmemory import GitInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError,
-    RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError)
+    RepositoryError, TagAlreadyExistError, TagDoesNotExistError, VCSError, UnresolvedFilesInRepo)
 
 
 SHA_PATTERN = re.compile(r'^[[0-9a-fA-F]{12}|[0-9a-fA-F]{40}]$')
@@ -64,19 +63,17 @@ class GitRepository(BaseRepository):
 
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
-        self.with_wire = with_wire
+        self.with_wire = with_wire or {"cache": False}  # default should not use cache
 
         self._init_repo(create, src_url, do_workspace_checkout, bare)
 
         # caches
         self._commit_ids = {}
 
-        # dependent that trigger re-computation of  commit_ids
-        self._commit_ids_ver = 0
-
     @LazyProperty
     def _remote(self):
-        return connection.Git(self.path, self.config, with_wire=self.with_wire)
+        repo_id = self.path
+        return connection.Git(self.path, repo_id, self.config, with_wire=self.with_wire)
 
     @LazyProperty
     def bare(self):
@@ -86,7 +83,7 @@ class GitRepository(BaseRepository):
     def head(self):
         return self._remote.head()
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -190,12 +187,16 @@ class GitRepository(BaseRepository):
         except OSError as err:
             raise RepositoryError(err)
 
-    def _get_all_commit_ids(self, filters=None):
+    def _get_all_commit_ids(self):
+        return self._remote.get_all_commit_ids()
+
+    def _get_commit_ids(self, filters=None):
         # we must check if this repo is not empty, since later command
         # fails if it is. And it's cheaper to ask than throw the subprocess
         # errors
 
         head = self._remote.head(show_exc=False)
+
         if not head:
             return []
 
@@ -208,7 +209,7 @@ class GitRepository(BaseRepository):
             if filters.get('until'):
                 extra_filter.append('--until=%s' % (filters['until']))
             if filters.get('branch_name'):
-                rev_filter = ['--tags']
+                rev_filter = []
                 extra_filter.append(filters['branch_name'])
         rev_filter.extend(extra_filter)
 
@@ -233,6 +234,8 @@ class GitRepository(BaseRepository):
 
         if commit_id_or_idx in (None, '', 'tip', 'HEAD', 'head', -1):
             return self.commit_ids[-1]
+        commit_missing_err = "Commit {} does not exist for `{}`".format(
+            *map(safe_str, [commit_id_or_idx, self.name]))
 
         is_bstr = isinstance(commit_id_or_idx, (str, unicode))
         if ((is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12)
@@ -240,30 +243,15 @@ class GitRepository(BaseRepository):
             try:
                 commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
             except Exception:
-                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
-                raise CommitDoesNotExistError(msg)
+                raise CommitDoesNotExistError(commit_missing_err)
 
         elif is_bstr:
-            # check full path ref, eg. refs/heads/master
-            ref_id = self._refs.get(commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            # check branch name
-            branch_ids = self.branches.values()
-            ref_id = self._refs.get('refs/heads/%s' % commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            # check tag name
-            ref_id = self._refs.get('refs/tags/%s' % commit_id_or_idx)
-            if ref_id:
-                return ref_id
-
-            if (not SHA_PATTERN.match(commit_id_or_idx) or
-                    commit_id_or_idx not in self.commit_ids):
-                msg = "Commit {} does not exist for `{}`".format(commit_id_or_idx, self.name)
-                raise CommitDoesNotExistError(msg)
+            # Need to call remote to translate id for tagging scenario
+            try:
+                remote_data = self._remote.get_object(commit_id_or_idx)
+                commit_id_or_idx = remote_data["commit_id"]
+            except (CommitDoesNotExistError,):
+                raise CommitDoesNotExistError(commit_missing_err)
 
         # Ensure we return full id
         if not SHA_PATTERN.match(str(commit_id_or_idx)):
@@ -327,32 +315,31 @@ class GitRepository(BaseRepository):
     def _get_branches(self):
         return self._get_refs_entries(prefix='refs/heads/', strip_prefix=True)
 
-    @LazyProperty
+    @CachedProperty
     def branches(self):
         return self._get_branches()
 
-    @LazyProperty
+    @CachedProperty
     def branches_closed(self):
         return {}
 
-    @LazyProperty
+    @CachedProperty
     def bookmarks(self):
         return {}
 
-    @LazyProperty
+    @CachedProperty
     def branches_all(self):
         all_branches = {}
         all_branches.update(self.branches)
         all_branches.update(self.branches_closed)
         return all_branches
 
-    @LazyProperty
+    @CachedProperty
     def tags(self):
         return self._get_tags()
 
     def _get_tags(self):
-        return self._get_refs_entries(
-            prefix='refs/tags/', strip_prefix=True, reverse=True)
+        return self._get_refs_entries(prefix='refs/tags/', strip_prefix=True, reverse=True)
 
     def tag(self, name, user, commit_id=None, message=None, date=None,
             **kwargs):
@@ -371,12 +358,13 @@ class GitRepository(BaseRepository):
         if name in self.tags:
             raise TagAlreadyExistError("Tag %s already exists" % name)
         commit = self.get_commit(commit_id=commit_id)
-        message = message or "Added tag %s for commit %s" % (
-            name, commit.raw_id)
-        self._remote.set_refs('refs/tags/%s' % name, commit._commit['id'])
+        message = message or "Added tag %s for commit %s" % (name, commit.raw_id)
 
-        self._refs = self._get_refs()
-        self.tags = self._get_tags()
+        self._remote.set_refs('refs/tags/%s' % name, commit.raw_id)
+
+        self._invalidate_prop_cache('tags')
+        self._invalidate_prop_cache('_refs')
+
         return commit
 
     def remove_tag(self, name, user, message=None, date=None):
@@ -392,19 +380,15 @@ class GitRepository(BaseRepository):
         """
         if name not in self.tags:
             raise TagDoesNotExistError("Tag %s does not exist" % name)
-        tagpath = vcspath.join(
-            self._remote.get_refs_path(), 'refs', 'tags', name)
-        try:
-            os.remove(tagpath)
-            self._refs = self._get_refs()
-            self.tags = self._get_tags()
-        except OSError as e:
-            raise RepositoryError(e.strerror)
+
+        self._remote.tag_remove(name)
+        self._invalidate_prop_cache('tags')
+        self._invalidate_prop_cache('_refs')
 
     def _get_refs(self):
         return self._remote.get_refs()
 
-    @LazyProperty
+    @CachedProperty
     def _refs(self):
         return self._get_refs()
 
@@ -455,18 +439,13 @@ class GitRepository(BaseRepository):
         else:
             commit_id = "tip"
 
-        commit_id = self._lookup_commit(commit_id)
-        remote_idx = None
         if translate_tag:
-            # Need to call remote to translate id for tagging scenario
-            remote_data = self._remote.get_object(commit_id)
-            commit_id = remote_data["commit_id"]
-            remote_idx = remote_data["idx"]
+            commit_id = self._lookup_commit(commit_id)
 
         try:
             idx = self._commit_ids[commit_id]
         except KeyError:
-            idx = remote_idx or 0
+            idx = -1
 
         return GitCommit(self, commit_id, idx, pre_load=pre_load)
 
@@ -539,14 +518,8 @@ class GitRepository(BaseRepository):
                 'start': start_pos,
                 'end': end_pos,
             }
-            commit_ids = self._get_all_commit_ids(filters=revfilters)
+            commit_ids = self._get_commit_ids(filters=revfilters)
 
-            # pure python stuff, it's slow due to walker walking whole repo
-            # def get_revs(walker):
-            #     for walker_entry in walker:
-            #         yield walker_entry.commit.id
-            # revfilters = {}
-            # commit_ids = list(reversed(list(get_revs(self._repo.get_walker(**revfilters)))))
         else:
             commit_ids = self.commit_ids
 
@@ -576,33 +549,16 @@ class GitRepository(BaseRepository):
         if path1 is not None and path1 != path:
             raise ValueError("Diff of two different paths not supported.")
 
-        flags = [
-            '-U%s' % context, '--full-index', '--binary', '-p',
-            '-M', '--abbrev=40']
-        if ignore_whitespace:
-            flags.append('-w')
-
-        if commit1 == self.EMPTY_COMMIT:
-            cmd = ['show'] + flags + [commit2.raw_id]
-        else:
-            cmd = ['diff'] + flags + [commit1.raw_id, commit2.raw_id]
-
         if path:
-            cmd.extend(['--', path])
+            file_filter = path
+        else:
+            file_filter = None
 
-        stdout, __ = self.run_git_command(cmd)
-        # If we used 'show' command, strip first few lines (until actual diff
-        # starts)
-        if commit1 == self.EMPTY_COMMIT:
-            lines = stdout.splitlines()
-            x = 0
-            for line in lines:
-                if line.startswith('diff'):
-                    break
-                x += 1
-            # Append new line just like 'diff' command do
-            stdout = '\n'.join(lines[x:]) + '\n'
-        return GitDiff(stdout)
+        diff = self._remote.diff(
+            commit1.raw_id, commit2.raw_id, file_filter=file_filter,
+            opt_ignorews=ignore_whitespace,
+            context=context)
+        return GitDiff(diff)
 
     def strip(self, commit_id, branch_name):
         commit = self.get_commit(commit_id=commit_id)
@@ -613,8 +569,11 @@ class GitRepository(BaseRepository):
         commit = commit.parents[0]
         self._remote.set_refs('refs/heads/%s' % branch_name, commit.raw_id)
 
-        self._commit_ids_ver = time.time()
-        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        # clear cached properties
+        self._invalidate_prop_cache('commit_ids')
+        self._invalidate_prop_cache('_refs')
+        self._invalidate_prop_cache('branches')
+
         return len(self.commit_ids)
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
@@ -697,9 +656,11 @@ class GitRepository(BaseRepository):
 
     def set_refs(self, ref_name, commit_id):
         self._remote.set_refs(ref_name, commit_id)
+        self._invalidate_prop_cache('_refs')
 
     def remove_ref(self, ref_name):
         self._remote.remove_ref(ref_name)
+        self._invalidate_prop_cache('_refs')
 
     def _update_server_info(self):
         """
@@ -743,6 +704,12 @@ class GitRepository(BaseRepository):
             cmd.append('-b')
         cmd.append(branch_name)
         self.run_git_command(cmd, fail_on_stderr=False)
+
+    def _create_branch(self, branch_name, commit_id):
+        """
+        creates a branch in a GIT repo
+        """
+        self._remote.create_branch(branch_name, commit_id)
 
     def _identify(self):
         """
@@ -820,8 +787,8 @@ class GitRepository(BaseRepository):
 
         return heads
 
-    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
-        return GitRepository(shadow_repository_path)
+    def get_shadow_instance(self, shadow_repository_path, enable_hooks=False, cache=False):
+        return GitRepository(shadow_repository_path, with_wire={"cache": cache})
 
     def _local_pull(self, repository_path, branch_name, ff_only=True):
         """
@@ -859,9 +826,10 @@ class GitRepository(BaseRepository):
             return
 
         if self.is_empty():
-            # TODO(skreft): do somehting more robust in this case.
+            # TODO(skreft): do something more robust in this case.
             raise RepositoryError(
                 'Do not know how to merge into empty repositories yet')
+        unresolved = None
 
         # N.B.(skreft): the --no-ff option is used to enforce the creation of a
         # commit message. We also specify the user who is doing the merge.
@@ -872,9 +840,18 @@ class GitRepository(BaseRepository):
         try:
             output = self.run_git_command(cmd, fail_on_stderr=False)
         except RepositoryError:
+            files = self.run_git_command(['diff', '--name-only', '--diff-filter', 'U'],
+                                         fail_on_stderr=False)[0].splitlines()
+            # NOTE(marcink): we add U notation for consistent with HG backend output
+            unresolved = ['U {}'.format(f) for f in files]
+
             # Cleanup any merge leftovers
             self.run_git_command(['merge', '--abort'], fail_on_stderr=False)
-            raise
+
+            if unresolved:
+                raise UnresolvedFilesInRepo(unresolved)
+            else:
+                raise
 
     def _local_push(
             self, source_branch, repository_path, target_branch,
@@ -925,12 +902,12 @@ class GitRepository(BaseRepository):
     def _maybe_prepare_merge_workspace(
             self, repo_id, workspace_id, target_ref, source_ref):
         shadow_repository_path = self._get_shadow_repository_path(
-            repo_id, workspace_id)
+            self.path, repo_id, workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(
                 shadow_repository_path, target_ref.name, source_ref.name)
-            log.debug(
-                'Prepared shadow repository in %s', shadow_repository_path)
+            log.debug('Prepared %s shadow repository in %s',
+                      self.alias, shadow_repository_path)
 
         return shadow_repository_path
 
@@ -950,7 +927,7 @@ class GitRepository(BaseRepository):
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
 
         # checkout source, if it's different. Otherwise we could not
         # fetch proper commits for merge testing
@@ -968,7 +945,7 @@ class GitRepository(BaseRepository):
 
         # Need to reload repo to invalidate the cache, or otherwise we cannot
         # retrieve the last target commit.
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
         if target_ref.commit_id != shadow_repo.branches[target_ref.name]:
             log.warning('Shadow Target ref %s commit mismatch %s vs %s',
                         target_ref, target_ref.commit_id,
@@ -1000,9 +977,9 @@ class GitRepository(BaseRepository):
                                      [source_ref.commit_id])
             merge_possible = True
 
-            # Need to reload repo to invalidate the cache, or otherwise we
+            # Need to invalidate the cache, or otherwise we
             # cannot retrieve the merge commit.
-            shadow_repo = GitRepository(shadow_repository_path)
+            shadow_repo = shadow_repo.get_shadow_instance(shadow_repository_path)
             merge_commit_id = shadow_repo.branches[pr_branch]
 
             # Set a reference pointing to the merge commit. This reference may
@@ -1010,8 +987,11 @@ class GitRepository(BaseRepository):
             # the shadow repository.
             shadow_repo.set_refs('refs/heads/pr-merge', merge_commit_id)
             merge_ref = Reference('branch', 'pr-merge', merge_commit_id)
-        except RepositoryError:
+        except RepositoryError as e:
             log.exception('Failure when doing local merge on git shadow repo')
+            if isinstance(e, UnresolvedFilesInRepo):
+                metadata['unresolved_files'] = '\n* conflict: ' + ('\n * conflict: '.join(e.args[0]))
+
             merge_possible = False
             merge_failure_reason = MergeFailureReason.MERGE_FAILED
 

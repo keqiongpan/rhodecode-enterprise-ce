@@ -12,10 +12,8 @@
         %if c.extern_type != 'rhodecode':
             <% readonly = "readonly" %>
             <% disabled = " disabled" %>
-            <div class="infoform">
-              <div class="fields">
-                <p>${_('This user was created from external source (%s). Editing some of the settings is limited.' % c.extern_type)}</p>
-              </div>
+            <div class="alert-warning" style="margin:0px 0px 20px 0px; padding: 10px">
+                <strong>${_('This user was created from external source (%s). Editing some of the settings is limited.' % c.extern_type)}</strong>
             </div>
         %endif
         <div class="form">
@@ -70,6 +68,20 @@
             </div>
             <div class="field">
                <div class="label">
+                   <label for="description">${_('Description')}:</label>
+               </div>
+               <div class="input textarea editor">
+                   ${h.textarea('description', rows=10, class_="medium")}
+                    <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
+                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span id="meta-tags-desc" style="display: none">
+                        <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+                        ${dt.metatags_help()}
+                    </span>
+               </div>
+            </div>
+            <div class="field">
+               <div class="label">
                     ${_('New Password')}:
                </div>
                <div class="input">
@@ -94,7 +106,7 @@
             </div>
             <div class="field">
                <div class="label-text">
-                    ${_('Super Admin')}:
+                    ${_('Super-admin')}:
                </div>
                <div class="input user-checkbox">
                     ${h.checkbox('admin',value=True)}
@@ -105,9 +117,8 @@
                     ${_('Authentication type')}:
                </div>
                <div class="input">
-                    <p>${c.extern_type}</p>
-                    ${h.hidden('extern_type', readonly="readonly")}
-                    <p class="help-block">${_('User was created using an external source. He is bound to authentication using this method.')}</p>
+                    ${h.select('extern_type', c.extern_type, c.allowed_extern_types)}
+                    <p class="help-block">${_('When user was created using an external source. He is bound to authentication using this method.')}</p>
                 </div>
             </div>
             <div class="field">

@@ -31,6 +31,7 @@ from pyramid.response import Response
 from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView, UserAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
+from rhodecode.authentication.base import get_authn_registry, RhodeCodeExternalAuthPlugin
 from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
 from rhodecode.model.db import true
@@ -43,6 +44,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
 from rhodecode.lib import helpers as h
+from rhodecode.lib.helpers import SqlPage
 from rhodecode.lib.utils2 import safe_int, safe_unicode, AttributeDict
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.forms import (
@@ -249,7 +251,32 @@ class UsersView(UserAppView):
     in there as well.
     """
 
+    def get_auth_plugins(self):
+        valid_plugins = []
+        authn_registry = get_authn_registry(self.request.registry)
+        for plugin in authn_registry.get_plugins_for_authentication():
+            if isinstance(plugin, RhodeCodeExternalAuthPlugin):
+                valid_plugins.append(plugin)
+            elif plugin.name == 'rhodecode':
+                valid_plugins.append(plugin)
+
+        # extend our choices if user has set a bound plugin which isn't enabled at the
+        # moment
+        extern_type = self.db_user.extern_type
+        if extern_type not in [x.uid for x in valid_plugins]:
+            try:
+                plugin = authn_registry.get_plugin_by_uid(extern_type)
+                if plugin:
+                    valid_plugins.append(plugin)
+
+            except Exception:
+                log.exception(
+                    'Could not extend user plugins with `{}`'.format(extern_type))
+        return valid_plugins
+
     def load_default_context(self):
+        req = self.request
+
         c = self._get_local_tmpl_context()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
         c.allowed_languages = [
@@ -263,7 +290,10 @@ class UsersView(UserAppView):
             ('ru', 'Russian (ru)'),
             ('zh', 'Chinese (zh)'),
         ]
-        req = self.request
+
+        c.allowed_extern_types = [
+            (x.uid, x.get_display_name()) for x in self.get_auth_plugins()
+        ]
 
         c.available_permissions = req.registry.settings['available_permissions']
         PermissionModel().set_global_permission_choices(
@@ -297,7 +327,7 @@ class UsersView(UserAppView):
         old_values = c.user.get_api_data()
         try:
             form_result = _form.to_python(dict(self.request.POST))
-            skip_attrs = ['extern_type', 'extern_name']
+            skip_attrs = ['extern_name']
             # TODO: plugin should define if username can be updated
             if c.extern_type != "rhodecode":
                 # forbid updating username for external accounts
@@ -347,59 +377,69 @@ class UsersView(UserAppView):
         _repos = c.user.repositories
         _repo_groups = c.user.repository_groups
         _user_groups = c.user.user_groups
+        _artifacts = c.user.artifacts
 
         handle_repos = None
         handle_repo_groups = None
         handle_user_groups = None
-        # dummy call for flash of handle
-        set_handle_flash_repos = lambda: None
-        set_handle_flash_repo_groups = lambda: None
-        set_handle_flash_user_groups = lambda: None
+        handle_artifacts = None
+
+        # calls for flash of handle based on handle case detach or delete
+        def set_handle_flash_repos():
+            handle = handle_repos
+            if handle == 'detach':
+                h.flash(_('Detached %s repositories') % len(_repos),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s repositories') % len(_repos),
+                        category='success')
+
+        def set_handle_flash_repo_groups():
+            handle = handle_repo_groups
+            if handle == 'detach':
+                h.flash(_('Detached %s repository groups') % len(_repo_groups),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s repository groups') % len(_repo_groups),
+                        category='success')
+
+        def set_handle_flash_user_groups():
+            handle = handle_user_groups
+            if handle == 'detach':
+                h.flash(_('Detached %s user groups') % len(_user_groups),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s user groups') % len(_user_groups),
+                        category='success')
+
+        def set_handle_flash_artifacts():
+            handle = handle_artifacts
+            if handle == 'detach':
+                h.flash(_('Detached %s artifacts') % len(_artifacts),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s artifacts') % len(_artifacts),
+                        category='success')
 
         if _repos and self.request.POST.get('user_repos'):
-            do = self.request.POST['user_repos']
-            if do == 'detach':
-                handle_repos = 'detach'
-                set_handle_flash_repos = lambda: h.flash(
-                    _('Detached %s repositories') % len(_repos),
-                    category='success')
-            elif do == 'delete':
-                handle_repos = 'delete'
-                set_handle_flash_repos = lambda: h.flash(
-                    _('Deleted %s repositories') % len(_repos),
-                    category='success')
+            handle_repos = self.request.POST['user_repos']
 
         if _repo_groups and self.request.POST.get('user_repo_groups'):
-            do = self.request.POST['user_repo_groups']
-            if do == 'detach':
-                handle_repo_groups = 'detach'
-                set_handle_flash_repo_groups = lambda: h.flash(
-                    _('Detached %s repository groups') % len(_repo_groups),
-                    category='success')
-            elif do == 'delete':
-                handle_repo_groups = 'delete'
-                set_handle_flash_repo_groups = lambda: h.flash(
-                    _('Deleted %s repository groups') % len(_repo_groups),
-                    category='success')
+            handle_repo_groups = self.request.POST['user_repo_groups']
 
         if _user_groups and self.request.POST.get('user_user_groups'):
-            do = self.request.POST['user_user_groups']
-            if do == 'detach':
-                handle_user_groups = 'detach'
-                set_handle_flash_user_groups = lambda: h.flash(
-                    _('Detached %s user groups') % len(_user_groups),
-                    category='success')
-            elif do == 'delete':
-                handle_user_groups = 'delete'
-                set_handle_flash_user_groups = lambda: h.flash(
-                    _('Deleted %s user groups') % len(_user_groups),
-                    category='success')
+            handle_user_groups = self.request.POST['user_user_groups']
+
+        if _artifacts and self.request.POST.get('user_artifacts'):
+            handle_artifacts = self.request.POST['user_artifacts']
 
         old_values = c.user.get_api_data()
+
         try:
             UserModel().delete(c.user, handle_repos=handle_repos,
                                handle_repo_groups=handle_repo_groups,
-                               handle_user_groups=handle_user_groups)
+                               handle_user_groups=handle_user_groups,
+                               handle_artifacts=handle_artifacts)
 
             audit_logger.store_web(
                 'user.delete', action_data={'old_data': old_values},
@@ -409,7 +449,9 @@ class UsersView(UserAppView):
             set_handle_flash_repos()
             set_handle_flash_repo_groups()
             set_handle_flash_user_groups()
-            h.flash(_('Successfully deleted user'), category='success')
+            set_handle_flash_artifacts()
+            username = h.escape(old_values['username'])
+            h.flash(_('Successfully deleted user `{}`').format(username), category='success')
         except (UserOwnsReposException, UserOwnsRepoGroupsException,
                 UserOwnsUserGroupsException, DefaultUserException) as e:
             h.flash(e, category='warning')
@@ -1187,15 +1229,41 @@ class UsersView(UserAppView):
         filter_term = self.request.GET.get('filter')
         user_log = UserModel().get_user_log(c.user, filter_term)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             if filter_term:
-                kw['filter'] = filter_term
-            return self.request.current_route_path(_query=kw)
+                query_params['filter'] = filter_term
+            return self.request.current_route_path(_query=query_params)
 
-        c.audit_logs = h.Page(
-            user_log, page=p, items_per_page=10, url=url_generator)
+        c.audit_logs = SqlPage(
+            user_log, page=p, items_per_page=10, url_maker=url_generator)
         c.filter_term = filter_term
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_audit_logs_download', request_method='GET',
+        renderer='string')
+    def user_audit_logs_download(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        user_log = UserModel().get_user_log(c.user, filter_term=None)
+
+        audit_log_data = {}
+        for entry in user_log:
+            audit_log_data[entry.user_log_id] = entry.get_dict()
+
+        response = Response(json.dumps(audit_log_data, indent=4))
+        response.content_disposition = str(
+            'attachment; filename=%s' % 'user_{}_audit_logs.json'.format(c.user.user_id))
+        response.content_type = 'application/json'
+
+        return response
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')

@@ -62,7 +62,7 @@ class TestRepoPermissionsView(object):
             route_path('edit_repo_perms',
                        repo_name=repo_name), form_data).follow()
 
-        assert 'Repository permissions updated' in response
+        assert 'Repository access permissions updated' in response
 
         # revoke given
         form_data = permission_update_data_generator(
@@ -74,4 +74,4 @@ class TestRepoPermissionsView(object):
             route_path('edit_repo_perms',
                        repo_name=repo_name), form_data).follow()
 
-        assert 'Repository permissions updated' in response
+        assert 'Repository access permissions updated' in response

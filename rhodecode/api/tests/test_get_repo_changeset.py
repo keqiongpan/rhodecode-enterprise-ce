@@ -54,7 +54,7 @@ class TestGetRepoChangeset(object):
             details=details,
         )
         response = api_call(self.app, params)
-        expected = 'commit_id must be a string value'
+        expected = "commit_id must be a string value got <type 'int'> instead"
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.parametrize("details", ['basic', 'extended', 'full'])
@@ -137,5 +137,5 @@ class TestGetRepoChangeset(object):
             details=details,
         )
         response = api_call(self.app, params)
-        expected = 'commit_id must be a string value'
+        expected = "commit_id must be a string value got <type 'int'> instead"
         assert_error(id_, expected, given=response.body)

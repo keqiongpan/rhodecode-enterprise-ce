@@ -35,7 +35,7 @@
                 ${h.age_component(commit.date)}
             </td>
             <td class="td-user">
-                ${base.gravatar_with_user(commit.author, 16)}
+                ${base.gravatar_with_user(commit.author, 16, tooltip=True)}
             </td>
             <td class="td-hash">
                 <code>
@@ -55,10 +55,9 @@
             </td>
         </tr>
     %endfor
-        <tr class="compare_select_hidden" style="${'' if c.collapse_all_commits else 'display: none'}">
+        <tr class="compare_select_hidden" style="${('' if c.collapse_all_commits else 'display: none')}">
             <td colspan="5">
-                ${_ungettext('%s commit hidden','%s commits hidden', len(c.commit_ranges)) % len(c.commit_ranges)},
-                <a href="#" onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">${_ungettext('show it','show them', len(c.commit_ranges))}</a>
+                ${_ungettext('{} commit hidden, click expand to show them.', '{} commits hidden, click expand to show them.', len(c.commit_ranges)).format(len(c.commit_ranges))}
             </td>
         </tr>
     % if not c.commit_ranges:

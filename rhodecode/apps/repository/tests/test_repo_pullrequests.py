@@ -101,12 +101,11 @@ class TestPullrequestsView(object):
         for commit_id in pull_request.revisions:
             response.mustcontain(commit_id)
 
-        assert pull_request.target_ref_parts.type in response
-        assert pull_request.target_ref_parts.name in response
-        target_clone_url = pull_request.target_repo.clone_url()
-        assert target_clone_url in response
+        response.mustcontain(pull_request.target_ref_parts.type)
+        response.mustcontain(pull_request.target_ref_parts.name)
 
-        assert 'class="pull-request-merge"' in response
+        response.mustcontain('class="pull-request-merge"')
+
         if pr_merge_enabled:
             response.mustcontain('Pull request reviewer approval is pending')
         else:
@@ -261,7 +260,7 @@ class TestPullrequestsView(object):
             True, True, '', MergeFailureReason.MISSING_TARGET_REF,
             metadata={'target_ref': PullRequest.unicode_to_reference(unicode_reference)})
         response.assert_response().element_contains(
-            'span[data-role="merge-message"]', merge_resp.merge_status_message)
+            'div[data-role="merge-message"]', merge_resp.merge_status_message)
 
     def test_comment_and_close_pull_request_custom_message_approved(
             self, pr_util, csrf_token, xhr_header):
@@ -284,7 +283,7 @@ class TestPullrequestsView(object):
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
             .filter(UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-1].action == 'repo.pull_request.close'
 
@@ -323,7 +322,7 @@ class TestPullrequestsView(object):
 
         journal = UserLog.query()\
             .filter(UserLog.user_id == author, UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-1].action == 'repo.pull_request.close'
 
@@ -467,7 +466,7 @@ class TestPullrequestsView(object):
             .filter(Notification.created_by == pull_request.author.user_id,
                     Notification.type_ == Notification.TYPE_PULL_REQUEST,
                     Notification.subject.contains(
-                        "wants you to review pull request #%s" % pull_request_id))
+                        "requested a pull request review. !%s" % pull_request_id))
         assert len(notifications.all()) == 1
 
         # Change reviewers and check that a notification was made
@@ -536,9 +535,9 @@ class TestPullrequestsView(object):
 
         # Check generated diff contents
         response = response.follow()
-        assert 'content_of_ancestor' not in response.body
-        assert 'content_of_ancestor-child' not in response.body
-        assert 'content_of_change' in response.body
+        response.mustcontain(no=['content_of_ancestor'])
+        response.mustcontain(no=['content_of_ancestor-child'])
+        response.mustcontain('content_of_change')
 
     def test_merge_pull_request_enabled(self, pr_util, csrf_token):
         # Clear any previous calls to rcextensions
@@ -549,11 +548,10 @@ class TestPullrequestsView(object):
         pull_request_id = pull_request.pull_request_id
         repo_name = pull_request.target_repo.scm_instance().name,
 
-        response = self.app.post(
-            route_path('pullrequest_merge',
-                repo_name=str(repo_name[0]),
-                pull_request_id=pull_request_id),
-            params={'csrf_token': csrf_token}).follow()
+        url = route_path('pullrequest_merge',
+                         repo_name=str(repo_name[0]),
+                         pull_request_id=pull_request_id)
+        response = self.app.post(url, params={'csrf_token': csrf_token}).follow()
 
         pull_request = PullRequest.get(pull_request_id)
 
@@ -563,7 +561,7 @@ class TestPullrequestsView(object):
             pull_request, ChangesetStatus.STATUS_APPROVED)
 
         # Check the relevant log entries were added
-        user_logs = UserLog.query().order_by('-user_log_id').limit(3)
+        user_logs = UserLog.query().order_by(UserLog.user_log_id.desc()).limit(3)
         actions = [log.action for log in user_logs]
         pr_commit_ids = PullRequestModel()._get_commit_ids(pull_request)
         expected_actions = [
@@ -573,7 +571,7 @@ class TestPullrequestsView(object):
         ]
         assert actions == expected_actions
 
-        user_logs = UserLog.query().order_by('-user_log_id').limit(4)
+        user_logs = UserLog.query().order_by(UserLog.user_log_id.desc()).limit(4)
         actions = [log for log in user_logs]
         assert actions[-1].action == 'user.push'
         assert actions[-1].action_data['commit_ids'] == pr_commit_ids
@@ -690,8 +688,8 @@ class TestPullrequestsView(object):
                        pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
-        assert 'Pull request updated to' in response.body
-        assert 'with 1 added, 0 removed commits.' in response.body
+        response.mustcontain('Pull request updated to')
+        response.mustcontain('with 1 added, 0 removed commits.')
 
         # check that we have now both revisions
         pull_request = PullRequest.get(pull_request_id)
@@ -735,12 +733,12 @@ class TestPullrequestsView(object):
         backend.pull_heads(source, heads=['change-rebased'])
 
         # update PR
-        self.app.post(
-            route_path('pullrequest_update',
-                       repo_name=target.repo_name,
-                       pull_request_id=pull_request_id),
-            params={'update_commits': 'true', 'csrf_token': csrf_token},
-            status=200)
+        url = route_path('pullrequest_update',
+                         repo_name=target.repo_name,
+                         pull_request_id=pull_request_id)
+        self.app.post(url,
+                      params={'update_commits': 'true', 'csrf_token': csrf_token},
+                      status=200)
 
         # check that we have now both revisions
         pull_request = PullRequest.get(pull_request_id)
@@ -753,8 +751,8 @@ class TestPullrequestsView(object):
                        repo_name=target.repo_name,
                        pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
-        assert 'Pull request updated to' in response.body
-        assert 'with 1 added, 1 removed commits.' in response.body
+        response.mustcontain('Pull request updated to')
+        response.mustcontain('with 1 added, 1 removed commits.')
 
     def test_update_target_revision_with_removal_of_1_commit_git(self, backend_git, csrf_token):
         backend = backend_git
@@ -801,12 +799,12 @@ class TestPullrequestsView(object):
         vcsrepo.run_git_command(['reset', '--soft', 'HEAD~2'])
 
         # update PR
-        self.app.post(
-            route_path('pullrequest_update',
-                repo_name=target.repo_name,
-                pull_request_id=pull_request_id),
-            params={'update_commits': 'true', 'csrf_token': csrf_token},
-            status=200)
+        url = route_path('pullrequest_update',
+                         repo_name=target.repo_name,
+                         pull_request_id=pull_request_id)
+        self.app.post(url,
+                      params={'update_commits': 'true', 'csrf_token': csrf_token},
+                      status=200)
 
         response = self.app.get(route_path('pullrequest_new', repo_name=target.repo_name))
         assert response.status_int == 200
@@ -871,6 +869,7 @@ class TestPullrequestsView(object):
             {'message': 'new-feature', 'branch': branch_name},
         ]
         repo = backend_git.create_repo(commits)
+        repo_name = repo.repo_name
         commit_ids = backend_git.commit_ids
 
         pull_request = PullRequest()
@@ -888,13 +887,15 @@ class TestPullrequestsView(object):
         Session().add(pull_request)
         Session().commit()
 
+        pull_request_id = pull_request.pull_request_id
+
         vcs = repo.scm_instance()
         vcs.remove_ref('refs/heads/{}'.format(branch_name))
 
         response = self.app.get(route_path(
             'pullrequest_show',
-            repo_name=repo.repo_name,
-            pull_request_id=pull_request.pull_request_id))
+            repo_name=repo_name,
+            pull_request_id=pull_request_id))
 
         assert response.status_int == 200
 
@@ -958,15 +959,15 @@ class TestPullrequestsView(object):
         else:
             vcs.strip(pr_util.commit_ids['new-feature'])
 
-        response = self.app.post(
-            route_path('pullrequest_update',
-                repo_name=pull_request.target_repo.repo_name,
-                pull_request_id=pull_request.pull_request_id),
-            params={'update_commits': 'true',
-                    'csrf_token': csrf_token})
+        url = route_path('pullrequest_update',
+                         repo_name=pull_request.target_repo.repo_name,
+                         pull_request_id=pull_request.pull_request_id)
+        response = self.app.post(url,
+                                 params={'update_commits': 'true',
+                                         'csrf_token': csrf_token})
 
         assert response.status_int == 200
-        assert response.body == 'true'
+        assert response.body == '{"response": true, "redirect_url": null}'
 
         # Make sure that after update, it won't raise 500 errors
         response = self.app.get(route_path(
@@ -992,12 +993,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        origin_children = origin.getchildren()
-        assert len(origin_children) == 1
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        target_children = target.getchildren()
-        assert len(target_children) == 1
+        source = response.assert_response().get_element('.pr-source-info')
+        source_parent = source.getparent()
+        assert len(source_parent) == 1
+
+        target = response.assert_response().get_element('.pr-target-info')
+        target_parent = target.getparent()
+        assert len(target_parent) == 1
 
         expected_origin_link = route_path(
             'repo_commits',
@@ -1007,10 +1009,8 @@ class TestPullrequestsView(object):
             'repo_commits',
             repo_name=pull_request.target_repo.scm_instance().name,
             params=dict(branch='target'))
-        assert origin_children[0].attrib['href'] == expected_origin_link
-        assert origin_children[0].text == 'branch: origin'
-        assert target_children[0].attrib['href'] == expected_target_link
-        assert target_children[0].text == 'branch: target'
+        assert source_parent.attrib['href'] == expected_origin_link
+        assert target_parent.attrib['href'] == expected_target_link
 
     def test_bookmark_is_not_a_link(self, pr_util):
         pull_request = pr_util.create_pull_request()
@@ -1025,13 +1025,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        assert origin.text.strip() == 'bookmark: origin'
-        assert origin.getchildren() == []
+        source = response.assert_response().get_element('.pr-source-info')
+        assert source.text.strip() == 'bookmark:origin'
+        assert source.getparent().attrib.get('href') is None
 
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        assert target.text.strip() == 'bookmark: target'
-        assert target.getchildren() == []
+        target = response.assert_response().get_element('.pr-target-info')
+        assert target.text.strip() == 'bookmark:target'
+        assert target.getparent().attrib.get('href') is None
 
     def test_tag_is_not_a_link(self, pr_util):
         pull_request = pr_util.create_pull_request()
@@ -1046,13 +1046,13 @@ class TestPullrequestsView(object):
             pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
 
-        origin = response.assert_response().get_element('.pr-origininfo .tag')
-        assert origin.text.strip() == 'tag: origin'
-        assert origin.getchildren() == []
+        source = response.assert_response().get_element('.pr-source-info')
+        assert source.text.strip() == 'tag:origin'
+        assert source.getparent().attrib.get('href') is None
 
-        target = response.assert_response().get_element('.pr-targetinfo .tag')
-        assert target.text.strip() == 'tag: target'
-        assert target.getchildren() == []
+        target = response.assert_response().get_element('.pr-target-info')
+        assert target.text.strip() == 'tag:target'
+        assert target.getparent().attrib.get('href') is None
 
     @pytest.mark.parametrize('mergeable', [True, False])
     def test_shadow_repository_link(
@@ -1205,14 +1205,11 @@ class TestPullrequestsControllerDelete(object):
 
 
 def assert_pull_request_status(pull_request, expected_status):
-    status = ChangesetStatusModel().calculated_review_status(
-        pull_request=pull_request)
+    status = ChangesetStatusModel().calculated_review_status(pull_request=pull_request)
     assert status == expected_status
 
 
 @pytest.mark.parametrize('route', ['pullrequest_new', 'pullrequest_create'])
 @pytest.mark.usefixtures("autologin_user")
 def test_forbidde_to_repo_summary_for_svn_repositories(backend_svn, app, route):
-    response = app.get(
-        route_path(route, repo_name=backend_svn.repo_name), status=404)
-
+    app.get(route_path(route, repo_name=backend_svn.repo_name), status=404)

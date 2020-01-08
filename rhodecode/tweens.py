@@ -116,3 +116,6 @@ def includeme(config):
                           'pyramid.events.ContextFound')
     config.add_tween('rhodecode.tweens.vcs_detection_tween_factory')
     config.add_tween('rhodecode.tweens.sanity_check_factory')
+
+    # This needs to be the LAST item
+    config.add_tween('rhodecode.lib.middleware.request_wrapper.RequestWrapperTween')

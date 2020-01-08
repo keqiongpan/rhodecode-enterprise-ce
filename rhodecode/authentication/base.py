@@ -762,7 +762,7 @@ def authenticate(username, password, environ=None, auth_type=None,
         plugin_user = compute_auth('auth', plugin.name, username, (password or ''))
 
         auth_time = time.time() - start
-        log.debug('Authentication for plugin `%s` completed in %.3fs, '
+        log.debug('Authentication for plugin `%s` completed in %.4fs, '
                   'expiration time of fetched cache %.1fs.',
                   plugin.get_id(), auth_time, cache_ttl)
 

@@ -26,7 +26,8 @@ import hashlib
 from rhodecode.lib.ext_json import json
 from rhodecode.apps.file_store import utils
 from rhodecode.apps.file_store.extensions import resolve_extensions
-from rhodecode.apps.file_store.exceptions import FileNotAllowedException
+from rhodecode.apps.file_store.exceptions import (
+    FileNotAllowedException, FileOverSizeException)
 
 METADATA_VER = 'v1'
 
@@ -91,6 +92,9 @@ class LocalFileStorage(object):
         self.base_path = base_path
         self.extensions = resolve_extensions([], groups=extension_groups)
 
+    def __repr__(self):
+        return '{}@{}'.format(self.__class__, self.base_path)
+
     def store_path(self, filename):
         """
         Returns absolute file path of the filename, joined to the
@@ -140,16 +144,21 @@ class LocalFileStorage(object):
         :param ext: extension to check
         :param extensions: iterable of extensions to validate against (or self.extensions)
         """
+        def normalize_ext(_ext):
+            if _ext.startswith('.'):
+                _ext = _ext[1:]
+            return _ext.lower()
 
         extensions = extensions or self.extensions
         if not extensions:
             return True
-        if ext.startswith('.'):
-            ext = ext[1:]
-        return ext.lower() in extensions
+
+        ext = normalize_ext(ext)
+
+        return ext in [normalize_ext(x) for x in extensions]
 
     def save_file(self, file_obj, filename, directory=None, extensions=None,
-                  extra_metadata=None, **kwargs):
+                  extra_metadata=None, max_filesize=None, **kwargs):
         """
         Saves a file object to the uploads location.
         Returns the resolved filename, i.e. the directory +
@@ -159,7 +168,9 @@ class LocalFileStorage(object):
         :param filename: original filename
         :param directory: relative path of sub-directory
         :param extensions: iterable of allowed extensions, if not default
+        :param max_filesize: maximum size of file that should be allowed
         :param extra_metadata: extra JSON metadata to store next to the file with .meta suffix
+
         """
 
         extensions = extensions or self.extensions
@@ -191,6 +202,12 @@ class LocalFileStorage(object):
             metadata = extra_metadata
 
         size = os.stat(path).st_size
+
+        if max_filesize and size > max_filesize:
+            # free up the copied file, and raise exc
+            os.remove(path)
+            raise FileOverSizeException()
+
         file_hash = self.calculate_path_hash(path)
 
         metadata.update(

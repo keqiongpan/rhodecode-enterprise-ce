@@ -17,6 +17,7 @@ test:
 test-clean:
 	rm -rf coverage.xml htmlcov junit.xml pylint.log result
 	find . -type d -name "__pycache__" -prune -exec rm -rf '{}' ';'
+	find . -type f \( -iname '.coverage.*' \) -exec rm '{}' ';'
 
 test-only:
 	PYTHONHASHSEED=random \
@@ -28,7 +29,7 @@ test-only-mysql:
 	PYTHONHASHSEED=random \
 	py.test -x -vv -r xw -p no:sugar --cov=rhodecode \
     --cov-report=term-missing --cov-report=html \
-    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "mysql://root:qweqwe@localhost/rhodecode_test"}}' \
+    --ini-config-override='{"app:main": {"sqlalchemy.db1.url": "mysql://root:qweqwe@localhost/rhodecode_test?charset=utf8"}}' \
     rhodecode
 
 test-only-postgres:

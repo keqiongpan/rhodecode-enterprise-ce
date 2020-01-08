@@ -16,9 +16,12 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import logging
 import os
 import functools
 import collections
+
+log = logging.getLogger('rhodecode.' + __name__)
 
 
 class HookResponse(object):
@@ -135,6 +138,7 @@ def has_kwargs(required_args):
             _verify_kwargs(func.func_name, required_args.keys(), kwargs)
             # in case there's `calls` defined on module we store the data
             maybe_log_call(func.func_name, args, kwargs)
+            log.debug('Calling rcextensions function %s', func.func_name)
             return func(*args, **kwargs)
         return wrapper
     return wrap

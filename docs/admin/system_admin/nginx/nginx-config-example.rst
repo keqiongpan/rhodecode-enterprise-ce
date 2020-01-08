@@ -110,6 +110,7 @@ Use the following example to configure Nginx as a your web server.
         #    gzip_types  text/css text/javascript text/xml text/plain text/x-component application/javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
         #    gzip_vary on;
         #    gzip_disable     "msie6";
+        #    expires 60d;
         #    alias /path/to/.rccontrol/community-1/static;
         #    alias /path/to/.rccontrol/enterprise-1/static;
         # }

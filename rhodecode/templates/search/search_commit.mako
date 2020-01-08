@@ -8,15 +8,15 @@
         <th>${_('Repository')}</th>
         <th>${_('Commit')}</th>
         <th></th>
-        <th>${_('Commit message')}</th>
         <th>
-        %if c.sort == 'newfirst':
-            <a href="${c.url_generator(sort='oldfirst')}">${_('Age (new first)')}</a>
-        %else:
-            <a href="${c.url_generator(sort='newfirst')}">${_('Age (old first)')}</a>
-        %endif
+            <a href="${search.field_sort('message')}">${_('Commit message')}</a>
         </th>
-        <th>${_('Author')}</th>
+        <th>
+            <a href="${search.field_sort('date')}">${_('Commit date')}</a>
+        </th>
+        <th>
+            <a href="${search.field_sort('author_email')}">${_('Author')}</a>
+        </th>
     </tr>
     %for entry in c.formatted_results:
         ## search results are additionally filtered, and this check is just a safe gate
@@ -27,7 +27,7 @@
                     ${search.repo_icon(repo_type)}
                     ${h.link_to(entry['repository'], h.route_path('repo_summary',repo_name=entry['repository']))}
                 </td>
-                <td class="td-commit">
+                <td class="td-hash">
                     ${h.link_to(h._shorten_commit_id(entry['commit_id']),
                       h.route_path('repo_commit',repo_name=entry['repository'],commit_id=entry['commit_id']))}
                 </td>
@@ -54,7 +54,7 @@
                     if isinstance(author, dict):
                         author = author['email']
                     %>
-                    ${base.gravatar_with_user(author)}
+                    ${base.gravatar_with_user(author, tooltip=True)}
                 </td>
             </tr>
         % endif
@@ -63,7 +63,7 @@
 
 %if c.cur_query:
 <div class="pagination-wh pagination-left">
-    ${c.formatted_results.pager('$link_previous ~2~ $link_next')}
+    ${c.formatted_results.render()}
 </div>
 %endif
 

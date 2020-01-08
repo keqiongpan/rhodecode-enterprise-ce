@@ -312,8 +312,6 @@ class LoginView(BaseAppView):
             action_data = {'data': new_user.get_api_data(),
                            'user_agent': self.request.user_agent}
 
-
-
             if external_identity:
                 action_data['external_identity'] = external_identity
 
@@ -329,8 +327,13 @@ class LoginView(BaseAppView):
             event = UserRegistered(user=new_user, session=self.session)
             trigger(event)
             h.flash(
-                _('You have successfully registered with RhodeCode'),
+                _('You have successfully registered with RhodeCode. You can log-in now.'),
                 category='success')
+            if external_identity:
+                h.flash(
+                    _('Please use the {identity} button to log-in').format(
+                        identity=external_identity),
+                    category='success')
             Session().commit()
 
             redirect_ro = self.request.route_path('login')

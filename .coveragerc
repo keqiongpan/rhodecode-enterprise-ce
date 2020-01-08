@@ -8,6 +8,7 @@ include =
 omit =
     rhodecode/lib/dbmigrate/*
     rhodecode/lib/paster_commands/*
+    rhodecode/lib/_vendor/*
 
 [report]
 

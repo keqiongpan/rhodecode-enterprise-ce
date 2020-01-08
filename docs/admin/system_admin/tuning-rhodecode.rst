@@ -9,7 +9,8 @@ may find some of the following methods useful.
 .. toctree::
 
    tuning/tuning-gunicorn
-   tuning/tuning-vcs-memory-cache
+   tuning/tuning-vcs-server-memory-usage
+   tuning/tuning-rhodecode-memory-usage
    tuning/tuning-user-sessions-performance
    tuning/tuning-increase-db-performance
    tuning/tuning-scale-horizontally-cluster

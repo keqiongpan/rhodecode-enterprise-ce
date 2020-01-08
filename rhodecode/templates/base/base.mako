@@ -1,4 +1,13 @@
 ## -*- coding: utf-8 -*-
+
+<%!
+    ## base64 filter e.g ${ example | base64 }
+    def base64(text):
+        import base64
+        from rhodecode.lib.helpers import safe_str
+        return base64.encodestring(safe_str(text))
+%>
+
 <%inherit file="root.mako"/>
 
 <%include file="/ejs_templates/templates.html"/>
@@ -75,11 +84,6 @@
 </%def>
 
 <%def name="admin_menu(active=None)">
-  <%
-    def is_active(selected):
-        if selected == active:
-            return "active"
-  %>
 
   <div id="context-bar">
     <div class="wrapper">
@@ -87,7 +91,7 @@
         <div class="title-content">
           <div class="title-main">
             % if c.is_super_admin:
-                ${_('Super Admin Panel')}
+                ${_('Super-admin Panel')}
             % else:
                 ${_('Delegated Admin Panel')}
             % endif
@@ -97,18 +101,18 @@
 
     <ul id="context-pages" class="navigation horizontal-list">
 
-        ## super admin case
+        ## super-admin case
         % if c.is_super_admin:
-          <li class="${is_active('audit_logs')}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
-          <li class="${is_active('repositories')}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
-          <li class="${is_active('repository_groups')}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
-          <li class="${is_active('users')}"><a href="${h.route_path('users')}">${_('Users')}</a></li>
-          <li class="${is_active('user_groups')}"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
-          <li class="${is_active('permissions')}"><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
-          <li class="${is_active('authentication')}"><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
-          <li class="${is_active('integrations')}"><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
-          <li class="${is_active('defaults')}"><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
-          <li class="${is_active('settings')}"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
+          <li class="${h.is_active('audit_logs', active)}"><a href="${h.route_path('admin_audit_logs')}">${_('Admin audit logs')}</a></li>
+          <li class="${h.is_active('repositories', active)}"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+          <li class="${h.is_active('repository_groups', active)}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+          <li class="${h.is_active('users', active)}"><a href="${h.route_path('users')}">${_('Users')}</a></li>
+          <li class="${h.is_active('user_groups', active)}"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+          <li class="${h.is_active('permissions', active)}"><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
+          <li class="${h.is_active('authentication', active)}"><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
+          <li class="${h.is_active('integrations', active)}"><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>
+          <li class="${h.is_active('defaults', active)}"><a href="${h.route_path('admin_defaults_repositories')}">${_('Defaults')}</a></li>
+          <li class="${h.is_active('settings', active)}"><a href="${h.route_path('admin_settings')}">${_('Settings')}</a></li>
 
         ## delegated admin
         % elif c.is_delegated_admin:
@@ -119,13 +123,13 @@
            %>
 
            %if repositories:
-              <li class="${is_active('repositories')} local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
+              <li class="${h.is_active('repositories', active)} local-admin-repos"><a href="${h.route_path('repos')}">${_('Repositories')}</a></li>
            %endif
            %if repository_groups:
-              <li class="${is_active('repository_groups')} local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
+              <li class="${h.is_active('repository_groups', active)} local-admin-repo-groups"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
            %endif
            %if user_groups:
-              <li class="${is_active('user_groups')} local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+              <li class="${h.is_active('user_groups', active)} local-admin-user-groups"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
            %endif
         % endif
     </ul>
@@ -164,30 +168,101 @@
     </dl>
 </%def>
 
-<%def name="gravatar(email, size=16)">
+<%def name="tr_info_entry(element)">
+    <% key, val, title, show_items = element %>
+
+    <tr>
+        <td style="vertical-align: top">${key}</td>
+        <td title="${h.tooltip(title)}">
+          %if callable(val):
+              ## allow lazy evaluation of elements
+              ${val()}
+          %else:
+              ${val}
+          %endif
+          %if show_items:
+              <div class="collapsable-content" data-toggle="item-${h.md5_safe(val)[:6]}-details" style="display: none">
+              % for item in show_items:
+                  <dt></dt>
+                  <dd>${item}</dd>
+              % endfor
+              </div>
+          %endif
+        </td>
+        <td style="vertical-align: top">
+          %if show_items:
+              <span class="btn-collapse" data-toggle="item-${h.md5_safe(val)[:6]}-details">${_('Show More')} </span>
+          %endif
+        </td>
+    </tr>
+
+</%def>
+
+<%def name="gravatar(email, size=16, tooltip=False, tooltip_alt=None, user=None, extra_class=None)">
   <%
-    if (size > 16):
-        gravatar_class = 'gravatar gravatar-large'
+    if size > 16:
+        gravatar_class = ['gravatar','gravatar-large']
     else:
-        gravatar_class = 'gravatar'
+        gravatar_class = ['gravatar']
+
+    data_hovercard_url = ''
+    data_hovercard_alt = tooltip_alt.replace('<', '&lt;').replace('>', '&gt;') if tooltip_alt else ''
+
+    if tooltip:
+        gravatar_class += ['tooltip-hovercard']
+    if extra_class:
+        gravatar_class += extra_class
+    if tooltip and user:
+        if user.username == h.DEFAULT_USER:
+            gravatar_class.pop(-1)
+        else:
+            data_hovercard_url = request.route_path('hovercard_user', user_id=getattr(user, 'user_id', ''))
+    gravatar_class = ' '.join(gravatar_class)
+
   %>
   <%doc>
     TODO: johbo: For now we serve double size images to make it smooth
     for retina. This is how it worked until now. Should be replaced
     with a better solution at some point.
   </%doc>
-  <img class="${gravatar_class}" src="${h.gravatar_url(email, size * 2)}" height="${size}" width="${size}">
+
+  <img class="${gravatar_class}" height="${size}" width="${size}" data-hovercard-url="${data_hovercard_url}" data-hovercard-alt="${data_hovercard_alt}" src="${h.gravatar_url(email, size * 2)}" />
 </%def>
 
 
-<%def name="gravatar_with_user(contact, size=16, show_disabled=False)">
-  <% email = h.email_or_none(contact) %>
-  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
-    ${self.gravatar(email, size)}
-    <span class="${'user user-disabled' if show_disabled else 'user'}"> ${h.link_to_user(contact)}</span>
+<%def name="gravatar_with_user(contact, size=16, show_disabled=False, tooltip=False)">
+  <%
+      email = h.email_or_none(contact)
+      rc_user = h.discover_user(contact)
+  %>
+
+  <div class="rc-user">
+    ${self.gravatar(email, size, tooltip=tooltip, tooltip_alt=contact, user=rc_user)}
+    <span class="${('user user-disabled' if show_disabled else 'user')}"> ${h.link_to_user(rc_user or contact)}</span>
   </div>
 </%def>
 
+
+<%def name="user_group_icon(user_group=None, size=16, tooltip=False)">
+  <%
+    if (size > 16):
+        gravatar_class = 'icon-user-group-alt'
+    else:
+        gravatar_class = 'icon-user-group-alt'
+
+    if tooltip:
+        gravatar_class += ' tooltip-hovercard'
+
+    data_hovercard_url = request.route_path('hovercard_user_group', user_group_id=user_group.users_group_id)
+  %>
+  <%doc>
+    TODO: johbo: For now we serve double size images to make it smooth
+    for retina. This is how it worked until now. Should be replaced
+    with a better solution at some point.
+  </%doc>
+
+  <i style="font-size: ${size}px" class="${gravatar_class} x-icon-size-${size}" data-hovercard-url="${data_hovercard_url}"></i>
+</%def>
 
 <%def name="repo_page_title(repo_instance)">
 <div class="title-content repo-title">
@@ -268,9 +343,10 @@
 
 <%def name="repo_menu(active=None)">
     <%
-    def is_active(selected):
-        if selected == active:
-            return "active"
+    ## determine if we have "any" option available
+    can_lock = h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking
+    has_actions = can_lock
+
     %>
     % if c.rhodecode_db_repo.archived:
     <div class="alert alert-warning text-center">
@@ -287,45 +363,40 @@
       </div>
 
       <ul id="context-pages" class="navigation horizontal-list">
-        <li class="${is_active('summary')}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
-        <li class="${is_active('commits')}"><a class="menulink" href="${h.route_path('repo_commits', repo_name=c.repo_name)}"><div class="menulabel">${_('Commits')}</div></a></li>
-        <li class="${is_active('files')}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
-        <li class="${is_active('compare')}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
+        <li class="${h.is_active('summary', active)}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
+        <li class="${h.is_active('commits', active)}"><a class="menulink" href="${h.route_path('repo_commits', repo_name=c.repo_name)}"><div class="menulabel">${_('Commits')}</div></a></li>
+        <li class="${h.is_active('files', active)}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_rev[1], f_path='')}"><div class="menulabel">${_('Files')}</div></a></li>
+        <li class="${h.is_active('compare', active)}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
 
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"
         %if c.rhodecode_db_repo.repo_type in ['git','hg']:
-          <li class="${is_active('showpullrequest')}">
+          <li class="${h.is_active('showpullrequest', active)}">
             <a class="menulink" href="${h.route_path('pullrequest_show_all', repo_name=c.repo_name)}" title="${h.tooltip(_('Show Pull Requests for %s') % c.repo_name)}">
               <div class="menulabel">
-              %if c.repository_pull_requests == 1:
-                  ${_('Pull Request')} ${c.repository_pull_requests}
-              %else:
-                  ${_('Pull Requests')} ${c.repository_pull_requests} 
-              %endif
+                  ${_('Pull Requests')} <span class="menulink-counter">${c.repository_pull_requests}</span>
               </div>
             </a>
           </li>
         %endif
 
-        <li class="${is_active('artifacts')}"><a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}"><div class="menulabel">${_('Artifacts')} (BETA)</div></a></li>
+        <li class="${h.is_active('artifacts', active)}">
+            <a class="menulink" href="${h.route_path('repo_artifacts_list',repo_name=c.repo_name)}">
+                <div class="menulabel">
+                    ${_('Artifacts')}  <span class="menulink-counter">${c.repository_artifacts}</span>
+                </div>
+            </a>
+        </li>
 
         %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
-            <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
+            <li class="${h.is_active('settings', active)}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
         %endif
 
-        ## determine if we have "any" option available
-        <%
-            can_lock = h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name) and c.rhodecode_db_repo.enable_locking
-            has_actions = (c.rhodecode_user.username != h.DEFAULT_USER and c.rhodecode_db_repo.repo_type in ['git','hg'] ) or can_lock
-        %>
-        <li class="${is_active('options')}">
+        <li class="${h.is_active('options', active)}">
           % if has_actions:
             <a class="menulink dropdown">
               <div class="menulabel">${_('Options')}<div class="show_more"></div></div>
             </a>
             <ul class="submenu">
-                <li><a href="${h.route_path('repo_fork_new',repo_name=c.repo_name)}">${_('Fork this repository')}</a></li>
-                <li><a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a></li>
                 %if can_lock:
                     %if c.rhodecode_db_repo.locked[0]:
                       <li><a class="locking_del" href="${h.route_path('repo_edit_toggle_locking',repo_name=c.repo_name)}">${_('Unlock Repository')}</a></li>
@@ -368,19 +439,15 @@
 </div>
 </%def>
 
+
 <%def name="repo_group_menu(active=None)">
     <%
-    def is_active(selected):
-        if selected == active:
-            return "active"
-
     gr_name = c.repo_group.group_name if c.repo_group else None
     # create repositories with write permission on group is set to true
-    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
     group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
-    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
 
     %>
+
 
   <!--- REPO GROUP CONTEXT BAR -->
   <div id="context-bar">
@@ -390,35 +457,15 @@
       </div>
 
       <ul id="context-pages" class="navigation horizontal-list">
-        <li class="${is_active('home')}"><a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a></li>
-        % if c.is_super_admin or group_admin:
-            <li class="${is_active('settings')}"><a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a></li>
-        % endif
-        ## determine if we have "any" option available
-        <%
-            can_create_repos = c.is_super_admin or group_admin or (group_write and create_on_write)
-            can_create_repo_groups = c.is_super_admin or group_admin
-            has_actions = can_create_repos or can_create_repo_groups
-        %>
-        <li class="${is_active('options')}">
-          % if has_actions:
-            <a class="menulink dropdown">
-              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-            </a>
-            <ul class="submenu">
-                %if can_create_repos:
-                    <li><a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('Add Repository')}</a></li>
-                %endif
-                %if can_create_repo_groups:
-                    <li><a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'Add Repository Group')}</a></li>
-                %endif
-            </ul>
-          % else:
-            <a class="menulink disabled">
-              <div class="menulabel">${_('Options')} <div class="show_more"></div></div>
-            </a>
-          % endif
+        <li class="${h.is_active('home', active)}">
+            <a class="menulink" href="${h.route_path('repo_group_home', repo_group_name=c.repo_group.group_name)}"><div class="menulabel">${_('Group Home')}</div></a>
         </li>
+        % if c.is_super_admin or group_admin:
+            <li class="${h.is_active('settings', active)}">
+                <a class="menulink" href="${h.route_path('edit_repo_group',repo_group_name=c.repo_group.group_name)}" title="${_('You have admin right to this group, and can edit it')}"><div class="menulabel">${_('Group Settings')}</div></a>
+            </li>
+        % endif
+
       </ul>
     </div>
     <div class="clear"></div>
@@ -430,6 +477,114 @@
 
 
 <%def name="usermenu(active=False)">
+    <%
+    not_anonymous = c.rhodecode_user.username != h.DEFAULT_USER
+
+    gr_name = c.repo_group.group_name if (hasattr(c, 'repo_group') and c.repo_group) else None
+    # create repositories with write permission on group is set to true
+
+    can_fork = c.is_super_admin or h.HasPermissionAny('hg.fork.repository')()
+    create_on_write = h.HasPermissionAny('hg.create.write_on_repogroup.true')()
+    group_write = h.HasRepoGroupPermissionAny('group.write')(gr_name, 'can write into group index page')
+    group_admin = h.HasRepoGroupPermissionAny('group.admin')(gr_name, 'group admin index page')
+
+    can_create_repos = c.is_super_admin or c.can_create_repo
+    can_create_repo_groups = c.is_super_admin or c.can_create_repo_group
+
+    can_create_repos_in_group = c.is_super_admin or group_admin or (group_write and create_on_write)
+    can_create_repo_groups_in_group = c.is_super_admin or group_admin
+    %>
+
+    % if not_anonymous:
+    <%
+    default_target_group = dict()
+    if c.rhodecode_user.personal_repo_group:
+        default_target_group = dict(parent_group=c.rhodecode_user.personal_repo_group.group_id)
+    %>
+
+    ## create action
+    <li>
+       <a href="#create-actions" onclick="return false;" class="menulink childs">
+        <i class="tooltip icon-plus-circled" title="${_('Create')}"></i>
+       </a>
+
+       <div class="action-menu submenu">
+
+        <ol>
+            ## scope of within a repository
+            % if hasattr(c, 'rhodecode_db_repo') and c.rhodecode_db_repo:
+                <li class="submenu-title">${_('This Repository')}</li>
+                <li>
+                    <a href="${h.route_path('pullrequest_new',repo_name=c.repo_name)}">${_('Create Pull Request')}</a>
+                </li>
+                % if can_fork:
+                <li>
+                    <a href="${h.route_path('repo_fork_new',repo_name=c.repo_name,_query=default_target_group)}">${_('Fork this repository')}</a>
+                </li>
+                % endif
+            % endif
+
+            ## scope of within repository groups
+            % if hasattr(c, 'repo_group') and c.repo_group and (can_create_repos_in_group or can_create_repo_groups_in_group):
+                <li class="submenu-title">${_('This Repository Group')}</li>
+
+                % if can_create_repos_in_group:
+                    <li>
+                    <a href="${h.route_path('repo_new',_query=dict(parent_group=c.repo_group.group_id))}">${_('New Repository')}</a>
+                    </li>
+                % endif
+
+                % if can_create_repo_groups_in_group:
+                    <li>
+                        <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.repo_group.group_id))}">${_(u'New Repository Group')}</a>
+                    </li>
+                % endif
+            % endif
+
+            ## personal group
+            % if c.rhodecode_user.personal_repo_group:
+                <li class="submenu-title">Personal Group</li>
+
+                <li>
+                <a href="${h.route_path('repo_new',_query=dict(parent_group=c.rhodecode_user.personal_repo_group.group_id))}" >${_('New Repository')} </a>
+                </li>
+
+                <li>
+                <a href="${h.route_path('repo_group_new',_query=dict(parent_group=c.rhodecode_user.personal_repo_group.group_id))}">${_('New Repository Group')} </a>
+                </li>
+            % endif
+
+            ## Global actions
+            <li class="submenu-title">RhodeCode</li>
+            % if can_create_repos:
+                <li>
+                <a href="${h.route_path('repo_new')}" >${_('New Repository')}</a>
+                </li>
+            % endif
+
+            % if can_create_repo_groups:
+                <li>
+                <a href="${h.route_path('repo_group_new')}" >${_(u'New Repository Group')}</a>
+                </li>
+            % endif
+
+            <li>
+                <a href="${h.route_path('gists_new')}">${_(u'New Gist')}</a>
+            </li>
+
+        </ol>
+
+       </div>
+    </li>
+
+    ## notifications
+    <li>
+       <a class="${('empty' if c.unread_notifications == 0 else '')}" href="${h.route_path('notifications_show_all')}">
+           ${c.unread_notifications}
+       </a>
+    </li>
+   % endif
+
     ## USER MENU
     <li id="quick_login_li" class="${'active' if active else ''}">
         % if c.rhodecode_user.username == h.DEFAULT_USER:
@@ -464,11 +619,23 @@
                       <li>${h.link_to(_(u'My personal group'), h.route_path('repo_group_home', repo_group_name=c.rhodecode_user.personal_repo_group.group_name))}</li>
                       % endif
                       <li>${h.link_to(_(u'Pull Requests'), h.route_path('my_account_pullrequests'))}</li>
+
+                      % if c.debug_style:
+                      <li>
+                          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
+                            <div class="menulabel">${_('[Style]')}</div>
+                          </a>
+                      </li>
+                      % endif
+
                       ## bookmark-items
                       <li class="bookmark-items">
                           ${_('Bookmarks')}
                           <div class="pull-right">
-                              <a href="${h.route_path('my_account_bookmarks')}">${_('Manage')}</a>
+                              <a href="${h.route_path('my_account_bookmarks')}">
+
+                                  <i class="icon-cog"></i>
+                              </a>
                           </div>
                       </li>
                       % if not c.bookmark_items:
@@ -519,26 +686,17 @@
                 %endif
               </div>
           </div>
-          ## unread counter
-          <div class="pill_container">
-            <a class="menu_link_notifications ${'empty' if c.unread_notifications == 0 else ''}" href="${h.route_path('notifications_show_all')}">${c.unread_notifications}</a>
-          </div>
+
         % endif
     </li>
 </%def>
 
 <%def name="menu_items(active=None)">
-    <%
-    def is_active(selected):
-        if selected == active:
-            return "active"
-        return ""
-    %>
 
     <ul id="quick" class="main_nav navigation horizontal-list">
        ## notice box for important system messages
        <li style="display: none">
-          <a class="notice-box" href="#openNotice" onclick="showNoticeBox(); return false">
+          <a class="notice-box" href="#openNotice" onclick="return false">
             <div class="menulabel-notice" >
                 0
             </div>
@@ -550,6 +708,10 @@
         <div class="menulabel main_filter_box">
             <div class="main_filter_input_box">
                 <ul class="searchItems">
+
+                    <li class="searchTag searchTagIcon">
+                        <i class="icon-search"></i>
+                    </li>
 
                     % if c.template_context['search_context']['repo_id']:
                         <li class="searchTag searchTagFilter searchTagHidable" >
@@ -607,34 +769,34 @@
        </li>
 
       ## ROOT MENU
-        <li class="${is_active('home')}">
+        <li class="${h.is_active('home', active)}">
           <a class="menulink" title="${_('Home')}" href="${h.route_path('home')}">
             <div class="menulabel">${_('Home')}</div>
           </a>
         </li>
 
       %if c.rhodecode_user.username != h.DEFAULT_USER:
-        <li class="${is_active('journal')}">
+        <li class="${h.is_active('journal', active)}">
           <a class="menulink" title="${_('Show activity journal')}" href="${h.route_path('journal')}">
             <div class="menulabel">${_('Journal')}</div>
           </a>
         </li>
       %else:
-        <li class="${is_active('journal')}">
+        <li class="${h.is_active('journal', active)}">
           <a class="menulink" title="${_('Show Public activity journal')}" href="${h.route_path('journal_public')}">
             <div class="menulabel">${_('Public journal')}</div>
           </a>
         </li>
       %endif
 
-        <li class="${is_active('gists')}">
+        <li class="${h.is_active('gists', active)}">
           <a class="menulink childs" title="${_('Show Gists')}" href="${h.route_path('gists_show')}">
             <div class="menulabel">${_('Gists')}</div>
           </a>
         </li>
 
         % if c.is_super_admin or c.is_delegated_admin:
-        <li class="${is_active('admin')}">
+        <li class="${h.is_active('admin', active)}">
           <a class="menulink childs" title="${_('Admin settings')}" href="${h.route_path('admin_home')}">
             <div class="menulabel">${_('Admin')} </div>
           </a>
@@ -644,13 +806,6 @@
       ## render extra user menu
       ${usermenu(active=(active=='my_account'))}
 
-      % if c.debug_style:
-      <li>
-          <a class="menulink" title="${_('Style')}" href="${h.route_path('debug_style_home')}">
-            <div class="menulabel">${_('[Style]')}</div>
-          </a>
-      </li>
-      % endif
     </ul>
 
     <script type="text/javascript">
@@ -735,6 +890,7 @@
             var searchType = data['type'];
             var searchSubType = data['subtype'];
             var valueDisplay = data['value_display'];
+            var valueIcon = data['value_icon'];
 
             var pattern = '(' + escapeRegExChars(value) + ')';
 
@@ -752,7 +908,12 @@
             }
             // full text search/hints
             else if (searchType === 'search') {
-                icon += '<i class="icon-more"></i> ';
+                if (valueIcon === undefined) {
+                    icon += '<i class="icon-more"></i> ';
+                } else {
+                    icon += valueIcon + ' ';
+                }
+
                 if (searchSubType !== undefined && searchSubType == 'repo') {
                     valueDisplay += '<div class="pull-right tag">repository</div>';
                 }
@@ -876,7 +1037,13 @@
                     alert("Error during search.\nError code: {0}".format(textStatus));
                     window.location = '';
                 }
-            }
+            },
+            onSearchStart: function (params) {
+                $('.searchTag.searchTagIcon').html('<i class="icon-spin animate-spin"></i>')
+            },
+            onSearchComplete: function (query, suggestions) {
+                $('.searchTag.searchTagIcon').html('<i class="icon-search"></i>')
+            },
         });
 
         showMainFilterBox = function () {
@@ -951,7 +1118,7 @@
                          ('g F', 'Goto files page with file search activated'),
                          ('g p', 'Goto pull requests page'),
                          ('g o', 'Goto repository settings'),
-                         ('g O', 'Goto repository permissions settings'),
+                         ('g O', 'Goto repository access permissions settings'),
                      ]
                   %>
                   %for key, desc in elems:
@@ -971,4 +1138,3 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
-

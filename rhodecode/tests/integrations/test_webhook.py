@@ -25,7 +25,7 @@ from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.integrations.types.webhook import WebhookDataHandler
 
 
-@pytest.fixture
+@pytest.fixture()
 def base_data():
     return {
         'name': 'event',

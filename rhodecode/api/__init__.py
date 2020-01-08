@@ -122,7 +122,7 @@ def jsonrpc_response(request, result):
     return response
 
 
-def jsonrpc_error(request, message, retid=None, code=None):
+def jsonrpc_error(request, message, retid=None, code=None, headers=None):
     """
     Generate a Response object with a JSON-RPC error body
 
@@ -132,10 +132,12 @@ def jsonrpc_error(request, message, retid=None, code=None):
     """
     err_dict = {'id': retid, 'result': None, 'error': message}
     body = render(DEFAULT_RENDERER, err_dict, request=request).encode('utf-8')
+
     return Response(
         body=body,
         status=code,
-        content_type='application/json'
+        content_type='application/json',
+        headerlist=headers
     )
 
 
@@ -287,8 +289,7 @@ def request_view(request):
     })
 
     # register some common functions for usage
-    attach_context_attributes(
-        TemplateArgs(), request, request.rpc_user.user_id)
+    attach_context_attributes(TemplateArgs(), request, request.rpc_user.user_id)
 
     try:
         ret_value = func(**call_params)
@@ -298,9 +299,13 @@ def request_view(request):
     except Exception:
         log.exception('Unhandled exception occurred on api call: %s', func)
         exc_info = sys.exc_info()
-        store_exception(id(exc_info), exc_info, prefix='rhodecode-api')
+        exc_id, exc_type_name = store_exception(
+            id(exc_info), exc_info, prefix='rhodecode-api')
+        error_headers = [('RhodeCode-Exception-Id', str(exc_id)),
+                         ('RhodeCode-Exception-Type', str(exc_type_name))]
         return jsonrpc_error(
-            request, retid=request.rpc_id, message='Internal server error')
+            request, retid=request.rpc_id, message='Internal server error',
+            headers=error_headers)
 
 
 def setup_request(request):
@@ -333,6 +338,7 @@ def setup_request(request):
             raise JSONRPCError("Content-Length is 0")
 
     raw_body = request.body
+    log.debug("Loading JSON body now")
     try:
         json_body = json.loads(raw_body)
     except ValueError as e:
@@ -359,7 +365,7 @@ def setup_request(request):
         request.rpc_params = json_body['args'] \
             if isinstance(json_body['args'], dict) else {}
 
-        log.debug('method: %s, params: %s', request.rpc_method, request.rpc_params)
+        log.debug('method: %s, params: %.10240r', request.rpc_method, request.rpc_params)
     except KeyError as e:
         raise JSONRPCError('Incorrect JSON data. Missing %s' % e)
 

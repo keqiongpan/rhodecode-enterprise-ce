@@ -2,7 +2,7 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Repository Permissions')}</h3>
+        <h3 class="panel-title">${_('Repository Access Permissions')}</h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_repo_perms', repo_name=c.repo_name), request=request)}
@@ -25,10 +25,10 @@
                         <td class="td-radio">${h.radio('admin_perm_%s' % _user.user_id,'repository.write', disabled="disabled")}</td>
                         <td class="td-radio">${h.radio('admin_perm_%s' % _user.user_id,'repository.admin', 'repository.admin', disabled="disabled")}</td>
                         <td class="td-user">
-                            ${base.gravatar(_user.email, 16)}
+                            ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             ${h.link_to_user(_user.username)}
                             %if getattr(_user, 'admin_row', None):
-                                (${_('super admin')})
+                                (${_('super-admin')})
                             %endif
                             %if getattr(_user, 'owner_row', None):
                                 (${_('owner')})
@@ -80,7 +80,7 @@
                         <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.write', checked=_user.permission=='repository.write')}</td>
                         <td class="td-radio">${h.radio('u_perm_%s' % _user.user_id,'repository.admin', checked=_user.permission=='repository.admin')}</td>
                         <td class="td-user">
-                            ${base.gravatar(_user.email, 16)}
+                            ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
                                     ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
@@ -139,7 +139,7 @@
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.write', checked=_user_group.permission=='repository.write')}</td>
                     <td class="td-radio">${h.radio('g_perm_%s' % _user_group.users_group_id,'repository.admin', checked=_user_group.permission=='repository.admin')}</td>
                     <td class="td-componentname">
-                        <i class="icon-user-group"></i>
+                        ${base.user_group_icon(_user_group, tooltip=True)}
                         %if c.is_super_admin:
                          <a href="${h.route_path('edit_user_group',user_group_id=_user_group.users_group_id)}">
                              ${_user_group.users_group_name}

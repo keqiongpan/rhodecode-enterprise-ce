@@ -46,9 +46,16 @@ class RepoGroupSettingsView(RepoGroupAppView):
         route_name='edit_repo_group_advanced', request_method='GET',
         renderer='rhodecode:templates/admin/repo_groups/repo_group_edit.mako')
     def edit_repo_group_advanced(self):
+        _ = self.request.translate
         c = self.load_default_context()
         c.active = 'advanced'
         c.repo_group = self.db_repo_group
+
+        # update commit cache if GET flag is present
+        if self.request.GET.get('update_commit_cache'):
+            self.db_repo_group.update_commit_cache()
+            h.flash(_('updated commit cache'), category='success')
+
         return self._get_template_context(c)
 
     @LoginRequired()

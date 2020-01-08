@@ -1,13 +1,14 @@
 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
-<%def name="form_item(count, position=None, title=None, redirect_url=None, repo=None, repo_group=None)">
+<%def name="form_item(position=None, title=None, redirect_url=None, repo=None, repo_group=None)">
     <tr>
         <td class="td-align-top" >
             <div class="label">
                 <label for="position">${_('Position')}:</label>
             </div>
             <div class="input">
-                <input type="text" name="position" value="${position or count}" style="width: 40px"/>
+                <input type="text" name="position" value="${position}" style="width: 40px"/>
+                ${h.hidden('cur_position', position)}
             </div>
         </td>
 
@@ -91,14 +92,14 @@
         <table class="rctable">
         ## generate always 10 entries
         <input type="hidden" name="__start__" value="bookmarks:sequence"/>
-        % for cnt, item in enumerate((c.bookmark_items + [None for i in range(10)])[:10]):
+        % for item in (c.bookmark_items + [None for i in range(10)])[:10]:
             <input type="hidden" name="__start__" value="bookmark:mapping"/>
             % if item is None:
                 ## empty placehodlder
-                ${form_item(cnt)}
+                ${form_item()}
             % else:
                 ## actual entry
-                ${form_item(cnt, position=item.position, title=item.title, redirect_url=item.redirect_url, repo=item.repository, repo_group=item.repository_group)}
+                ${form_item(position=item.position, title=item.title, redirect_url=item.redirect_url, repo=item.repository, repo_group=item.repository_group)}
             % endif
             <input type="hidden" name="__end__" value="bookmark:mapping"/>
         % endfor

@@ -617,9 +617,7 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
     cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
     region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-    @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                           condition=cache_on)
-    def compute_fts_tree(repo_id, commit_id, root_path, cache_ver):
+    def compute_fts_tree(cache_ver, repo_id, commit_id, root_path):
         return ScmModel().get_fts_data(repo_id, commit_id, root_path)
 
     try:
@@ -640,7 +638,7 @@ def get_repo_fts_tree(request, apiuser, repoid, commit_id, root_path):
             'with caching: %s[TTL: %ss]' % (
                 repo_id, commit_id, cache_on, cache_seconds or 0))
 
-        tree_files = compute_fts_tree(repo_id, commit_id, root_path, 'v1')
+        tree_files = compute_fts_tree(rc_cache.FILE_TREE_CACHE_VER, repo_id, commit_id, root_path)
         return tree_files
 
     except Exception:
@@ -714,7 +712,7 @@ def create_repo(
         private=Optional(False),
         clone_uri=Optional(None),
         push_uri=Optional(None),
-        landing_rev=Optional('rev:tip'),
+        landing_rev=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
         enable_downloads=Optional(False),
@@ -749,7 +747,7 @@ def create_repo(
     :type clone_uri: str
     :param push_uri: set push_uri
     :type push_uri: str
-    :param landing_rev: <rev_type>:<rev>
+    :param landing_rev: <rev_type>:<rev>, e.g branch:default, book:dev, rev:abcd
     :type landing_rev: str
     :param enable_locking:
     :type enable_locking: bool
@@ -793,7 +791,6 @@ def create_repo(
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
     push_uri = Optional.extract(push_uri)
-    landing_commit_ref = Optional.extract(landing_rev)
 
     defs = SettingsModel().get_default_repo_settings(strip_prefix=True)
     if isinstance(private, Optional):
@@ -807,8 +804,15 @@ def create_repo(
     if isinstance(enable_downloads, Optional):
         enable_downloads = defs.get('repo_enable_downloads')
 
+    landing_ref, _label = ScmModel.backend_landing_ref(repo_type)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(request.translate)
+    ref_choices = list(set(ref_choices + [landing_ref]))
+
+    landing_commit_ref = Optional.extract(landing_rev) or landing_ref
+
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_ref_options=ref_choices,
         repo_type=repo_type,
         # user caller
         user=apiuser)
@@ -958,7 +962,7 @@ def update_repo(
         owner=Optional(OAttr('apiuser')), description=Optional(''),
         private=Optional(False),
         clone_uri=Optional(None), push_uri=Optional(None),
-        landing_rev=Optional('rev:tip'), fork_of=Optional(None),
+        landing_rev=Optional(None), fork_of=Optional(None),
         enable_statistics=Optional(False),
         enable_locking=Optional(False),
         enable_downloads=Optional(False), fields=Optional('')):
@@ -993,7 +997,7 @@ def update_repo(
     :type private: bool
     :param clone_uri: Update the |repo| clone URI.
     :type clone_uri: str
-    :param landing_rev: Set the |repo| landing revision. Default is ``rev:tip``.
+    :param landing_rev: Set the |repo| landing revision. e.g branch:default, book:dev, rev:abcd
     :type landing_rev: str
     :param enable_statistics: Enable statistics on the |repo|, (True | False).
     :type enable_statistics: bool
@@ -1049,8 +1053,10 @@ def update_repo(
         repo_enable_downloads=enable_downloads
         if not isinstance(enable_downloads, Optional) else repo.enable_downloads)
 
+    landing_ref, _label = ScmModel.backend_landing_ref(repo.repo_type)
     ref_choices, _labels = ScmModel().get_repo_landing_revs(
         request.translate, repo=repo)
+    ref_choices = list(set(ref_choices + [landing_ref]))
 
     old_values = repo.get_api_data()
     repo_type = repo.repo_type
@@ -1128,7 +1134,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
               description=Optional(''),
               private=Optional(False),
               clone_uri=Optional(None),
-              landing_rev=Optional('rev:tip'),
+              landing_rev=Optional(None),
               copy_permissions=Optional(False)):
     """
     Creates a fork of the specified |repo|.
@@ -1158,7 +1164,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
     :type copy_permissions: bool
     :param private: Make the fork private. The default is False.
     :type private: bool
-    :param landing_rev: Set the landing revision. The default is tip.
+    :param landing_rev: Set the landing revision. E.g branch:default, book:dev, rev:abcd
 
     Example output:
 
@@ -1210,11 +1216,17 @@ def fork_repo(request, apiuser, repoid, fork_name,
     description = Optional.extract(description)
     copy_permissions = Optional.extract(copy_permissions)
     clone_uri = Optional.extract(clone_uri)
-    landing_commit_ref = Optional.extract(landing_rev)
+
+    landing_ref, _label = ScmModel.backend_landing_ref(repo.repo_type)
+    ref_choices, _labels = ScmModel().get_repo_landing_revs(request.translate)
+    ref_choices = list(set(ref_choices + [landing_ref]))
+    landing_commit_ref = Optional.extract(landing_rev) or landing_ref
+
     private = Optional.extract(private)
 
     schema = repo_schema.RepoSchema().bind(
         repo_type_options=rhodecode.BACKENDS.keys(),
+        repo_ref_options=ref_choices,
         repo_type=repo.repo_type,
         # user caller
         user=apiuser)
@@ -1538,7 +1550,7 @@ def lock(request, apiuser, repoid, locked=Optional(None),
 def comment_commit(
         request, apiuser, repoid, commit_id, message, status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
-        resolves_comment_id=Optional(None),
+        resolves_comment_id=Optional(None), extra_recipients=Optional([]),
         userid=Optional(OAttr('apiuser'))):
     """
     Set a commit comment, and optionally change the status of the commit.
@@ -1556,6 +1568,11 @@ def comment_commit(
     :type status: str
     :param comment_type: Comment type, one of: 'note', 'todo'
     :type comment_type: Optional(str), default: 'note'
+    :param resolves_comment_id: id of comment which this one will resolve
+    :type resolves_comment_id: Optional(int)
+    :param extra_recipients: list of user ids or usernames to add
+        notifications for this comment. Acts like a CC for notification
+    :type extra_recipients: Optional(list)
     :param userid: Set the user name of the comment creator.
     :type userid: Optional(str or int)
 
@@ -1592,6 +1609,7 @@ def comment_commit(
     status = Optional.extract(status)
     comment_type = Optional.extract(comment_type)
     resolves_comment_id = Optional.extract(resolves_comment_id)
+    extra_recipients = Optional.extract(extra_recipients)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
@@ -1620,7 +1638,8 @@ def comment_commit(
             renderer=renderer,
             comment_type=comment_type,
             resolves_comment_id=resolves_comment_id,
-            auth_user=apiuser
+            auth_user=apiuser,
+            extra_recipients=extra_recipients
         )
         if status:
             # also do a status change

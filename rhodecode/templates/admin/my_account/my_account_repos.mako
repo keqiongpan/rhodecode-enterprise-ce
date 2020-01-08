@@ -15,13 +15,10 @@
 <script>
 $(document).ready(function() {
 
-    var get_datatable_count = function(){
-      var api = $('#repo_list_table').dataTable().api();
-      $('#repo_count').text(api.page.info().recordsDisplay);
-    };
-
     // repo list
-    $('#repo_list_table').DataTable({
+    $repoListTable = $('#repo_list_table');
+
+    $repoListTable.DataTable({
       data: ${c.data|n},
       dom: 'rtp',
       pageLength: ${c.visual.admin_grid_items},
@@ -29,39 +26,23 @@ $(document).ready(function() {
       columns: [
          { data: {"_": "name",
                   "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname" },
-         { data: 'menu', className: "quick_repo_menu" },
-         { data: {"_": "last_changeset",
-                  "sort": "last_changeset_raw",
-                  "type": Number}, title: "${_('Commit')}", className: "td-hash" },
-         { data: {"_": "action",
-                  "sort": "action"}, title: "${_('Action')}", className: "td-action" }
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,
           emptyTable: _gettext("No repositories available yet.")
       },
-      "initComplete": function( settings, json ) {
-          get_datatable_count();
-          quick_repo_menu();
-      }
+
     });
 
-    // update the counter when doing search
-    $('#repo_list_table').on( 'search.dt', function (e,settings) {
-      get_datatable_count();
-    });
+    // filter
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $repoListTable.DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
 
-    // filter, filter both grids
-    $('#q_filter').on( 'keyup', function () {
-      var repo_api = $('#repo_list_table').dataTable().api();
-      repo_api
-        .columns(0)
-        .search(this.value)
-        .draw();
-    });
-
-    // refilter table if page load via back button
-    $("#q_filter").trigger('keyup');
 
   });
 

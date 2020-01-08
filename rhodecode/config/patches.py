@@ -32,7 +32,6 @@ Please keep the following principles in mind:
 """
 
 
-
 def inspect_getargspec():
     """
     Pyramid rely on inspect.getargspec to lookup the signature of

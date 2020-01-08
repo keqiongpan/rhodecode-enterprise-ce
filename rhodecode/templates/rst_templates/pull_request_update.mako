@@ -14,13 +14,13 @@ Pull request updated. Auto status change to |under_review|
   %else:
   Changed files:
     %for file_name in added_files:
-    * `A ${file_name} <#${'a_' + h.FID('', file_name)}>`_
+    * `A ${file_name} <#${'a_' + h.FID(ancestor_commit_id, file_name)}>`_
     %endfor
     %for file_name in modified_files:
-    * `M ${file_name} <#${'a_' + h.FID('', file_name)}>`_
+    * `M ${file_name} <#${'a_' + h.FID(ancestor_commit_id, file_name)}>`_
     %endfor
     %for file_name in removed_files:
-    * R ${file_name}
+    * `R ${file_name}`
     %endfor
   %endif
 

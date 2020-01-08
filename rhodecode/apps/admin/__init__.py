@@ -140,7 +140,6 @@ def admin_routes(config):
         name='admin_settings_visual_update',
         pattern='/settings/visual/update')
 
-
     config.add_route(
         name='admin_settings_issuetracker',
         pattern='/settings/issue-tracker')
@@ -378,6 +377,10 @@ def admin_routes(config):
         name='edit_user_audit_logs',
         pattern='/users/{user_id:\d+}/edit/audit', user_route=True)
 
+    config.add_route(
+        name='edit_user_audit_logs_download',
+        pattern='/users/{user_id:\d+}/edit/audit/download', user_route=True)
+
     # user caches
     config.add_route(
         name='edit_user_caches',
@@ -409,6 +412,10 @@ def admin_routes(config):
     config.add_route(
         name='repos',
         pattern='/repos')
+
+    config.add_route(
+        name='repos_data',
+        pattern='/repos_data')
 
     config.add_route(
         name='repo_new',

@@ -21,7 +21,6 @@
 import deform
 import logging
 import peppercorn
-import webhelpers.paginate
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPNotFound
 
@@ -32,6 +31,7 @@ from rhodecode.lib.auth import (
     LoginRequired, CSRFRequired, HasPermissionAnyDecorator,
     HasRepoPermissionAnyDecorator, HasRepoGroupPermissionAnyDecorator)
 from rhodecode.lib.utils2 import safe_int
+from rhodecode.lib.helpers import Page
 from rhodecode.lib import helpers as h
 from rhodecode.model.db import Repository, RepoGroup, Session, Integration
 from rhodecode.model.scm import ScmModel
@@ -219,12 +219,16 @@ class IntegrationSettingsViewBase(BaseAppView):
             key=lambda x: getattr(x[1], sort_field),
             reverse=(sort_dir == 'desc'))
 
-        page_url = webhelpers.paginate.PageURL(
-            self.request.path, self.request.GET)
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
+            return self.request.current_route_path(_query=query_params)
+
         page = safe_int(self.request.GET.get('page', 1), 1)
 
-        integrations = h.Page(
-            integrations, page=page, items_per_page=10, url=page_url)
+        integrations = Page(
+            integrations, page=page, items_per_page=10, url_maker=url_generator)
 
         c.rev_sort_dir = sort_dir != 'desc' and 'desc' or 'asc'
 
@@ -402,6 +406,7 @@ class RepoIntegrationsView(IntegrationSettingsViewBase):
         c.rhodecode_db_repo = self.repo
         c.repo_name = self.db_repo.repo_name
         c.repository_pull_requests = ScmModel().get_pull_requests(self.repo)
+        c.repository_artifacts = ScmModel().get_artifacts(self.repo)
         c.repository_is_user_following = ScmModel().is_following_repo(
             c.repo_name, self._rhodecode_user.user_id)
         c.has_origin_repo_read_perm = False

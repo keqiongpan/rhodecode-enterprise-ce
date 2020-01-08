@@ -29,11 +29,14 @@ from rhodecode.tests import no_newline_id_generator
 
 
 @pytest.mark.parametrize('url, expected_url', [
-    ('http://rc.rc/test', '<a href="http://rc.rc/test">http://rc.rc/test</a>'),
-    ('http://rc.rc/@foo', '<a href="http://rc.rc/@foo">http://rc.rc/@foo</a>'),
-    ('http://rc.rc/!foo', '<a href="http://rc.rc/!foo">http://rc.rc/!foo</a>'),
-    ('http://rc.rc/&foo', '<a href="http://rc.rc/&foo">http://rc.rc/&foo</a>'),
-    ('http://rc.rc/#foo', '<a href="http://rc.rc/#foo">http://rc.rc/#foo</a>'),
+    ('http://rc.com', '<a href="http://rc.com">http://rc.com</a>'),
+    ('http://rc.com/test', '<a href="http://rc.com/test">http://rc.com/test</a>'),
+    ('http://rc.com/!foo', '<a href="http://rc.com/!foo">http://rc.com/!foo</a>'),
+    ('http://rc.com/&foo', '<a href="http://rc.com/&amp;foo">http://rc.com/&amp;foo</a>'),
+    ('http://rc.com/?foo-1&bar=1', '<a href="http://rc.com/?foo-1&amp;bar=1">http://rc.com/?foo-1&amp;bar=1</a>'),
+    ('http://rc.com?foo-1&bar=1', '<a href="http://rc.com?foo-1&amp;bar=1">http://rc.com?foo-1&amp;bar=1</a>'),
+    ('http://rc.com/#foo', '<a href="http://rc.com/#foo">http://rc.com/#foo</a>'),
+    ('http://rc.com/@foo', '<a href="http://rc.com/@foo">http://rc.com/@foo</a>'),
 ])
 def test_urlify_text(url, expected_url):
     assert helpers.urlify_text(url) == expected_url
@@ -110,6 +113,7 @@ def test_extract_issues(backend, text_string, pattern, expected):
             'pat': pattern,
             'url': 'http://r.io/${repo}/i/${issue_id}',
             'pref': '#',
+            'desc': 'Test Pattern'
         }
     }
 
@@ -129,7 +133,7 @@ def test_extract_issues(backend, text_string, pattern, expected):
 
 @pytest.mark.parametrize('text_string, pattern, link_format, expected_text', [
     ('Fix #42', '(?:#)(?P<issue_id>\d+)', 'html',
-     'Fix <a class="issue-tracker-link" href="http://r.io/{repo}/i/42">#42</a>'),
+     'Fix <a class="tooltip issue-tracker-link" href="http://r.io/{repo}/i/42" title="Test Pattern">#42</a>'),
 
     ('Fix #42', '(?:#)(?P<issue_id>\d+)', 'markdown',
      'Fix [#42](http://r.io/{repo}/i/42)'),
@@ -150,6 +154,7 @@ def test_process_patterns_repo(backend, text_string, pattern, expected_text, lin
                 'pat': pattern,
                 'url': 'http://r.io/${repo}/i/${issue_id}',
                 'pref': '#',
+                'desc': 'Test Pattern'
             }
         }
 
@@ -163,7 +168,7 @@ def test_process_patterns_repo(backend, text_string, pattern, expected_text, lin
 
 @pytest.mark.parametrize('text_string, pattern, expected_text', [
     ('Fix #42', '(?:#)(?P<issue_id>\d+)',
-     'Fix <a class="issue-tracker-link" href="http://r.io/i/42">#42</a>'),
+     'Fix <a class="tooltip issue-tracker-link" href="http://r.io/i/42" title="Test Pattern">#42</a>'),
     ('Fix #42', '(?:#)?<issue_id>\d+)',
      'Fix #42'),  # Broken regex
 ])
@@ -176,6 +181,7 @@ def test_process_patterns_no_repo(text_string, pattern, expected_text):
                 'pat': pattern,
                 'url': 'http://r.io/i/${issue_id}',
                 'pref': '#',
+                'desc': 'Test Pattern'
             }
         }
 
@@ -190,8 +196,8 @@ def test_process_patterns_no_repo(text_string, pattern, expected_text):
 def test_process_patterns_non_existent_repo_name(backend):
     text_string = 'Fix #42'
     pattern = '(?:#)(?P<issue_id>\d+)'
-    expected_text = ('Fix <a class="issue-tracker-link" '
-                     'href="http://r.io/do-not-exist/i/42">#42</a>')
+    expected_text = ('Fix <a class="tooltip issue-tracker-link" '
+                     'href="http://r.io/do-not-exist/i/42" title="Test Pattern">#42</a>')
 
     def get_settings_mock(self, cache=True):
         return {
@@ -200,6 +206,7 @@ def test_process_patterns_non_existent_repo_name(backend):
                 'pat': pattern,
                 'url': 'http://r.io/${repo}/i/${issue_id}',
                 'pref': '#',
+                'desc': 'Test Pattern'
             }
         }
 

@@ -12,113 +12,212 @@
    <div class="box">
         <!-- box / title -->
         <div class="title">
-            %if c.rhodecode_user.username != h.DEFAULT_USER:
-              <div class="block-right">
-                %if not c.repo_group:
-                    ## no repository group context here
-                    %if c.is_super_admin or c.can_create_repo:
-                        <a href="${h.route_path('repo_new')}" class="btn btn-small btn-success btn-primary">${_('Add Repository')}</a>
-                    %endif
 
-                    %if c.is_super_admin or c.can_create_repo_group:
-                        <a href="${h.route_path('repo_group_new')}" class="btn btn-small btn-default">${_(u'Add Repository Group')}</a>
-                    %endif
-                %endif
-              </div>
-            %endif
         </div>
         <!-- end box / title -->
-        <div class="table">
-            <div id="groups_list_wrap">
-                <table id="group_list_table" class="display" style="width: 100%"></table>
-            </div>
-        </div>
-
-        <div class="table">
-            <div id="repos_list_wrap">
-                <table id="repo_list_table" class="display" style="width: 100%"></table>
-            </div>
-        </div>
-
-       ## no repository groups and repos present, show something to the users
-       % if c.repo_groups_data == '[]' and c.repos_data == '[]':
-        <div class="table">
+        <div id="no_grid_data" class="table" style="display: none">
             <h2 class="no-object-border">
                  ${_('No repositories or repositories groups exists here.')}
             </h2>
         </div>
-       % endif
+
+        <div class="table">
+            <div id="groups_list_wrap" style="min-height: 200px;">
+                <table id="group_list_table" class="display" style="width: 100%;"></table>
+            </div>
+        </div>
+
+        <div class="table">
+            <div id="repos_list_wrap" style="min-height: 200px;">
+                <table id="repo_list_table" class="display" style="width: 100%;"></table>
+            </div>
+        </div>
 
     </div>
     <script>
-      $(document).ready(function() {
+    $(document).ready(function () {
 
         // repo group list
-        % if c.repo_groups_data != '[]':
-        $('#group_list_table').DataTable({
-          data: ${c.repo_groups_data|n},
-          dom: 'rtp',
-          pageLength: ${c.visual.dashboard_items},
-          order: [[ 0, "asc" ]],
-          columns: [
-             { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
-             { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
-             { data: {"_": "desc",
-                      "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
-             { data: {"_": "last_change",
-                      "sort": "last_change_raw",
-                      "type": Number}, title: "${_('Last Change')}", className: "td-time" },
-             { data: {"_": "last_changeset",
-                      "sort": "last_changeset_raw",
-                      "type": Number}, title: "", className: "td-hash" },
-             { data: {"_": "owner",
-                      "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
-          ],
-          language: {
-            paginate: DEFAULT_GRID_PAGINATION,
-            emptyTable: _gettext("No repository groups available yet.")
-          },
-          "drawCallback": function( settings, json ) {
-              timeagoActivate();
-              quick_repo_menu();
-          }
-        });
-        % endif
+        var $groupListTable = $('#group_list_table');
 
-        // repo list
-        % if c.repos_data != '[]':
-        $('#repo_list_table').DataTable({
-          data: ${c.repos_data|n},
-          dom: 'rtp',
-          order: [[ 0, "asc" ]],
-          pageLength: ${c.visual.dashboard_items},
-          columns: [
-             { data: {"_": "name",
-                      "sort": "name_raw"}, title: "${_('Name')}", className: "truncate-wrap td-grid-name" },
-             { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
-             { data: {"_": "desc",
-                      "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
-             { data: {"_": "last_change",
-                      "sort": "last_change_raw",
-                      "type": Number}, title: "${_('Last Change')}", className: "td-time" },
-             { data: {"_": "last_changeset",
-                      "sort": "last_changeset_raw",
-                      "type": Number}, title: "${_('Commit')}", className: "td-hash" },
-             { data: {"_": "owner",
-                      "sort": "owner"}, title: "${_('Owner')}", className: "td-user" }
-          ],
-          language: {
-              paginate: DEFAULT_GRID_PAGINATION,
-              emptyTable: _gettext("No repositories available yet.")
-          },
-          "drawCallback": function( settings, json ) {
-              timeagoActivate();
-              quick_repo_menu();
-          }
-        });
-        % endif
+        $groupListTable.DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                "url": "${h.route_path('main_page_repo_groups_data')}",
+                "data": function (d) {
+                    % if c.repo_group:
+                        d.repo_group_id = ${c.repo_group.group_id}
+                    % endif
+                }
+            },
+            dom: 'rtp',
+            pageLength: ${c.visual.dashboard_items},
+            order: [[0, "asc"]],
+            columns: [
+                {
+                    data: {
+                        "_": "name",
+                        "sort": "name"
+                    }, title: "${_('Name')}", className: "truncate-wrap td-grid-name"
+                },
+                {
+                    data: 'menu', "bSortable": false, className: "quick_repo_menu"
+                },
+                {
+                    data: {
+                        "_": "desc",
+                        "sort": "desc"
+                    }, title: "${_('Description')}", className: "td-description"
+                },
+                {
+                    data: {
+                        "_": "last_change",
+                        "sort": "last_change",
+                        "type": Number
+                    }, title: "${_('Last Change')}", className: "td-time"
+                },
+                {
+                    data: {
+                        "_": "last_changeset",
+                        "sort": "last_changeset_raw",
+                        "type": Number
+                    }, title: "", className: "td-hash", orderable: false
+                },
+                {
+                    data: {
+                        "_": "owner",
+                        "sort": "owner"
+                    }, title: "${_('Owner')}", className: "td-user"
+                }
+            ],
+            language: {
+                paginate: DEFAULT_GRID_PAGINATION,
+                sProcessing: _gettext('loading...'),
+                emptyTable: _gettext("No repository groups present.")
+            },
+            "drawCallback": function (settings, json) {
+                // hide grid if it's empty
+                if (settings.fnRecordsDisplay() === 0) {
+                    $('#groups_list_wrap').hide();
+                    // both hidden, show no-data
+                    if ($('#repos_list_wrap').is(':hidden')) {
+                        $('#no_grid_data').show();
+                    }
+                } else {
+                    $('#groups_list_wrap').show();
+                }
 
-      });
+                timeagoActivate();
+                tooltipActivate();
+                quick_repo_menu();
+                // hide pagination for single page
+                if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+                    $(settings.nTableWrapper).find('.dataTables_paginate').hide();
+                }
+
+            },
+        });
+
+        $groupListTable.on('xhr.dt', function (e, settings, json, xhr) {
+            $groupListTable.css('opacity', 1);
+        });
+
+        $groupListTable.on('preXhr.dt', function (e, settings, data) {
+            $groupListTable.css('opacity', 0.3);
+        });
+
+
+        ##  // repo list
+        var $repoListTable = $('#repo_list_table');
+
+        $repoListTable.DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                "url": "${h.route_path('main_page_repos_data')}",
+                "data": function (d) {
+                    % if c.repo_group:
+                        d.repo_group_id = ${c.repo_group.group_id}
+                    % endif
+                }
+            },
+            order: [[0, "asc"]],
+            dom: 'rtp',
+            pageLength: ${c.visual.dashboard_items},
+            columns: [
+                {
+                    data: {
+                        "_": "name",
+                        "sort": "name"
+                    }, title: "${_('Name')}", className: "truncate-wrap td-grid-name"
+                },
+                {
+                    data: 'menu', "bSortable": false, className: "quick_repo_menu"
+                },
+                {
+                    data: {
+                        "_": "desc",
+                        "sort": "desc"
+                    }, title: "${_('Description')}", className: "td-description"
+                },
+                {
+                    data: {
+                        "_": "last_change",
+                        "sort": "last_change",
+                        "type": Number
+                    }, title: "${_('Last Change')}", className: "td-time"
+                },
+                {
+                    data: {
+                        "_": "last_changeset",
+                        "sort": "last_changeset_raw",
+                        "type": Number
+                    }, title: "${_('Commit')}", className: "td-hash", orderable: false
+                },
+                 {
+                    data: {
+                        "_": "owner",
+                        "sort": "owner"
+                    }, title: "${_('Owner')}", className: "td-user"
+                }
+            ],
+            language: {
+                paginate: DEFAULT_GRID_PAGINATION,
+                sProcessing: _gettext('loading...'),
+                emptyTable: _gettext("No repositories present.")
+            },
+            "drawCallback": function (settings, json) {
+                // hide grid if it's empty
+                if (settings.fnRecordsDisplay() == 0) {
+                    $('#repos_list_wrap').hide()
+                    // both hidden, show no-data
+                    if ($('#groups_list_wrap').is(':hidden')) {
+                        $('#no_grid_data').show()
+                    }
+                } else {
+                    $('#repos_list_wrap').show()
+                }
+
+                timeagoActivate();
+                tooltipActivate();
+                quick_repo_menu();
+                // hide pagination for single page
+                if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+                    $(settings.nTableWrapper).find('.dataTables_paginate').hide();
+                }
+
+            },
+        });
+
+        $repoListTable.on('xhr.dt', function (e, settings, json, xhr) {
+            $repoListTable.css('opacity', 1);
+        });
+
+        $repoListTable.on('preXhr.dt', function (e, settings, data) {
+            $repoListTable.css('opacity', 0.3);
+        });
+
+    });
     </script>
 </%def>

@@ -29,12 +29,12 @@ from rhodecode.lib.jsonalchemy import (
     MutationDict, MutationList, MutationObj, JsonType)
 
 
-@pytest.fixture
+@pytest.fixture()
 def engine():
     return create_engine('sqlite://')
 
 
-@pytest.fixture
+@pytest.fixture()
 def session(engine):
     return sessionmaker(bind=engine)()
 

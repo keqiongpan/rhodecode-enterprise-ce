@@ -6,7 +6,7 @@ search methods
 search 
 ------
 
-.. py:function:: search(apiuser, search_query, search_type, page_limit=<Optional:10>, page=<Optional:1>, search_sort=<Optional:'newfirst'>, repo_name=<Optional:None>, repo_group_name=<Optional:None>)
+.. py:function:: search(apiuser, search_query, search_type, page_limit=<Optional:10>, page=<Optional:1>, search_sort=<Optional:'desc:date'>, repo_name=<Optional:None>, repo_group_name=<Optional:None>)
 
    Fetch Full Text Search results using API.
 
@@ -23,9 +23,15 @@ search
    :type page_limit: Optional(int)
    :param page: Page number. Default first page.
    :type page: Optional(int)
-   :param search_sort: Search sort order. Default newfirst. The following are valid options:
-       * newfirst
-       * oldfirst
+   :param search_sort: Search sort order.Must start with asc: or desc: Default desc:date.
+       The following are valid options:
+       * asc|desc:message.raw
+       * asc|desc:date
+       * asc|desc:author.email.raw
+       * asc|desc:message.raw
+       * newfirst (old legacy equal to desc:date)
+       * oldfirst (old legacy equal to asc:date)
+
    :type search_sort: Optional(str)
    :param repo_name: Filter by one repo. Default is all.
    :type repo_name: Optional(str)

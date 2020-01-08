@@ -20,8 +20,8 @@
 
 import logging
 
-from webhelpers.html.builder import literal
-from webhelpers.html.tags import link_to
+from webhelpers2.html.builder import literal
+from webhelpers2.html.tags import link_to
 
 from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.lib.vcs.backends.base import BaseCommit

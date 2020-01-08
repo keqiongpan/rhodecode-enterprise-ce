@@ -450,11 +450,31 @@ def test_clone_url_generator(tmpl, repo_name, overrides, prefix, expected):
     clone_url = get_clone_url(
         request=RequestStub(),
         uri_tmpl=tmpl,
-        repo_name=repo_name, repo_id=23, **overrides)
+        repo_name=repo_name, repo_id=23, repo_type='hg', **overrides)
     assert clone_url == expected
 
 
-def _quick_url(text, tmpl="""<a class="revision-link" href="%s">%s</a>""", url_=None):
+def test_clone_url_svn_ssh_generator():
+    from rhodecode.lib.utils2 import get_clone_url
+
+    class RequestStub(object):
+        def request_url(self, name):
+            return 'http://vps1:8000'
+
+        def route_url(self, name):
+            return self.request_url(name)
+
+    clone_url = get_clone_url(
+        request=RequestStub(),
+        uri_tmpl=Repository.DEFAULT_CLONE_URI_SSH,
+        repo_name='svn-test', repo_id=23, repo_type='svn', **{'sys_user': 'rcdev'})
+    assert clone_url == 'svn+ssh://rcdev@vps1/svn-test'
+
+
+idx = 0
+
+
+def _quick_url(text, tmpl="""<a class="tooltip-hovercard revision-link" href="%s" data-hovercard-alt="Commit: %s" data-hovercard-url="/some-url">%s</a>""", url_=None, commits=''):
     """
     Changes `some text url[foo]` => `some text <a href="/">foo</a>
 
@@ -462,47 +482,86 @@ def _quick_url(text, tmpl="""<a class="revision-link" href="%s">%s</a>""", url_=
     """
     import re
     # quickly change expected url[] into a link
-    URL_PAT = re.compile(r'(?:url\[)(.+?)(?:\])')
+    url_pat = re.compile(r'(?:url\[)(.+?)(?:\])')
+    commits = commits or []
+
+    global idx
+    idx = 0
 
     def url_func(match_obj):
+        global idx
         _url = match_obj.groups()[0]
-        return tmpl % (url_ or '/some-url', _url)
-    return URL_PAT.sub(url_func, text)
+        if commits:
+            commit = commits[idx]
+            idx += 1
+            return tmpl % (url_ or '/some-url', _url, commit)
+        else:
+            return tmpl % (url_ or '/some-url', _url)
+
+    return url_pat.sub(url_func, text)
 
 
-@pytest.mark.parametrize("sample, expected", [
-  ("",
-   ""),
-  ("git-svn-id: https://svn.apache.org/repos/asf/libcloud/trunk@1441655 13f79535-47bb-0310-9956-ffa450edef68",
-   "git-svn-id: https://svn.apache.org/repos/asf/libcloud/trunk@1441655 13f79535-47bb-0310-9956-ffa450edef68"),
-  ("from rev 000000000000",
-   "from rev url[000000000000]"),
-  ("from rev 000000000000123123 also rev 000000000000",
-   "from rev url[000000000000123123] also rev url[000000000000]"),
-  ("this should-000 00",
-   "this should-000 00"),
-  ("longtextffffffffff rev 123123123123",
-   "longtextffffffffff rev url[123123123123]"),
-  ("rev ffffffffffffffffffffffffffffffffffffffffffffffffff",
-   "rev ffffffffffffffffffffffffffffffffffffffffffffffffff"),
-  ("ffffffffffff some text traalaa",
-   "url[ffffffffffff] some text traalaa"),
-   ("""Multi line
-   123123123123
-   some text 123123123123
-   sometimes !
-   """,
-   """Multi line
-   url[123123123123]
-   some text url[123123123123]
-   sometimes !
-   """)
+@pytest.mark.parametrize("sample, expected, commits", [
+    (
+            "",
+            "",
+            [""]
+    ),
+    (
+            "git-svn-id: https://svn.apache.org/repos/asf/libcloud/trunk@1441655 13f79535-47bb-0310-9956-ffa450edef68",
+            "git-svn-id: https://svn.apache.org/repos/asf/libcloud/trunk@1441655 13f79535-47bb-0310-9956-ffa450edef68",
+            [""]
+    ),
+    (
+            "from rev 000000000000",
+            "from rev url[000000000000]",
+            ["000000000000"]
+    ),
+
+    (
+            "from rev 000000000000123123 also rev 000000000000",
+            "from rev url[000000000000123123] also rev url[000000000000]",
+            ["000000000000123123", "000000000000"]
+    ),
+    (
+            "this should-000 00",
+            "this should-000 00",
+            [""]
+    ),
+    (
+            "longtextffffffffff rev 123123123123",
+            "longtextffffffffff rev url[123123123123]",
+            ["123123123123"]
+    ),
+    (
+            "rev ffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "rev ffffffffffffffffffffffffffffffffffffffffffffffffff",
+            ["ffffffffffffffffffffffffffffffffffffffffffffffffff"]
+    ),
+    (
+            "ffffffffffff some text traalaa",
+            "url[ffffffffffff] some text traalaa",
+            ["ffffffffffff"]
+    ),
+    (
+            """Multi line
+            123123123123
+            some text 000000000000
+            sometimes !
+            """,
+            """Multi line
+            url[123123123123]
+            some text url[000000000000]
+            sometimes !
+            """,
+            ["123123123123", "000000000000"]
+    )
 ], ids=no_newline_id_generator)
-def test_urlify_commits(sample, expected):
+def test_urlify_commits(sample, expected, commits):
     def fake_url(self, *args, **kwargs):
         return '/some-url'
 
-    expected = _quick_url(expected)
+    expected = _quick_url(expected, commits=commits)
 
     with mock.patch('rhodecode.lib.helpers.route_url', fake_url):
         from rhodecode.lib.helpers import urlify_commits
@@ -564,7 +623,7 @@ def test_invalidation_context(baseapp):
     repo_id = 9999
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
@@ -627,7 +686,7 @@ def test_invalidation_context_exception_in_compute(baseapp):
     repo_id = 888
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
@@ -656,7 +715,7 @@ def test_cache_invalidation_race_condition(execution_number, baseapp):
     repo_id = 777
 
     cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-        repo_id, CacheKey.CACHE_TYPE_README)
+        repo_id, CacheKey.CACHE_TYPE_FEED)
     invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
         repo_id=repo_id)
     region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)

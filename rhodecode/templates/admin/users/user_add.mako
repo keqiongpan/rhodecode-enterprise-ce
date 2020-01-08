@@ -118,14 +118,14 @@
                 <div class="checkboxes">
                     ${h.checkbox('create_repo_group',value=True, checked=c.default_create_repo_group)}
                     <span class="help-block">
-                        ${_('New group will be created at: `/%(path)s`') % {'path': c.personal_repo_group_name}}<br/>
+                        ${_('New group will be created at: `/{path}`').format(path=c.personal_repo_group_name)}<br/>
                         ${_('User will be automatically set as this group owner.')}
                     </span>
                 </div>
              </div>
 
             <div class="buttons">
-              ${h.submit('save',_('Save'),class_="btn")}
+              ${h.submit('save',_('Create User'),class_="btn")}
             </div>
         </div>
     </div>

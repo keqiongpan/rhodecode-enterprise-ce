@@ -59,7 +59,7 @@ class TestAdminRepoVcsSettings(object):
                 rhodecode.CONFIG, {'labs_settings_active': 'true'}):
             response = self.app.get(vcs_settings_url)
 
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         assertr.one_element_exists('#rhodecode_{}'.format(setting_name))
 
     @pytest.mark.parametrize('setting_name, setting_backends', [

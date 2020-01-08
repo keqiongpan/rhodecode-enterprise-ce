@@ -76,28 +76,28 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if filter_type == 'awaiting_review':
             pull_requests = PullRequestModel().get_awaiting_review(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 statuses=statuses, offset=start, length=limit,
                 order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_review(
-                repo_name, source=source, statuses=statuses,
+                repo_name, search_q=search_q, source=source, statuses=statuses,
                 opened_by=opened_by)
         elif filter_type == 'awaiting_my_review':
             pull_requests = PullRequestModel().get_awaiting_my_review(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 user_id=self._rhodecode_user.user_id, statuses=statuses,
                 offset=start, length=limit, order_by=order_by,
                 order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_my_review(
-                repo_name, source=source, user_id=self._rhodecode_user.user_id,
+                repo_name, search_q=search_q, source=source, user_id=self._rhodecode_user.user_id,
                 statuses=statuses, opened_by=opened_by)
         else:
             pull_requests = PullRequestModel().get_all(
-                repo_name, source=source, opened_by=opened_by,
+                repo_name, search_q=search_q, source=source, opened_by=opened_by,
                 statuses=statuses, offset=start, length=limit,
                 order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_all(
-                repo_name, source=source, statuses=statuses,
+                repo_name, search_q=search_q, source=source, statuses=statuses,
                 opened_by=opened_by)
 
         data = []
@@ -108,7 +108,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             data.append({
                 'name': _render('pullrequest_name',
-                                pr.pull_request_id, pr.target_repo.repo_name),
+                                pr.pull_request_id, pr.pull_request_state,
+                                pr.work_in_progress, pr.target_repo.repo_name),
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
@@ -272,15 +273,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
         pull_request_id = pull_request.pull_request_id
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
-            log.debug('show: forbidden because pull request is in state %s',
-                      pull_request.pull_request_state)
-            msg = _(u'Cannot show pull requests in state other than `{}`. '
-                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
-                                                      pull_request.pull_request_state)
-            h.flash(msg, category='error')
-            raise HTTPFound(h.route_path('pullrequest_show_all',
-                                         repo_name=self.db_repo_name))
+        c.state_progressing = pull_request.is_state_changing()
 
         version = self.request.GET.get('version')
         from_version = self.request.GET.get('from_version') or version
@@ -426,6 +419,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c.inline_versions = comments_model.aggregate_comments(
             inline_comments, versions, c.at_version_num, inline=True)
 
+        # TODOs
+        c.unresolved_comments = CommentsModel() \
+            .get_pull_request_unresolved_todos(pull_request)
+        c.resolved_comments = CommentsModel() \
+            .get_pull_request_resolved_todos(pull_request)
+
         # inject latest version
         latest_ver = PullRequest.get_pr_display_object(
             pull_request_latest, pull_request_latest)
@@ -488,7 +487,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             log.debug('Failed to get shadow repo', exc_info=True)
         # try first the existing source_repo, and then shadow
         # repo if we can obtain one
-        commits_source_repo = source_scm or shadow_scm
+        commits_source_repo = source_scm
+        if shadow_scm:
+            commits_source_repo = shadow_scm
 
         c.commits_source_repo = commits_source_repo
         c.ancestor = None  # set it to None, to hide it from PR view
@@ -618,7 +619,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         diffset = cached_diff['diff']
                     else:
                         diffset = self._get_range_diffset(
-                            source_scm, source_repo,
+                            commits_source_repo, source_repo,
                             commit1, commit2, diff_limit, file_limit,
                             c.fulldiff, ign_whitespace_lcl, context_lcl
                         )
@@ -687,7 +688,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         commit_cache = collections.OrderedDict()
         missing_requirements = False
         try:
-            pre_load = ["author", "branch", "date", "message", "parents"]
+            pre_load = ["author", "date", "message", "branch", "parents"]
             show_revs = pull_request_at_ver.revisions
             for rev in show_revs:
                 comm = commits_source_repo.get_commit(
@@ -1045,39 +1046,52 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _ = self.request.translate
 
         self.load_default_context()
+        redirect_url = None
 
         if pull_request.is_closed():
             log.debug('update: forbidden because pull request is closed')
             msg = _(u'Cannot update closed pull requests.')
             h.flash(msg, category='error')
-            return True
+            return {'response': True,
+                    'redirect_url': redirect_url}
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
-            log.debug('update: forbidden because pull request is in state %s',
-                      pull_request.pull_request_state)
-            msg = _(u'Cannot update pull requests in state other than `{}`. '
-                    u'Current state is: `{}`').format(PullRequest.STATE_CREATED,
-                                                      pull_request.pull_request_state)
-            h.flash(msg, category='error')
-            return True
+        is_state_changing = pull_request.is_state_changing()
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
         if allowed_to_update:
             controls = peppercorn.parse(self.request.POST.items())
+            force_refresh = str2bool(self.request.POST.get('force_refresh'))
 
             if 'review_members' in controls:
                 self._update_reviewers(
                     pull_request, controls['review_members'],
                     pull_request.reviewer_data)
             elif str2bool(self.request.POST.get('update_commits', 'false')):
+                if is_state_changing:
+                    log.debug('commits update: forbidden because pull request is in state %s',
+                              pull_request.pull_request_state)
+                    msg = _(u'Cannot update pull requests commits in state other than `{}`. '
+                            u'Current state is: `{}`').format(
+                        PullRequest.STATE_CREATED, pull_request.pull_request_state)
+                    h.flash(msg, category='error')
+                    return {'response': True,
+                            'redirect_url': redirect_url}
+
                 self._update_commits(pull_request)
+                if force_refresh:
+                    redirect_url = h.route_path(
+                        'pullrequest_show', repo_name=self.db_repo_name,
+                        pull_request_id=pull_request.pull_request_id,
+                        _query={"force_refresh": 1})
             elif str2bool(self.request.POST.get('edit_pull_request', 'false')):
                 self._edit_pull_request(pull_request)
             else:
                 raise HTTPBadRequest()
-            return True
+
+            return {'response': True,
+                    'redirect_url': redirect_url}
         raise HTTPForbidden()
 
     def _edit_pull_request(self, pull_request):
@@ -1105,7 +1119,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _ = self.request.translate
 
         with pull_request.set_state(PullRequest.STATE_UPDATING):
-            resp = PullRequestModel().update_commits(pull_request)
+            resp = PullRequestModel().update_commits(
+                pull_request, self._rhodecode_db_user)
 
         if resp.executed:
 
@@ -1164,7 +1179,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
         _ = self.request.translate
 
-        if pull_request.pull_request_state != PullRequest.STATE_CREATED:
+        if pull_request.is_state_changing():
             log.debug('show: forbidden because pull request is in state %s',
                       pull_request.pull_request_state)
             msg = _(u'Cannot merge pull requests in state other than `{}`. '

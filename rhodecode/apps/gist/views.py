@@ -72,7 +72,7 @@ class GistView(BaseAppView):
     @LoginRequired()
     @view_config(
         route_name='gists_show', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/index.mako')
+        renderer='rhodecode:templates/admin/gists/gist_index.mako')
     def gist_show_all(self):
         c = self.load_default_context()
 
@@ -136,7 +136,7 @@ class GistView(BaseAppView):
     @NotAnonymous()
     @view_config(
         route_name='gists_new', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/new.mako')
+        renderer='rhodecode:templates/admin/gists/gist_new.mako')
     def gist_new(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -146,21 +146,26 @@ class GistView(BaseAppView):
     @CSRFRequired()
     @view_config(
         route_name='gists_create', request_method='POST',
-        renderer='rhodecode:templates/admin/gists/new.mako')
+        renderer='rhodecode:templates/admin/gists/gist_new.mako')
     def gist_create(self):
         _ = self.request.translate
         c = self.load_default_context()
 
         data = dict(self.request.POST)
         data['filename'] = data.get('filename') or Gist.DEFAULT_FILENAME
+
         data['nodes'] = [{
             'filename': data['filename'],
             'content': data.get('content'),
             'mimetype': data.get('mimetype')  # None is autodetect
         }]
+        gist_type = {
+            'public': Gist.GIST_PUBLIC,
+            'private': Gist.GIST_PRIVATE
+        }.get(data.get('gist_type')) or Gist.GIST_PRIVATE
 
-        data['gist_type'] = (
-            Gist.GIST_PUBLIC if data.get('public') else Gist.GIST_PRIVATE)
+        data['gist_type'] = gist_type
+
         data['gist_acl_level'] = (
             data.get('gist_acl_level') or Gist.ACL_LEVEL_PRIVATE)
 
@@ -196,7 +201,7 @@ class GistView(BaseAppView):
                 errors['filename'] = errors['nodes.0.filename']
                 del errors['nodes.0.filename']
 
-            data = render('rhodecode:templates/admin/gists/new.mako',
+            data = render('rhodecode:templates/admin/gists/gist_new.mako',
                           self._get_template_context(c), self.request)
             html = formencode.htmlfill.render(
                 data,
@@ -260,10 +265,10 @@ class GistView(BaseAppView):
     @LoginRequired()
     @view_config(
         route_name='gist_show', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/show.mako')
+        renderer='rhodecode:templates/admin/gists/gist_show.mako')
     @view_config(
         route_name='gist_show_rev', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/show.mako')
+        renderer='rhodecode:templates/admin/gists/gist_show.mako')
     @view_config(
         route_name='gist_show_formatted', request_method='GET',
         renderer=None)
@@ -304,7 +309,7 @@ class GistView(BaseAppView):
     @NotAnonymous()
     @view_config(
         route_name='gist_edit', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/edit.mako')
+        renderer='rhodecode:templates/admin/gists/gist_edit.mako')
     def gist_edit(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']
@@ -338,7 +343,7 @@ class GistView(BaseAppView):
     @CSRFRequired()
     @view_config(
         route_name='gist_update', request_method='POST',
-        renderer='rhodecode:templates/admin/gists/edit.mako')
+        renderer='rhodecode:templates/admin/gists/gist_edit.mako')
     def gist_update(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']

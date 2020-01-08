@@ -21,7 +21,7 @@
 import logging
 import urllib
 from pyramid.view import view_config
-from webhelpers.util import update_params
+from webhelpers2.html.tools import update_params
 
 from rhodecode.apps._base import BaseAppView, RepoAppView, RepoGroupAppView
 from rhodecode.lib.auth import (
@@ -44,6 +44,7 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     search_tags = []
     search_params = {}
     errors = []
+
     try:
         search_params = schema.deserialize(
             dict(
@@ -58,11 +59,19 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     except validation_schema.Invalid as e:
         errors = e.children
 
-    def url_generator(**kw):
+    def url_generator(page_num):
         q = urllib.quote(safe_str(search_query))
-        return update_params(
-            "?q=%s&type=%s&max_lines=%s" % (
-                q, safe_str(search_type), search_max_lines), **kw)
+
+        query_params = {
+            'page': page_num,
+            'q': q,
+            'type': safe_str(search_type),
+            'max_lines': search_max_lines,
+            'sort': search_sort
+        }
+
+        return '?' + urllib.urlencode(query_params)
+
 
     c = tmpl_context
     search_query = search_params.get('search_query')
@@ -81,14 +90,14 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
             formatted_results = Page(
                 search_result['results'], page=requested_page,
                 item_count=search_result['count'],
-                items_per_page=page_limit, url=url_generator)
+                items_per_page=page_limit, url_maker=url_generator)
         finally:
             searcher.cleanup()
 
         search_tags = searcher.extract_search_tags(search_query)
 
         if not search_result['error']:
-            execution_time = '%s results (%.3f seconds)' % (
+            execution_time = '%s results (%.4f seconds)' % (
                 search_result['count'],
                 search_result['runtime'])
         elif not errors:
@@ -99,8 +108,6 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.perm_user = c.auth_user
     c.repo_name = repo_name
     c.repo_group_name = repo_group_name
-    c.sort = search_sort
-    c.url_generator = url_generator
     c.errors = errors
     c.formatted_results = formatted_results
     c.runtime = execution_time
@@ -108,6 +115,15 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
     c.search_type = search_type
     c.searcher = searcher
     c.search_tags = search_tags
+
+    direction, sort_field = searcher.get_sort(search_type, search_sort)
+    sort_definition = searcher.sort_def(search_type, direction, sort_field)
+    c.sort = ''
+    c.sort_tag = None
+    c.sort_tag_dir = direction
+    if sort_definition:
+        c.sort = '{}:{}'.format(direction, sort_field)
+        c.sort_tag = sort_field
 
 
 class SearchView(BaseAppView):

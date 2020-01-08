@@ -5,7 +5,7 @@
     %for cnt,cs in enumerate(c.pagination):
         <tr id="chg_${cnt+1}" class="${('tablerow%s' % (cnt%2))}">
             <td class="td-user">
-                ${base.gravatar_with_user(cs.author, 16)}
+                ${base.gravatar_with_user(cs.author, 16, tooltip=True)}
             </td>
             <td class="td-time">
                 <div class="date">

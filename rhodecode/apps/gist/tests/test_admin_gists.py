@@ -83,7 +83,7 @@ class GistUtility(object):
         Session().commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_gist(request):
     gist_utility = GistUtility()
     request.addfinalizer(gist_utility.cleanup)
@@ -159,7 +159,7 @@ class TestGistsController(TestController):
             params={'lifetime': -1,
                     'content': 'gist test',
                     'filename': 'foo',
-                    'public': 'public',
+                    'gist_type': 'public',
                     'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
                     'csrf_token': self.csrf_token},
             status=302)
@@ -174,7 +174,7 @@ class TestGistsController(TestController):
             params={'lifetime': -1,
                     'content': 'gist test',
                     'filename': '/home/foo',
-                    'public': 'public',
+                    'gist_type': 'public',
                     'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
                     'csrf_token': self.csrf_token},
             status=200)
@@ -197,7 +197,7 @@ class TestGistsController(TestController):
             params={'lifetime': -1,
                     'content': 'private gist test',
                     'filename': 'private-foo',
-                    'private': 'private',
+                    'gist_type': 'private',
                     'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
                     'csrf_token': self.csrf_token},
             status=302)
@@ -216,7 +216,7 @@ class TestGistsController(TestController):
             params={'lifetime': -1,
                     'content': 'private gist test',
                     'filename': 'private-foo',
-                    'private': 'private',
+                    'gist_type': 'private',
                     'gist_acl_level': Gist.ACL_LEVEL_PRIVATE,
                     'csrf_token': self.csrf_token},
             status=302)
@@ -236,7 +236,7 @@ class TestGistsController(TestController):
                     'content': 'gist test',
                     'filename': 'foo-desc',
                     'description': 'gist-desc',
-                    'public': 'public',
+                    'gist_type': 'public',
                     'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
                     'csrf_token': self.csrf_token},
              status=302)
@@ -252,7 +252,7 @@ class TestGistsController(TestController):
             'content': 'gist test',
             'filename': 'foo-desc',
             'description': 'gist-desc',
-            'public': 'public',
+            'gist_type': 'public',
             'gist_acl_level': Gist.ACL_LEVEL_PUBLIC,
             'csrf_token': self.csrf_token
         }

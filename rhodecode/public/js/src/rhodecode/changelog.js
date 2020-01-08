@@ -145,7 +145,7 @@ var CommitsController = function () {
     this.loadNext = function (node, page, branch, commit_id, f_path) {
         var loadUrl = this.getChunkUrl(page, 'next', branch, commit_id, f_path);
         var postData = {'graph': JSON.stringify(this.getCurrentGraphData())};
-
+        $(node).html('loading...').addClass('disabled').css({'cursor':'default'});
         $.post(loadUrl, postData, function (data) {
             $(node).closest('tbody').append(data);
             $(node).closest('td').remove();
@@ -156,7 +156,7 @@ var CommitsController = function () {
     this.loadPrev = function (node, page, branch, commit_id, f_path) {
         var loadUrl = this.getChunkUrl(page, 'prev', branch, commit_id, f_path);
         var postData = {'graph': JSON.stringify(this.getCurrentGraphData())};
-
+        $(node).html('loading...').addClass('disabled').css({'cursor':'default'});
         $.post(loadUrl, postData, function (data) {
             $(node).closest('tbody').prepend(data);
             $(node).closest('td').remove();

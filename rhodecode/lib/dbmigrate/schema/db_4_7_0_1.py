@@ -2077,7 +2077,7 @@ class RepoGroup(Base, BaseModel):
 
     @classmethod
     def _generate_choice(cls, repo_group):
-        from webhelpers.html import literal as _literal
+        from webhelpers2.html import literal as _literal
         _name = lambda k: _literal(cls.CHOICES_SEPARATOR.join(k))
         return repo_group.group_id, _name(repo_group.full_path_splitted)
 
@@ -3344,7 +3344,7 @@ class PullRequest(Base, _PullRequestBase):
         vcs_obj = self.target_repo.scm_instance()
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
             workspace_id)
-        return vcs_obj._get_shadow_instance(shadow_repository_path)
+        return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):

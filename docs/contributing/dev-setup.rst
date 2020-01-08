@@ -19,7 +19,7 @@ Setup Nix Package Manager
 
 To install the Nix Package Manager, please run::
 
-   $ curl https://nixos.org/nix/install | sh
+   $ curl https://nixos.org/releases/nix/nix-2.0.4/install | sh
 
 or go to https://nixos.org/nix/ and follow the installation instructions.
 Once this is correctly set up on your system, you should be able to use the

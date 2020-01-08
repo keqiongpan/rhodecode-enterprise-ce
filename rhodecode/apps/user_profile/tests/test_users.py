@@ -46,14 +46,14 @@ class TestUsersController(TestController):
         response = self.app.get(route_path('user_profile', username=username))
         response.mustcontain('testme')
         response.mustcontain('testme@rhodecode.org')
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.no_element_exists(edit_link_css)
 
         # edit should be available to superadmin users
         self.logout_user()
         self.log_user(TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS)
         response = self.app.get(route_path('user_profile', username=username))
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(edit_link_css, 'Edit')
 
     def test_user_profile_not_available(self, user_util):

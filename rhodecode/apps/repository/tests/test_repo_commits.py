@@ -20,6 +20,7 @@
 
 import pytest
 
+from rhodecode.apps.repository.tests.test_repo_compare import ComparePage
 from rhodecode.lib.helpers import _shorten_commit_id
 
 
@@ -79,13 +80,22 @@ class TestRepoCommitView(object):
             'git': '03fa803d7e9fb14daa9a3089e0d1494eda75d986',
             'svn': '337',
         }
+        diff_stat = {
+            'hg': (21, 943, 288),
+            'git': (20, 941, 286),
+            'svn': (21, 943, 288),
+        }
+
         commit_id = commit_id[backend.alias]
         response = self.app.get(route_path(
             'repo_commit',
             repo_name=backend.repo_name, commit_id=commit_id))
 
         response.mustcontain(_shorten_commit_id(commit_id))
-        response.mustcontain('21 files changed: 943 inserted, 288 deleted')
+
+        compare_page = ComparePage(response)
+        file_changes = diff_stat[backend.alias]
+        compare_page.contains_change_summary(*file_changes)
 
         # files op files
         response.mustcontain('File not present at commit: %s' %
@@ -121,20 +131,24 @@ class TestRepoCommitView(object):
         response.mustcontain(_shorten_commit_id(commit_ids[0]))
         response.mustcontain(_shorten_commit_id(commit_ids[1]))
 
+        compare_page = ComparePage(response)
+
         # svn is special
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
-            response.mustcontain('1 file changed: 5 inserted, 1 deleted')
-            response.mustcontain('12 files changed: 236 inserted, 22 deleted')
-            response.mustcontain('21 files changed: 943 inserted, 288 deleted')
+            for file_changes in [(1, 5, 1), (12, 236, 22), (21, 943, 288)]:
+                compare_page.contains_change_summary(*file_changes)
+        elif backend.alias == 'git':
+            response.mustcontain('new file 100644')
+            for file_changes in [(12, 222, 20), (20, 941, 286)]:
+                compare_page.contains_change_summary(*file_changes)
         else:
             response.mustcontain('new file 100644')
-            response.mustcontain('12 files changed: 222 inserted, 20 deleted')
-            response.mustcontain('21 files changed: 943 inserted, 288 deleted')
+            for file_changes in [(12, 222, 20), (21, 943, 288)]:
+                compare_page.contains_change_summary(*file_changes)
 
         # files op files
-        response.mustcontain('File not present at commit: %s' %
-                             _shorten_commit_id(commit_ids[1]))
+        response.mustcontain('File not present at commit: %s' % _shorten_commit_id(commit_ids[1]))
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
 
@@ -166,13 +180,21 @@ class TestRepoCommitView(object):
         response.mustcontain('File not present at commit: %s' %
                              _shorten_commit_id(commit_ids[1]))
 
+        compare_page = ComparePage(response)
+
         # svn is special
         if backend.alias == 'svn':
             response.mustcontain('new file 10644')
-            response.mustcontain('32 files changed: 1179 inserted, 310 deleted')
+            file_changes = (32, 1179, 310)
+            compare_page.contains_change_summary(*file_changes)
+        elif backend.alias == 'git':
+            response.mustcontain('new file 100644')
+            file_changes = (31, 1163, 306)
+            compare_page.contains_change_summary(*file_changes)
         else:
             response.mustcontain('new file 100644')
-            response.mustcontain('32 files changed: 1165 inserted, 308 deleted')
+            file_changes = (32, 1165, 308)
+            compare_page.contains_change_summary(*file_changes)
 
         response.mustcontain('Added docstrings to vcs.cli')  # commit msg
         response.mustcontain('Changed theme to ADC theme')  # commit msg
@@ -246,7 +268,7 @@ new file mode 120000
 """,
         'git': r"""diff --git a/README b/README
 new file mode 120000
-index 0000000000000000000000000000000000000000..92cacd285355271487b7e379dba6ca60f9a554a4
+index 0000000..92cacd2
 --- /dev/null
 +++ b/README
 @@ -0,0 +1 @@
@@ -300,6 +322,6 @@ Added a symlink
 
         # right pane diff menus
         if right_menu:
-            for elem in ['Hide whitespace changes', 'Toggle Wide Mode diff',
+            for elem in ['Hide whitespace changes', 'Toggle wide diff',
                          'Show full context diff']:
                 response.mustcontain(elem)

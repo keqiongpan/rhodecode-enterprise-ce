@@ -4,7 +4,6 @@
     <%
     from rhodecode.lib.codeblocks import render_tokenstream
     # avoid module lookup for performance
-    html_escape = h.html_escape
     tooltip = h.tooltip
     %>
     <tr class="cb-line cb-line-fresh ${'cb-annotate' if show_annotation else ''}"
@@ -15,11 +14,9 @@
 
     % if annotation:
         % if show_annotation:
-            <td class="cb-annotate-info tooltip"
-                title="Author: ${tooltip(annotation.author) | entity}<br>Date: ${annotation.date}<br>Message: ${annotation.message | entity}"
-            >
-              ${h.gravatar_with_user(request, annotation.author, 16) | n}
-              <div class="cb-annotate-message truncate-wrap">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
+            <td class="cb-annotate-info">
+              ${h.gravatar_with_user(request, annotation.author, 16, tooltip=True) | n}
+              <div class="tooltip cb-annotate-message truncate-wrap" title="SHA: ${h.show_id(annotation)}<br/>Date: ${annotation.date}<br/>${annotation.message | entity}">${h.chop_at_smart(annotation.message, '\n', suffix_if_chopped='...')}</div>
             </td>
             <td class="cb-annotate-message-spacer">
                 <a class="tooltip" href="#show-previous-annotation" onclick="return annotationController.previousAnnotation('${annotation.raw_id}', '${c.f_path}', ${line_num})" title="${tooltip(_('view annotation from before this change'))}">

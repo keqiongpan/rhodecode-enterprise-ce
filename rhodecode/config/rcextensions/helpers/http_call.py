@@ -41,7 +41,7 @@ def run(url, json_data=None, params=None, method='post'):
     if json_data:
         resp = method_caller(url, json=json_data, timeout=timeout)
     elif params:
-        resp = method_caller(url, params=json_data, timeout=timeout)
+        resp = method_caller(url, params=params, timeout=timeout)
     else:
         raise AttributeError('Provide json_data= or params= in function call')
     resp.raise_for_status()  # raise exception on a failed request

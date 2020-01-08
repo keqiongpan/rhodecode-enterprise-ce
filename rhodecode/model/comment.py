@@ -170,11 +170,45 @@ class CommentsModel(BaseModel):
 
         return todos
 
+    def get_pull_request_resolved_todos(self, pull_request, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .filter(ChangesetComment.resolved_by != None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
     def get_commit_unresolved_todos(self, commit_id, show_outdated=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.revision == commit_id) \
             .filter(ChangesetComment.resolved_by == None) \
+            .filter(ChangesetComment.comment_type
+                    == ChangesetComment.COMMENT_TYPE_TODO)
+
+        if not show_outdated:
+            todos = todos.filter(
+                coalesce(ChangesetComment.display_state, '') !=
+                ChangesetComment.COMMENT_OUTDATED)
+
+        todos = todos.all()
+
+        return todos
+
+    def get_commit_resolved_todos(self, commit_id, show_outdated=True):
+
+        todos = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.revision == commit_id) \
+            .filter(ChangesetComment.resolved_by != None) \
             .filter(ChangesetComment.comment_type
                     == ChangesetComment.COMMENT_TYPE_TODO)
 
@@ -198,7 +232,7 @@ class CommentsModel(BaseModel):
                f_path=None, line_no=None, status_change=None,
                status_change_type=None, comment_type=None,
                resolves_comment_id=None, closing_pr=False, send_email=True,
-               renderer=None, auth_user=None):
+               renderer=None, auth_user=None, extra_recipients=None):
         """
         Creates new comment for commit or pull request.
         IF status_change is not none this comment is associated with a
@@ -213,10 +247,13 @@ class CommentsModel(BaseModel):
         :param line_no:
         :param status_change: Label for status change
         :param comment_type: Type of comment
+        :param resolves_comment_id: id of comment which this one will resolve
         :param status_change_type: type of status change
         :param closing_pr:
         :param send_email:
         :param renderer: pick renderer for this comment
+        :param auth_user: current authenticated user calling this method
+        :param extra_recipients: list of extra users to be added to recipients
         """
 
         if not text:
@@ -302,7 +339,8 @@ class CommentsModel(BaseModel):
             'comment_body': text,
             'comment_file': f_path,
             'comment_line': line_no,
-            'comment_type': comment_type or 'note'
+            'comment_type': comment_type or 'note',
+            'comment_id': comment.comment_id
         }
 
         if commit_obj:
@@ -316,6 +354,9 @@ class CommentsModel(BaseModel):
             recipients += [cs_author]
 
             commit_comment_url = self.get_url(comment, request=request)
+            commit_comment_reply_url = self.get_url(
+                comment, request=request,
+                anchor='comment-{}/?/ReplyToComment'.format(comment.comment_id))
 
             target_repo_url = h.link_to(
                 repo.repo_name,
@@ -325,8 +366,9 @@ class CommentsModel(BaseModel):
             kwargs.update({
                 'commit': commit_obj,
                 'commit_message': commit_obj.message,
-                'commit_target_repo': target_repo_url,
+                'commit_target_repo_url': target_repo_url,
                 'commit_comment_url': commit_comment_url,
+                'commit_comment_reply_url': commit_comment_reply_url
             })
 
         elif pull_request_obj:
@@ -342,11 +384,15 @@ class CommentsModel(BaseModel):
             pr_target_repo = pull_request_obj.target_repo
             pr_source_repo = pull_request_obj.source_repo
 
-            pr_comment_url = h.route_url(
+            pr_comment_url = self.get_url(comment, request=request)
+            pr_comment_reply_url = self.get_url(
+                comment, request=request,
+                anchor='comment-{}/?/ReplyToComment'.format(comment.comment_id))
+
+            pr_url = h.route_url(
                 'pullrequest_show',
                 repo_name=pr_target_repo.repo_name,
-                pull_request_id=pull_request_obj.pull_request_id,
-                _anchor='comment-%s' % comment.comment_id)
+                pull_request_id=pull_request_obj.pull_request_id, )
 
             # set some variables for email notification
             pr_target_repo_url = h.route_url(
@@ -359,13 +405,18 @@ class CommentsModel(BaseModel):
             kwargs.update({
                 'pull_request': pull_request_obj,
                 'pr_id': pull_request_obj.pull_request_id,
-                'pr_target_repo': pr_target_repo,
-                'pr_target_repo_url': pr_target_repo_url,
-                'pr_source_repo': pr_source_repo,
-                'pr_source_repo_url': pr_source_repo_url,
+                'pull_request_url': pr_url,
+                'pull_request_target_repo': pr_target_repo,
+                'pull_request_target_repo_url': pr_target_repo_url,
+                'pull_request_source_repo': pr_source_repo,
+                'pull_request_source_repo_url': pr_source_repo_url,
                 'pr_comment_url': pr_comment_url,
+                'pr_comment_reply_url': pr_comment_reply_url,
                 'pr_closing': closing_pr,
             })
+
+        recipients += [self._get_user(u) for u in (extra_recipients or [])]
+
         if send_email:
             # pre-generate the subject for notification itself
             (subject,
@@ -459,24 +510,27 @@ class CommentsModel(BaseModel):
         q = q.order_by(ChangesetComment.created_on)
         return q.all()
 
-    def get_url(self, comment, request=None, permalink=False):
+    def get_url(self, comment, request=None, permalink=False, anchor=None):
         if not request:
             request = get_current_request()
 
         comment = self.__get_commit_comment(comment)
+        if anchor is None:
+            anchor = 'comment-{}'.format(comment.comment_id)
+
         if comment.pull_request:
             pull_request = comment.pull_request
             if permalink:
                 return request.route_url(
                     'pull_requests_global',
                     pull_request_id=pull_request.pull_request_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
             else:
                 return request.route_url(
                     'pullrequest_show',
                     repo_name=safe_str(pull_request.target_repo.repo_name),
                     pull_request_id=pull_request.pull_request_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
         else:
             repo = comment.repo
@@ -486,13 +540,13 @@ class CommentsModel(BaseModel):
                 return request.route_url(
                     'repo_commit', repo_name=safe_str(repo.repo_id),
                     commit_id=commit_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
             else:
                 return request.route_url(
                     'repo_commit', repo_name=safe_str(repo.repo_name),
                     commit_id=commit_id,
-                    _anchor='comment-%s' % comment.comment_id)
+                    _anchor=anchor)
 
     def get_comments(self, repo_id, revision=None, pull_request=None):
         """

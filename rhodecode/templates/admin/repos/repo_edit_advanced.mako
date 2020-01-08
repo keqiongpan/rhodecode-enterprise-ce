@@ -3,11 +3,12 @@
 <%
  elems = [
     (_('Repository ID'), c.rhodecode_db_repo.repo_id, '', ''),
-    (_('Owner'), lambda:base.gravatar_with_user(c.rhodecode_db_repo.user.email), '', ''),
+    (_('Owner'), lambda:base.gravatar_with_user(c.rhodecode_db_repo.user.email, tooltip=True), '', ''),
     (_('Created on'), h.format_date(c.rhodecode_db_repo.created_on), '', ''),
     (_('Updated on'), h.format_date(c.rhodecode_db_repo.updated_on), '', ''),
     (_('Cached Commit id'), lambda: h.link_to(c.rhodecode_db_repo.changeset_cache.get('short_id'), h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.changeset_cache.get('raw_id'))), '', ''),
     (_('Cached Commit date'), c.rhodecode_db_repo.changeset_cache.get('date'), '', ''),
+    (_('Cached Commit data'), lambda: h.link_to('refresh now', h.current_route_path(request, update_commit_cache=1)), '', ''),
     (_('Attached scoped tokens'), len(c.rhodecode_db_repo.scoped_tokens), '', [x.user for x in c.rhodecode_db_repo.scoped_tokens]),
     (_('Pull requests source'), len(c.rhodecode_db_repo.pull_requests_source), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.source_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_source]),
     (_('Pull requests target'), len(c.rhodecode_db_repo.pull_requests_target), '', ['pr_id:{}, repo:{}'.format(x.pull_request_id,x.target_repo.repo_name) for x in c.rhodecode_db_repo.pull_requests_target]),
@@ -142,7 +143,7 @@
             % endif
         </table>
 
-        <a href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
+        <a class="btn btn-primary" href="${h.route_path('edit_repo_advanced_hooks', repo_name=c.repo_name)}"
            onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
             ${_('Update Hooks')}
         </a>
@@ -159,9 +160,8 @@
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
         <div class="field">
-            <button class="btn btn-small btn-danger" type="submit"
+            <button class="btn btn-small btn-warning" type="submit"
                     onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
-                <i class="icon-remove"></i>
                 ${_('Archive this repository')}
             </button>
         </div>
@@ -217,7 +217,6 @@
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
                     onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
-                <i class="icon-remove"></i>
                 ${_('Delete this repository')}
             </button>
         </div>

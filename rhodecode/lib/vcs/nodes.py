@@ -27,6 +27,7 @@ import stat
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
 
+import rhodecode
 from rhodecode.config.conf import LANGUAGES_EXTENSIONS_MAP
 from rhodecode.lib.utils import safe_unicode, safe_str
 from rhodecode.lib.utils2 import md5
@@ -369,6 +370,15 @@ class FileNode(Node):
             content = self._content
         return content
 
+    def stream_bytes(self):
+        """
+        Returns an iterator that will stream the content of the file directly from
+        vcsserver without loading it to memory.
+        """
+        if self.commit:
+            return self.commit.get_file_content_streamed(self.path)
+        raise NodeError("Cannot retrieve stream_bytes without related commit attribute")
+
     @LazyProperty
     def md5(self):
         """
@@ -432,7 +442,7 @@ class FileNode(Node):
     @LazyProperty
     def last_commit(self):
         if self.commit:
-            pre_load = ["author", "date", "message"]
+            pre_load = ["author", "date", "message", "parents"]
             return self.commit.get_path_commit(self.path, pre_load=pre_load)
         raise NodeError(
             "Cannot retrieve last commit of the file without "
@@ -548,7 +558,7 @@ class FileNode(Node):
         """
         if self.commit is None:
             raise NodeError('Unable to get commit for this FileNode')
-        pre_load = ["author", "date", "message"]
+        pre_load = ["author", "date", "message", "parents"]
         return self.commit.get_file_annotate(self.path, pre_load=pre_load)
 
     @LazyProperty
@@ -569,8 +579,11 @@ class FileNode(Node):
         """
         Returns True if file has binary content.
         """
-        _bin = self.raw_bytes and '\0' in self.raw_bytes
-        return _bin
+        if self.commit:
+            return self.commit.is_node_binary(self.path)
+        else:
+            raw_bytes = self._content
+            return raw_bytes and '\0' in raw_bytes
 
     @LazyProperty
     def extension(self):
@@ -594,27 +607,32 @@ class FileNode(Node):
         if self.commit:
             return self.commit.get_largefile_node(self.path)
 
+    def count_lines(self, content, count_empty=False):
+
+        if count_empty:
+            all_lines = 0
+            empty_lines = 0
+            for line in content.splitlines(True):
+                if line == '\n':
+                    empty_lines += 1
+                all_lines += 1
+
+            return all_lines, all_lines - empty_lines
+        else:
+            # fast method
+            empty_lines = all_lines = content.count('\n')
+            if all_lines == 0 and content:
+                # one-line without a newline
+                empty_lines = all_lines = 1
+
+        return all_lines, empty_lines
+
     def lines(self, count_empty=False):
         all_lines, empty_lines = 0, 0
 
         if not self.is_binary:
             content = self.content
-            if count_empty:
-                all_lines = 0
-                empty_lines = 0
-                for line in content.splitlines(True):
-                    if line == '\n':
-                        empty_lines += 1
-                    all_lines += 1
-
-                return all_lines, all_lines - empty_lines
-            else:
-                # fast method
-                empty_lines = all_lines = content.count('\n')
-                if all_lines == 0 and content:
-                    # one-line without a newline
-                    empty_lines = all_lines = 1
-
+            all_lines, empty_lines = self.count_lines(content, count_empty=count_empty)
         return all_lines, empty_lines
 
     def __repr__(self):
@@ -654,7 +672,7 @@ class DirNode(Node):
     """
     DirNode stores list of files and directories within this node.
     Nodes may be used standalone but within repository context they
-    lazily fetch data within same repositorty's commit.
+    lazily fetch data within same repository's commit.
     """
 
     def __init__(self, path, nodes=(), commit=None):
@@ -730,8 +748,7 @@ class DirNode(Node):
                 return self._nodes_dict[path]
             elif len(paths) > 1:
                 if self.commit is None:
-                    raise NodeError(
-                        "Cannot access deeper nodes without commit")
+                    raise NodeError("Cannot access deeper nodes without commit")
                 else:
                     path1, path2 = paths[0], '/'.join(paths[1:])
                     return self.get_node(path1).get_node(path2)
@@ -756,7 +773,7 @@ class DirNode(Node):
     @LazyProperty
     def last_commit(self):
         if self.commit:
-            pre_load = ["author", "date", "message"]
+            pre_load = ["author", "date", "message", "parents"]
             return self.commit.get_path_commit(self.path, pre_load=pre_load)
         raise NodeError(
             "Cannot retrieve last commit of the file without "
@@ -848,3 +865,11 @@ class LargeFileNode(FileNode):
         Overwrites name to be the org lf path
         """
         return self.org_path
+
+    def stream_bytes(self):
+        with open(self.path, 'rb') as stream:
+            while True:
+                data = stream.read(16 * 1024)
+                if not data:
+                    break
+                yield data

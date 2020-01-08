@@ -58,6 +58,11 @@ class AuthenticationPluginRegistry(object):
     def get_plugin(self, plugin_id):
         return self._plugins.get(plugin_id, None)
 
+    def get_plugin_by_uid(self, plugin_uid):
+        for plugin in self._plugins.values():
+            if plugin.uid == plugin_uid:
+                return plugin
+
     def get_plugins_for_authentication(self):
         """
         Returns a list of plugins which should be consulted when authenticating

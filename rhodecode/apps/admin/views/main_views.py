@@ -25,7 +25,7 @@ from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
-from rhodecode.lib.auth import (LoginRequired, NotAnonymous)
+from rhodecode.lib.auth import (LoginRequired, NotAnonymous, HasRepoPermissionAny)
 from rhodecode.model.db import PullRequest
 
 
@@ -66,6 +66,13 @@ class AdminMainView(BaseAppView):
         pull_request_id = pull_request.pull_request_id
 
         repo_name = pull_request.target_repo.repo_name
+        # NOTE(marcink):
+        # check permissions so we don't redirect to repo that we don't have access to
+        # exposing it's name
+        target_repo_perm = HasRepoPermissionAny(
+            'repository.read', 'repository.write', 'repository.admin')(repo_name)
+        if not target_repo_perm:
+            raise HTTPNotFound()
 
         raise HTTPFound(
             h.route_path('pullrequest_show', repo_name=repo_name,

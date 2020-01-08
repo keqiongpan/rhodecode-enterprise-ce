@@ -57,7 +57,7 @@ Here's an overview what components should be installed/setup on each server in o
  - `nginx` acting as a load-balancer.
  - `postgresql-server` used for database and sessions.
  - `redis-server` used for storing shared caches.
- - optionally `rabbitmq-server` for `Celery` if used.
+ - optionally `rabbitmq-server` or `redis` for `Celery` if used.
  - optionally if `Celery` is used Enterprise/Community instance + VCSServer.
  - optionally mailserver that can be shared by other instances.
  - optionally channelstream server to handle live communication for all instances.
@@ -263,6 +263,7 @@ persistent sessions across nodes. Please generate other one then in this example
             gzip_types  text/css text/javascript text/xml text/plain text/x-component application/javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
             gzip_vary on;
             gzip_disable     "msie6";
+            expires 60d;
             #alias /home/rcdev/.rccontrol/community-1/static;
             alias /home/rcdev/.rccontrol/enterprise-1/static;
         }
@@ -372,16 +373,16 @@ Using Celery with cluster
 
 
 If `Celery` is used we recommend setting also an instance of Enterprise/Community+VCSserver
-on the node that is running `RabbitMQ`_. Those instances will be used to executed async
-tasks on the `rc-node-1`. This is the most efficient setup. `Celery` usually
-handles tasks such as sending emails, forking repositories, importing
+on the node that is running `RabbitMQ`_ or `Redis`_. Those instances will be used to
+executed async tasks on the `rc-node-1`. This is the most efficient setup.
+`Celery` usually handles tasks such as sending emails, forking repositories, importing
 repositories from external location etc. Using workers on instance that has
 the direct access to disks used by NFS as well as email server gives noticeable
 performance boost. Running local workers to the NFS storage results in faster
 execution of forking large repositories or sending lots of emails.
 
 Those instances need to be configured in the same way as for other nodes.
-The instance in rc-node-1 can be added to the cluser, but we don't recommend doing it.
+The instance in rc-node-1 can be added to the cluster, but we don't recommend doing it.
 For best results let it be isolated to only executing `Celery` tasks in the cluster setup.
 
 

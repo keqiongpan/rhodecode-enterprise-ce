@@ -24,16 +24,15 @@ HG repository module
 import os
 import logging
 import binascii
-import time
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import (
     date_to_timestamp_plus_offset, utcdate_fromtimestamp, makedate)
 from rhodecode.lib.utils import safe_unicode, safe_str
+from rhodecode.lib.utils2 import CachedProperty
 from rhodecode.lib.vcs import connection, exceptions
 from rhodecode.lib.vcs.backends.base import (
     BaseRepository, CollectionGenerator, Config, MergeResponse,
@@ -43,7 +42,7 @@ from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.hg.inmemory import MercurialInMemoryCommit
 from rhodecode.lib.vcs.exceptions import (
     EmptyRepositoryError, RepositoryError, TagAlreadyExistError,
-    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError)
+    TagDoesNotExistError, CommitDoesNotExistError, SubrepoMergeError, UnresolvedFilesInRepo)
 from rhodecode.lib.vcs.compat import configparser
 
 hexlify = binascii.hexlify
@@ -80,21 +79,19 @@ class MercurialRepository(BaseRepository):
         # special requirements
         self.config = config if config else self.get_default_config(
             default=[('extensions', 'largefiles', '1')])
-        self.with_wire = with_wire
+        self.with_wire = with_wire or {"cache": False}  # default should not use cache
 
         self._init_repo(create, src_url, do_workspace_checkout)
 
         # caches
         self._commit_ids = {}
 
-        # dependent that trigger re-computation of  commit_ids
-        self._commit_ids_ver = 0
-
     @LazyProperty
     def _remote(self):
-        return connection.Hg(self.path, self.config, with_wire=self.with_wire)
+        repo_id = self.path
+        return connection.Hg(self.path, repo_id, self.config, with_wire=self.with_wire)
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         """
         Returns list of commit ids, in ascending order.  Being lazy
@@ -108,15 +105,15 @@ class MercurialRepository(BaseRepository):
         self._commit_ids = dict((commit_id, index)
                                 for index, commit_id in enumerate(commit_ids))
 
-    @LazyProperty
+    @CachedProperty
     def branches(self):
         return self._get_branches()
 
-    @LazyProperty
+    @CachedProperty
     def branches_closed(self):
         return self._get_branches(active=False, closed=True)
 
-    @LazyProperty
+    @CachedProperty
     def branches_all(self):
         all_branches = {}
         all_branches.update(self.branches)
@@ -143,7 +140,7 @@ class MercurialRepository(BaseRepository):
 
         return OrderedDict(sorted(_branches, key=get_name, reverse=False))
 
-    @LazyProperty
+    @CachedProperty
     def tags(self):
         """
         Gets tags for this repository
@@ -189,7 +186,7 @@ class MercurialRepository(BaseRepository):
         self._remote.invalidate_vcs_cache()
 
         # Reinitialize tags
-        self.tags = self._get_tags()
+        self._invalidate_prop_cache('tags')
         tag_id = self.tags[name]
 
         return self.get_commit(commit_id=tag_id)
@@ -216,7 +213,7 @@ class MercurialRepository(BaseRepository):
 
         self._remote.tag(name, nullid, message, local, user, date, tz)
         self._remote.invalidate_vcs_cache()
-        self.tags = self._get_tags()
+        self._invalidate_prop_cache('tags')
 
     @LazyProperty
     def bookmarks(self):
@@ -276,8 +273,9 @@ class MercurialRepository(BaseRepository):
         self._remote.strip(commit_id, update=False, backup="none")
 
         self._remote.invalidate_vcs_cache()
-        self._commit_ids_ver = time.time()
-        # we updated _commit_ids_ver so accessing self.commit_ids will re-compute it
+        # clear cache
+        self._invalidate_prop_cache('commit_ids')
+
         return len(self.commit_ids)
 
     def verify(self):
@@ -285,6 +283,12 @@ class MercurialRepository(BaseRepository):
 
         self._remote.invalidate_vcs_cache()
         return verify
+
+    def hg_update_cache(self):
+        update_cache = self._remote.hg_update_cache()
+
+        self._remote.invalidate_vcs_cache()
+        return update_cache
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
         if commit_id1 == commit_id2:
@@ -362,7 +366,6 @@ class MercurialRepository(BaseRepository):
 
         if create:
             os.makedirs(self.path, mode=0o755)
-
         self._remote.localrepository(create)
 
     @LazyProperty
@@ -631,6 +634,7 @@ class MercurialRepository(BaseRepository):
             # In this case we should force a commit message
             return source_ref.commit_id, True
 
+        unresolved = None
         if use_rebase:
             try:
                 bookmark_name = 'rcbook%s%s' % (source_ref.commit_id,
@@ -641,17 +645,23 @@ class MercurialRepository(BaseRepository):
                 self._remote.invalidate_vcs_cache()
                 self._update(bookmark_name, clean=True)
                 return self._identify(), True
-            except RepositoryError:
+            except RepositoryError as e:
                 # The rebase-abort may raise another exception which 'hides'
                 # the original one, therefore we log it here.
                 log.exception('Error while rebasing shadow repo during merge.')
+                if 'unresolved conflicts' in safe_str(e):
+                    unresolved = self._remote.get_unresolved_files()
+                    log.debug('unresolved files: %s', unresolved)
 
                 # Cleanup any rebase leftovers
                 self._remote.invalidate_vcs_cache()
                 self._remote.rebase(abort=True)
                 self._remote.invalidate_vcs_cache()
                 self._remote.update(clean=True)
-                raise
+                if unresolved:
+                    raise UnresolvedFilesInRepo(unresolved)
+                else:
+                    raise
         else:
             try:
                 self._remote.merge(source_ref.commit_id)
@@ -661,10 +671,20 @@ class MercurialRepository(BaseRepository):
                     username=safe_str('%s <%s>' % (user_name, user_email)))
                 self._remote.invalidate_vcs_cache()
                 return self._identify(), True
-            except RepositoryError:
+            except RepositoryError as e:
+                # The merge-abort may raise another exception which 'hides'
+                # the original one, therefore we log it here.
+                log.exception('Error while merging shadow repo during merge.')
+                if 'unresolved merge conflicts' in safe_str(e):
+                    unresolved = self._remote.get_unresolved_files()
+                    log.debug('unresolved files: %s', unresolved)
+
                 # Cleanup any merge leftovers
                 self._remote.update(clean=True)
-                raise
+                if unresolved:
+                    raise UnresolvedFilesInRepo(unresolved)
+                else:
+                    raise
 
     def _local_close(self, target_ref, user_name, user_email,
                      source_ref, close_message=''):
@@ -701,7 +721,7 @@ class MercurialRepository(BaseRepository):
     def _maybe_prepare_merge_workspace(
             self, repo_id, workspace_id, unused_target_ref, unused_source_ref):
         shadow_repository_path = self._get_shadow_repository_path(
-            repo_id, workspace_id)
+            self.path, repo_id, workspace_id)
         if not os.path.exists(shadow_repository_path):
             self._local_clone(shadow_repository_path)
             log.debug(
@@ -741,7 +761,7 @@ class MercurialRepository(BaseRepository):
 
         shadow_repository_path = self._maybe_prepare_merge_workspace(
             repo_id, workspace_id, target_ref, source_ref)
-        shadow_repo = self._get_shadow_instance(shadow_repository_path)
+        shadow_repo = self.get_shadow_instance(shadow_repository_path)
 
         log.debug('Pulling in target reference %s', target_ref)
         self._validate_pull_reference(target_ref)
@@ -807,8 +827,11 @@ class MercurialRepository(BaseRepository):
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.SUBREPO_MERGE_FAILED
                 needs_push = False
-            except RepositoryError:
+            except RepositoryError as e:
                 log.exception('Failure when doing local merge on hg shadow repo')
+                if isinstance(e, UnresolvedFilesInRepo):
+                    metadata['unresolved_files'] = '\n* conflict: ' + ('\n * conflict: '.join(e.args[0]))
+
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
                 needs_push = False
@@ -821,7 +844,7 @@ class MercurialRepository(BaseRepository):
                     shadow_repo.bookmark(
                         target_ref.name, revision=merge_commit_id)
                 try:
-                    shadow_repo_with_hooks = self._get_shadow_instance(
+                    shadow_repo_with_hooks = self.get_shadow_instance(
                         shadow_repository_path,
                         enable_hooks=True)
                     # This is the actual merge action, we push from shadow
@@ -857,11 +880,11 @@ class MercurialRepository(BaseRepository):
             merge_possible, merge_succeeded, merge_ref, merge_failure_reason,
             metadata=metadata)
 
-    def _get_shadow_instance(self, shadow_repository_path, enable_hooks=False):
+    def get_shadow_instance(self, shadow_repository_path, enable_hooks=False, cache=False):
         config = self.config.copy()
         if not enable_hooks:
             config.clear_section('hooks')
-        return MercurialRepository(shadow_repository_path, config)
+        return MercurialRepository(shadow_repository_path, config, with_wire={"cache": cache})
 
     def _validate_pull_reference(self, reference):
         if not (reference.name in self.bookmarks or

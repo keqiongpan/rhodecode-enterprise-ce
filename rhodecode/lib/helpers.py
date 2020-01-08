@@ -53,30 +53,35 @@ from pygments.lexers import (
 
 from pyramid.threadlocal import get_current_request
 
-from webhelpers.html import literal, HTML, escape
-from webhelpers.html.tools import *
-from webhelpers.html.builder import make_tag
-from webhelpers.html.tags import auto_discovery_link, checkbox, css_classes, \
-    end_form, file, form as wh_form, hidden, image, javascript_link, link_to, \
-    link_to_if, link_to_unless, ol, required_legend, select, stylesheet_link, \
-    submit, text, password, textarea, title, ul, xml_declaration, radio
-from webhelpers.html.tools import auto_link, button_to, highlight, \
-    js_obfuscate, mail_to, strip_links, strip_tags, tag_re
-from webhelpers.text import chop_at, collapse, convert_accented_entities, \
-    convert_misc_entities, lchop, plural, rchop, remove_formatting, \
-    replace_whitespace, urlify, truncate, wrap_paragraphs
-from webhelpers.date import time_ago_in_words
-from webhelpers.paginate import Page as _Page
-from webhelpers.html.tags import _set_input_attrs, _set_id_attr, \
-    convert_boolean_attrs, NotGiven, _make_safe_id_component
+from webhelpers2.html import literal, HTML, escape
+from webhelpers2.html._autolink import _auto_link_urls
+from webhelpers2.html.tools import (
+    button_to, highlight, js_obfuscate, strip_links, strip_tags)
+
+from webhelpers2.text import (
+    chop_at, collapse, convert_accented_entities,
+    convert_misc_entities, lchop, plural, rchop, remove_formatting,
+    replace_whitespace, urlify, truncate, wrap_paragraphs)
+from webhelpers2.date import time_ago_in_words
+
+from webhelpers2.html.tags import (
+    _input, NotGiven, _make_safe_id_component as safeid,
+    form as insecure_form,
+    auto_discovery_link, checkbox, end_form, file,
+    hidden, image, javascript_link, link_to, link_to_if, link_to_unless, ol,
+    select as raw_select, stylesheet_link, submit, text, password, textarea,
+    ul, radio, Options)
+
 from webhelpers2.number import format_byte_size
 
 from rhodecode.lib.action_parser import action_parser
+from rhodecode.lib.pagination import Page, RepoPage, SqlPage
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.utils import repo_name_slug, get_custom_lexer
-from rhodecode.lib.utils2 import str2bool, safe_unicode, safe_str, \
-    get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime, \
-    AttributeDict, safe_int, md5, md5_safe
+from rhodecode.lib.utils2 import (
+    str2bool, safe_unicode, safe_str,
+    get_commit_safe, datetime_to_time, time_to_datetime, time_to_utcdatetime,
+    AttributeDict, safe_int, md5, md5_safe, get_host_info)
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
@@ -150,24 +155,53 @@ def chop_at_smart(s, sub, inclusive=False, suffix_if_chopped=None):
     return chopped
 
 
-def shorter(text, size=20):
+def shorter(text, size=20, prefix=False):
     postfix = '...'
     if len(text) > size:
-        return text[:size - len(postfix)] + postfix
+        if prefix:
+            # shorten in front
+            return postfix + text[-(size - len(postfix)):]
+        else:
+            return text[:size - len(postfix)] + postfix
     return text
 
 
-def _reset(name, value=None, id=NotGiven, type="reset", **attrs):
+def reset(name, value=None, id=NotGiven, type="reset", **attrs):
     """
     Reset button
     """
-    _set_input_attrs(attrs, type, name, value)
-    _set_id_attr(attrs, id, name)
-    convert_boolean_attrs(attrs, ["disabled"])
-    return HTML.input(**attrs)
+    return _input(type, name, value, id, attrs)
 
-reset = _reset
-safeid = _make_safe_id_component
+
+def select(name, selected_values, options, id=NotGiven, **attrs):
+
+    if isinstance(options, (list, tuple)):
+        options_iter = options
+        # Handle old value,label lists ... where value also can be value,label lists
+        options = Options()
+        for opt in options_iter:
+            if isinstance(opt, tuple) and len(opt) == 2:
+                value, label = opt
+            elif isinstance(opt, basestring):
+                value = label = opt
+            else:
+                raise ValueError('invalid select option type %r' % type(opt))
+
+            if isinstance(value, (list, tuple)):
+                option_group = options.add_optgroup(label)
+                for opt2 in value:
+                    if isinstance(opt2, tuple) and len(opt2) == 2:
+                        group_value, group_label = opt2
+                    elif isinstance(opt2, basestring):
+                        group_value = group_label = opt2
+                    else:
+                        raise ValueError('invalid select option type %r' % type(opt2))
+
+                    option_group.add_option(group_label, group_value)
+            else:
+                options.add_option(label, value)
+
+    return raw_select(name, selected_values, options, id=id, **attrs)
 
 
 def branding(name, length=40):
@@ -660,7 +694,7 @@ class Flash(object):
                 })
         return json.dumps(payloads)
 
-    def __call__(self, message, category=None, ignore_duplicate=False,
+    def __call__(self, message, category=None, ignore_duplicate=True,
                  session=None, request=None):
 
         if not session:
@@ -692,7 +726,7 @@ import tzlocal
 local_timezone = tzlocal.get_localzone()
 
 
-def age_component(datetime_iso, value=None, time_is_local=False):
+def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
     title = value or format_date(datetime_iso)
     tzinfo = '+00:00'
 
@@ -706,9 +740,11 @@ def age_component(datetime_iso, value=None, time_is_local=False):
         tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
 
     return literal(
-        '<time class="timeago tooltip" '
-        'title="{1}{2}" datetime="{0}{2}">{1}</time>'.format(
-            datetime_iso, title, tzinfo))
+        '<time class="timeago {cls}" title="{tt_title}" datetime="{dt}{tzinfo}">{title}</time>'.format(
+            cls='tooltip' if tooltip else '',
+            tt_title=('{title}{tzinfo}'.format(title=title, tzinfo=tzinfo)) if tooltip else '',
+            title=title, dt=datetime_iso, tzinfo=tzinfo
+        ))
 
 
 def _shorten_commit_id(commit_id, commit_len=None):
@@ -787,7 +823,7 @@ def is_svn_without_proxy(repository):
 
 def discover_user(author):
     """
-    Tries to discover RhodeCode User based on the autho string. Author string
+    Tries to discover RhodeCode User based on the author string. Author string
     is typically `FirstName LastName <email@address.com>`
     """
 
@@ -895,10 +931,9 @@ def person_by_id(id_, show_attr="username_and_name"):
     return id_
 
 
-def gravatar_with_user(request, author, show_disabled=False):
-    _render = request.get_partial_renderer(
-        'rhodecode:templates/base/base.mako')
-    return _render('gravatar_with_user', author, show_disabled=show_disabled)
+def gravatar_with_user(request, author, show_disabled=False, tooltip=False):
+    _render = request.get_partial_renderer('rhodecode:templates/base/base.mako')
+    return _render('gravatar_with_user', author, show_disabled=show_disabled, tooltip=tooltip)
 
 
 tags_paterns = OrderedDict((
@@ -973,19 +1008,20 @@ def bool2icon(value, show_at_false=True):
     """
 
     if value:  # does bool conversion
-        return HTML.tag('i', class_="icon-true")
+        return HTML.tag('i', class_="icon-true", title='True')
     else:  # not true as bool
         if show_at_false:
-            return HTML.tag('i', class_="icon-false")
+            return HTML.tag('i', class_="icon-false", title='False')
         return HTML.tag('i')
 
 #==============================================================================
 # PERMS
 #==============================================================================
-from rhodecode.lib.auth import HasPermissionAny, HasPermissionAll, \
-HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll, \
-HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token, \
-csrf_token_key
+from rhodecode.lib.auth import (
+    HasPermissionAny, HasPermissionAll,
+    HasRepoPermissionAny, HasRepoPermissionAll, HasRepoGroupPermissionAll,
+    HasRepoGroupPermissionAny, HasRepoPermissionAnyApi, get_csrf_token,
+    csrf_token_key, AuthUser)
 
 
 #==============================================================================
@@ -1276,233 +1312,6 @@ def gravatar_url(email_address, size=30, request=None):
         return initials_gravatar(email_address, '', '', size=size)
 
 
-class Page(_Page):
-    """
-    Custom pager to match rendering style with paginator
-    """
-
-    def _get_pos(self, cur_page, max_page, items):
-        edge = (items / 2) + 1
-        if (cur_page <= edge):
-            radius = max(items / 2, items - cur_page)
-        elif (max_page - cur_page) < edge:
-            radius = (items - 1) - (max_page - cur_page)
-        else:
-            radius = items / 2
-
-        left = max(1, (cur_page - (radius)))
-        right = min(max_page, cur_page + (radius))
-        return left, cur_page, right
-
-    def _range(self, regexp_match):
-        """
-        Return range of linked pages (e.g. '1 2 [3] 4 5 6 7 8').
-
-        Arguments:
-
-        regexp_match
-            A "re" (regular expressions) match object containing the
-            radius of linked pages around the current page in
-            regexp_match.group(1) as a string
-
-        This function is supposed to be called as a callable in
-        re.sub.
-
-        """
-        radius = int(regexp_match.group(1))
-
-        # Compute the first and last page number within the radius
-        # e.g. '1 .. 5 6 [7] 8 9 .. 12'
-        # -> leftmost_page  = 5
-        # -> rightmost_page = 9
-        leftmost_page, _cur, rightmost_page = self._get_pos(self.page,
-                                                            self.last_page,
-                                                            (radius * 2) + 1)
-        nav_items = []
-
-        # Create a link to the first page (unless we are on the first page
-        # or there would be no need to insert '..' spacers)
-        if self.page != self.first_page and self.first_page < leftmost_page:
-            nav_items.append(self._pagerlink(self.first_page, self.first_page))
-
-        # Insert dots if there are pages between the first page
-        # and the currently displayed page range
-        if leftmost_page - self.first_page > 1:
-            # Wrap in a SPAN tag if nolink_attr is set
-            text = '..'
-            if self.dotdot_attr:
-                text = HTML.span(c=text, **self.dotdot_attr)
-            nav_items.append(text)
-
-        for thispage in xrange(leftmost_page, rightmost_page + 1):
-            # Hilight the current page number and do not use a link
-            if thispage == self.page:
-                text = '%s' % (thispage,)
-                # Wrap in a SPAN tag if nolink_attr is set
-                if self.curpage_attr:
-                    text = HTML.span(c=text, **self.curpage_attr)
-                nav_items.append(text)
-            # Otherwise create just a link to that page
-            else:
-                text = '%s' % (thispage,)
-                nav_items.append(self._pagerlink(thispage, text))
-
-        # Insert dots if there are pages between the displayed
-        # page numbers and the end of the page range
-        if self.last_page - rightmost_page > 1:
-            text = '..'
-            # Wrap in a SPAN tag if nolink_attr is set
-            if self.dotdot_attr:
-                text = HTML.span(c=text, **self.dotdot_attr)
-            nav_items.append(text)
-
-        # Create a link to the very last page (unless we are on the last
-        # page or there would be no need to insert '..' spacers)
-        if self.page != self.last_page and rightmost_page < self.last_page:
-            nav_items.append(self._pagerlink(self.last_page, self.last_page))
-
-        ## prerender links
-        #_page_link = url.current()
-        #nav_items.append(literal('<link rel="prerender" href="%s?page=%s">' % (_page_link, str(int(self.page)+1))))
-        #nav_items.append(literal('<link rel="prefetch" href="%s?page=%s">' % (_page_link, str(int(self.page)+1))))
-        return self.separator.join(nav_items)
-
-    def pager(self, format='~2~', page_param='page', partial_param='partial',
-        show_if_single_page=False, separator=' ', onclick=None,
-        symbol_first='<<', symbol_last='>>',
-        symbol_previous='<', symbol_next='>',
-        link_attr={'class': 'pager_link', 'rel': 'prerender'},
-        curpage_attr={'class': 'pager_curpage'},
-        dotdot_attr={'class': 'pager_dotdot'}, **kwargs):
-
-        self.curpage_attr = curpage_attr
-        self.separator = separator
-        self.pager_kwargs = kwargs
-        self.page_param = page_param
-        self.partial_param = partial_param
-        self.onclick = onclick
-        self.link_attr = link_attr
-        self.dotdot_attr = dotdot_attr
-
-        # Don't show navigator if there is no more than one page
-        if self.page_count == 0 or (self.page_count == 1 and not show_if_single_page):
-            return ''
-
-        from string import Template
-        # Replace ~...~ in token format by range of pages
-        result = re.sub(r'~(\d+)~', self._range, format)
-
-        # Interpolate '%' variables
-        result = Template(result).safe_substitute({
-            'first_page': self.first_page,
-            'last_page': self.last_page,
-            'page': self.page,
-            'page_count': self.page_count,
-            'items_per_page': self.items_per_page,
-            'first_item': self.first_item,
-            'last_item': self.last_item,
-            'item_count': self.item_count,
-            'link_first': self.page > self.first_page and \
-                    self._pagerlink(self.first_page, symbol_first) or '',
-            'link_last': self.page < self.last_page and \
-                    self._pagerlink(self.last_page, symbol_last) or '',
-            'link_previous': self.previous_page and \
-                    self._pagerlink(self.previous_page, symbol_previous) \
-                    or HTML.span(symbol_previous, class_="pg-previous disabled"),
-            'link_next': self.next_page and \
-                    self._pagerlink(self.next_page, symbol_next) \
-                    or HTML.span(symbol_next, class_="pg-next disabled")
-        })
-
-        return literal(result)
-
-
-#==============================================================================
-# REPO PAGER, PAGER FOR REPOSITORY
-#==============================================================================
-class RepoPage(Page):
-
-    def __init__(self, collection, page=1, items_per_page=20,
-                 item_count=None, url=None, **kwargs):
-
-        """Create a "RepoPage" instance. special pager for paging
-        repository
-        """
-        self._url_generator = url
-
-        # Safe the kwargs class-wide so they can be used in the pager() method
-        self.kwargs = kwargs
-
-        # Save a reference to the collection
-        self.original_collection = collection
-
-        self.collection = collection
-
-        # The self.page is the number of the current page.
-        # The first page has the number 1!
-        try:
-            self.page = int(page)  # make it int() if we get it as a string
-        except (ValueError, TypeError):
-            self.page = 1
-
-        self.items_per_page = items_per_page
-
-        # Unless the user tells us how many items the collections has
-        # we calculate that ourselves.
-        if item_count is not None:
-            self.item_count = item_count
-        else:
-            self.item_count = len(self.collection)
-
-        # Compute the number of the first and last available page
-        if self.item_count > 0:
-            self.first_page = 1
-            self.page_count = int(math.ceil(float(self.item_count) /
-                                            self.items_per_page))
-            self.last_page = self.first_page + self.page_count - 1
-
-            # Make sure that the requested page number is the range of
-            # valid pages
-            if self.page > self.last_page:
-                self.page = self.last_page
-            elif self.page < self.first_page:
-                self.page = self.first_page
-
-            # Note: the number of items on this page can be less than
-            #       items_per_page if the last page is not full
-            self.first_item = max(0, (self.item_count) - (self.page *
-                                                          items_per_page))
-            self.last_item = ((self.item_count - 1) - items_per_page *
-                              (self.page - 1))
-
-            self.items = list(self.collection[self.first_item:self.last_item + 1])
-
-            # Links to previous and next page
-            if self.page > self.first_page:
-                self.previous_page = self.page - 1
-            else:
-                self.previous_page = None
-
-            if self.page < self.last_page:
-                self.next_page = self.page + 1
-            else:
-                self.next_page = None
-
-        # No items available
-        else:
-            self.first_page = None
-            self.page_count = 0
-            self.last_page = None
-            self.first_item = None
-            self.last_item = None
-            self.previous_page = None
-            self.next_page = None
-            self.items = []
-
-        # This is a subclass of the 'list' type. Initialise the list now.
-        list.__init__(self, reversed(self.items))
-
-
 def breadcrumb_repo_link(repo):
     """
     Makes a breadcrumbs path link to repo
@@ -1560,11 +1369,9 @@ def format_byte_size_binary(file_size):
     return formatted_size
 
 
-def urlify_text(text_, safe=True):
+def urlify_text(text_, safe=True, **href_attrs):
     """
-    Extrac urls from text and make html links out of them
-
-    :param text_:
+    Extract urls from text and make html links out of them
     """
 
     url_pat = re.compile(r'''(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@#.&+]'''
@@ -1572,22 +1379,27 @@ def urlify_text(text_, safe=True):
 
     def url_func(match_obj):
         url_full = match_obj.groups()[0]
-        return '<a href="%(url)s">%(url)s</a>' % ({'url': url_full})
-    _newtext = url_pat.sub(url_func, text_)
+        a_options = dict(href_attrs)
+        a_options['href'] = url_full
+        a_text = url_full
+        return HTML.tag("a", a_text, **a_options)
+
+    _new_text = url_pat.sub(url_func, text_)
+
     if safe:
-        return literal(_newtext)
-    return _newtext
+        return literal(_new_text)
+    return _new_text
 
 
-def urlify_commits(text_, repository):
+def urlify_commits(text_, repo_name):
     """
     Extract commit ids from text and make link from them
 
     :param text_:
-    :param repository: repo name to build the URL with
+    :param repo_name: repo name to build the URL with
     """
 
-    URL_PAT = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
+    url_pat = re.compile(r'(^|\s)([0-9a-fA-F]{12,40})($|\s)')
 
     def url_func(match_obj):
         commit_id = match_obj.groups()[1]
@@ -1595,20 +1407,24 @@ def urlify_commits(text_, repository):
         suf = match_obj.groups()[2]
 
         tmpl = (
-            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(pref)s<a class="tooltip-hovercard %(cls)s" href="%(url)s" data-hovercard-alt="%(hovercard_alt)s" data-hovercard-url="%(hovercard_url)s">'
             '%(commit_id)s</a>%(suf)s'
         )
         return tmpl % {
             'pref': pref,
             'cls': 'revision-link',
-            'url': route_url('repo_commit', repo_name=repository, commit_id=commit_id),
+            'url': route_url(
+                'repo_commit', repo_name=repo_name, commit_id=commit_id),
             'commit_id': commit_id,
-            'suf': suf
+            'suf': suf,
+            'hovercard_alt': 'Commit: {}'.format(commit_id),
+            'hovercard_url': route_url(
+                'hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)
         }
 
-    newtext = URL_PAT.sub(url_func, text_)
+    new_text = url_pat.sub(url_func, text_)
 
-    return newtext
+    return new_text
 
 
 def _process_url_func(match_obj, repo_name, uid, entry,
@@ -1621,13 +1437,18 @@ def _process_url_func(match_obj, repo_name, uid, entry,
 
     if link_format == 'html':
         tmpl = (
-            '%(pref)s<a class="%(cls)s" href="%(url)s">'
+            '%(pref)s<a class="tooltip %(cls)s" href="%(url)s" title="%(title)s">'
             '%(issue-prefix)s%(id-repr)s'
             '</a>')
-    elif link_format == 'rst':
+    elif link_format == 'html+hovercard':
+        tmpl = (
+            '%(pref)s<a class="tooltip-hovercard %(cls)s" href="%(url)s" data-hovercard-url="%(hovercard_url)s">'
+            '%(issue-prefix)s%(id-repr)s'
+            '</a>')
+    elif link_format in ['rst', 'rst+hovercard']:
         tmpl = '`%(issue-prefix)s%(id-repr)s <%(url)s>`_'
-    elif link_format == 'markdown':
-        tmpl = '[%(issue-prefix)s%(id-repr)s](%(url)s)'
+    elif link_format in ['markdown', 'markdown+hovercard']:
+        tmpl = '[%(pref)s%(issue-prefix)s%(id-repr)s](%(url)s)'
     else:
         raise ValueError('Bad link_format:{}'.format(link_format))
 
@@ -1639,11 +1460,24 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id': issue_id,
         'repo': repo_name,
         'repo_name': repo_name_cleaned,
-        'group_name': parent_group_name
+        'group_name': parent_group_name,
+        # set dummy keys so we always have them
+        'hostname': '',
+        'netloc': '',
+        'scheme': ''
     }
+
+    request = get_current_request()
+    if request:
+        # exposes, hostname, netloc, scheme
+        host_data = get_host_info(request)
+        named_vars.update(host_data)
+
     # named regex variables
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
+    desc = string.Template(entry['desc']).safe_substitute(**named_vars)
+    hovercard_url = string.Template(entry.get('hovercard_url', '')).safe_substitute(**named_vars)
 
     def quote_cleaner(input_str):
         """Remove quotes as it's HTML"""
@@ -1656,7 +1490,10 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
+        'title': desc,
+        'hovercard_url': hovercard_url
     }
+
     if return_raw_data:
         return {
             'id': issue_id,
@@ -1679,15 +1516,17 @@ def get_active_pattern_entries(repo_name):
 
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
-    allowed_formats = ['html', 'rst', 'markdown']
+    allowed_formats = ['html', 'rst', 'markdown',
+                       'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
     if link_format not in allowed_formats:
         raise ValueError('Link format can be only one of:{} got {}'.format(
                          allowed_formats, link_format))
 
     active_entries = active_entries or get_active_pattern_entries(repo_name)
     issues_data = []
-    newtext = text_string
+    new_text = text_string
 
+    log.debug('Got %s entries to process', len(active_entries))
     for uid, entry in active_entries.items():
         log.debug('found issue tracker entry with uid %s', uid)
 
@@ -1701,9 +1540,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         try:
             pattern = re.compile(r'%s' % entry['pat'])
         except re.error:
-            log.exception(
-                'issue tracker pattern: `%s` failed to compile',
-                entry['pat'])
+            log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
             continue
 
         data_func = partial(
@@ -1717,38 +1554,50 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
             _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
             link_format=link_format)
 
-        newtext = pattern.sub(url_func, newtext)
+        new_text = pattern.sub(url_func, new_text)
         log.debug('processed prefix:uid `%s`', uid)
 
-    return newtext, issues_data
+    # finally use global replace, eg !123 -> pr-link, those will not catch
+    # if already similar pattern exists
+    server_url = '${scheme}://${netloc}'
+    pr_entry = {
+        'pref': '!',
+        'url': server_url + '/_admin/pull-requests/${id}',
+        'desc': 'Pull Request !${id}',
+        'hovercard_url': server_url + '/_hovercard/pull_request/${id}'
+    }
+    pr_url_func = partial(
+        _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None,
+        link_format=link_format+'+hovercard')
+    new_text = re.compile(r'(?:(?:^!)|(?: !))(\d+)').sub(pr_url_func, new_text)
+    log.debug('processed !pr pattern')
+
+    return new_text, issues_data
 
 
 def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
-
-    :param commit_text:
-    :param repository:
     """
-    def escaper(string):
-        return string.replace('<', '&lt;').replace('>', '&gt;')
+    def escaper(_text):
+        return _text.replace('<', '&lt;').replace('>', '&gt;')
 
-    newtext = escaper(commit_text)
+    new_text = escaper(commit_text)
 
     # extract http/https links and make them real urls
-    newtext = urlify_text(newtext, safe=False)
+    new_text = urlify_text(new_text, safe=False)
 
     # urlify commits - extract commit ids and make link out of them, if we have
     # the scope of repository present.
     if repository:
-        newtext = urlify_commits(newtext, repository)
+        new_text = urlify_commits(new_text, repository)
 
     # process issue tracker patterns
-    newtext, issues = process_patterns(newtext, repository or '',
-                                       active_entries=active_pattern_entries)
+    new_text, issues = process_patterns(new_text, repository or '',
+                                        active_entries=active_pattern_entries)
 
-    return literal(newtext)
+    return literal(new_text)
 
 
 def render_binary(repo_name, file_obj):
@@ -1898,7 +1747,7 @@ def form(url, method='post', needs_csrf_token=True, **attrs):
             'CSRF token. If the endpoint does not require such token you can ' +
             'explicitly set the parameter needs_csrf_token to false.')
 
-    return wh_form(url, method=method, **attrs)
+    return insecure_form(url, method=method, **attrs)
 
 
 def secure_form(form_url, method="POST", multipart=False, **attrs):
@@ -1920,7 +1769,6 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
         over POST.
 
     """
-    from webhelpers.pylonslib.secure_form import insecure_form
 
     if 'request' in attrs:
         session = attrs['request'].session
@@ -1929,12 +1777,12 @@ def secure_form(form_url, method="POST", multipart=False, **attrs):
         raise ValueError(
             'Calling this form requires request= to be passed as argument')
 
-    form = insecure_form(form_url, method, multipart, **attrs)
+    _form = insecure_form(form_url, method, multipart, **attrs)
     token = literal(
-        '<input type="hidden" id="{}" name="{}" value="{}">'.format(
-        csrf_token_key, csrf_token_key, get_csrf_token(session)))
+        '<input type="hidden" name="{}" value="{}">'.format(
+            csrf_token_key, get_csrf_token(session)))
 
-    return literal("%s\n%s" % (form, token))
+    return literal("%s\n%s" % (_form, token))
 
 
 def dropdownmenu(name, selected, options, enable_filter=False, **attrs):
@@ -1987,7 +1835,7 @@ def get_last_path_part(file_node):
 
 def route_url(*args, **kwargs):
     """
-    Wrapper around pyramids `route_url` (fully qualified url) function. 
+    Wrapper around pyramids `route_url` (fully qualified url) function.
     """
     req = get_current_request()
     return req.route_url(*args, **kwargs)
@@ -2014,24 +1862,31 @@ def current_route_path(request, **kw):
     return request.current_route_path(_query=new_args)
 
 
-def api_call_example(method, args):
-    """
-    Generates an API call example via CURL
-    """
+def curl_api_example(method, args):
     args_json = json.dumps(OrderedDict([
         ('id', 1),
         ('auth_token', 'SECRET'),
         ('method', method),
         ('args', args)
     ]))
+
+    return "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{args_json}'".format(
+        api_url=route_url('apiv2'),
+        args_json=args_json
+    )
+
+
+def api_call_example(method, args):
+    """
+    Generates an API call example via CURL
+    """
+    curl_call = curl_api_example(method, args)
+
     return literal(
-        "curl {api_url} -X POST -H 'content-type:text/plain' --data-binary '{data}'"
+        curl_call +
         "<br/><br/>SECRET can be found in <a href=\"{token_url}\">auth-tokens</a> page, "
         "and needs to be of `api calls` role."
-        .format(
-            api_url=route_url('apiv2'),
-            token_url=route_url('my_account_auth_tokens'),
-            data=args_json))
+        .format(token_url=route_url('my_account_auth_tokens')))
 
 
 def notification_description(notification, request):
@@ -2076,3 +1931,15 @@ def get_repo_view_type(request):
     }
 
     return route_to_view_type.get(route_name)
+
+
+def is_active(menu_entry, selected):
+    """
+    Returns active class for selecting menus in templates
+    <li class=${h.is_active('settings', current_active)}></li>
+    """
+    if not isinstance(menu_entry, list):
+        menu_entry = [menu_entry]
+
+    if selected in menu_entry:
+        return "active"

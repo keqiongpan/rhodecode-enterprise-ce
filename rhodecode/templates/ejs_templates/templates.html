@@ -9,6 +9,13 @@ if (size > 16) {
 } else {
     var gravatar_class = 'gravatar';
 }
+
+if (tooltip) {
+    var gravatar_class = gravatar_class + ' tooltip-hovercard';
+}
+
+var data_hovercard_alt = username;
+
 %>
 
 <%
@@ -17,10 +24,11 @@ if (show_disabled) {
 } else {
     var user_cls = 'user';
 }
+var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
 %>
 
 <div class="rc-user">
-    <img class="<%= gravatar_class %>" src="<%- gravatar_url -%>" height="<%= size %>" width="<%= size %>">
+    <img class="<%= gravatar_class %>" height="<%= size %>" width="<%= size %>" data-hovercard-url="<%= data_hovercard_url %>" data-hovercard-alt="<%= data_hovercard_alt %>" src="<%- gravatar_url -%>">
     <span class="<%= user_cls %>"> <%- user_link -%> </span>
 </div>
 
@@ -49,7 +57,7 @@ var CG = new ColorGenerator();
 
     <div class="reviewers_member" style="<%= groupStyle%>" >
         <div class="reviewer_status tooltip" title="<%= review_status_label %>">
-          <div class="flag_status <%= review_status %> pull-left reviewer_member_status"></div>
+          <i class="icon-circle review-status-<%= review_status %>"></i>
         </div>
       <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
         <% if (mandatory) { %>
@@ -62,6 +70,9 @@ var CG = new ColorGenerator();
           renderTemplate('gravatarWithUser', {
             'size': 16,
             'show_disabled': false,
+            'tooltip': true,
+            'username': member.username,
+            'user_id': member.user_id,
             'user_link': member.user_link,
             'gravatar_url':  member.gravatar_link
             })

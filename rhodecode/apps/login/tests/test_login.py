@@ -93,7 +93,7 @@ class TestLoginController(object):
         session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == 'test_admin'
-        response.mustcontain('/%s' % HG_REPO)
+        response.mustcontain('logout')
 
     def test_login_regular_ok(self):
         response = self.app.post(route_path('login'),
@@ -104,8 +104,7 @@ class TestLoginController(object):
         session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == 'test_regular'
-
-        response.mustcontain('/%s' % HG_REPO)
+        response.mustcontain('logout')
 
     def test_login_regular_forbidden_when_super_admin_restriction(self):
         from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
@@ -225,7 +224,7 @@ class TestLoginController(object):
         session = response.get_session_from_response()
         username = session['rhodecode_user'].get('username')
         assert username == temp_user
-        response.mustcontain('/%s' % HG_REPO)
+        response.mustcontain('logout')
 
         # new password should be bcrypted, after log-in and transfer
         user = User.get_by_username(temp_user)
@@ -401,7 +400,7 @@ class TestLoginController(object):
         )  # This should be overridden
 
         assert_session_flash(
-            response, 'You have successfully registered with RhodeCode')
+            response, 'You have successfully registered with RhodeCode. You can log-in now.')
 
         ret = Session().query(User).filter(
             User.username == 'test_regular4').one()

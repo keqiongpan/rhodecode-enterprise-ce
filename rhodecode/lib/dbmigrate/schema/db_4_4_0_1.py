@@ -2028,7 +2028,7 @@ class RepoGroup(Base, BaseModel):
 
     @classmethod
     def _generate_choice(cls, repo_group):
-        from webhelpers.html import literal as _literal
+        from webhelpers2.html import literal as _literal
         _name = lambda k: _literal(cls.CHOICES_SEPARATOR.join(k))
         return repo_group.group_id, _name(repo_group.full_path_splitted)
 

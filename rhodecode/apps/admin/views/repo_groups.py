@@ -19,6 +19,8 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import datetime
 import logging
+import time
+
 import formencode
 import formencode.htmlfill
 
@@ -63,7 +65,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         # and display only those we have ADMIN right
         groups_with_admin_rights = RepoGroupList(
             RepoGroup.query().all(),
-            perm_set=['group.admin'])
+            perm_set=['group.admin'], extra_kwargs=dict(user=self._rhodecode_user))
         c.repo_groups = RepoGroup.groups_choices(
             groups=groups_with_admin_rights,
             show_empty_group=allow_empty_group)
@@ -109,9 +111,9 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     def repo_group_list_data(self):
         self.load_default_context()
         column_map = {
-            'name_raw': 'group_name_hash',
+            'name': 'group_name_hash',
             'desc': 'group_description',
-            'last_change_raw': 'updated_on',
+            'last_change': 'updated_on',
             'top_level_repos': 'repos_total',
             'owner': 'user_username',
         }
@@ -131,9 +133,10 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
 
         def last_change(last_change):
             if isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                delta = datetime.timedelta(
-                    seconds=(datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
-                last_change = last_change + delta
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
             return _render("last_change", last_change)
 
         def desc(desc, personal):
@@ -147,12 +150,8 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         def user_profile(username):
             return _render('user_profile', username)
 
-        auth_repo_group_list = RepoGroupList(
-            RepoGroup.query().all(), perm_set=['group.admin'])
-
-        allowed_ids = [-1]
-        for repo_group in auth_repo_group_list:
-                allowed_ids.append(repo_group.group_id)
+        _perms = ['group.admin']
+        allowed_ids = [-1] + self._rhodecode_user.repo_group_acl_ids_from_stack(_perms)
 
         repo_groups_data_total_count = RepoGroup.query()\
             .filter(or_(
@@ -180,7 +179,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(RepoGroup.group_id, allowed_ids)
             )) \
-            .outerjoin(Repository) \
+            .outerjoin(Repository,  Repository.group_id == RepoGroup.group_id) \
             .join(User, User.user_id == RepoGroup.user_id) \
             .group_by(RepoGroup, User)
 
@@ -224,9 +223,8 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
             row = {
                 "menu": quick_menu(repo_gr.group_name),
                 "name": repo_group_lnk(repo_gr.group_name),
-                "name_raw": repo_gr.group_name,
+
                 "last_change": last_change(repo_gr.updated_on),
-                "last_change_raw": datetime_to_time(repo_gr.updated_on),
 
                 "last_changeset": "",
                 "last_changeset_raw": "",

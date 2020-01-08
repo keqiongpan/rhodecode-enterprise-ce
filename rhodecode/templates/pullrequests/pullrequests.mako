@@ -1,7 +1,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s Pull Requests') % c.repo_name}
+    ${_('{} Pull Requests').format(c.repo_name)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -24,12 +24,12 @@
 <div class="box">
     <div class="title">
     <ul class="button-links">
-      <li class="btn ${('active' if c.active=='open' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
-      <li class="btn ${('active' if c.active=='my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
-      <li class="btn ${('active' if c.active=='awaiting' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
-      <li class="btn ${('active' if c.active=='awaiting_my' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
-      <li class="btn ${('active' if c.active=='closed' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
-      <li class="btn ${('active' if c.active=='source' else '')}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
+      <li class="btn ${h.is_active('open', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
+      <li class="btn ${h.is_active('my', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
+      <li class="btn ${h.is_active('awaiting', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
+      <li class="btn ${h.is_active('awaiting_my', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
+      <li class="btn ${h.is_active('closed', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
+      <li class="btn ${h.is_active('source', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
     </ul>
 
     <ul class="links">
@@ -42,6 +42,20 @@
             </span>
         </li>
         % endif
+
+        <li>
+            <div class="grid-quick-filter">
+                <ul class="grid-filter-box">
+                    <li class="grid-filter-box-icon">
+                        <i class="icon-search"></i>
+                    </li>
+                    <li class="grid-filter-box-input">
+                        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
     </ul>
 
     </div>
@@ -54,7 +68,6 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-
     var $pullRequestListTable = $('#pull_request_list_table');
 
     // object list
@@ -78,11 +91,11 @@ $(document).ready(function() {
          { data: {"_": "status",
                   "sort": "status"}, title: "", className: "td-status", orderable: false},
          { data: {"_": "name",
-                  "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname", "type": "num" },
-         { data: {"_": "author",
-                  "sort": "author_raw"}, title: "${_('Author')}", className: "td-user", orderable: false },
+                  "sort": "name_raw"}, title: "${_('Id')}", className: "td-componentname", "type": "num" },
          { data: {"_": "title",
                   "sort": "title"}, title: "${_('Title')}", className: "td-description" },
+         { data: {"_": "author",
+                  "sort": "author_raw"}, title: "${_('Author')}", className: "td-user", orderable: false },
          { data: {"_": "comments",
                   "sort": "comments_raw"}, title: "", className: "td-comments", orderable: false},
          { data: {"_": "updated_on",
@@ -95,13 +108,11 @@ $(document).ready(function() {
       },
       "drawCallback": function( settings, json ) {
           timeagoActivate();
+          tooltipActivate();
       },
       "createdRow": function ( row, data, index ) {
           if (data['closed']) {
               $(row).addClass('closed');
-          }
-          if (data['state'] !== 'created') {
-              $(row).addClass('state-' + data['state']);
           }
       }
     });
@@ -113,6 +124,15 @@ $(document).ready(function() {
     $pullRequestListTable.on('preXhr.dt', function(e, settings, data){
         $pullRequestListTable.css('opacity', 0.3);
     });
+
+    // filter
+    $('#q_filter').on('keyup',
+        $.debounce(250, function() {
+            $pullRequestListTable.DataTable().search(
+                $('#q_filter').val()
+            ).draw();
+        })
+    );
 
 });
 

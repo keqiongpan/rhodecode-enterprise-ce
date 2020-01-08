@@ -28,7 +28,7 @@ from rhodecode.model.db import joinedload, UserLog
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.auth import LoginRequired, HasPermissionAllDecorator
 from rhodecode.lib.utils2 import safe_int
-from rhodecode.lib.helpers import Page
+from rhodecode.lib.helpers import SqlPage
 
 log = logging.getLogger(__name__)
 
@@ -62,13 +62,16 @@ class AdminAuditLogsView(BaseAppView):
 
         p = safe_int(self.request.GET.get('page', 1), 1)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
             if c.search_term:
-                kw['filter'] = c.search_term
-            return self.request.current_route_path(_query=kw)
+                query_params['filter'] = c.search_term
+            return self.request.current_route_path(_query=query_params)
 
-        c.audit_logs = Page(users_log, page=p, items_per_page=10,
-                            url=url_generator)
+        c.audit_logs = SqlPage(users_log, page=p, items_per_page=10,
+                               url_maker=url_generator)
         return self._get_template_context(c)
 
     @LoginRequired()

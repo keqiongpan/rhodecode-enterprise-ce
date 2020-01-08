@@ -11,7 +11,7 @@
     padding: .25em;
     text-align: center;
     font-size: (-1 + @basefontsize); //fit in tables
-    line-height: .9em;
+    line-height: 1.1em;
     border: none;
     box-shadow: @button-shadow;
     .border-radius(@border-radius);
@@ -48,6 +48,36 @@
 .tag6 { .border   ( @border-thickness-tags, @color6 ); color:@color6; }
 .tag7 { .border   ( @border-thickness-tags, @color7 ); color:@color7; }
 .tag8 { .border   ( @border-thickness-tags, @color8 ); color:@color8; }
+
+
+.tag-gist-public {
+    .border   (@border-thickness-tags, @color1);
+    color: @color1;
+}
+
+
+.tag-gist-private {
+    .border   (@border-thickness-tags, @color2);
+    color: @color2;
+}
+
+
+.tag-merge-state-created {
+    color: @color1;
+}
+
+.tag-merge-state-creating {
+    color: @color1;
+}
+
+.tag-merge-state-merging {
+    color: @color3;
+}
+
+.tag-merge-state-updating {
+    color: @color3;
+}
+
 
 .metatag-list {
     margin: 0;

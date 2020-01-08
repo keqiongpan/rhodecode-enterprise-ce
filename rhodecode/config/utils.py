@@ -41,7 +41,6 @@ def configure_vcs(config):
     conf.settings.HOOKS_PROTOCOL = config['vcs.hooks.protocol']
     conf.settings.HOOKS_HOST = config['vcs.hooks.host']
     conf.settings.HOOKS_DIRECT_CALLS = config['vcs.hooks.direct_calls']
-    conf.settings.GIT_REV_FILTER = shlex.split(config['git_rev_filter'])
     conf.settings.DEFAULT_ENCODINGS = config['default_encoding']
     conf.settings.ALIASES[:] = config['vcs.backends']
     conf.settings.SVN_COMPATIBLE_VERSION = config['vcs.svn.compatible_version']

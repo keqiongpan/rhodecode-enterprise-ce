@@ -90,6 +90,7 @@ def get_cert_path(ini_path):
 
     return default
 
+
 class SysInfoRes(object):
     def __init__(self, value, state=None, human_value=None):
         self.value = value
@@ -187,7 +188,7 @@ def ulimit_info():
         ('open files', get_resource(resource.RLIMIT_NOFILE)),
     ])
 
-    text = ', '.join('{}:{}'.format(k,v) for k,v in data.items())
+    text = ', '.join('{}:{}'.format(k, v) for k, v in data.items())
 
     value = {
         'limits': data,
@@ -593,6 +594,23 @@ def vcs_server():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+def vcs_server_config():
+    from rhodecode.lib.vcs.backends import get_vcsserver_service_data
+    state = STATE_OK_DEFAULT
+
+    value = {}
+    try:
+        data = get_vcsserver_service_data()
+        value = data['app_config']
+    except Exception as e:
+        state = {'message': str(e), 'type': STATE_ERR}
+
+    human_value = value.copy()
+    human_value['text'] = 'VCS Server config'
+
+    return SysInfoRes(value=value, state=state, human_value=human_value)
+
+
 def rhodecode_app_info():
     import rhodecode
     edition = rhodecode.CONFIG.get('rhodecode.edition')
@@ -769,6 +787,8 @@ def get_system_info(environ):
 
         'vcs_backends': SysInfo(vcs_backends)(),
         'vcs_server': SysInfo(vcs_server)(),
+
+        'vcs_server_config': SysInfo(vcs_server_config)(),
 
         'git': SysInfo(git_info)(),
         'hg': SysInfo(hg_info)(),

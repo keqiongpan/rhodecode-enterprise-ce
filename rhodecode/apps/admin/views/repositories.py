@@ -31,7 +31,6 @@ from rhodecode import events
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib.celerylib.utils import get_task_id
 
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, CSRFRequired, NotAnonymous,
     HasPermissionAny, HasRepoGroupPermissionAny)
@@ -43,7 +42,8 @@ from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import RepoList, RepoGroupList, ScmModel
 from rhodecode.model.settings import SettingsModel
-from rhodecode.model.db import Repository, RepoGroup
+from rhodecode.model.db import (
+    in_filter_generator, or_, func, Session, Repository, RepoGroup, User)
 
 log = logging.getLogger(__name__)
 
@@ -60,8 +60,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
                                    perm_set=['group.write', 'group.admin'])
         c.repo_groups = RepoGroup.groups_choices(groups=acl_groups)
         c.repo_groups_choices = map(lambda k: safe_unicode(k[0]), c.repo_groups)
-        c.landing_revs_choices, c.landing_revs = \
-            ScmModel().get_repo_landing_revs(self.request.translate)
         c.personal_repo_group = self._rhodecode_user.personal_repo_group
 
     @LoginRequired()
@@ -72,15 +70,94 @@ class AdminReposView(BaseAppView, DataGridAppView):
         renderer='rhodecode:templates/admin/repos/repos.mako')
     def repository_list(self):
         c = self.load_default_context()
-
-        repo_list = Repository.get_all_repos()
-        c.repo_list = RepoList(repo_list, perm_set=['repository.admin'])
-        repos_data = RepoModel().get_repos_as_dict(
-            repo_list=c.repo_list, admin=True, super_user_actions=True)
-        # json used to render the grid
-        c.data = json.dumps(repos_data)
-
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    # perms check inside
+    @view_config(
+        route_name='repos_data', request_method='GET',
+        renderer='json_ext', xhr=True)
+    def repository_list_data(self):
+        self.load_default_context()
+        column_map = {
+            'name': 'repo_name',
+            'desc': 'description',
+            'last_change': 'updated_on',
+            'owner': 'user_username',
+        }
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(
+            self.request, column_map=column_map)
+
+        _perms = ['repository.admin']
+        allowed_ids = [-1] + self._rhodecode_user.repo_acl_ids_from_stack(_perms)
+
+        repos_data_total_count = Repository.query() \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .count()
+
+        base_q = Session.query(
+            Repository.repo_id,
+            Repository.repo_name,
+            Repository.description,
+            Repository.repo_type,
+            Repository.repo_state,
+            Repository.private,
+            Repository.archived,
+            Repository.fork,
+            Repository.updated_on,
+            Repository._changeset_cache,
+            User,
+            ) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .join(User, User.user_id == Repository.user_id) \
+            .group_by(Repository, User)
+
+        if search_q:
+            like_expression = u'%{}%'.format(safe_unicode(search_q))
+            base_q = base_q.filter(or_(
+                Repository.repo_name.ilike(like_expression),
+            ))
+
+        repos_data_total_filtered_count = base_q.count()
+
+        sort_defined = False
+        if order_by == 'repo_name':
+            sort_col = func.lower(Repository.repo_name)
+            sort_defined = True
+        elif order_by == 'user_username':
+            sort_col = User.username
+        else:
+            sort_col = getattr(Repository, order_by, None)
+
+        if sort_defined or sort_col:
+            if order_dir == 'asc':
+                sort_col = sort_col.asc()
+            else:
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        repos_list = base_q.all()
+
+        repos_data = RepoModel().get_repos_as_dict(
+            repo_list=repos_list, admin=True, super_user_actions=True)
+
+        data = ({
+            'draw': draw,
+            'data': repos_data,
+            'recordsTotal': repos_data_total_count,
+            'recordsFiltered': repos_data_total_filtered_count,
+        })
+        return data
 
     @LoginRequired()
     @NotAnonymous()
@@ -151,8 +228,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
         try:
             # CanWriteToGroup validators checks permissions of this POST
             form = RepoForm(
-                self.request.translate, repo_groups=c.repo_groups_choices,
-                landing_revs=c.landing_revs_choices)()
+                self.request.translate, repo_groups=c.repo_groups_choices)()
             form_result = form.to_python(dict(self.request.POST))
             copy_permissions = form_result.get('repo_copy_permissions')
             # create is done sometimes async on celery, db transaction

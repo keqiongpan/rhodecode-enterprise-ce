@@ -242,7 +242,7 @@ class SettingsModel(BaseModel):
                 region.invalidate()
 
             result = _get_all_settings('rhodecode_settings', key)
-            log.debug('Fetching app settings for key: %s took: %.3fs', key,
+            log.debug('Fetching app settings for key: %s took: %.4fs', key,
                       inv_context_manager.compute_time)
 
         return result
@@ -519,6 +519,12 @@ class VcsSettingsModel(object):
     @assert_repo_settings
     def get_repo_settings(self):
         return self._collect_all_settings(global_=False)
+
+    @assert_repo_settings
+    def get_repo_settings_inherited(self):
+        global_settings = self.get_global_settings()
+        global_settings.update(self.get_repo_settings())
+        return global_settings
 
     @assert_repo_settings
     def create_or_update_repo_settings(

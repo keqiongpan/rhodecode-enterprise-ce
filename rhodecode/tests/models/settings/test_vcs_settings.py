@@ -277,6 +277,8 @@ class TestCreateOrUpdateRepoHookSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model.create_or_update_repo_hook_settings(data)
+            Session().commit()
+
         msg = 'The given data does not contain {} key'.format(deleted_key)
         assert str(exc_info.value) == msg
 
@@ -286,6 +288,8 @@ class TestCreateOrUpdateRepoHookSettings(object):
             settings_util.create_repo_rhodecode_ui(
                 repo_stub, section, None, key=key, active=False)
         model.create_or_update_repo_hook_settings(HOOKS_FORM_DATA)
+        Session().commit()
+
         for section, key in model.HOOKS_SETTINGS:
             ui = model.repo_settings.get_ui_by_section_and_key(section, key)
             assert ui.ui_active is True
@@ -297,6 +301,7 @@ class TestCreateOrUpdateRepoHookSettings(object):
         with global_patch as global_mock:
             global_mock.get_ui_by_section_and_key.return_value = global_setting
             model.create_or_update_repo_hook_settings(HOOKS_FORM_DATA)
+            Session().commit()
 
 
 class TestUpdateGlobalHookSettings(object):
@@ -309,6 +314,8 @@ class TestUpdateGlobalHookSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model.update_global_hook_settings(data)
+            Session().commit()
+
         msg = 'The given data does not contain {} key'.format(deleted_key)
         assert str(exc_info.value) == msg
 
@@ -322,6 +329,8 @@ class TestUpdateGlobalHookSettings(object):
         session_patcher = mock.patch('rhodecode.model.settings.Session')
         with get_settings_patcher as get_settings_mock, session_patcher:
             model.update_global_hook_settings(HOOKS_FORM_DATA)
+            Session().commit()
+
         assert setting_mock.ui_active is True
         assert get_settings_mock.call_count == 3
 
@@ -333,6 +342,8 @@ class TestCreateOrUpdateRepoGeneralSettings(object):
             model, '_create_or_update_general_settings')
         with create_patch as create_mock:
             model.create_or_update_repo_pr_settings(GENERAL_FORM_DATA)
+            Session().commit()
+
         create_mock.assert_called_once_with(
             model.repo_settings, GENERAL_FORM_DATA)
 
@@ -380,6 +391,7 @@ class TestCreateOrUpdateGeneralSettings(object):
 
         with pytest.raises(ValueError) as exc_info:
             model._create_or_update_general_settings(model.repo_settings, data)
+        Session().commit()
 
         msg = 'The given data does not contain {} key'.format(deleted_key)
         assert str(exc_info.value) == msg
@@ -392,6 +404,7 @@ class TestCreateOrUpdateGeneralSettings(object):
 
         model._create_or_update_general_settings(
             model.repo_settings, GENERAL_FORM_DATA)
+        Session().commit()
 
         for name in model.GENERAL_SETTINGS:
             setting = model.repo_settings.get_setting_by_name(name)
@@ -403,12 +416,16 @@ class TestCreateRepoSvnSettings(object):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         with mock.patch.object(model, '_create_svn_settings') as create_mock:
             model.create_repo_svn_settings(SVN_FORM_DATA)
+            Session().commit()
+
         create_mock.assert_called_once_with(model.repo_settings, SVN_FORM_DATA)
 
     def test_raises_exception_when_repository_is_not_specified(self):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_repo_svn_settings(SVN_FORM_DATA)
+            Session().commit()
+
         assert str(exc_info.value) == 'Repository is not specified'
 
 
@@ -547,6 +564,8 @@ class TestCreateOrUpdateRepoHgSettings(object):
         data.pop(field_to_remove)
         with pytest.raises(ValueError) as exc_info:
             model.create_or_update_repo_hg_settings(data)
+            Session().commit()
+
         expected_message = 'The given data does not contain {} key'.format(
             field_to_remove)
         assert str(exc_info.value) == expected_message
@@ -555,6 +574,8 @@ class TestCreateOrUpdateRepoHgSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_repo_hg_settings(self.FORM_DATA)
+            Session().commit()
+
         assert str(exc_info.value) == 'Repository is not specified'
 
 
@@ -563,6 +584,8 @@ class TestUpdateGlobalSslSetting(object):
         model = VcsSettingsModel()
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.update_global_ssl_setting('False')
+            Session().commit()
+
         create_mock.assert_called_once_with(
             model.global_settings, 'web', 'push_ssl', value='False')
 
@@ -572,6 +595,8 @@ class TestUpdateGlobalPathSetting(object):
         model = VcsSettingsModel()
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.update_global_path_setting('False')
+            Session().commit()
+
         create_mock.assert_called_once_with(
             model.global_settings, 'paths', '/', value='False')
 
@@ -589,6 +614,8 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         model = VcsSettingsModel()
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.create_or_update_global_hg_settings(self.FORM_DATA)
+            Session().commit()
+
         expected_calls = [
             mock.call(model.global_settings, 'extensions', 'largefiles', active=False, value=''),
             mock.call(model.global_settings, 'largefiles', 'usercache', value='/example/largefiles-store'),
@@ -609,6 +636,8 @@ class TestCreateOrUpdateGlobalHgSettings(object):
         data.pop(field_to_remove)
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_global_hg_settings(data)
+            Session().commit()
+
         expected_message = 'The given data does not contain {} key'.format(
             field_to_remove)
         assert str(exc_info.value) == expected_message
@@ -624,6 +653,8 @@ class TestCreateOrUpdateGlobalGitSettings(object):
         model = VcsSettingsModel()
         with mock.patch.object(model, '_create_or_update_ui') as create_mock:
             model.create_or_update_global_git_settings(self.FORM_DATA)
+            Session().commit()
+
         expected_calls = [
             mock.call(model.global_settings, 'vcs_git_lfs', 'enabled', active=False, value=False),
             mock.call(model.global_settings, 'vcs_git_lfs', 'store_location', value='/example/lfs-store'),
@@ -649,6 +680,8 @@ class TestDeleteRepoSvnPattern(object):
         delete_ui_patch = mock.patch.object(model.repo_settings, 'delete_ui')
         with delete_ui_patch as delete_ui_mock:
             model.delete_repo_svn_pattern(123)
+            Session().commit()
+
         delete_ui_mock.assert_called_once_with(-1)
 
     def test_raises_exception_when_repository_is_not_specified(self):
@@ -748,6 +781,8 @@ class TestGetRepoUiSettings(object):
         for section in svn_sections:
             settings_util.create_rhodecode_ui(
                 section, 'repo', key='deadbeef' + section, active=False)
+            Session().commit()
+
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         result = model.get_repo_ui_settings()
         for setting in result:
@@ -795,6 +830,8 @@ class TestGetRepoGeneralSettings(object):
         for key in VcsSettingsModel.GENERAL_SETTINGS:
             settings_util.create_repo_rhodecode_setting(
                 repo_stub, key, 'abcde', type_='unicode')
+            Session().commit()
+
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         result = model.get_repo_ui_settings()
         for key in result:
@@ -820,6 +857,8 @@ class TestGetGlobalGeneralSettings(object):
         for key in VcsSettingsModel.GENERAL_SETTINGS:
             settings_util.create_repo_rhodecode_setting(
                 repo_stub, key, 'abcde', type_='unicode')
+            Session().commit()
+
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         result = model.get_global_general_settings()
         expected_result = model.global_settings.get_all_settings()
@@ -838,6 +877,8 @@ class TestGetGlobalUiSettings(object):
         for section, key in VcsSettingsModel.HOOKS_SETTINGS:
             settings_util.create_repo_rhodecode_ui(
                 repo_stub, section, 'repo', key=key, active=False)
+            Session().commit()
+
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         result = model.get_global_ui_settings()
         expected_result = model.global_settings.get_ui()
@@ -868,6 +909,8 @@ class TestGetGeneralSettings(object):
         for key in VcsSettingsModel.GENERAL_SETTINGS:
             settings_util.create_repo_rhodecode_setting(
                 repo_stub, key, 'abcde', type_='unicode')
+            Session().commit()
+
         result = model.get_general_settings()
         expected_result = model.get_global_general_settings()
         assert sorted(result) == sorted(expected_result)
@@ -879,6 +922,8 @@ class TestGetGeneralSettings(object):
         for key in VcsSettingsModel.GENERAL_SETTINGS:
             settings_util.create_repo_rhodecode_setting(
                 repo_stub, key, 'abcde', type_='unicode')
+            Session().commit()
+
         result = model.get_general_settings()
         expected_result = model.get_repo_general_settings()
         assert sorted(result) == sorted(expected_result)
@@ -898,6 +943,8 @@ class TestGetUiSettings(object):
         for section, key in VcsSettingsModel.HOOKS_SETTINGS:
             settings_util.create_repo_rhodecode_ui(
                 repo_stub, section, 'repo', key=key, active=True)
+            Session().commit()
+
         result = model.get_ui_settings()
         expected_result = model.get_global_ui_settings()
         assert sorted(result) == sorted(expected_result)
@@ -909,6 +956,8 @@ class TestGetUiSettings(object):
         for section, key in VcsSettingsModel.HOOKS_SETTINGS:
             settings_util.create_repo_rhodecode_ui(
                 repo_stub, section, 'repo', key=key, active=True)
+            Session().commit()
+
         result = model.get_ui_settings()
         expected_result = model.get_repo_ui_settings()
         assert sorted(result) == sorted(expected_result)
@@ -916,9 +965,12 @@ class TestGetUiSettings(object):
     def test_repo_settings_filtered_by_section_and_key(self, repo_stub):
         model = VcsSettingsModel(repo=repo_stub.repo_name)
         model.inherit_global_settings = False
+
         args = ('section', 'key')
         with mock.patch.object(model, 'get_repo_ui_settings') as settings_mock:
             model.get_ui_settings(*args)
+        Session().commit()
+
         settings_mock.assert_called_once_with(*args)
 
     def test_global_settings_filtered_by_section_and_key(self):
@@ -942,6 +994,8 @@ class TestGetSvnPatterns(object):
         args = ('section', )
         with mock.patch.object(model, 'get_repo_ui_settings') as settings_mock:
             model.get_svn_patterns(*args)
+
+        Session().commit()
         settings_mock.assert_called_once_with(*args)
 
     def test_global_settings_filtered_by_section_and_key(self):
@@ -990,6 +1044,8 @@ class TestCreateOrUpdateRepoSettings(object):
         model = VcsSettingsModel()
         with pytest.raises(Exception) as exc_info:
             model.create_or_update_repo_settings(data=self.FORM_DATA)
+            Session().commit()
+
         assert str(exc_info.value) == 'Repository is not specified'
 
     def test_only_svn_settings_are_updated_when_type_is_svn(self, backend_svn):
@@ -998,6 +1054,8 @@ class TestCreateOrUpdateRepoSettings(object):
         with self._patch_model(model) as mocks:
             model.create_or_update_repo_settings(
                 data=self.FORM_DATA, inherit_global_settings=False)
+            Session().commit()
+
         mocks['create_repo_svn_settings'].assert_called_once_with(
             self.FORM_DATA)
         non_called_methods = (
@@ -1013,6 +1071,7 @@ class TestCreateOrUpdateRepoSettings(object):
         with self._patch_model(model) as mocks:
             model.create_or_update_repo_settings(
                 data=self.FORM_DATA, inherit_global_settings=False)
+            Session().commit()
 
         assert mocks['create_repo_svn_settings'].call_count == 0
         called_methods = (
@@ -1060,6 +1119,8 @@ class TestCreateOrUpdateRepoSettings(object):
         with invalidation_patcher as invalidation_mock:
             model.create_or_update_repo_settings(
                 data=self.FORM_DATA, inherit_global_settings=True)
+        Session().commit()
+
         invalidation_mock.assert_called_once_with(
             repo_stub.repo_name, delete=True)
 
@@ -1069,6 +1130,8 @@ class TestCreateOrUpdateRepoSettings(object):
         with self._patch_model(model):
             model.create_or_update_repo_settings(
                 data=self.FORM_DATA, inherit_global_settings=False)
+            Session().commit()
+
         assert model.inherit_global_settings is False
 
     def _patch_model(self, model):

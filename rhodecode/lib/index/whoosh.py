@@ -99,6 +99,29 @@ class WhooshSearcher(BaseSearcher):
             query = u'(%s) OR %s' % (query, hashes_or_query)
         return query
 
+    def sort_def(self, search_type, direction, sort_field):
+
+        if search_type == 'commit':
+            field_defs = {
+                'message': 'message',
+                'date': 'date',
+                'author_email': 'author',
+            }
+        elif search_type == 'path':
+            field_defs = {
+                'file': 'path',
+                'size': 'size',
+                'lines': 'lines',
+            }
+        elif search_type == 'content':
+            # NOTE(dan): content doesn't support any sorting
+            field_defs = {}
+        else:
+            return ''
+
+        if sort_field in field_defs:
+            return field_defs[sort_field]
+
     def search(self, query, document_type, search_user,
                repo_name=None, repo_group_name=None,
                requested_page=1, page_limit=10, sort=None, raise_on_exc=True):
@@ -124,18 +147,20 @@ class WhooshSearcher(BaseSearcher):
                 query = qp.parse(safe_unicode(query))
                 log.debug('query: %s (%s)', query, repr(query))
 
-                reverse, sortedby = False, None
-                if search_type == 'message':
-                    if sort == 'oldfirst':
-                        sortedby = 'date'
-                        reverse = False
-                    elif sort == 'newfirst':
-                        sortedby = 'date'
-                        reverse = True
+                reverse, sorted_by = False, None
+                direction, sort_field = self.get_sort(search_type, sort)
+                if sort_field:
+                    sort_definition = self.sort_def(search_type, direction, sort_field)
+                    if sort_definition:
+                        sorted_by = sort_definition
+                        if direction == Searcher.DIRECTION_DESC:
+                            reverse = True
+                        if direction == Searcher.DIRECTION_ASC:
+                            reverse = False
 
                 whoosh_results = self.searcher.search(
                     query, filter=allowed_repos_filter, limit=None,
-                    sortedby=sortedby, reverse=reverse)
+                    sortedby=sorted_by, reverse=reverse)
 
                 # fixes for 32k limit that whoosh uses for highlight
                 whoosh_results.fragmenter.charlimit = None

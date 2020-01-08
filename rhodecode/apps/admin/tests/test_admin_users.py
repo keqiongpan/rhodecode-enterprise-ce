@@ -91,6 +91,9 @@ def route_path(name, params=None, **kwargs):
         'edit_user_audit_logs':
             ADMIN_PREFIX + '/users/{user_id}/edit/audit',
 
+        'edit_user_audit_logs_download':
+            ADMIN_PREFIX + '/users/{user_id}/edit/audit/download',
+
     }[name].format(**kwargs)
 
     if params:
@@ -318,7 +321,6 @@ class TestAdminUsersView(TestController):
             route_path('edit_user_emails', user_id=user_id))
         response.mustcontain(no=['example@rhodecode.com'])
 
-
     def test_create(self, request, xhr_header):
         self.log_user()
         username = 'newtestuser'
@@ -333,6 +335,7 @@ class TestAdminUsersView(TestController):
         response = self.app.post(route_path('users_create'), params={
             'username': username,
             'password': password,
+            'description': 'mr CTO',
             'password_confirmation': password_confirmation,
             'firstname': name,
             'active': True,
@@ -381,6 +384,7 @@ class TestAdminUsersView(TestController):
             'name': name,
             'active': False,
             'lastname': lastname,
+            'description': 'mr CTO',
             'email': email,
             'csrf_token': self.csrf_token,
         })
@@ -418,6 +422,7 @@ class TestAdminUsersView(TestController):
         ('email', {'email': 'some@email.com'}),
         ('language', {'language': 'de'}),
         ('language', {'language': 'en'}),
+        ('description', {'description': 'hello CTO'}),
         # ('new_password', {'new_password': 'foobar123',
         #                   'password_confirmation': 'foobar123'})
         ])
@@ -515,7 +520,7 @@ class TestAdminUsersView(TestController):
             route_path('user_delete', user_id=new_user.user_id),
             params={'csrf_token': self.csrf_token})
 
-        assert_session_flash(response, 'Successfully deleted user')
+        assert_session_flash(response, 'Successfully deleted user `{}`'.format(username))
 
     def test_delete_owner_of_repository(self, request, user_util):
         self.log_user()
@@ -531,8 +536,7 @@ class TestAdminUsersView(TestController):
             params={'csrf_token': self.csrf_token})
 
         msg = 'user "%s" still owns 1 repositories and cannot be removed. ' \
-              'Switch owners or remove those repositories:%s' % (username,
-                                                                 obj_name)
+              'Switch owners or remove those repositories:%s' % (username, obj_name)
         assert_session_flash(response, msg)
         fixture.destroy_repo(obj_name)
 
@@ -542,6 +546,7 @@ class TestAdminUsersView(TestController):
         usr = user_util.create_user(auto_cleanup=False)
         username = usr.username
         fixture.create_repo(obj_name, cur_user=usr.username)
+        Session().commit()
 
         new_user = Session().query(User)\
             .filter(User.username == username).one()
@@ -583,8 +588,7 @@ class TestAdminUsersView(TestController):
             params={'csrf_token': self.csrf_token})
 
         msg = 'user "%s" still owns 1 repository groups and cannot be removed. ' \
-              'Switch owners or remove those repository groups:%s' % (username,
-                                                                      obj_name)
+              'Switch owners or remove those repository groups:%s' % (username, obj_name)
         assert_session_flash(response, msg)
         fixture.destroy_repo_group(obj_name)
 
@@ -635,8 +639,7 @@ class TestAdminUsersView(TestController):
             params={'csrf_token': self.csrf_token})
 
         msg = 'user "%s" still owns 1 user groups and cannot be removed. ' \
-              'Switch owners or remove those user groups:%s' % (username,
-                                                                obj_name)
+              'Switch owners or remove those user groups:%s' % (username, obj_name)
         assert_session_flash(response, msg)
         fixture.destroy_user_group(obj_name)
 
@@ -779,3 +782,13 @@ class TestAdminUsersView(TestController):
         user = self.log_user()
         self.app.get(
             route_path('edit_user_audit_logs', user_id=user['user_id']))
+
+    def test_audit_log_page_download(self):
+        user = self.log_user()
+        user_id = user['user_id']
+        response = self.app.get(
+            route_path('edit_user_audit_logs_download', user_id=user_id))
+
+        assert response.content_disposition == \
+               'attachment; filename=user_{}_audit_logs.json'.format(user_id)
+        assert response.content_type == "application/json"

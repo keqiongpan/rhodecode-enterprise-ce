@@ -451,7 +451,7 @@ def comment_pull_request(
         request, apiuser, pullrequestid, repoid=Optional(None),
         message=Optional(None), commit_id=Optional(None), status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
-        resolves_comment_id=Optional(None),
+        resolves_comment_id=Optional(None), extra_recipients=Optional([]),
         userid=Optional(OAttr('apiuser'))):
     """
     Comment on the pull request specified with the `pullrequestid`,
@@ -476,6 +476,11 @@ def comment_pull_request(
     :type status: str
     :param comment_type: Comment type, one of: 'note', 'todo'
     :type comment_type: Optional(str), default: 'note'
+    :param resolves_comment_id: id of comment which this one will resolve
+    :type resolves_comment_id: Optional(int)
+    :param extra_recipients: list of user ids or usernames to add
+        notifications for this comment. Acts like a CC for notification
+    :type extra_recipients: Optional(list)
     :param userid: Comment on the pull request as this user
     :type userid: Optional(str or int)
 
@@ -521,6 +526,7 @@ def comment_pull_request(
     commit_id = Optional.extract(commit_id)
     comment_type = Optional.extract(comment_type)
     resolves_comment_id = Optional.extract(resolves_comment_id)
+    extra_recipients = Optional.extract(extra_recipients)
 
     if not message and not status:
         raise JSONRPCError(
@@ -580,7 +586,8 @@ def comment_pull_request(
         renderer=renderer,
         comment_type=comment_type,
         resolves_comment_id=resolves_comment_id,
-        auth_user=auth_user
+        auth_user=auth_user,
+        extra_recipients=extra_recipients
     )
 
     if allowed_to_change_status and status:
@@ -888,7 +895,9 @@ def update_pull_request(
 
         with pull_request.set_state(PullRequest.STATE_UPDATING):
             if PullRequestModel().has_valid_update_type(pull_request):
-                update_response = PullRequestModel().update_commits(pull_request)
+                db_user = apiuser.get_instance()
+                update_response = PullRequestModel().update_commits(
+                    pull_request, db_user)
                 commit_changes = update_response.changes or commit_changes
             Session().commit()
 

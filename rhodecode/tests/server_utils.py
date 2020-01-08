@@ -133,8 +133,7 @@ class RcVCSServer(ServerBase):
 
     def __init__(self, config_file, log_file=None):
         super(RcVCSServer, self).__init__(config_file, log_file)
-        self._args = [
-            'gunicorn', '--paste', self.config_file]
+        self._args = ['gunicorn', '--paste', self.config_file]
 
     def start(self):
         env = os.environ.copy()
@@ -145,6 +144,7 @@ class RcVCSServer(ServerBase):
         host_url = self.host_url()
         assert_no_running_instance(host_url)
 
+        print('rhodecode-vcsserver start command: {}'.format(' '.join(self._args)))
         print('rhodecode-vcsserver starting at: {}'.format(host_url))
         print('rhodecode-vcsserver command: {}'.format(self.command))
         print('rhodecode-vcsserver logfile: {}'.format(self.log_file))

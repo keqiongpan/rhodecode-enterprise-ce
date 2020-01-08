@@ -22,29 +22,30 @@ import re
 import logging
 import collections
 
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import view_config
 
-from rhodecode.apps._base import BaseAppView
+from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
-    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired)
+    LoginRequired, NotAnonymous, HasRepoGroupPermissionAnyDecorator, CSRFRequired,
+    HasRepoGroupPermissionAny, AuthUser)
 from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
-from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
-    func, true, or_, case, in_filter_generator, Repository, RepoGroup, User, UserGroup)
+    func, true, or_, case, in_filter_generator, Session,
+    Repository, RepoGroup, User, UserGroup)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
-from rhodecode.model.scm import RepoGroupList, RepoList
 from rhodecode.model.user import UserModel
 from rhodecode.model.user_group import UserGroupModel
 
 log = logging.getLogger(__name__)
 
 
-class HomeView(BaseAppView):
+class HomeView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
@@ -112,7 +113,12 @@ class HomeView(BaseAppView):
             ['repository.read', 'repository.write', 'repository.admin'],
             cache=False, name_filter=name_contains) or [-1]
 
-        query = Repository.query()\
+        query = Session().query(
+                Repository.repo_name,
+                Repository.repo_id,
+                Repository.repo_type,
+                Repository.private,
+            )\
             .filter(Repository.archived.isnot(true()))\
             .filter(or_(
                 # generate multiple IN to fix limitation problems
@@ -158,7 +164,10 @@ class HomeView(BaseAppView):
             ['group.read', 'group.write', 'group.admin'],
             cache=False, name_filter=name_contains) or [-1]
 
-        query = RepoGroup.query()\
+        query = Session().query(
+                RepoGroup.group_id,
+                RepoGroup.group_name,
+            )\
             .filter(or_(
                 # generate multiple IN to fix limitation problems
                 *in_filter_generator(RepoGroup.group_id, allowed_ids)
@@ -449,6 +458,7 @@ class HomeView(BaseAppView):
                 'id': -10,
                 'value': query,
                 'value_display': label,
+                'value_icon': '<i class="icon-code"></i>',
                 'type': 'search',
                 'subtype': 'repo',
                 'url': h.route_path('search_repo',
@@ -466,6 +476,7 @@ class HomeView(BaseAppView):
                 'id': -20,
                 'value': query,
                 'value_display': label,
+                'value_icon': '<i class="icon-history"></i>',
                 'type': 'search',
                 'subtype': 'repo',
                 'url': h.route_path('search_repo',
@@ -491,6 +502,7 @@ class HomeView(BaseAppView):
                 'id': -30,
                 'value': query,
                 'value_display': label,
+                'value_icon': '<i class="icon-code"></i>',
                 'type': 'search',
                 'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
@@ -508,6 +520,7 @@ class HomeView(BaseAppView):
                 'id': -40,
                 'value': query,
                 'value_display': label,
+                'value_icon': '<i class="icon-history"></i>',
                 'type': 'search',
                 'subtype': 'repo_group',
                 'url': h.route_path('search_repo_group',
@@ -529,6 +542,7 @@ class HomeView(BaseAppView):
                     'id': -1,
                     'value': query,
                     'value_display': u'File search for: `{}`'.format(query),
+                    'value_icon': '<i class="icon-code"></i>',
                     'type': 'search',
                     'subtype': 'global',
                     'url': h.route_path('search',
@@ -539,6 +553,7 @@ class HomeView(BaseAppView):
                     'id': -2,
                     'value': query,
                     'value_display': u'Commit search for: `{}`'.format(query),
+                    'value_icon': '<i class="icon-history"></i>',
                     'type': 'search',
                     'subtype': 'global',
                     'url': h.route_path('search',
@@ -667,23 +682,6 @@ class HomeView(BaseAppView):
 
         return {'suggestions': res}
 
-    def _get_groups_and_repos(self, repo_group_id=None):
-        # repo groups groups
-        repo_group_list = RepoGroup.get_all_repo_groups(group_id=repo_group_id)
-        _perms = ['group.read', 'group.write', 'group.admin']
-        repo_group_list_acl = RepoGroupList(repo_group_list, perm_set=_perms)
-        repo_group_data = RepoGroupModel().get_repo_groups_as_dict(
-            repo_group_list=repo_group_list_acl, admin=False)
-
-        # repositories
-        repo_list = Repository.get_all_repos(group_id=repo_group_id)
-        _perms = ['repository.read', 'repository.write', 'repository.admin']
-        repo_list_acl = RepoList(repo_list, perm_set=_perms)
-        repo_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list_acl, admin=False)
-
-        return repo_data, repo_group_data
-
     @LoginRequired()
     @view_config(
         route_name='home', request_method='GET',
@@ -691,17 +689,74 @@ class HomeView(BaseAppView):
     def main_page(self):
         c = self.load_default_context()
         c.repo_group = None
-
-        repo_data, repo_group_data = self._get_groups_and_repos()
-        # json used to render the grids
-        c.repos_data = json.dumps(repo_data)
-        c.repo_groups_data = json.dumps(repo_group_data)
-
         return self._get_template_context(c)
 
+    def _main_page_repo_groups_data(self, repo_group_id):
+        column_map = {
+            'name': 'group_name_hash',
+            'desc': 'group_description',
+            'last_change': 'updated_on',
+            'owner': 'user_username',
+        }
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(
+            self.request, column_map=column_map)
+        return RepoGroupModel().get_repo_groups_data_table(
+            draw, start, limit,
+            search_q, order_by, order_dir,
+            self._rhodecode_user, repo_group_id)
+
+    def _main_page_repos_data(self, repo_group_id):
+        column_map = {
+            'name': 'repo_name',
+            'desc': 'description',
+            'last_change': 'updated_on',
+            'owner': 'user_username',
+        }
+        draw, start, limit = self._extract_chunk(self.request)
+        search_q, order_by, order_dir = self._extract_ordering(
+            self.request, column_map=column_map)
+        return RepoModel().get_repos_data_table(
+            draw, start, limit,
+            search_q, order_by, order_dir,
+            self._rhodecode_user, repo_group_id)
+
     @LoginRequired()
-    @HasRepoGroupPermissionAnyDecorator(
-        'group.read', 'group.write', 'group.admin')
+    @view_config(
+        route_name='main_page_repo_groups_data',
+        request_method='GET', renderer='json_ext', xhr=True)
+    def main_page_repo_groups_data(self):
+        self.load_default_context()
+        repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
+
+        if repo_group_id:
+            group = RepoGroup.get_or_404(repo_group_id)
+            _perms = AuthUser.repo_group_read_perms
+            if not HasRepoGroupPermissionAny(*_perms)(
+                    group.group_name, 'user is allowed to list repo group children'):
+                raise HTTPNotFound()
+
+        return self._main_page_repo_groups_data(repo_group_id)
+
+    @LoginRequired()
+    @view_config(
+        route_name='main_page_repos_data',
+        request_method='GET', renderer='json_ext', xhr=True)
+    def main_page_repos_data(self):
+        self.load_default_context()
+        repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
+
+        if repo_group_id:
+            group = RepoGroup.get_or_404(repo_group_id)
+            _perms = AuthUser.repo_group_read_perms
+            if not HasRepoGroupPermissionAny(*_perms)(
+                    group.group_name, 'user is allowed to list repo group children'):
+                raise HTTPNotFound()
+
+        return self._main_page_repos_data(repo_group_id)
+
+    @LoginRequired()
+    @HasRepoGroupPermissionAnyDecorator(*AuthUser.repo_group_read_perms)
     @view_config(
         route_name='repo_group_home', request_method='GET',
         renderer='rhodecode:templates/index_repo_group.mako')
@@ -711,16 +766,6 @@ class HomeView(BaseAppView):
     def repo_group_main_page(self):
         c = self.load_default_context()
         c.repo_group = self.request.db_repo_group
-        repo_data, repo_group_data = self._get_groups_and_repos(c.repo_group.group_id)
-
-        # update every 5 min
-        if self.request.db_repo_group.last_commit_cache_update_diff > 60 * 5:
-            self.request.db_repo_group.update_commit_cache()
-
-        # json used to render the grids
-        c.repos_data = json.dumps(repo_data)
-        c.repo_groups_data = json.dumps(repo_group_data)
-
         return self._get_template_context(c)
 
     @LoginRequired()

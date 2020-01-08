@@ -31,9 +31,17 @@ from rhodecode.lib.utils import safe_str, sha1
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.model.db import Session, CacheKey, IntegrityError
 
-from . import region_meta
+from rhodecode.lib.rc_cache import cache_key_meta
+from rhodecode.lib.rc_cache import region_meta
 
 log = logging.getLogger(__name__)
+
+
+def isCython(func):
+    """
+    Private helper that checks if a function is a cython function.
+    """
+    return func.__class__.__name__ == 'cython_function_or_method'
 
 
 class RhodeCodeCacheRegion(CacheRegion):
@@ -55,28 +63,90 @@ class RhodeCodeCacheRegion(CacheRegion):
         if function_key_generator is None:
             function_key_generator = self.function_key_generator
 
-        def decorator(fn):
-            if to_str is compat.string_type:
-                # backwards compatible
-                key_generator = function_key_generator(namespace, fn)
-            else:
-                key_generator = function_key_generator(namespace, fn, to_str=to_str)
-
-            @functools.wraps(fn)
-            def decorate(*arg, **kw):
-                key = key_generator(*arg, **kw)
+        # workaround for py2 and cython problems, this block should be removed
+        # once we've migrated to py3
+        if 'cython' == 'cython':
+            def decorator(fn):
+                if to_str is compat.string_type:
+                    # backwards compatible
+                    key_generator = function_key_generator(namespace, fn)
+                else:
+                    key_generator = function_key_generator(namespace, fn, to_str=to_str)
 
                 @functools.wraps(fn)
-                def creator():
-                    return fn(*arg, **kw)
+                def decorate(*arg, **kw):
+                    key = key_generator(*arg, **kw)
 
-                if not condition:
-                    return creator()
+                    @functools.wraps(fn)
+                    def creator():
+                        return fn(*arg, **kw)
 
-                timeout = expiration_time() if expiration_time_is_callable \
-                    else expiration_time
+                    if not condition:
+                        return creator()
 
-                return self.get_or_create(key, creator, timeout, should_cache_fn)
+                    timeout = expiration_time() if expiration_time_is_callable \
+                        else expiration_time
+
+                    return self.get_or_create(key, creator, timeout, should_cache_fn)
+
+                def invalidate(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    self.delete(key)
+
+                def set_(value, *arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    self.set(key, value)
+
+                def get(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    return self.get(key)
+
+                def refresh(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    value = fn(*arg, **kw)
+                    self.set(key, value)
+                    return value
+
+                decorate.set = set_
+                decorate.invalidate = invalidate
+                decorate.refresh = refresh
+                decorate.get = get
+                decorate.original = fn
+                decorate.key_generator = key_generator
+                decorate.__wrapped__ = fn
+
+                return decorate
+            return decorator
+
+        def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
+
+            if not condition:
+                log.debug('Calling un-cached func:%s', user_func.func_name)
+                return user_func(*arg, **kw)
+
+            key = key_generator(*arg, **kw)
+
+            timeout = expiration_time() if expiration_time_is_callable \
+                else expiration_time
+
+            log.debug('Calling cached fn:%s', user_func.func_name)
+            return self.get_or_create(key, user_func, timeout, should_cache_fn, (arg, kw))
+
+        def cache_decorator(user_func):
+            if to_str is compat.string_type:
+                # backwards compatible
+                key_generator = function_key_generator(namespace, user_func)
+            else:
+                key_generator = function_key_generator(namespace, user_func, to_str=to_str)
+
+            def refresh(*arg, **kw):
+                """
+                Like invalidate, but regenerates the value instead
+                """
+                key = key_generator(*arg, **kw)
+                value = user_func(*arg, **kw)
+                self.set(key, value)
+                return value
 
             def invalidate(*arg, **kw):
                 key = key_generator(*arg, **kw)
@@ -90,23 +160,18 @@ class RhodeCodeCacheRegion(CacheRegion):
                 key = key_generator(*arg, **kw)
                 return self.get(key)
 
-            def refresh(*arg, **kw):
-                key = key_generator(*arg, **kw)
-                value = fn(*arg, **kw)
-                self.set(key, value)
-                return value
+            user_func.set = set_
+            user_func.invalidate = invalidate
+            user_func.get = get
+            user_func.refresh = refresh
+            user_func.key_generator = key_generator
+            user_func.original = user_func
 
-            decorate.set = set_
-            decorate.invalidate = invalidate
-            decorate.refresh = refresh
-            decorate.get = get
-            decorate.original = fn
-            decorate.key_generator = key_generator
-            decorate.__wrapped__ = fn
+            # Use `decorate` to preserve the signature of :param:`user_func`.
+            return decorator.decorate(user_func, functools.partial(
+                get_or_create_for_user_func, key_generator))
 
-            return decorate
-
-        return decorator
+        return cache_decorator
 
 
 def make_region(*arg, **kw):
@@ -134,13 +199,23 @@ def compute_key_from_params(*args):
     return sha1("_".join(map(safe_str, args)))
 
 
-def key_generator(namespace, fn):
+def backend_key_generator(backend):
+    """
+    Special wrapper that also sends over the backend to the key generator
+    """
+    def wrapper(namespace, fn):
+        return key_generator(backend, namespace, fn)
+    return wrapper
+
+
+def key_generator(backend, namespace, fn):
     fname = fn.__name__
 
     def generate_key(*args):
-        namespace_pref = namespace or 'default'
+        backend_prefix = getattr(backend, 'key_prefix', None) or 'backend_prefix'
+        namespace_pref = namespace or 'default_namespace'
         arg_key = compute_key_from_params(*args)
-        final_key = "{}:{}_{}".format(namespace_pref, fname, arg_key)
+        final_key = "{}:{}:{}_{}".format(backend_prefix, namespace_pref, fname, arg_key)
 
         return final_key
 
@@ -167,7 +242,8 @@ def get_or_create_region(region_name, region_namespace=None):
         if not os.path.isdir(cache_dir):
             os.makedirs(cache_dir)
         new_region = make_region(
-            name=region_uid_name, function_key_generator=key_generator
+            name=region_uid_name,
+            function_key_generator=backend_key_generator(region_obj.actual_backend)
         )
         namespace_filename = os.path.join(
             cache_dir, "{}.cache.dbm".format(region_namespace))
@@ -179,7 +255,7 @@ def get_or_create_region(region_name, region_namespace=None):
         )
 
         # create and save in region caches
-        log.debug('configuring new region: %s',region_uid_name)
+        log.debug('configuring new region: %s', region_uid_name)
         region_obj = region_meta.dogpile_cache_regions[region_namespace] = new_region
 
     return region_obj
@@ -195,16 +271,18 @@ def clear_cache_namespace(cache_region, cache_namespace_uid):
 
 
 class ActiveRegionCache(object):
-    def __init__(self, context):
+    def __init__(self, context, cache_data):
         self.context = context
+        self.cache_data = cache_data
 
     def should_invalidate(self):
         return False
 
 
 class FreshRegionCache(object):
-    def __init__(self, context):
+    def __init__(self, context, cache_data):
         self.context = context
+        self.cache_data = cache_data
 
     def should_invalidate(self):
         return True
@@ -238,7 +316,7 @@ class InvalidationContext(object):
                 result = heavy_compute(*args)
 
             compute_time = inv_context_manager.compute_time
-            log.debug('result computed in %.3fs', compute_time)
+            log.debug('result computed in %.4fs', compute_time)
 
         # To send global invalidation signal, simply run
         CacheKey.set_invalidate(invalidation_namespace)
@@ -267,16 +345,28 @@ class InvalidationContext(object):
             self.thread_id = threading.current_thread().ident
 
         self.cache_key = compute_key_from_params(uid)
-        self.cache_key = 'proc:{}_thread:{}_{}'.format(
+        self.cache_key = 'proc:{}|thread:{}|params:{}'.format(
             self.proc_id, self.thread_id, self.cache_key)
         self.compute_time = 0
 
-    def get_or_create_cache_obj(self, uid, invalidation_namespace=''):
-        cache_obj = CacheKey.get_active_cache(self.cache_key)
-        log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
+    def get_or_create_cache_obj(self, cache_type, invalidation_namespace=''):
         invalidation_namespace = invalidation_namespace or self.invalidation_namespace
+        # fetch all cache keys for this namespace and convert them to a map to find if we
+        # have specific cache_key object registered. We do this because we want to have
+        # all consistent cache_state_uid for newly registered objects
+        cache_obj_map = CacheKey.get_namespace_map(invalidation_namespace)
+        cache_obj = cache_obj_map.get(self.cache_key)
+        log.debug('Fetched cache obj %s using %s cache key.', cache_obj, self.cache_key)
         if not cache_obj:
-            cache_obj = CacheKey(self.cache_key, cache_args=invalidation_namespace)
+            new_cache_args = invalidation_namespace
+            first_cache_obj = next(cache_obj_map.itervalues()) if cache_obj_map else None
+            cache_state_uid = None
+            if first_cache_obj:
+                cache_state_uid = first_cache_obj.cache_state_uid
+            cache_obj = CacheKey(self.cache_key, cache_args=new_cache_args,
+                                 cache_state_uid=cache_state_uid)
+            cache_key_meta.cache_keys_by_pid.append(self.cache_key)
+
         return cache_obj
 
     def __enter__(self):
@@ -284,21 +374,23 @@ class InvalidationContext(object):
         Test if current object is valid, and return CacheRegion function
         that does invalidation and calculation
         """
+        log.debug('Entering cache invalidation check context: %s', self.invalidation_namespace)
         # register or get a new key based on uid
-        self.cache_obj = self.get_or_create_cache_obj(uid=self.uid)
+        self.cache_obj = self.get_or_create_cache_obj(cache_type=self.uid)
+        cache_data = self.cache_obj.get_dict()
         self._start_time = time.time()
         if self.cache_obj.cache_active:
             # means our cache obj is existing and marked as it's
             # cache is not outdated, we return ActiveRegionCache
             self.skip_cache_active_change = True
 
-            return ActiveRegionCache(context=self)
+            return ActiveRegionCache(context=self, cache_data=cache_data)
 
-            # the key is either not existing or set to False, we return
+        # the key is either not existing or set to False, we return
         # the real invalidator which re-computes value. We additionally set
         # the flag to actually update the Database objects
         self.skip_cache_active_change = False
-        return FreshRegionCache(context=self)
+        return FreshRegionCache(context=self, cache_data=cache_data)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # save compute time

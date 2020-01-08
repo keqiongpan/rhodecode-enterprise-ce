@@ -89,7 +89,7 @@ class RepoChangelogView(RepoAppView):
             data = dict(
                 raw_id=commit.raw_id,
                 idx=commit.idx,
-                branch=h.escape(commit.branch),
+                branch=None,
             )
             if parents:
                 data['parents'] = [
@@ -121,9 +121,16 @@ class RepoChangelogView(RepoAppView):
             self, c, collection, page, chunk_size, branch_name=None,
             dynamic=False, f_path=None, commit_id=None):
 
-        def url_generator(**kw):
-            query_params = {}
-            query_params.update(kw)
+        def url_generator(page_num):
+            query_params = {
+                'page': page_num
+            }
+
+            if branch_name:
+                query_params.update({
+                    'branch': branch_name
+                })
+
             if f_path:
                 # changelog for file
                 return h.route_path(
@@ -139,8 +146,7 @@ class RepoChangelogView(RepoAppView):
         c.total_cs = len(collection)
         c.showing_commits = min(chunk_size, c.total_cs)
         c.pagination = RepoPage(collection, page=page, item_count=c.total_cs,
-                                items_per_page=chunk_size, branch=branch_name,
-                                url=url_generator)
+                                items_per_page=chunk_size, url_maker=url_generator)
 
         c.next_page = c.pagination.next_page
         c.prev_page = c.pagination.previous_page

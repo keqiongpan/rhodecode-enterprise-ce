@@ -50,7 +50,7 @@ class TestVCSOperationsSpecial(object):
         repo.in_memory_commit.add(FileNode('file', content=''))
         repo.in_memory_commit.commit(
             message='Commit on branch test',
-            author='Automatic test',
+            author='Automatic test <automatic@rhodecode.com>',
             branch='test')
 
         repo_cmd = Command(repo.path)
@@ -92,7 +92,7 @@ class TestVCSOperationsSpecial(object):
         repo.in_memory_commit.add(FileNode('readme.md', content='## Hello'))
         repo.in_memory_commit.commit(
             message='Commit on branch Master',
-            author='Automatic test',
+            author='Automatic test <automatic@rhodecode.com>',
             branch='master')
 
         repo_cmd = Command(repo.path)
@@ -109,7 +109,7 @@ class TestVCSOperationsSpecial(object):
         repo.in_memory_commit.add(FileNode('setup.py', content='print\n'))
         repo.in_memory_commit.commit(
             message='Commit2 on branch Master',
-            author='Automatic test2',
+            author='Automatic test2 <automatic@rhodecode.com>',
             branch='master')
 
         repo_cmd = Command(repo.path)
@@ -124,7 +124,7 @@ class TestVCSOperationsSpecial(object):
         repo.in_memory_commit.add(FileNode('feature1.py', content='## Hello world'))
         repo.in_memory_commit.commit(
             message='Commit on branch feature',
-            author='Automatic test',
+            author='Automatic test <automatic@rhodecode.com>',
             branch='feature')
 
         repo_cmd = Command(repo.path)

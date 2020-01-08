@@ -58,7 +58,7 @@ def test_git_push_with_small_push_buffer(backend_git, rc_web_server, tmpdir):
     repo.in_memory_commit.add(FileNode('readme.md', content='## Hello'))
     repo.in_memory_commit.commit(
         message='Commit on branch Master',
-        author='Automatic test',
+        author='Automatic test <automatic@rhodecode.com>',
         branch='master')
 
     repo_cmd = Command(repo.path)

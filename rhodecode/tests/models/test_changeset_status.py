@@ -81,7 +81,7 @@ def test_pull_request_stays_if_update_without_change(
         voted_status, *pull_request.reviewers)
 
     # Update, without change
-    PullRequestModel().update_commits(pull_request)
+    PullRequestModel().update_commits(pull_request, pull_request.author)
 
     # Expect that review status is the voted_status
     expected_review_status = voted_status
@@ -100,7 +100,7 @@ def test_pull_request_under_review_if_update(pr_util, voted_status, config_stub)
 
     # Update, with change
     pr_util.update_source_repository()
-    PullRequestModel().update_commits(pull_request)
+    PullRequestModel().update_commits(pull_request, pull_request.author)
 
     # Expect that review status is the voted_status
     expected_review_status = db.ChangesetStatus.STATUS_UNDER_REVIEW
@@ -171,7 +171,7 @@ def test_commit_keeps_status_if_unchanged_after_update_of_pull_request(
     commit_id = pull_request.revisions[-1]
     pr_util.create_status_votes(voted_status, pull_request.reviewers[0])
     pr_util.update_source_repository()
-    PullRequestModel().update_commits(pull_request)
+    PullRequestModel().update_commits(pull_request, pull_request.author)
     assert pull_request.revisions[-1] == commit_id
 
     status = ChangesetStatusModel().get_status(

@@ -47,7 +47,16 @@ class TestDeleteScopesDeletesIntegrations(object):
         assert integration is None
 
 
-@pytest.fixture
+count = 1
+
+def counter():
+    global count
+    val = count
+    count += 1
+    return '{}_{}'.format(val, time.time())
+
+
+@pytest.fixture()
 def integration_repos(request, StubIntegrationType, stub_integration_settings):
     """
     Create repositories and integrations for testing, and destroy them after
@@ -63,27 +72,26 @@ def integration_repos(request, StubIntegrationType, stub_integration_settings):
     """
     fixture = Fixture()
 
-
-    parent_group_id = 'int_test_parent_group_%s' % time.time()
+    parent_group_id = 'int_test_parent_group_{}'.format(counter())
     parent_group = fixture.create_repo_group(parent_group_id)
 
-    other_group_id = 'int_test_other_group_%s' % time.time()
+    other_group_id = 'int_test_other_group_{}'.format(counter())
     other_group = fixture.create_repo_group(other_group_id)
 
     child_group_id = (
-        parent_group_id + '/' + 'int_test_child_group_%s' % time.time())
+        parent_group_id + '/' + 'int_test_child_group_{}'.format(counter()))
     child_group = fixture.create_repo_group(child_group_id)
 
-    parent_repo_id = 'int_test_parent_repo_%s' % time.time()
+    parent_repo_id = 'int_test_parent_repo_{}'.format(counter())
     parent_repo = fixture.create_repo(parent_repo_id, repo_group=parent_group)
 
-    child_repo_id = 'int_test_child_repo_%s' % time.time()
+    child_repo_id = 'int_test_child_repo_{}'.format(counter())
     child_repo = fixture.create_repo(child_repo_id, repo_group=child_group)
 
-    other_repo_id = 'int_test_other_repo_%s' % time.time()
+    other_repo_id = 'int_test_other_repo_{}'.format(counter())
     other_repo = fixture.create_repo(other_repo_id, repo_group=other_group)
 
-    root_repo_id = 'int_test_repo_root_%s' % time.time()
+    root_repo_id = 'int_test_repo_root_{}'.format(counter())
     root_repo = fixture.create_repo(root_repo_id)
 
     integrations = {}

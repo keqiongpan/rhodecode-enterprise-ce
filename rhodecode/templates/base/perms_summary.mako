@@ -7,7 +7,7 @@
 <% section_to_label = {
     'global': 'Global Permissions',
     'repository_branches': 'Repository Branch Rules',
-    'repositories': 'Repository Permissions',
+    'repositories': 'Repository Access Permissions',
     'user_groups': 'User Group Permissions',
     'repositories_groups': 'Repository Group Permissions',
 } %>
@@ -86,7 +86,7 @@
                 <td class="td-tags">
                     %if val[0]:
                       %if not val_lbl:
-                          ## super admin case
+                          ## super-admin case
                           True
                       %else:
                           <span class="perm_tag admin">${val_lbl}.admin</span>
@@ -142,7 +142,7 @@
            ${glob(_('User group default permission'), get_section_perms('usergroup.', permissions[section]), 'usergroup',
                 edit_url=None, edit_global_url=h.route_path('admin_permissions_object'))}
 
-           ${glob(_('Super admin'), get_section_perms('hg.admin', permissions[section]),
+           ${glob(_('Super-admin'), get_section_perms('hg.admin', permissions[section]),
                 edit_url=h.route_path('user_edit', user_id=c.user.user_id, _anchor='admin'), edit_global_url=None)}
 
            ${glob(_('Inherit permissions'), get_section_perms('hg.inherit_default_perms.', permissions[section]),
@@ -278,7 +278,7 @@
                     <td class="td-tags">
                       %if hasattr(permissions[section], 'perm_origin_stack'):
                          <div>
-                         %for i, (perm, origin) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
+                         %for i, (perm, origin, obj_id) in enumerate(reversed(permissions[section].perm_origin_stack[k])):
                          <% _css_class =  i > 0 and 'perm_overriden' or '' %>
                          % if i > 0:
                              <div style="color: #979797">

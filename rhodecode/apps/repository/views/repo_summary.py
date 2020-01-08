@@ -20,6 +20,8 @@
 
 import logging
 import string
+import time
+
 import rhodecode
 
 from pyramid.view import view_config
@@ -30,14 +32,12 @@ from rhodecode.config.conf import (LANGUAGES_EXTENSIONS_MAP)
 from rhodecode.lib import helpers as h, rc_cache
 from rhodecode.lib.utils2 import safe_str, safe_int
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
-from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     CommitError, EmptyRepositoryError, CommitDoesNotExistError)
 from rhodecode.model.db import Statistics, CacheKey, User
 from rhodecode.model.meta import Session
-from rhodecode.model.repo import ReadmeFinder
 from rhodecode.model.scm import ScmModel
 
 log = logging.getLogger(__name__)
@@ -52,91 +52,15 @@ class RepoSummaryView(RepoAppView):
             c.rhodecode_repo = self.rhodecode_vcs_repo
         return c
 
-    def _get_readme_data(self, db_repo, renderer_type):
-
-        log.debug('Looking for README file')
-
-        cache_namespace_uid = 'cache_repo_instance.{}_{}'.format(
-            db_repo.repo_id, CacheKey.CACHE_TYPE_README)
-        invalidation_namespace = CacheKey.REPO_INVALIDATION_NAMESPACE.format(
-            repo_id=self.db_repo.repo_id)
-        region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
-
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def generate_repo_readme(repo_id, _repo_name, _renderer_type):
-            readme_data = None
-            readme_node = None
-            readme_filename = None
-            commit = self._get_landing_commit_or_none(db_repo)
-            if commit:
-                log.debug("Searching for a README file.")
-                readme_node = ReadmeFinder(_renderer_type).search(commit)
-            if readme_node:
-                log.debug('Found README node: %s', readme_node)
-                relative_urls = {
-                    'raw': h.route_path(
-                        'repo_file_raw', repo_name=_repo_name,
-                        commit_id=commit.raw_id, f_path=readme_node.path),
-                    'standard': h.route_path(
-                        'repo_files', repo_name=_repo_name,
-                        commit_id=commit.raw_id, f_path=readme_node.path),
-                }
-                readme_data = self._render_readme_or_none(
-                    commit, readme_node, relative_urls)
-                readme_filename = readme_node.unicode_path
-
-            return readme_data, readme_filename
-
-        inv_context_manager = rc_cache.InvalidationContext(
-            uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace)
-        with inv_context_manager as invalidation_context:
-            args = (db_repo.repo_id, db_repo.repo_name, renderer_type,)
-            # re-compute and store cache if we get invalidate signal
-            if invalidation_context.should_invalidate():
-                instance = generate_repo_readme.refresh(*args)
-            else:
-                instance = generate_repo_readme(*args)
-
-            log.debug(
-                'Repo readme generated and computed in %.3fs',
-                inv_context_manager.compute_time)
-            return instance
-
-    def _get_landing_commit_or_none(self, db_repo):
-        log.debug("Getting the landing commit.")
-        try:
-            commit = db_repo.get_landing_commit()
-            if not isinstance(commit, EmptyCommit):
-                return commit
-            else:
-                log.debug("Repository is empty, no README to render.")
-        except CommitError:
-            log.exception(
-                "Problem getting commit when trying to render the README.")
-
-    def _render_readme_or_none(self, commit, readme_node, relative_urls):
-        log.debug(
-            'Found README file `%s` rendering...', readme_node.path)
-        renderer = MarkupRenderer()
-        try:
-            html_source = renderer.render(
-                readme_node.content, filename=readme_node.path)
-            if relative_urls:
-                return relative_links(html_source, relative_urls)
-            return html_source
-        except Exception:
-            log.exception(
-                "Exception while trying to render the README")
-
     def _load_commits_context(self, c):
         p = safe_int(self.request.GET.get('page'), 1)
         size = safe_int(self.request.GET.get('size'), 10)
 
-        def url_generator(**kw):
+        def url_generator(page_num):
             query_params = {
+                'page': page_num,
                 'size': size
             }
-            query_params.update(kw)
             return h.route_path(
                 'repo_summary_commits',
                 repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
@@ -149,7 +73,7 @@ class RepoSummaryView(RepoAppView):
             collection = self.rhodecode_vcs_repo
 
         c.repo_commits = h.RepoPage(
-            collection, page=p, items_per_page=size, url=url_generator)
+            collection, page=p, items_per_page=size, url_maker=url_generator)
         page_ids = [x.raw_id for x in c.repo_commits]
         c.comments = self.db_repo.get_comments(page_ids)
         c.statuses = self.db_repo.statuses(page_ids)
@@ -204,12 +128,7 @@ class RepoSummaryView(RepoAppView):
         # Prepare the clone URL
         self._prepare_and_set_clone_url(c)
 
-        # update every 5 min
-        if self.db_repo.last_commit_cache_update_diff > 60 * 5:
-            self.db_repo.update_commit_cache()
-
         # If enabled, get statistics data
-
         c.show_stats = bool(self.db_repo.enable_statistics)
 
         stats = Session().query(Statistics) \
@@ -254,9 +173,6 @@ class RepoSummaryView(RepoAppView):
 
         return self._get_template_context(c)
 
-    def get_request_commit_id(self):
-        return self.request.matchdict['commit_id']
-
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -264,33 +180,35 @@ class RepoSummaryView(RepoAppView):
         route_name='repo_stats', request_method='GET',
         renderer='json_ext')
     def repo_stats(self):
-        commit_id = self.get_request_commit_id()
         show_stats = bool(self.db_repo.enable_statistics)
         repo_id = self.db_repo.repo_id
 
-        cache_seconds = safe_int(
-            rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
+        landing_commit = self.db_repo.get_landing_commit()
+        if isinstance(landing_commit, EmptyCommit):
+            return {'size': 0, 'code_stats': {}}
+
+        cache_seconds = safe_int(rhodecode.CONFIG.get('rc_cache.cache_repo.expiration_time'))
         cache_on = cache_seconds > 0
+
         log.debug(
-            'Computing REPO TREE for repo_id %s commit_id `%s` '
+            'Computing REPO STATS for repo_id %s commit_id `%s` '
             'with caching: %s[TTL: %ss]' % (
-                repo_id, commit_id, cache_on, cache_seconds or 0))
+                repo_id, landing_commit, cache_on, cache_seconds or 0))
 
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
                                                condition=cache_on)
-        def compute_stats(repo_id, commit_id, show_stats):
+        def compute_stats(repo_id, commit_id, _show_stats):
             code_stats = {}
             size = 0
             try:
-                scm_instance = self.db_repo.scm_instance()
-                commit = scm_instance.get_commit(commit_id)
+                commit = self.db_repo.get_commit(commit_id)
 
                 for node in commit.get_filenodes_generator():
                     size += node.size
-                    if not show_stats:
+                    if not _show_stats:
                         continue
                     ext = string.lower(node.extension)
                     ext_info = LANGUAGES_EXTENSIONS_MAP.get(ext)
@@ -304,7 +222,7 @@ class RepoSummaryView(RepoAppView):
             return {'size': h.format_byte_size_binary(size),
                     'code_stats': code_stats}
 
-        stats = compute_stats(self.db_repo.repo_id, commit_id, show_stats)
+        stats = compute_stats(self.db_repo.repo_id, landing_commit.raw_id, show_stats)
         return stats
 
     @LoginRequired()

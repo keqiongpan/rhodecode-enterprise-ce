@@ -289,7 +289,7 @@ def attach_context_attributes(context, request, user_id=None):
     config = request.registry.settings
 
     rc_config = SettingsModel().get_all_settings(cache=True)
-
+    context.rc_config = rc_config
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
     # unique secret + version does not leak the version but keep consistency
@@ -362,6 +362,10 @@ def attach_context_attributes(context, request, user_id=None):
         config.get('cut_off_limit_diff'))
     context.visual.cut_off_limit_file = safe_int(
         config.get('cut_off_limit_file'))
+
+    context.license = AttributeDict({})
+    context.license.hide_license_info = str2bool(
+        config.get('license.hide_license_info', False))
 
     # AppEnlight
     context.appenlight_enabled = str2bool(config.get('appenlight', 'false'))
@@ -459,9 +463,14 @@ def get_auth_user(request):
     session = request.session
 
     ip_addr = get_ip_addr(environ)
+
     # make sure that we update permissions each time we call controller
-    _auth_token = (request.GET.get('auth_token', '') or
-                   request.GET.get('api_key', ''))
+    _auth_token = (request.GET.get('auth_token', '') or request.GET.get('api_key', ''))
+    if not _auth_token and request.matchdict:
+        url_auth_token = request.matchdict.get('_auth_token')
+        _auth_token = url_auth_token
+        if _auth_token:
+            log.debug('Using URL extracted auth token `...%s`', _auth_token[-4:])
 
     if _auth_token:
         # when using API_KEY we assume user exists, and
@@ -495,7 +504,7 @@ def get_auth_user(request):
         # user is not authenticated and not empty
         auth_user.set_authenticated(authenticated)
 
-    return auth_user
+    return auth_user, _auth_token
 
 
 def h_filter(s):
@@ -519,6 +528,8 @@ def add_events_routes(config):
     from rhodecode.apps._base import ADMIN_PREFIX
 
     config.add_route(name='home', pattern='/')
+    config.add_route(name='main_page_repos_data', pattern='/_home_repos')
+    config.add_route(name='main_page_repo_groups_data', pattern='/_home_repo_groups')
 
     config.add_route(name='login', pattern=ADMIN_PREFIX + '/login')
     config.add_route(name='logout', pattern=ADMIN_PREFIX + '/logout')
@@ -530,11 +541,23 @@ def add_events_routes(config):
                      pattern='/{repo_name}/pull-request/{pull_request_id}')
     config.add_route(name='pull_requests_global',
                      pattern='/pull-request/{pull_request_id}')
+
     config.add_route(name='repo_commit',
                      pattern='/{repo_name}/changeset/{commit_id}')
-
     config.add_route(name='repo_files',
                      pattern='/{repo_name}/files/{commit_id}/{f_path}')
+
+    config.add_route(name='hovercard_user',
+                     pattern='/_hovercard/user/{user_id}')
+
+    config.add_route(name='hovercard_user_group',
+                     pattern='/_hovercard/user_group/{user_group_id}')
+
+    config.add_route(name='hovercard_pull_request',
+                     pattern='/_hovercard/pull_request/{pull_request_id}')
+
+    config.add_route(name='hovercard_repo_commit',
+                     pattern='/_hovercard/commit/{repo_name}/{commit_id}')
 
 
 def bootstrap_config(request):

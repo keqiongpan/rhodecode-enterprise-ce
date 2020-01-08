@@ -2,7 +2,7 @@
 <%inherit file="/base/base.mako"/>
 
 <%def name="title()">
-    ${_('%s user settings') % c.user.username}
+    ${_('{} user settings').format(c.user.username)}
     %if c.rhodecode_name:
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
@@ -36,17 +36,17 @@
   <div class="sidebar-col-wrapper">
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='profile' else ''}"><a href="${h.route_path('user_edit', user_id=c.user.user_id)}">${_('User Profile')}</a></li>
-          <li class="${'active' if c.active=='auth_tokens' else ''}"><a href="${h.route_path('edit_user_auth_tokens', user_id=c.user.user_id)}">${_('Auth tokens')}</a></li>
-          <li class="${'active' if c.active in ['ssh_keys','ssh_keys_generate'] else ''}"><a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id)}">${_('SSH Keys')}</a></li>
-          <li class="${'active' if c.active=='advanced' else ''}"><a href="${h.route_path('user_edit_advanced', user_id=c.user.user_id)}">${_('Advanced')}</a></li>
-          <li class="${'active' if c.active=='global_perms' else ''}"><a href="${h.route_path('user_edit_global_perms', user_id=c.user.user_id)}">${_('Global permissions')}</a></li>
-          <li class="${'active' if c.active=='perms_summary' else ''}"><a href="${h.route_path('edit_user_perms_summary', user_id=c.user.user_id)}">${_('Permissions summary')}</a></li>
-          <li class="${'active' if c.active=='emails' else ''}"><a href="${h.route_path('edit_user_emails', user_id=c.user.user_id)}">${_('Emails')}</a></li>
-          <li class="${'active' if c.active=='ips' else ''}"><a href="${h.route_path('edit_user_ips', user_id=c.user.user_id)}">${_('Ip Whitelist')}</a></li>
-          <li class="${'active' if c.active=='groups' else ''}"><a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a></li>
-          <li class="${'active' if c.active=='audit' else ''}"><a href="${h.route_path('edit_user_audit_logs', user_id=c.user.user_id)}">${_('Audit logs')}</a></li>
-          <li class="${'active' if c.active=='caches' else ''}"><a href="${h.route_path('edit_user_caches', user_id=c.user.user_id)}">${_('Caches')}</a></li>
+          <li class="${h.is_active('profile', c.active)}"><a href="${h.route_path('user_edit', user_id=c.user.user_id)}">${_('User Profile')}</a></li>
+          <li class="${h.is_active('auth_tokens', c.active)}"><a href="${h.route_path('edit_user_auth_tokens', user_id=c.user.user_id)}">${_('Auth tokens')}</a></li>
+          <li class="${h.is_active(['ssh_keys','ssh_keys_generate'], c.active)}"><a href="${h.route_path('edit_user_ssh_keys', user_id=c.user.user_id)}">${_('SSH Keys')}</a></li>
+          <li class="${h.is_active('advanced', c.active)}"><a href="${h.route_path('user_edit_advanced', user_id=c.user.user_id)}">${_('Advanced')}</a></li>
+          <li class="${h.is_active('global_perms', c.active)}"><a href="${h.route_path('user_edit_global_perms', user_id=c.user.user_id)}">${_('Global permissions')}</a></li>
+          <li class="${h.is_active('perms_summary', c.active)}"><a href="${h.route_path('edit_user_perms_summary', user_id=c.user.user_id)}">${_('Permissions summary')}</a></li>
+          <li class="${h.is_active('emails', c.active)}"><a href="${h.route_path('edit_user_emails', user_id=c.user.user_id)}">${_('Emails')}</a></li>
+          <li class="${h.is_active('ips', c.active)}"><a href="${h.route_path('edit_user_ips', user_id=c.user.user_id)}">${_('Ip Whitelist')}</a></li>
+          <li class="${h.is_active('groups', c.active)}"><a href="${h.route_path('edit_user_groups_management', user_id=c.user.user_id)}">${_('User Groups Management')}</a></li>
+          <li class="${h.is_active('audit', c.active)}"><a href="${h.route_path('edit_user_audit_logs', user_id=c.user.user_id)}">${_('Audit logs')}</a></li>
+          <li class="${h.is_active('caches', c.active)}"><a href="${h.route_path('edit_user_caches', user_id=c.user.user_id)}">${_('Caches')}</a></li>
         </ul>
     </div>
 

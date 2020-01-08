@@ -36,7 +36,7 @@ from rhodecode.tests.fixture import Fixture
 fixture = Fixture()
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_name(backend_hg):
     return backend_hg.repo_name
 
@@ -79,21 +79,23 @@ class TestPermissions(object):
     def cleanup(self):
         if hasattr(self, 'test_repo'):
             RepoModel().delete(repo=self.test_repo)
+            Session().commit()
 
         if hasattr(self, 'g1'):
             RepoGroupModel().delete(self.g1.group_id)
         if hasattr(self, 'g2'):
             RepoGroupModel().delete(self.g2.group_id)
+        Session().commit()
 
-        UserModel().delete(self.u1)
-        UserModel().delete(self.u2)
-        UserModel().delete(self.u3)
-        UserModel().delete(self.a1)
+        UserModel().delete(self.u1, handle_repos='delete', handle_repo_groups='delete')
+        UserModel().delete(self.u2, handle_repos='delete', handle_repo_groups='delete')
+        UserModel().delete(self.u3, handle_repos='delete', handle_repo_groups='delete')
+        UserModel().delete(self.a1, handle_repos='delete', handle_repo_groups='delete')
+        Session().commit()
 
         if hasattr(self, 'ug1'):
             UserGroupModel().delete(self.ug1, force=True)
-
-        Session().commit()
+            Session().commit()
 
     def test_default_perms_set(self, repo_name):
         assert repo_perms(self.u1)[repo_name] == 'repository.read'
@@ -183,6 +185,7 @@ class TestPermissions(object):
         new_perm_gr = 'repository.write'
         RepoModel().grant_user_group_permission(
             repo=repo_name, group_name=self.ug1, perm=new_perm_gr)
+        Session().commit()
 
         assert repo_perms(self.u1)[repo_name] == new_perm
         assert group_perms(self.u1) == {}
@@ -197,6 +200,7 @@ class TestPermissions(object):
         new_perm_gr = 'repository.write'
         RepoModel().grant_user_group_permission(
             repo=repo_name, group_name=self.ug1, perm=new_perm_gr)
+        Session().commit()
 
         assert repo_perms(self.u3)[repo_name] == new_perm_gr
         assert group_perms(self.u3) == {}
@@ -220,6 +224,7 @@ class TestPermissions(object):
         new_perm_l = 'repository.read'
         RepoModel().grant_user_group_permission(
             repo=repo_name, group_name=self.ug1, perm=new_perm_l)
+        Session().commit()
 
         assert repo_perms(self.u1)[repo_name] == new_perm_h
         assert group_perms(self.u1) == {}
@@ -281,6 +286,8 @@ class TestPermissions(object):
         # set default permission to none
         RepoGroupModel().grant_user_permission(
             repo_group=self.g1, user=self.anon, perm='group.none')
+        Session().commit()
+
         # make group
         self.ug1 = fixture.create_user_group('G1')
         # add user to group
@@ -501,6 +508,7 @@ class TestPermissions(object):
         UserGroupModel().add_user_to_group(self.ug1, self.u1)
         RepoGroupModel().grant_user_group_permission(
             repo_group=self.g1, group_name=self.ug1, perm='group.write')
+        Session().commit()
 
         # Verify that user does not get any special permission if he is not
         # owner
@@ -515,6 +523,7 @@ class TestPermissions(object):
         self.g1 = fixture.create_repo_group('test1')
         RepoGroupModel().grant_user_permission(
             repo_group=self.g1, user=self.u1, perm='group.write')
+        Session().commit()
 
         # Verify that user does not get any special permission if he is not
         # owner
@@ -524,7 +533,7 @@ class TestPermissions(object):
         self.g1.user = self.u1
         assert group_perms(self.u1) == {u'test1': 'group.admin'}
 
-    def _test_def_user_perm_equal(
+    def assert_user_perm_equal(
             self, user, change_factor=0, compare_keys=None):
         perms = UserToPerm.query().filter(UserToPerm.user == user).all()
         assert len(perms) == \
@@ -533,7 +542,7 @@ class TestPermissions(object):
             assert set(
                 x.permissions.permission_name for x in perms) == compare_keys
 
-    def _test_def_user_group_perm_equal(
+    def assert_def_user_group_perm_equal(
             self, user_group, change_factor=0, compare_keys=None):
         perms = UserGroupToPerm.query().filter(
             UserGroupToPerm.users_group == user_group).all()
@@ -545,21 +554,21 @@ class TestPermissions(object):
 
     def test_set_default_permissions(self):
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
 
     def test_set_default_permissions_after_one_is_missing(self):
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
         # now we delete one, it should be re-created after another call
         perms = UserToPerm.query().filter(UserToPerm.user == self.u1).all()
         Session().delete(perms[0])
         Session().commit()
 
-        self._test_def_user_perm_equal(user=self.u1, change_factor=-1)
+        self.assert_user_perm_equal(user=self.u1, change_factor=-1)
 
         # create missing one !
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
 
     @pytest.mark.parametrize("perm, modify_to", [
         ('repository.read', 'repository.none'),
@@ -571,7 +580,7 @@ class TestPermissions(object):
     ])
     def test_set_default_permissions_after_modification(self, perm, modify_to):
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
 
         old = Permission.get_by_key(perm)
         new = Permission.get_by_key(modify_to)
@@ -587,28 +596,28 @@ class TestPermissions(object):
         Session().commit()
 
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
 
     def test_clear_user_perms(self):
         PermissionModel().create_default_user_permissions(user=self.u1)
-        self._test_def_user_perm_equal(user=self.u1)
+        self.assert_user_perm_equal(user=self.u1)
 
         # now clear permissions
         cleared = PermissionModel()._clear_user_perms(self.u1.user_id)
-        self._test_def_user_perm_equal(user=self.u1,
-                                       change_factor=len(cleared)*-1)
+        self.assert_user_perm_equal(user=self.u1,
+                                    change_factor=len(cleared)*-1)
 
     def test_clear_user_group_perms(self):
         self.ug1 = fixture.create_user_group('G1')
         PermissionModel().create_default_user_group_permissions(
             user_group=self.ug1)
-        self._test_def_user_group_perm_equal(user_group=self.ug1)
+        self.assert_def_user_group_perm_equal(user_group=self.ug1)
 
         # now clear permissions
         cleared = PermissionModel()._clear_user_group_perms(
             self.ug1.users_group_id)
-        self._test_def_user_group_perm_equal(user_group=self.ug1,
-                                             change_factor=len(cleared)*-1)
+        self.assert_def_user_group_perm_equal(user_group=self.ug1,
+                                              change_factor=len(cleared)*-1)
 
     @pytest.mark.parametrize("form_result", [
         {},
@@ -626,7 +635,7 @@ class TestPermissions(object):
         Session().commit()
         change_factor = -1 * (len(Permission.DEFAULT_USER_PERMISSIONS)
                               - len(form_result.keys()))
-        self._test_def_user_perm_equal(
+        self.assert_user_perm_equal(
             self.u1, change_factor=change_factor)
 
     @pytest.mark.parametrize("form_result", [
@@ -646,7 +655,7 @@ class TestPermissions(object):
         Session().commit()
         change_factor = -1 * (len(Permission.DEFAULT_USER_PERMISSIONS)
                               - len(form_result.keys()))
-        self._test_def_user_group_perm_equal(
+        self.assert_def_user_group_perm_equal(
             self.ug1, change_factor=change_factor)
 
     @pytest.mark.parametrize("group_active, expected_perm", [

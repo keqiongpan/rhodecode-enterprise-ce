@@ -35,13 +35,13 @@ pytestmark = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo(baseapp):
     repo = SubversionRepository(os.path.join(TESTS_TMP_PATH, SVN_REPO))
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def head(repo):
     return repo.get_commit()
 

@@ -57,7 +57,7 @@ def repo(request, baseapp):
     return repo
 
 
-class TestMercurialRepository:
+class TestMercurialRepository(object):
 
     # pylint: disable=protected-access
 
@@ -586,7 +586,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
         default_branch = target_repo.DEFAULT_BRANCH_NAME
@@ -630,7 +630,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
         default_branch = target_repo.DEFAULT_BRANCH_NAME
@@ -669,7 +669,7 @@ TODO: To be written...
         commits = list(target_repo.get_commits())
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic', parents=commits[0:1])
+            author=u'Automatic <automatic@rhodecode.com>', parents=commits[0:1])
 
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
@@ -702,7 +702,7 @@ TODO: To be written...
         imc.add(FileNode('file_x', content=source_repo.name))
         imc.commit(
             message=u'Automatic commit from repo merge test',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
         target_commit = target_repo.get_commit()
         source_commit = source_repo.get_commit()
 
@@ -743,7 +743,7 @@ TODO: To be written...
 
 class TestGetShadowInstance(object):
 
-    @pytest.fixture
+    @pytest.fixture()
     def repo(self, vcsbackend_hg, monkeypatch):
         repo = vcsbackend_hg.repo
         monkeypatch.setattr(repo, 'config', mock.Mock())
@@ -751,15 +751,15 @@ class TestGetShadowInstance(object):
         return repo
 
     def test_passes_config(self, repo):
-        shadow = repo._get_shadow_instance(repo.path)
+        shadow = repo.get_shadow_instance(repo.path)
         assert shadow.config == repo.config.copy()
 
     def test_disables_hooks(self, repo):
-        shadow = repo._get_shadow_instance(repo.path)
+        shadow = repo.get_shadow_instance(repo.path)
         shadow.config.clear_section.assert_called_once_with('hooks')
 
     def test_allows_to_keep_hooks(self, repo):
-        shadow = repo._get_shadow_instance(repo.path, enable_hooks=True)
+        shadow = repo.get_shadow_instance(repo.path, enable_hooks=True)
         assert not shadow.config.clear_section.called
 
 

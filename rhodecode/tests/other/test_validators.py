@@ -40,7 +40,7 @@ fixture = Fixture()
 pytestmark = pytest.mark.usefixtures('baseapp')
 
 
-@pytest.fixture
+@pytest.fixture()
 def localizer():
     def func(msg):
         return msg

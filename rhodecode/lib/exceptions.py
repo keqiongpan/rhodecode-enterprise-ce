@@ -58,6 +58,10 @@ class UserOwnsUserGroupsException(Exception):
     pass
 
 
+class UserOwnsArtifactsException(Exception):
+    pass
+
+
 class UserGroupAssignedException(Exception):
     pass
 
@@ -157,3 +161,15 @@ class VCSServerUnavailable(HTTPBadGateway):
         if message:
             self.explanation += ': ' + message
         super(VCSServerUnavailable, self).__init__()
+
+
+class ArtifactMetadataDuplicate(ValueError):
+
+    def __init__(self, *args, **kwargs):
+        self.err_section = kwargs.pop('err_section', None)
+        self.err_key = kwargs.pop('err_key', None)
+        super(ArtifactMetadataDuplicate, self).__init__(*args, **kwargs)
+
+
+class ArtifactMetadataBadValueType(ValueError):
+    pass

@@ -112,7 +112,7 @@ def _create_empty_repository(cls, backend_alias=None):
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def config():
     """
     Instance of a repository config.
@@ -151,7 +151,7 @@ def _add_commits_to_repo(repo, commits):
     return tip
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcs_repo(request, backend_alias):
     Backend = get_backend(backend_alias)
     repo_path = get_new_dir(str(time.time()))
@@ -164,7 +164,7 @@ def vcs_repo(request, backend_alias):
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def generate_repo_with_commits(vcs_repo):
     """
     Creates a fabric to generate N comits with some file nodes on a randomly
@@ -194,7 +194,7 @@ def generate_repo_with_commits(vcs_repo):
     return commit_maker
 
 
-@pytest.fixture
+@pytest.fixture()
 def hg_repo(request, vcs_repo):
     repo = vcs_repo
 
@@ -204,7 +204,7 @@ def hg_repo(request, vcs_repo):
     return repo
 
 
-@pytest.fixture
+@pytest.fixture()
 def hg_commit(hg_repo):
     return hg_repo.get_commit()
 

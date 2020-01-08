@@ -26,6 +26,8 @@ Set of diffing helpers, previously part of vcs
 import os
 import re
 import bz2
+import gzip
+import time
 
 import collections
 import difflib
@@ -1156,7 +1158,17 @@ def _cleanup_cache_file(cached_diff_file):
         log.exception('Failed to cleanup path %s', cached_diff_file)
 
 
+def _get_compression_mode(cached_diff_file):
+    mode = 'bz2'
+    if 'mode:plain' in cached_diff_file:
+        mode = 'plain'
+    elif 'mode:gzip' in cached_diff_file:
+        mode = 'gzip'
+    return mode
+
+
 def cache_diff(cached_diff_file, diff, commits):
+    compression_mode = _get_compression_mode(cached_diff_file)
 
     struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1164,16 +1176,26 @@ def cache_diff(cached_diff_file, diff, commits):
         'commits': commits
     }
 
+    start = time.time()
     try:
-        with bz2.BZ2File(cached_diff_file, 'wb') as f:
-            pickle.dump(struct, f)
-        log.debug('Saved diff cache under %s', cached_diff_file)
+        if compression_mode == 'plain':
+            with open(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
+        elif compression_mode == 'gzip':
+            with gzip.GzipFile(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
+        else:
+            with bz2.BZ2File(cached_diff_file, 'wb') as f:
+                pickle.dump(struct, f)
     except Exception:
         log.warn('Failed to save cache', exc_info=True)
         _cleanup_cache_file(cached_diff_file)
 
+    log.debug('Saved diff cache under %s in %.4fs', cached_diff_file, time.time() - start)
+
 
 def load_cached_diff(cached_diff_file):
+    compression_mode = _get_compression_mode(cached_diff_file)
 
     default_struct = {
         'version': CURRENT_DIFF_VERSION,
@@ -1183,13 +1205,22 @@ def load_cached_diff(cached_diff_file):
 
     has_cache = os.path.isfile(cached_diff_file)
     if not has_cache:
+        log.debug('Reading diff cache file failed %s', cached_diff_file)
         return default_struct
 
     data = None
+
+    start = time.time()
     try:
-        with bz2.BZ2File(cached_diff_file, 'rb') as f:
-            data = pickle.load(f)
-        log.debug('Loaded diff cache from %s', cached_diff_file)
+        if compression_mode == 'plain':
+            with open(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
+        elif compression_mode == 'gzip':
+            with gzip.GzipFile(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
+        else:
+            with bz2.BZ2File(cached_diff_file, 'rb') as f:
+                data = pickle.load(f)
     except Exception:
         log.warn('Failed to read diff cache file', exc_info=True)
 
@@ -1205,6 +1236,8 @@ def load_cached_diff(cached_diff_file):
         # purge cache
         _cleanup_cache_file(cached_diff_file)
         return default_struct
+
+    log.debug('Loaded diff cache from %s in %.4fs', cached_diff_file, time.time() - start)
 
     return data
 
@@ -1228,6 +1261,7 @@ def diff_cache_exist(cache_storage, *args):
     """
     Based on all generated arguments check and return a cache path
     """
+    args = list(args) + ['mode:gzip']
     cache_key = generate_diff_cache_key(*args)
     cache_file_path = os.path.join(cache_storage, cache_key)
     # prevent path traversal attacks using some param that have e.g '../../'

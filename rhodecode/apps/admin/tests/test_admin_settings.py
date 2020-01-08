@@ -367,7 +367,7 @@ class TestAdminSettingsVcs(object):
 
     def test_has_an_input_for_invalidation_of_inline_comments(self):
         response = self.app.get(route_path('admin_settings_vcs'))
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.one_element_exists(
             '[name=rhodecode_use_outdated_comments]')
 
@@ -412,14 +412,14 @@ class TestAdminSettingsVcs(object):
         setting = SettingsModel().get_setting_by_name(setting_key)
         assert setting.app_settings_value is new_value
 
-    @pytest.fixture
+    @pytest.fixture()
     def disable_sql_cache(self, request):
         patcher = mock.patch(
             'rhodecode.lib.caching_query.FromCache.process_query')
         request.addfinalizer(patcher.stop)
         patcher.start()
 
-    @pytest.fixture
+    @pytest.fixture()
     def form_defaults(self):
         from rhodecode.apps.admin.views.settings import AdminSettingsView
         return AdminSettingsView._form_defaults()
@@ -518,7 +518,7 @@ class TestOpenSourceLicenses(object):
             response = self.app.get(
                 route_path('admin_settings_open_source'), status=200)
 
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
         for license_data in sample_licenses:
@@ -528,7 +528,7 @@ class TestOpenSourceLicenses(object):
     def test_records_can_be_read(self, autologin_user):
         response = self.app.get(
             route_path('admin_settings_open_source'), status=200)
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         assert_response.element_contains(
             '.panel-heading', 'Licenses of Third Party Packages')
 
@@ -726,7 +726,7 @@ class TestAdminSettingsIssueTracker(object):
             IssueTrackerSettingsModel().delete_entries(self.uid)
 
     def test_delete_issuetracker_pattern(
-            self, autologin_user, backend, csrf_token, settings_util):
+            self, autologin_user, backend, csrf_token, settings_util, xhr_header):
         pattern = 'issuetracker_pat'
         uid = md5(pattern)
         settings_util.create_rhodecode_setting(
@@ -734,10 +734,9 @@ class TestAdminSettingsIssueTracker(object):
 
         post_url = route_path('admin_settings_issuetracker_delete')
         post_data = {
-            '_method': 'delete',
             'uid': uid,
             'csrf_token': csrf_token
         }
-        self.app.post(post_url, post_data, status=302)
+        self.app.post(post_url, post_data, extra_environ=xhr_header, status=200)
         settings = SettingsModel().get_all_settings()
         assert 'rhodecode_%s%s' % (self.SHORT_PATTERN_KEY, uid) not in settings

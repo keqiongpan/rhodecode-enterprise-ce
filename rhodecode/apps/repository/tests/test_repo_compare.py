@@ -623,8 +623,8 @@ class ComparePage(AssertResponse):
 
     def contains_change_summary(self, files_changed, inserted, deleted):
         template = (
-            "{files_changed} file{plural} changed: "
-            "{inserted} inserted, {deleted} deleted")
+            '{files_changed} file{plural} changed: '
+            '<span class="op-added">{inserted} inserted</span>, <span class="op-deleted">{deleted} deleted</span>')
         self.response.mustcontain(template.format(
             files_changed=files_changed,
             plural="s" if files_changed > 1 else "",

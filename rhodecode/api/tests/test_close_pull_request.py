@@ -49,7 +49,7 @@ class TestClosePullRequest(object):
         assert_ok(id_, expected, response.body)
         journal = UserLog.query()\
             .filter(UserLog.user_id == author) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .filter(UserLog.repository_id == repo)\
             .all()
         assert journal[-1].action == 'repo.pull_request.close'

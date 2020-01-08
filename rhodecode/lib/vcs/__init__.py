@@ -27,6 +27,7 @@ import logging
 import urlparse
 from cStringIO import StringIO
 
+import rhodecode
 from rhodecode.lib.vcs.conf import settings
 from rhodecode.lib.vcs.backends import get_vcs_instance, get_backend
 from rhodecode.lib.vcs.exceptions import (
@@ -71,11 +72,11 @@ def connect_http(server_and_port):
 
     session_factory = client_http.ThreadlocalSessionFactory()
 
-    connection.Git = client_http.RepoMaker(
+    connection.Git = client_http.RemoteVCSMaker(
         server_and_port, '/git', 'git', session_factory)
-    connection.Hg = client_http.RepoMaker(
+    connection.Hg = client_http.RemoteVCSMaker(
         server_and_port, '/hg', 'hg', session_factory)
-    connection.Svn = client_http.RepoMaker(
+    connection.Svn = client_http.RemoteVCSMaker(
         server_and_port, '/svn', 'svn', session_factory)
     connection.Service = client_http.ServiceConnection(
         server_and_port, '/_service', session_factory)
@@ -106,21 +107,6 @@ def connect_vcs(server_and_port, protocol):
         raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
 
 
-def create_vcsserver_proxy(server_and_port, protocol):
-    if protocol == 'http':
-        return _create_vcsserver_proxy_http(server_and_port)
-    else:
-        raise Exception('Invalid vcs server protocol "{}"'.format(protocol))
-
-
-def _create_vcsserver_proxy_http(server_and_port):
-    from rhodecode.lib.vcs import client_http
-
-    session = _create_http_rpc_session()
-    url = urlparse.urljoin('http://%s' % server_and_port, '/server')
-    return client_http.RemoteObject(url, session)
-
-
 class CurlSession(object):
     """
     Modeled so that it provides a subset of the requests interface.
@@ -141,6 +127,9 @@ class CurlSession(object):
         curl.setopt(curl.HTTPHEADER, ["Expect:"])
         curl.setopt(curl.TCP_NODELAY, True)
         curl.setopt(curl.PROTOCOLS, curl.PROTO_HTTP)
+        curl.setopt(curl.USERAGENT, 'RhodeCode HTTP {}'.format(rhodecode.__version__))
+        curl.setopt(curl.SSL_VERIFYPEER, 0)
+        curl.setopt(curl.SSL_VERIFYHOST, 0)
         self._curl = curl
 
     def post(self, url, data, allow_redirects=False):
@@ -174,11 +163,22 @@ class CurlResponse(object):
 
     @property
     def content(self):
-        return self._response_buffer.getvalue()
+        try:
+            return self._response_buffer.getvalue()
+        finally:
+            self._response_buffer.close()
 
     @property
     def status_code(self):
         return self._status_code
+
+    def iter_content(self, chunk_size):
+        self._response_buffer.seek(0)
+        while 1:
+            chunk = self._response_buffer.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
 
 
 def _create_http_rpc_session():

@@ -44,7 +44,7 @@ pytestmark = [
 @pytest.mark.usefixtures('config_stub')
 class TestPullRequestModel(object):
 
-    @pytest.fixture
+    @pytest.fixture()
     def pull_request(self, request, backend, pr_util):
         """
         A pull request combined with multiples patches.
@@ -124,6 +124,8 @@ class TestPullRequestModel(object):
         PullRequestModel().update_reviewers(
             pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
+        Session().commit()
+
         prs = PullRequestModel().get_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
@@ -133,6 +135,8 @@ class TestPullRequestModel(object):
         PullRequestModel().update_reviewers(
             pull_request, [(pull_request.author, ['author'], False, [])],
             pull_request.author)
+        Session().commit()
+
         pr_count = PullRequestModel().count_awaiting_my_review(
             pull_request.target_repo, user_id=pull_request.author.user_id)
         assert pr_count == 1
@@ -140,6 +144,7 @@ class TestPullRequestModel(object):
     def test_delete_calls_cleanup_merge(self, pull_request):
         repo_id = pull_request.target_repo.repo_id
         PullRequestModel().delete(pull_request, pull_request.author)
+        Session().commit()
 
         self.workspace_remove_mock.assert_called_once_with(
             repo_id, self.workspace_id)
@@ -147,6 +152,8 @@ class TestPullRequestModel(object):
     def test_close_calls_cleanup_and_hook(self, pull_request):
         PullRequestModel().close_pull_request(
             pull_request, pull_request.author)
+        Session().commit()
+
         repo_id = pull_request.target_repo.repo_id
 
         self.workspace_remove_mock.assert_called_once_with(
@@ -184,7 +191,8 @@ class TestPullRequestModel(object):
 
     def test_merge_status_known_failure(self, pull_request):
         self.merge_mock.return_value = MergeResponse(
-            False, False, None, MergeFailureReason.MERGE_FAILED)
+            False, False, None, MergeFailureReason.MERGE_FAILED,
+            metadata={'unresolved_files': 'file1'})
 
         assert pull_request._last_merge_source_rev is None
         assert pull_request._last_merge_target_rev is None
@@ -192,7 +200,7 @@ class TestPullRequestModel(object):
 
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg == 'This pull request cannot be merged because of merge conflicts.'
+        assert msg == 'This pull request cannot be merged because of merge conflicts. file1'
         self.merge_mock.assert_called_with(
             self.repo_id, self.workspace_id,
             pull_request.target_ref_parts,
@@ -202,13 +210,12 @@ class TestPullRequestModel(object):
 
         assert pull_request._last_merge_source_rev == self.source_commit
         assert pull_request._last_merge_target_rev == self.target_commit
-        assert (
-            pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED)
+        assert pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED
 
         self.merge_mock.reset_mock()
         status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg == 'This pull request cannot be merged because of merge conflicts.'
+        assert msg == 'This pull request cannot be merged because of merge conflicts. '
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
@@ -286,9 +293,10 @@ class TestPullRequestModel(object):
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
+        Session().commit()
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(
@@ -327,11 +335,12 @@ class TestPullRequestModel(object):
             assert pull_request.pull_request_state == PullRequest.STATE_UPDATING
             PullRequestModel().merge_repo(
                 pull_request, pull_request.author, extras=merge_extras)
+            Session().commit()
 
         assert pull_request.pull_request_state == PullRequest.STATE_CREATED
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(
@@ -367,9 +376,10 @@ class TestPullRequestModel(object):
         merge_extras['repository'] = pull_request.target_repo.repo_name
         PullRequestModel().merge_repo(
             pull_request, pull_request.author, extras=merge_extras)
+        Session().commit()
 
         message = (
-            u'Merge pull request #{pr_id} from {source_repo} {source_ref_name}'
+            u'Merge pull request !{pr_id} from {source_repo} {source_ref_name}'
             u'\n\n {pr_title}'.format(
                 pr_id=pull_request.pull_request_id,
                 source_repo=safe_unicode(
@@ -392,7 +402,7 @@ class TestPullRequestModel(object):
         assert pull_request.merge_rev is None
 
     def test_get_commit_ids(self, pull_request):
-        # The PR has been not merget yet, so expect an exception
+        # The PR has been not merged yet, so expect an exception
         with pytest.raises(ValueError):
             PullRequestModel()._get_commit_ids(pull_request)
 
@@ -423,6 +433,20 @@ class TestPullRequestModel(object):
         )
         assert type(title) == unicode
 
+    @pytest.mark.parametrize('title, has_wip', [
+        ('hello', False),
+        ('hello wip', False),
+        ('hello wip: xxx', False),
+        ('[wip] hello', True),
+        ('[wip] hello', True),
+        ('wip: hello', True),
+        ('wip hello', True),
+
+    ])
+    def test_wip_title_marker(self, pull_request, title, has_wip):
+        pull_request.title = title
+        assert pull_request.work_in_progress == has_wip
+
 
 @pytest.mark.usefixtures('config_stub')
 class TestIntegrationMerge(object):
@@ -442,6 +466,7 @@ class TestIntegrationMerge(object):
         with mock.patch.dict(rhodecode.CONFIG, extra_config, clear=False):
             merge_state = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
+            Session().commit()
 
         assert merge_state.executed
         assert '_pre_push_hook' in capture_rcextensions
@@ -459,6 +484,7 @@ class TestIntegrationMerge(object):
             pre_pull.side_effect = RepositoryError("Disallow push!")
             merge_status = PullRequestModel().merge_repo(
                 pull_request, user_admin, extras=merge_extras)
+            Session().commit()
 
         assert not merge_status.executed
         assert 'pre_push' not in capture_rcextensions
@@ -479,6 +505,8 @@ class TestIntegrationMerge(object):
         Session().commit()
         merge_status = PullRequestModel().merge_repo(
             pull_request, user_regular, extras=merge_extras)
+        Session().commit()
+
         assert not merge_status.executed
 
 
@@ -504,7 +532,7 @@ def test_outdated_comments(
     (MergeFailureReason.UNKNOWN,
      'This pull request cannot be merged because of an unhandled exception. CRASH'),
     (MergeFailureReason.MERGE_FAILED,
-     'This pull request cannot be merged because of merge conflicts.'),
+     'This pull request cannot be merged because of merge conflicts. CONFLICT_FILE'),
     (MergeFailureReason.PUSH_FAILED,
      'This pull request could not be merged because push to target:`some-repo@merge_commit` failed.'),
     (MergeFailureReason.TARGET_IS_NOT_HEAD,
@@ -526,19 +554,21 @@ def test_outdated_comments(
 def test_merge_response_message(mr_type, expected_msg):
     merge_ref = Reference('type', 'ref_name', '6126b7bfcc82ad2d3deaee22af926b082ce54cc6')
     metadata = {
+        'unresolved_files': 'CONFLICT_FILE',
         'exception': "CRASH",
         'target': 'some-repo',
         'merge_commit': 'merge_commit',
         'target_ref': merge_ref,
         'source_ref': merge_ref,
         'heads': ','.join(['a', 'b', 'c']),
-        'locked_by': 'user:123'}
+        'locked_by': 'user:123'
+    }
 
     merge_response = MergeResponse(True, True, merge_ref, mr_type, metadata=metadata)
     assert merge_response.merge_status_message == expected_msg
 
 
-@pytest.fixture
+@pytest.fixture()
 def merge_extras(user_regular):
     """
     Context for the vcs operation when running a merge.
@@ -784,7 +814,7 @@ def test_update_writes_snapshot_into_pull_request_version(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that it has a version entry now
     assert len(model.get_versions(pull_request)) == 1
@@ -793,7 +823,7 @@ def test_update_writes_snapshot_into_pull_request_version(pr_util, config_stub):
 def test_update_skips_new_version_if_unchanged(pr_util, config_stub):
     pull_request = pr_util.create_pull_request()
     model = PullRequestModel()
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that it still has no versions
     assert len(model.get_versions(pull_request)) == 0
@@ -805,7 +835,7 @@ def test_update_assigns_comments_to_the_new_version(pr_util, config_stub):
     comment = pr_util.create_comment()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    model.update_commits(pull_request, pull_request.author)
 
     # Expect that the comment is linked to the pr version now
     assert comment.pull_request_version == model.get_versions(pull_request)[0]
@@ -817,8 +847,9 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util, con
     pr_util.update_source_repository()
     pr_util.update_source_repository()
 
-    model.update_commits(pull_request)
+    update_response = model.update_commits(pull_request, pull_request.author)
 
+    commit_id = update_response.common_ancestor_id
     # Expect to find a new comment about the change
     expected_message = textwrap.dedent(
         """\
@@ -833,10 +864,10 @@ def test_update_adds_a_comment_to_the_pull_request_about_the_change(pr_util, con
             * :removed:`0 removed`
 
           Changed files:
-            * `A file_2 <#a_c--92ed3b5f07b4>`_
+            * `A file_2 <#a_c-{}-92ed3b5f07b4>`_
 
         .. |under_review| replace:: *"Under Review"*"""
-    )
+    ).format(commit_id[:12])
     pull_request_comments = sorted(
         pull_request.comments, key=lambda c: c.modified_at)
     update_comment = pull_request_comments[-1]
@@ -889,6 +920,7 @@ def test_link_comments_to_version_only_updates_unlinked_comments(pr_util, config
     version2 = pr_util.create_version_of_pull_request()
 
     PullRequestModel()._link_comments_to_version(version2)
+    Session().commit()
 
     # Expect that only the new comment is linked to version2
     assert (

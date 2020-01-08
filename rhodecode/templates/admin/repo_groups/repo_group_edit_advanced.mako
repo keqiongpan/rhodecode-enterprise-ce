@@ -5,11 +5,14 @@
 
  elems = [
     (_('Repository Group ID'), c.repo_group.group_id, '', ''),
-    (_('Owner'), lambda:base.gravatar_with_user(c.repo_group.user.email), '', ''),
+    (_('Owner'), lambda:base.gravatar_with_user(c.repo_group.user.email, tooltip=True), '', ''),
     (_('Created on'), h.format_date(c.repo_group.created_on), '', ''),
     (_('Updated on'), h.format_date(c.repo_group.updated_on), '', ''),
+    (_('Cached Commit source'), (h.link_to_if(source_repo_id, 'repo_id:{}'.format(source_repo_id), h.route_path('repo_summary', repo_name='_{}'.format(source_repo_id)))), '', ''),
+    (_('Cached Commit id'), c.repo_group.changeset_cache.get('short_id'), '', ''),
     (_('Cached Commit date'), (c.repo_group.changeset_cache.get('date')), '', ''),
-    (_('Cached Commit repo_id'), (h.link_to_if(source_repo_id, source_repo_id, h.route_path('repo_summary', repo_name='_{}'.format(source_repo_id)))), '', ''),
+
+    (_('Cached Commit data'), lambda: h.link_to('refresh now', h.current_route_path(request, update_commit_cache=1)), '', ''),
 
     (_('Is Personal Group'), c.repo_group.personal or False, '', ''),
 

@@ -71,6 +71,7 @@ $(document).ready(function() {
       "initComplete": function( settings, json ) {
           get_datatable_count();
           timeagoActivate();
+          tooltipActivate();
           compare_radio_buttons("${c.repo_name}", 'branch');
       }
     });
@@ -79,6 +80,7 @@ $(document).ready(function() {
     $('#obj_list_table').on('draw.dt', function() {
         get_datatable_count();
         timeagoActivate();
+        tooltipActivate();
     });
 
     // filter, filter both grids

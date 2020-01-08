@@ -75,12 +75,13 @@ var getTitleAndDescription = function(sourceRef, elements, limit) {
   var desc = '';
 
   $.each($(elements).get().reverse().slice(0, limit), function(idx, value) {
-      var rawMessage = $(value).find('td.td-description .message').data('messageRaw');
+      var rawMessage = $(value).find('td.td-description .message').data('messageRaw').toString();
       desc += '- ' + rawMessage.split('\n')[0].replace(/\n+$/, "") + '\n';
   });
   // only 1 commit, use commit message as title
   if (elements.length === 1) {
-      title = $(elements[0]).find('td.td-description .message').data('messageRaw').split('\n')[0];
+      var rawMessage = $(elements[0]).find('td.td-description .message').data('messageRaw').toString();
+      title = rawMessage.split('\n')[0];
   }
   else {
       // use reference name
@@ -320,6 +321,7 @@ ReviewersController = function () {
                         'reasons': reasons,
                         'create': true
                         });
+                tooltipActivate();
             }
         }
 
@@ -342,18 +344,29 @@ var _updatePullRequest = function(repo_name, pull_request_id, postData) {
     } else {
         postData.csrf_token = CSRF_TOKEN;
     }
+
     var success = function(o) {
-        window.location.reload();
+        var redirectUrl = o['redirect_url'];
+        if (redirectUrl !== undefined && redirectUrl !== null && redirectUrl !== '') {
+            window.location = redirectUrl;
+        } else {
+            window.location.reload();
+        }
     };
+
     ajaxPOST(url, postData, success);
 };
 
 /**
  * PULL REQUEST update commits
  */
-var updateCommits = function(repo_name, pull_request_id) {
+var updateCommits = function(repo_name, pull_request_id, force) {
     var postData = {
-        'update_commits': true};
+        'update_commits': true
+    };
+    if (force !== undefined && force === true) {
+        postData['force_refresh'] = true
+    }
     _updatePullRequest(repo_name, pull_request_id, postData);
 };
 
@@ -546,6 +559,66 @@ VersionController = function () {
         }
 
         return false
+    };
+
+    this.toggleElement = function (elem, target) {
+        var $elem = $(elem);
+        var $target = $(target);
+
+        if ($target.is(':visible')) {
+            $target.hide();
+            $elem.html($elem.data('toggleOn'))
+        } else {
+            $target.show();
+            $elem.html($elem.data('toggleOff'))
+        }
+
+        return false
     }
 
+};
+
+
+UpdatePrController = function () {
+    var self = this;
+    this.$updateCommits = $('#update_commits');
+    this.$updateCommitsSwitcher = $('#update_commits_switcher');
+
+    this.lockUpdateButton = function (label) {
+        self.$updateCommits.attr('disabled', 'disabled');
+        self.$updateCommitsSwitcher.attr('disabled', 'disabled');
+
+        self.$updateCommits.addClass('disabled');
+        self.$updateCommitsSwitcher.addClass('disabled');
+
+        self.$updateCommits.removeClass('btn-primary');
+        self.$updateCommitsSwitcher.removeClass('btn-primary');
+
+        self.$updateCommits.text(_gettext(label));
+    };
+
+    this.isUpdateLocked = function () {
+        return self.$updateCommits.attr('disabled') !== undefined;
+    };
+
+    this.updateCommits = function (curNode) {
+        if (self.isUpdateLocked()) {
+            return
+        }
+        self.lockUpdateButton(_gettext('Updating...'));
+        updateCommits(
+            templateContext.repo_name,
+            templateContext.pull_request_data.pull_request_id);
+    };
+
+    this.forceUpdateCommits = function () {
+        if (self.isUpdateLocked()) {
+            return
+        }
+        self.lockUpdateButton(_gettext('Force updating...'));
+        var force = true;
+        updateCommits(
+            templateContext.repo_name,
+            templateContext.pull_request_data.pull_request_id, force);
+    };
 };

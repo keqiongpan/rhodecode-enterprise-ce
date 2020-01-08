@@ -238,7 +238,7 @@ def test_find_context_end_of_chunk(diff_processor):
     assert found_line == [diffs.DiffLineNumber(old=13, new=14)]
 
 
-@pytest.fixture
+@pytest.fixture()
 def diff_processor(request, diff_fixture):
     raw_diff = diffs_store[diff_fixture]
     diff = GitDiff(raw_diff)
@@ -247,7 +247,7 @@ def diff_processor(request, diff_fixture):
     return processor
 
 
-@pytest.fixture
+@pytest.fixture()
 def diff_fixture():
     return 'default.diff'
 

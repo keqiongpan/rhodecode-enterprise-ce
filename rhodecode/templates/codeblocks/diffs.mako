@@ -49,7 +49,19 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     # for cache purpose
     inline_comments=None,
 
+    # additional menu for PRs
+    pull_request_menu=None,
+
+    # show/hide todo next to comments
+    show_todos=True,
+
 )">
+
+<%
+    diffset_container_id = h.md5(diffset.target_ref)
+    collapse_all = len(diffset.files) > collapse_when_files_over
+%>
+
 %if use_comments:
 <div id="cb-comments-inline-container-template" class="js-template">
   ${inline_comments_container([], inline_comments)}
@@ -79,9 +91,6 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 </div>
 
 %endif
-<%
-collapse_all = len(diffset.files) > collapse_when_files_over
-%>
 
 %if c.user_session_attrs["diffmode"] == 'sideside':
 <style>
@@ -107,37 +116,113 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 %endif
 
 <div class="diffset ${disable_new_comments and 'diffset-comments-disabled'}">
-    <div class="diffset-heading ${diffset.limited_diff and 'diffset-heading-warning' or ''}">
-        %if commit:
-            <div class="pull-right">
-                <a class="btn tooltip" title="${h.tooltip(_('Browse Files at revision {}').format(commit.raw_id))}" href="${h.route_path('repo_files',repo_name=diffset.repo_name, commit_id=commit.raw_id, f_path='')}">
-                    ${_('Browse Files')}
-                </a>
-            </div>
-        %endif
-        <h2 class="clearinner">
-        ## invidual commit
-        % if commit:
-            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a> -
-            ${h.age_component(commit.date)}
-            % if diffset.limited_diff:
-                - ${_('The requested changes are too big and content was truncated.')}
-                ${_ungettext('%(num)s file changed.', '%(num)s files changed.', diffset.changed_files) % {'num': diffset.changed_files}}
-                <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
-            % elif hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
-                ## compare diff, has no file-selector and we want to show stats anyway
-               ${_ungettext('{num} file changed: {linesadd} inserted, ''{linesdel} deleted',
-                            '{num} files changed: {linesadd} inserted, {linesdel} deleted', diffset.changed_files) \
-                            .format(num=diffset.changed_files, linesadd=diffset.lines_added, linesdel=diffset.lines_deleted)}
+
+    <div style="height: 20px; line-height: 20px">
+        ## expand/collapse action
+        <div class="pull-left">
+            <a class="${'collapsed' if collapse_all else ''}" href="#expand-files" onclick="toggleExpand(this, '${diffset_container_id}'); return false">
+            % if collapse_all:
+                <i class="icon-plus-squared-alt icon-no-margin"></i>${_('Expand all files')}
+            % else:
+                <i class="icon-minus-squared-alt icon-no-margin"></i>${_('Collapse all files')}
             % endif
-        % else:
-            ## pull requests/compare
-            ${_('File Changes')}
+            </a>
+
+        </div>
+
+        ## todos
+        % if show_todos and getattr(c, 'at_version', None):
+        <div class="pull-right">
+            <i class="icon-flag-filled" style="color: #949494">TODOs:</i>
+             ${_('not available in this view')}
+        </div>
+        % elif show_todos:
+        <div class="pull-right">
+            <div class="comments-number" style="padding-left: 10px">
+                % if hasattr(c, 'unresolved_comments') and hasattr(c, 'resolved_comments'):
+                    <i class="icon-flag-filled" style="color: #949494">TODOs:</i>
+                    % if c.unresolved_comments:
+                        <a href="#show-todos" onclick="$('#todo-box').toggle(); return false">
+                            ${_('{} unresolved').format(len(c.unresolved_comments))}
+                        </a>
+                    % else:
+                        ${_('0 unresolved')}
+                    % endif
+
+                    ${_('{} Resolved').format(len(c.resolved_comments))}
+                % endif
+            </div>
+        </div>
         % endif
 
-        </h2>
+        ## comments
+        <div class="pull-right">
+            <div class="comments-number" style="padding-left: 10px">
+                % if hasattr(c, 'comments') and hasattr(c, 'inline_cnt'):
+                    <i class="icon-comment" style="color: #949494">COMMENTS:</i>
+                    % if c.comments:
+                        <a href="#comments">${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))}</a>,
+                    % else:
+                        ${_('0 General')}
+                    % endif
+
+                    % if c.inline_cnt:
+                        <a href="#" onclick="return Rhodecode.comments.nextComment();"
+                           id="inline-comments-counter">${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(c.inline_cnt)}
+                        </a>
+                    % else:
+                        ${_('0 Inline')}
+                    % endif
+                % endif
+
+                % if pull_request_menu:
+                    <%
+                    outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
+                    %>
+
+                    % if outdated_comm_count_ver:
+                        <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+                            (${_("{} Outdated").format(outdated_comm_count_ver)})
+                        </a>
+                        <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+                        <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+                    % else:
+                        (${_("{} Outdated").format(outdated_comm_count_ver)})
+                    % endif
+
+                % endif
+
+            </div>
+        </div>
+
     </div>
 
+    % if diffset.limited_diff:
+        <div class="diffset-heading ${(diffset.limited_diff and 'diffset-heading-warning' or '')}">
+            <h2 class="clearinner">
+                ${_('The requested changes are too big and content was truncated.')}
+                <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
+            </h2>
+        </div>
+    ## commit range header for each individual diff
+    % elif commit and hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
+        <div class="diffset-heading ${(diffset.limited_diff and 'diffset-heading-warning' or '')}">
+            <div class="clearinner">
+                <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a>
+            </div>
+        </div>
+    % endif
+
+    <div id="todo-box">
+        % if hasattr(c, 'unresolved_comments') and c.unresolved_comments:
+            % for co in c.unresolved_comments:
+                <a class="permalink" href="#comment-${co.comment_id}"
+                   onclick="Rhodecode.comments.scrollToComment($('#comment-${co.comment_id}'))">
+                    <i class="icon-flag-filled-red"></i>
+                    ${co.comment_id}</a>${('' if loop.last else ',')}
+            % endfor
+        % endif
+    </div>
     %if diffset.has_hidden_changes:
         <p class="empty_data">${_('Some changes may be hidden')}</p>
     %elif not diffset.files:
@@ -157,14 +242,14 @@ collapse_all = len(diffset.files) > collapse_when_files_over
         ## anchor with support of sticky header
         <div class="anchor" id="a_${h.FID(filediff.raw_id, filediff.patch['filename'])}"></div>
 
-        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="updateSticky();">
+        <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state collapse-${diffset_container_id}" id="filediff-collapse-${id(filediff)}" type="checkbox" onchange="updateSticky();">
         <div
             class="filediff"
             data-f-path="${filediff.patch['filename']}"
             data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}"
         >
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
-            <div class="filediff-collapse-indicator"></div>
+            <div class="filediff-collapse-indicator icon-"></div>
             ${diff_ops(filediff)}
         </label>
 
@@ -228,7 +313,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     <td colspan="3"></td>
                     <td>
                         <div>
-                        ${_('Unmatched inline comments below')}
+                        ${_('Unmatched/outdated inline comments below')}
                         </div>
                     </td>
                 </tr>
@@ -247,13 +332,13 @@ collapse_all = len(diffset.files) > collapse_when_files_over
                     <td colspan="2"></td>
                     <td class="cb-line">
                         <div>
-                        ${_('Unmatched inline comments below')}
+                        ${_('Unmatched/outdated inline comments below')}
                         </div>
                     </td>
                     <td colspan="2"></td>
                     <td class="cb-line">
                         <div>
-                        ${_('Unmatched comments below')}
+                        ${_('Unmatched/outdated comments below')}
                         </div>
                     </td>
                 </tr>
@@ -285,6 +370,7 @@ collapse_all = len(diffset.files) > collapse_when_files_over
 
     ## outdated comments that are made for a file that has been deleted
     % for filename, comments_dict in (deleted_files_comments or {}).items():
+
         <%
             display_state = 'display: none'
             open_comments_in_file = [x for x in comments_dict['comments'] if x.outdated is False]
@@ -293,26 +379,26 @@ collapse_all = len(diffset.files) > collapse_when_files_over
             fid = str(id(filename))
         %>
         <div class="filediffs filediff-outdated" style="${display_state}">
-            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
+            <input ${(collapse_all and 'checked' or '')} class="filediff-collapse-state collapse-${diffset_container_id}" id="filediff-collapse-${id(filename)}" type="checkbox" onchange="updateSticky();">
             <div class="filediff" data-f-path="${filename}"  id="a_${h.FID(fid, filename)}">
-
                 <label for="filediff-collapse-${id(filename)}" class="filediff-heading">
-                    <div class="filediff-collapse-indicator"></div>
+                    <div class="filediff-collapse-indicator icon-"></div>
+
                     <span class="pill">
                         ## file was deleted
-                        <strong>${filename}</strong>
+                        ${filename}
                     </span>
-                    <span class="pill-group" style="float: left">
+                    <span class="pill-group pull-left" >
                         ## file op, doesn't need translation
                         <span class="pill" op="removed">removed in this version</span>
                     </span>
                     <a class="pill filediff-anchor" href="#a_${h.FID(fid, filename)}">¶</a>
-                    <span class="pill-group" style="float: right">
+                    <span class="pill-group pull-right">
                         <span class="pill" op="deleted">-${comments_dict['stats']}</span>
                     </span>
                 </label>
 
-                <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${over_lines_changed_limit and 'cb-collapsed' or ''}">
+                <table class="cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
                     <tr>
                         % if c.user_session_attrs["diffmode"] == 'unified':
                         <td></td>
@@ -360,29 +446,30 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
 %>
     <span class="pill">
+        <i class="icon-file-text"></i>
         %if filediff.source_file_path and filediff.target_file_path:
             %if filediff.source_file_path != filediff.target_file_path:
                  ## file was renamed, or copied
                 %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
-                    <strong>${filediff.target_file_path}</strong> ⬅ <del>${filediff.source_file_path}</del>
+                    ${filediff.target_file_path} ⬅ <del>${filediff.source_file_path}</del>
                     <% final_path = filediff.target_file_path %>
                 %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
-                    <strong>${filediff.target_file_path}</strong> ⬅ ${filediff.source_file_path}
+                    ${filediff.target_file_path} ⬅ ${filediff.source_file_path}
                     <% final_path = filediff.target_file_path %>
                 %endif
             %else:
                 ## file was modified
-                <strong>${filediff.source_file_path}</strong>
+                ${filediff.source_file_path}
                 <% final_path = filediff.source_file_path %>
             %endif
         %else:
             %if filediff.source_file_path:
                 ## file was deleted
-                <strong>${filediff.source_file_path}</strong>
+                ${filediff.source_file_path}
                 <% final_path = filediff.source_file_path %>
             %else:
                 ## file was added
-                <strong>${filediff.target_file_path}</strong>
+                ${filediff.target_file_path}
                 <% final_path = filediff.target_file_path %>
             %endif
         %endif
@@ -391,7 +478,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
     ## anchor link
     <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
 
-    <span class="pill-group" style="float: right">
+    <span class="pill-group pull-right">
 
         ## ops pills
         %if filediff.limited_diff:
@@ -503,13 +590,11 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
         ${commentblock.comment_block(comment, inline=True)}
     %endfor
     % if comments and comments[-1].outdated:
-    <span class="btn btn-secondary cb-comment-add-button comment-outdated}"
-          style="display: none;}">
+    <span class="btn btn-secondary cb-comment-add-button comment-outdated}" style="display: none;}">
         ${_('Add another comment')}
     </span>
     % else:
-    <span onclick="return Rhodecode.comments.createComment(this)"
-          class="btn btn-secondary cb-comment-add-button">
+    <span onclick="return Rhodecode.comments.createComment(this)" class="btn btn-secondary cb-comment-add-button">
         ${_('Add another comment')}
     </span>
     % endif
@@ -719,30 +804,31 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </button>
 </%def>
 
-<%def name="render_diffset_menu(diffset=None, range_diff_on=None)">
+<%def name="render_diffset_menu(diffset, range_diff_on=None)">
+    <% diffset_container_id = h.md5(diffset.target_ref) %>
 
     <div id="diff-file-sticky" class="diffset-menu clearinner">
         ## auto adjustable
         <div class="sidebar__inner">
             <div class="sidebar__bar">
             <div class="pull-right">
-            <div class="btn-group">
-
-                ## DIFF OPTIONS via Select2
-                <div class="pull-left">
-                ${h.hidden('diff_menu')}
+                <div class="btn-group">
+                    <a class="btn tooltip toggle-wide-diff" href="#toggle-wide-diff" onclick="toggleWideDiff(this); return false" title="${h.tooltip(_('Toggle wide diff'))}">
+                    <i class="icon-wide-mode"></i>
+                    </a>
                 </div>
+                <div class="btn-group">
 
                 <a
-                  class="btn ${(c.user_session_attrs["diffmode"] == 'sideside' and 'btn-primary')} tooltip"
-                  title="${h.tooltip(_('View side by side'))}"
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'sideside' and 'btn-active')} tooltip"
+                  title="${h.tooltip(_('View diff as side by side'))}"
                   href="${h.current_route_path(request, diffmode='sideside')}">
                     <span>${_('Side by Side')}</span>
                 </a>
 
                 <a
-                  class="btn ${(c.user_session_attrs["diffmode"] == 'unified' and 'btn-primary')} tooltip"
-                  title="${h.tooltip(_('View unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
+                  class="btn ${(c.user_session_attrs["diffmode"] == 'unified' and 'btn-active')} tooltip"
+                  title="${h.tooltip(_('View diff as unified'))}" href="${h.current_route_path(request, diffmode='unified')}">
                     <span>${_('Unified')}</span>
                 </a>
 
@@ -762,20 +848,20 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                    </a>
                 % endif
             </div>
+                <div class="btn-group">
+
+                <div class="pull-left">
+                    ${h.hidden('diff_menu_{}'.format(diffset_container_id))}
+                </div>
+
+                </div>
         </div>
             <div class="pull-left">
             <div class="btn-group">
               <div class="pull-left">
-              ${h.hidden('file_filter')}
+                ${h.hidden('file_filter_{}'.format(diffset_container_id))}
               </div>
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', false); updateSticky(); return false">${_('Expand All Files')}</a>
-              <a
-                  class="btn"
-                  href="#"
-                  onclick="$('input[class=filediff-collapse-state]').prop('checked', true); updateSticky(); return false">${_('Collapse All Files')}</a>
+
             </div>
             </div>
         </div>
@@ -790,19 +876,19 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
     </div>
 
     % if diffset:
-
         %if diffset.limited_diff:
             <% file_placeholder = _ungettext('%(num)s file changed', '%(num)s files changed', diffset.changed_files) % {'num': diffset.changed_files} %>
         %else:
-            <% file_placeholder = _ungettext('%(num)s file changed: %(linesadd)s inserted, ''%(linesdel)s deleted', '%(num)s files changed: %(linesadd)s inserted, %(linesdel)s deleted', diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}%>
+            <% file_placeholder = h.literal(_ungettext('%(num)s file changed: <span class="op-added">%(linesadd)s inserted</span>, <span class="op-deleted">%(linesdel)s deleted</span>', '%(num)s files changed: <span class="op-added">%(linesadd)s inserted</span>, <span class="op-deleted">%(linesdel)s deleted</span>',
+            diffset.changed_files) % {'num': diffset.changed_files, 'linesadd': diffset.lines_added, 'linesdel': diffset.lines_deleted}) %>
+
         %endif
         ## case on range-diff placeholder needs to be updated
         % if range_diff_on is True:
             <% file_placeholder = _('Disabled on range diff') %>
         % endif
 
-        <script>
-
+        <script type="text/javascript">
         var feedFilesOptions = function (query, initialData) {
             var data = {results: []};
             var isQuery = typeof query.term !== 'undefined';
@@ -828,32 +914,40 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             query.callback(data);
         };
 
+        var selectionFormatter = function(data, escapeMarkup) {
+            var container = '<div class="filelist" style="padding-right:100px">{0}</div>';
+            var tmpl = '<div><strong>{0}</strong></div>'.format(escapeMarkup(data['text']));
+            var pill = '<div class="pill-group" style="position: absolute; top:7px; right: 0">' +
+                        '<span class="pill" op="added">{0}</span>' +
+                        '<span class="pill" op="deleted">{1}</span>' +
+                       '</div>'
+                    ;
+            var added = data['ops']['added'];
+            if (added === 0) {
+                // don't show +0
+                added = 0;
+            } else {
+                added = '+' + added;
+            }
+
+            var deleted = -1*data['ops']['deleted'];
+
+            tmpl += pill.format(added, deleted);
+            return container.format(tmpl);
+        };
         var formatFileResult = function(result, container, query, escapeMarkup) {
-            return function(data, escapeMarkup) {
-                var container = '<div class="filelist" style="padding-right:100px">{0}</div>';
-                var tmpl = '<span style="margin-right:-50px"><strong>{0}</strong></span>'.format(escapeMarkup(data['text']));
-                var pill = '<span class="pill-group" style="float: right;margin-right: -100px">' +
-                            '<span class="pill" op="added">{0}</span>' +
-                            '<span class="pill" op="deleted">{1}</span>' +
-                           '</span>'
-                        ;
-                var added = data['ops']['added'];
-                if (added === 0) {
-                    // don't show +0
-                    added = 0;
-                } else {
-                    added = '+' + added;
-                }
-
-                var deleted = -1*data['ops']['deleted'];
-
-                tmpl += pill.format(added, deleted);
-                return container.format(tmpl);
-
-            }(result, escapeMarkup);
+            return selectionFormatter(result, escapeMarkup);
         };
 
-        var preloadFileFilterData = {
+        var formatSelection = function (data, container) {
+            return '${file_placeholder}'
+        };
+
+        if (window.preloadFileFilterData === undefined) {
+            window.preloadFileFilterData = {}
+        }
+
+        preloadFileFilterData["${diffset_container_id}"] = {
             results: [
                 % for filediff in diffset.files:
                     {id:"a_${h.FID(filediff.raw_id, filediff.patch['filename'])}",
@@ -863,34 +957,47 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             ]
         };
 
+        var diffFileFilterId = "#file_filter_" + "${diffset_container_id}";
+        var diffFileFilter = $(diffFileFilterId).select2({
+            'dropdownAutoWidth': true,
+            'width': 'auto',
+
+            containerCssClass: "drop-menu",
+            dropdownCssClass: "drop-menu-dropdown",
+            data: preloadFileFilterData["${diffset_container_id}"],
+            query: function(query) {
+                feedFilesOptions(query, preloadFileFilterData["${diffset_container_id}"]);
+            },
+            initSelection: function(element, callback) {
+              callback({'init': true});
+            },
+            formatResult: formatFileResult,
+            formatSelection: formatSelection
+        });
+
+        % if range_diff_on is True:
+            diffFileFilter.select2("enable", false);
+        % endif
+
+        $(diffFileFilterId).on('select2-selecting', function (e) {
+            var idSelector = e.choice.id;
+
+            // expand the container if we quick-select the field
+            $('#'+idSelector).next().prop('checked', false);
+            // hide the mast as we later do preventDefault()
+            $("#select2-drop-mask").click();
+
+            window.location.hash = '#'+idSelector;
+            updateSticky();
+
+            e.preventDefault();
+        });
+
+        </script>
+    % endif
+
+    <script type="text/javascript">
         $(document).ready(function () {
-
-            var fileFilter = $("#file_filter").select2({
-                'dropdownAutoWidth': true,
-                'width': 'auto',
-                'placeholder': "${file_placeholder}",
-                containerCssClass: "drop-menu",
-                dropdownCssClass: "drop-menu-dropdown",
-                data: preloadFileFilterData,
-                query: function(query) {
-                    feedFilesOptions(query, preloadFileFilterData);
-                },
-                formatResult: formatFileResult
-            });
-
-            % if range_diff_on is True:
-                fileFilter.select2("enable", false);
-            % endif
-
-            $("#file_filter").on('click', function (e) {
-                e.preventDefault();
-                var selected = $('#file_filter').select2('data');
-                var idSelector = "#"+selected.id;
-                window.location.hash = idSelector;
-                // expand the container if we quick-select the field
-                $(idSelector).next().prop('checked', false);
-                updateSticky()
-            });
 
             var contextPrefix = _gettext('Context file: ');
             ## sticky sidebar
@@ -902,7 +1009,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             });
             sidebarElement.addEventListener('affixed.static.stickySidebar', function () {
                 // reset our file so it's not holding new value
-                $('.fpath-placeholder-text').html(contextPrefix)
+                $('.fpath-placeholder-text').html(contextPrefix + ' - ')
             });
 
             updateSticky = function () {
@@ -910,16 +1017,10 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 Waypoint.refreshAll();
             };
 
-            var animateText =  $.debounce(100, function(fPath, anchorId) {
+            var animateText = function (fPath, anchorId) {
                 fPath = Select2.util.escapeMarkup(fPath);
-
-                // animate setting the text
-                var callback = function () {
-                    $('.fpath-placeholder-text').animate({'opacity': 1.00}, 200)
-                    $('.fpath-placeholder-text').html(contextPrefix + '<a href="#a_' + anchorId + '">' + fPath + '</a>')
-                };
-                $('.fpath-placeholder-text').animate({'opacity': 0.15}, 200, callback);
-            });
+                $('.fpath-placeholder-text').html(contextPrefix + '<a href="#a_' + anchorId + '">' + fPath + '</a>')
+            };
 
             ## dynamic file waypoints
             var setFPathInfo = function(fPath, anchorId){
@@ -927,6 +1028,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             };
 
             var codeBlock = $('.filediff');
+
             // forward waypoint
             codeBlock.waypoint(
                 function(direction) {
@@ -934,7 +1036,9 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                         setFPathInfo($(this.element).data('fPath'), $(this.element).data('anchorId'))
                     }
                 }, {
-                    offset: 70,
+                    offset: function () {
+                        return 70;
+                    },
                     context: '.fpath-placeholder'
                 }
             );
@@ -947,26 +1051,26 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                     }
                 }, {
                     offset: function () {
-                        return -this.element.clientHeight + 90
+                        return -this.element.clientHeight + 90;
                     },
                     context: '.fpath-placeholder'
                 }
             );
 
+            toggleWideDiff = function (el) {
+                updateSticky();
+                var wide = Rhodecode.comments.toggleWideMode(this);
+                storeUserSessionAttr('rc_user_session_attr.wide_diff_mode', wide);
+                if (wide === true) {
+                    $(el).addClass('btn-active');
+                } else {
+                    $(el).removeClass('btn-active');
+                }
+                return null;
+            };
+
             var preloadDiffMenuData = {
                 results: [
-                    ## Wide diff mode
-                    {
-                        id: 1,
-                        text: _gettext('Toggle Wide Mode diff'),
-                        action: function () {
-                            updateSticky();
-                            var wide = Rhodecode.comments.toggleWideMode(this);
-                            storeUserSessionAttr('rc_user_session_attr.wide_diff_mode', wide);
-                            return null;
-                        },
-                        url: null,
-                    },
 
                     ## Whitespace change
                     % if request.GET.get('ignorews', '') == '1':
@@ -1005,29 +1109,73 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 ]
             };
 
-            // get stored diff mode and pre-enable it
-            if (templateContext.session_attrs.wide_diff_mode === "true") {
-                Rhodecode.comments.toggleWideMode(null);
-            }
-
-            $("#diff_menu").select2({
+            var diffMenuId = "#diff_menu_" + "${diffset_container_id}";
+            $(diffMenuId).select2({
                 minimumResultsForSearch: -1,
-                containerCssClass: "drop-menu",
+                containerCssClass: "drop-menu-no-width",
                 dropdownCssClass: "drop-menu-dropdown",
                 dropdownAutoWidth: true,
                 data: preloadDiffMenuData,
-                placeholder: "${_('Diff Options')}",
+                placeholder: "${_('...')}",
             });
-            $("#diff_menu").on('select2-selecting', function (e) {
+            $(diffMenuId).on('select2-selecting', function (e) {
                 e.choice.action();
                 if (e.choice.url !== null) {
                     window.location = e.choice.url
                 }
             });
+            toggleExpand = function (el, diffsetEl) {
+                var el = $(el);
+                if (el.hasClass('collapsed')) {
+                    $('.filediff-collapse-state.collapse-{0}'.format(diffsetEl)).prop('checked', false);
+                    el.removeClass('collapsed');
+                    el.html(
+                        '<i class="icon-minus-squared-alt icon-no-margin"></i>' +
+                        _gettext('Collapse all files'));
+                }
+                else {
+                    $('.filediff-collapse-state.collapse-{0}'.format(diffsetEl)).prop('checked', true);
+                    el.addClass('collapsed');
+                    el.html(
+                        '<i class="icon-plus-squared-alt icon-no-margin"></i>' +
+                        _gettext('Expand all files'));
+                }
+                updateSticky()
+            };
 
+            toggleCommitExpand = function (el) {
+                var $el = $(el);
+                var commits = $el.data('toggleCommitsCnt');
+                var collapseMsg = _ngettext('Collapse {0} commit', 'Collapse {0} commits', commits).format(commits);
+                var expandMsg = _ngettext('Expand {0} commit', 'Expand {0} commits', commits).format(commits);
+
+                if ($el.hasClass('collapsed')) {
+                    $('.compare_select').show();
+                    $('.compare_select_hidden').hide();
+
+                    $el.removeClass('collapsed');
+                    $el.html(
+                        '<i class="icon-minus-squared-alt icon-no-margin"></i>' +
+                       collapseMsg);
+                }
+                else {
+                    $('.compare_select').hide();
+                    $('.compare_select_hidden').show();
+                    $el.addClass('collapsed');
+                    $el.html(
+                        '<i class="icon-plus-squared-alt icon-no-margin"></i>' +
+                        expandMsg);
+                }
+                updateSticky();
+            };
+
+            // get stored diff mode and pre-enable it
+            if (templateContext.session_attrs.wide_diff_mode === "true") {
+                Rhodecode.comments.toggleWideMode(null);
+                $('.toggle-wide-diff').addClass('btn-active');
+                updateSticky();
+            }
         });
-
     </script>
-    % endif
 
 </%def>

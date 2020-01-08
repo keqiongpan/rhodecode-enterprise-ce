@@ -221,6 +221,103 @@ var clipboardActivate = function() {
     });
 };
 
+var tooltipActivate = function () {
+    var delay = 50;
+    var animation = 'fade';
+    var theme = 'tooltipster-shadow';
+    var debug = false;
+
+    $('.tooltip').tooltipster({
+        debug: debug,
+        theme: theme,
+        animation: animation,
+        delay: delay,
+        contentCloning: true,
+        contentAsHTML: true,
+
+        functionBefore: function (instance, helper) {
+            var $origin = $(helper.origin);
+            var data = '<div style="white-space: pre-wrap">{0}</div>'.format(instance.content());
+            instance.content(data);
+        }
+    });
+    var hovercardCache = {};
+
+    var loadHoverCard = function (url, altHovercard, callback) {
+        var id = url;
+
+        if (hovercardCache[id] !== undefined) {
+            callback(hovercardCache[id]);
+            return true;
+        }
+
+        hovercardCache[id] = undefined;
+        $.get(url, function (data) {
+            hovercardCache[id] = data;
+            callback(hovercardCache[id]);
+            return true;
+        }).fail(function (data, textStatus, errorThrown) {
+
+            if (parseInt(data.status) === 404) {
+                var msg = "<p>{0}</p>".format(altHovercard || "No Data exists for this hovercard");
+            } else {
+                var msg = "<p class='error-message'>Error while fetching hovercard.\nError code {0} ({1}).</p>".format(data.status,data.statusText);
+            }
+            callback(msg);
+            return false
+        });
+    };
+
+    $('.tooltip-hovercard').tooltipster({
+        debug: debug,
+        theme: theme,
+        animation: animation,
+        delay: delay,
+        interactive: true,
+        contentCloning: true,
+
+        trigger: 'custom',
+        triggerOpen: {
+            mouseenter: true,
+        },
+        triggerClose: {
+            mouseleave: true,
+            originClick: true,
+            touchleave: true
+        },
+        content: _gettext('Loading...'),
+        contentAsHTML: true,
+        updateAnimation: null,
+
+        functionBefore: function (instance, helper) {
+
+            var $origin = $(helper.origin);
+
+            // we set a variable so the data is only loaded once via Ajax, not every time the tooltip opens
+            if ($origin.data('loaded') !== true) {
+                var hovercardUrl = $origin.data('hovercardUrl');
+                var altHovercard =$origin.data('hovercardAlt');
+
+                if (hovercardUrl !== undefined && hovercardUrl !== "") {
+                    var loaded = loadHoverCard(hovercardUrl, altHovercard, function (data) {
+                        instance.content(data);
+                    })
+                } else {
+                    if ($origin.data('hovercardAltHtml')) {
+                        var data =  atob($origin.data('hovercardAltHtml'));
+                    } else {
+                        var data = '<div style="white-space: pre-wrap">{0}</div>'.format(altHovercard)
+                    }
+                    var loaded = true;
+                    instance.content(data);
+                }
+
+                // to remember that the data has been loaded
+                $origin.data('loaded', loaded);
+            }
+        }
+    })
+};
 
 // Formatting values in a Select2 dropdown of commit references
 var formatSelect2SelectionRefs = function(commit_ref){
@@ -437,15 +534,17 @@ $(document).ready(function() {
 
     if (location.hash) {
         var result = splitDelimitedHash(location.hash);
-        var loc  = result.loc;
+
+        var loc = result.loc;
+
         if (loc.length > 1) {
 
             var highlightable_line_tds = [];
 
             // source code line format
-            var page_highlights = loc.substring(
-                loc.indexOf('#') + 1).split('L');
+            var page_highlights = loc.substring(loc.indexOf('#') + 1).split('L');
 
+            // multi-line HL, for files
             if (page_highlights.length > 1) {
                 var highlight_ranges = page_highlights[1].split(",");
                 var h_lines = [];
@@ -459,8 +558,7 @@ $(document).ready(function() {
                                 h_lines.push(i);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         h_lines.push(parseInt(highlight_ranges[pos]));
                     }
                 }
@@ -472,24 +570,45 @@ $(document).ready(function() {
                 }
             }
 
-            // now check a direct id reference (diff page)
-            if ($(loc).length && $(loc).hasClass('cb-lineno')) {
+            // now check a direct id reference of line in diff / pull-request page)
+            if ($(loc).length > 0 && $(loc).hasClass('cb-lineno')) {
                 highlightable_line_tds.push($(loc));
             }
+
+            // mark diff lines as selected
             $.each(highlightable_line_tds, function (i, $td) {
                 $td.addClass('cb-line-selected'); // line number td
                 $td.prev().addClass('cb-line-selected'); // line data
                 $td.next().addClass('cb-line-selected'); // line content
             });
 
-            if (highlightable_line_tds.length) {
+            if (highlightable_line_tds.length > 0) {
                 var $first_line_td = highlightable_line_tds[0];
                 scrollToElement($first_line_td);
                 $.Topic('/ui/plugins/code/anchor_focus').prepareOrPublish({
                     td: $first_line_td,
                     remainder: result.remainder
                 });
+            } else {
+                // case for direct anchor to comments
+                var $line = $(loc);
+
+                if ($line.hasClass('comment-general')) {
+                    $line.show();
+                } else if ($line.hasClass('comment-inline')) {
+                    $line.show();
+                    var $cb = $line.closest('.cb');
+                    $cb.removeClass('cb-collapsed')
+                }
+                if ($line.length > 0) {
+                    $line.addClass('comment-selected-hl');
+                    offsetScroll($line, 70);
+                }
+                if (!$line.hasClass('comment-outdated') && result.remainder === '/ReplyToComment') {
+                    $line.nextAll('.cb-comment-add-button').trigger('click');
+                }
             }
+
         }
     }
     collapsableContent();

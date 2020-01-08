@@ -37,7 +37,7 @@ from rhodecode.lib.utils2 import (
     AttributeDict, str2bool)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
-    UserOwnsUserGroupsException, NotAllowedToCreateUserError)
+    UserOwnsUserGroupsException, NotAllowedToCreateUserError, UserOwnsArtifactsException)
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.auth_token import AuthTokenModel
@@ -179,6 +179,7 @@ class UserModel(BaseModel):
             'email': user.email,
             'firstname': user.name,
             'lastname': user.lastname,
+            'description': user.description,
             'active': user.active,
             'admin': user.admin,
             'extern_name': user.extern_name,
@@ -225,7 +226,8 @@ class UserModel(BaseModel):
             active=True, admin=False, extern_type=None, extern_name=None,
             cur_user=None, plugin=None, force_password_change=False,
             allow_to_create_user=True, create_repo_group=None,
-            updating_user_id=None, language=None, strict_creation_check=True):
+            updating_user_id=None, language=None, description='',
+            strict_creation_check=True):
         """
         Creates a new instance if not found, or updates current one
 
@@ -249,6 +251,8 @@ class UserModel(BaseModel):
         :param updating_user_id: if we set it up this is the user we want to
             update this allows to editing username.
         :param language: language of user from interface.
+        :param description: user description
+        :param strict_creation_check: checks for allowed creation license wise etc.
 
         :returns: new User object with injected `is_new_user` attribute.
         """
@@ -328,7 +332,7 @@ class UserModel(BaseModel):
             new_user = User()
             edit = False
         else:
-            log.debug('updating user %s', username)
+            log.debug('updating user `%s`', username)
             events.trigger(events.UserPreUpdate(user, user_data))
             new_user = user
             edit = True
@@ -356,6 +360,7 @@ class UserModel(BaseModel):
             new_user.extern_type = safe_unicode(extern_type)
             new_user.name = firstname
             new_user.lastname = lastname
+            new_user.description = description
 
             # set password only if creating an user or password is changed
             if not edit or _password_change(new_user, password):
@@ -407,6 +412,10 @@ class UserModel(BaseModel):
             self.sa.flush()
 
             user_data = new_user.get_dict()
+            user_data.update({
+                'first_name': user_data.get('firstname'),
+                'last_name': user_data.get('lastname'),
+            })
             kwargs = {
                 # use SQLALCHEMY safe dump of user data
                 'user': AttributeDict(user_data),
@@ -505,11 +514,37 @@ class UserModel(BaseModel):
         # if nothing is done we have left overs left
         return left_overs
 
+    def _handle_user_artifacts(self, username, artifacts, handle_mode=None):
+        _superadmin = self.cls.get_first_super_admin()
+        left_overs = True
+
+        if handle_mode == 'detach':
+            for a in artifacts:
+                a.upload_user = _superadmin
+                # set description we know why we super admin now owns
+                # additional artifacts that were orphaned !
+                a.file_description += '  \n::detached artifact from deleted user: %s' % (username,)
+                self.sa.add(a)
+            left_overs = False
+        elif handle_mode == 'delete':
+            from rhodecode.apps.file_store import utils as store_utils
+            storage = store_utils.get_file_storage(self.request.registry.settings)
+            for a in artifacts:
+                file_uid = a.file_uid
+                storage.delete(file_uid)
+                self.sa.delete(a)
+
+            left_overs = False
+
+        # if nothing is done we have left overs left
+        return left_overs
+
     def delete(self, user, cur_user=None, handle_repos=None,
-               handle_repo_groups=None, handle_user_groups=None):
+               handle_repo_groups=None, handle_user_groups=None, handle_artifacts=None):
+        from rhodecode.lib.hooks_base import log_delete_user
+
         if not cur_user:
-            cur_user = getattr(
-                get_current_rhodecode_user(), 'username', None)
+            cur_user = getattr(get_current_rhodecode_user(), 'username', None)
         user = self._get_user(user)
 
         try:
@@ -547,12 +582,23 @@ class UserModel(BaseModel):
                     u'removed. Switch owners or remove those user groups:%s'
                     % (user.username, len(user_groups), ', '.join(user_groups)))
 
+            left_overs = self._handle_user_artifacts(
+                user.username, user.artifacts, handle_artifacts)
+            if left_overs and user.artifacts:
+                artifacts = [x.file_uid for x in user.artifacts]
+                raise UserOwnsArtifactsException(
+                    u'user "%s" still owns %s artifacts and cannot be '
+                    u'removed. Switch owners or remove those artifacts:%s'
+                    % (user.username, len(artifacts), ', '.join(artifacts)))
+
+            user_data = user.get_dict()  # fetch user data before expire
+
             # we might change the user data with detach/delete, make sure
             # the object is marked as expired before actually deleting !
             self.sa.expire(user)
             self.sa.delete(user)
-            from rhodecode.lib.hooks_base import log_delete_user
-            log_delete_user(deleted_by=cur_user, **user.get_dict())
+
+            log_delete_user(deleted_by=cur_user, **user_data)
         except Exception:
             log.error(traceback.format_exc())
             raise
@@ -570,7 +616,8 @@ class UserModel(BaseModel):
                     'password_reset_url': pwd_reset_url,
                     'user': user,
                     'email': user_email,
-                    'date': datetime.datetime.now()
+                    'date': datetime.datetime.now(),
+                    'first_admin_email': User.get_first_super_admin().email
                 }
 
                 (subject, headers, email_body,
@@ -628,7 +675,8 @@ class UserModel(BaseModel):
                 'new_password': new_passwd,
                 'user': user,
                 'email': user_email,
-                'date': datetime.datetime.now()
+                'date': datetime.datetime.now(),
+                'first_admin_email': User.get_first_super_admin().email
             }
 
             (subject, headers, email_body,
@@ -697,19 +745,40 @@ class UserModel(BaseModel):
                 return False
 
             log.debug('AuthUser: filling found user:%s data', dbuser)
-            user_data = dbuser.get_dict()
 
-            user_data.update({
-                # set explicit the safe escaped values
+            attrs = {
+                'user_id': dbuser.user_id,
+                'username': dbuser.username,
+                'name': dbuser.name,
                 'first_name': dbuser.first_name,
+                'firstname': dbuser.firstname,
                 'last_name': dbuser.last_name,
-            })
+                'lastname': dbuser.lastname,
+                'admin': dbuser.admin,
+                'active': dbuser.active,
 
-            for k, v in user_data.items():
-                # properties of auth user we dont update
-                if k not in ['auth_tokens', 'permissions']:
-                    setattr(auth_user, k, v)
+                'email': dbuser.email,
+                'emails': dbuser.emails_cached(),
+                'short_contact': dbuser.short_contact,
+                'full_contact': dbuser.full_contact,
+                'full_name': dbuser.full_name,
+                'full_name_or_username': dbuser.full_name_or_username,
 
+                '_api_key': dbuser._api_key,
+                '_user_data': dbuser._user_data,
+
+                'created_on': dbuser.created_on,
+                'extern_name': dbuser.extern_name,
+                'extern_type': dbuser.extern_type,
+
+                'inherit_default_permissions': dbuser.inherit_default_permissions,
+
+                'language': dbuser.language,
+                'last_activity': dbuser.last_activity,
+                'last_login': dbuser.last_login,
+                'password': dbuser.password,
+            }
+            auth_user.__dict__.update(attrs)
         except Exception:
             log.error(traceback.format_exc())
             auth_user.is_authenticated = False

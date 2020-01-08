@@ -23,6 +23,7 @@
 </%def>
 
 <%def name="main()">
+
     <div class="box">
         <div class="summary changeset">
             <div class="summary-detail">
@@ -60,8 +61,7 @@
                     <div class="right-label-summary">
                         <div class="code-header" >
                             <div class="compare_header">
-                              <div class="btn btn-primary">
-                                <a href="${h.route_path('repo_compare',
+                                <a class="btn btn-primary" href="${h.route_path('repo_compare',
                                 repo_name=c.repo_name,
                                 source_ref_type='rev',
                                 source_ref=getattr(c.commit_ranges[0].parents[0] if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id'),
@@ -70,7 +70,6 @@
                                 >
                                     ${_('Show combined diff')}
                                 </a>
-                              </div>
                             </div>
                         </div>
                     </div>
@@ -84,17 +83,14 @@
         <div id="changeset_compare_view_content">
     <div class="pull-left">
       <div class="btn-group">
-          <a
-              class="btn"
-              href="#"
-              onclick="$('.compare_select').show();$('.compare_select_hidden').hide(); return false">
-              ${_ungettext('Expand %s commit','Expand %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
-          </a>
-          <a
-              class="btn"
-              href="#"
-              onclick="$('.compare_select').hide();$('.compare_select_hidden').show(); return false">
-              ${_ungettext('Collapse %s commit','Collapse %s commits', len(c.commit_ranges)) % len(c.commit_ranges)}
+          <a class="${('collapsed' if c.collapse_all_commits else '')}" href="#expand-commits" onclick="toggleCommitExpand(this); return false" data-toggle-commits-cnt=${len(c.commit_ranges)} >
+              % if c.collapse_all_commits:
+                <i class="icon-plus-squared-alt icon-no-margin"></i>
+                ${_ungettext('Expand {} commit', 'Expand {} commits', len(c.commit_ranges)).format(len(c.commit_ranges))}
+              % else:
+                <i class="icon-minus-squared-alt icon-no-margin"></i>
+                ${_ungettext('Collapse {} commit', 'Collapse {} commits', len(c.commit_ranges)).format(len(c.commit_ranges))}
+              % endif
           </a>
       </div>
     </div>
@@ -104,8 +100,9 @@
       <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
       <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
       <%namespace name="diff_block" file="/changeset/diff_block.mako"/>
-      ${cbdiffs.render_diffset_menu()}
+
       %for commit in c.commit_ranges:
+        ${cbdiffs.render_diffset_menu(c.changes[commit.raw_id])}
         ${cbdiffs.render_diffset(
             diffset=c.changes[commit.raw_id],
             collapse_when_files_over=5,

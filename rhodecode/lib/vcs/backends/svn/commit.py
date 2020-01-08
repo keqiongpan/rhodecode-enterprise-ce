@@ -108,6 +108,10 @@ class SubversionCommit(base.BaseCommit):
             return self.get_file_content(path).startswith('link')
         return False
 
+    def is_node_binary(self, path):
+        path = self._fix_path(path)
+        return self._remote.is_binary(self._svn_rev, safe_str(path))
+
     def _get_file_property(self, path, name):
         file_properties = self._remote.node_properties(
             safe_str(path), self._svn_rev)
@@ -116,6 +120,11 @@ class SubversionCommit(base.BaseCommit):
     def get_file_content(self, path):
         path = self._fix_path(path)
         return self._remote.get_file_content(safe_str(path), self._svn_rev)
+
+    def get_file_content_streamed(self, path):
+        path = self._fix_path(path)
+        stream_method = getattr(self._remote, 'stream:get_file_content')
+        return stream_method(safe_str(path), self._svn_rev)
 
     def get_file_size(self, path):
         path = self._fix_path(path)

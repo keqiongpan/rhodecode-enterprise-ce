@@ -29,7 +29,7 @@
     <div class="sidebar-col-wrapper">
         <div class="sidebar">
             <ul class="nav nav-pills nav-stacked">
-              <li class="${'active' if c.active=='repositories' else ''}"><a href="${h.route_path('admin_defaults_repositories')}">${_('Repository')}</a></li>
+              <li class="${h.is_active('repositories', c.active)}"><a href="${h.route_path('admin_defaults_repositories')}">${_('Repository')}</a></li>
             </ul>
         </div>
 

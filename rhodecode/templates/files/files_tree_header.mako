@@ -4,9 +4,11 @@
 <div class="summary">
   <div class="fieldset">
     <div class="left-content">
-
+      <%
+        rc_user = h.discover_user(c.commit.author_email)
+      %>
       <div class="left-content-avatar">
-        ${base.gravatar(c.commit.author_email, 30)}
+        ${base.gravatar(c.commit.author_email, 30, tooltip=(True if rc_user else False), user=rc_user)}
       </div>
 
       <div class="left-content-message">
@@ -25,11 +27,12 @@
     </div>
 
     <div class="right-content">
-      <div class="tags commit-info">
+      <div class="tags">
         <code>
             <a href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=c.commit.raw_id)}">${h.show_id(c.commit)}</a>
         </code>
 
+        <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
         ${file_base.refs(c.commit)}
       </div>
     </div>

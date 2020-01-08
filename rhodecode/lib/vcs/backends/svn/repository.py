@@ -27,11 +27,11 @@ import os
 import urllib
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.datelib import date_astimestamp
 from rhodecode.lib.utils import safe_str, safe_unicode
+from rhodecode.lib.utils2 import CachedProperty
 from rhodecode.lib.vcs import connection, path as vcspath
 from rhodecode.lib.vcs.backends import base
 from rhodecode.lib.vcs.backends.svn.commit import (
@@ -69,19 +69,21 @@ class SubversionRepository(base.BaseRepository):
     contact = base.BaseRepository.DEFAULT_CONTACT
     description = base.BaseRepository.DEFAULT_DESCRIPTION
 
-    def __init__(self, repo_path, config=None, create=False, src_url=None, bare=False,
-                 **kwargs):
+    def __init__(self, repo_path, config=None, create=False, src_url=None, with_wire=None,
+                 bare=False, **kwargs):
         self.path = safe_str(os.path.abspath(repo_path))
         self.config = config if config else self.get_default_config()
+        self.with_wire = with_wire or {"cache": False}  # default should not use cache
 
         self._init_repo(create, src_url)
 
-        # dependent that trigger re-computation of  commit_ids
-        self._commit_ids_ver = 0
+        # caches
+        self._commit_ids = {}
 
     @LazyProperty
     def _remote(self):
-        return connection.Svn(self.path, self.config)
+        repo_id = self.path
+        return connection.Svn(self.path, repo_id, self.config, with_wire=self.with_wire)
 
     def _init_repo(self, create, src_url):
         if create and os.path.exists(self.path):
@@ -97,7 +99,7 @@ class SubversionRepository(base.BaseRepository):
         else:
             self._check_path()
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         head = self._remote.lookup(None)
         return [str(r) for r in xrange(1, head + 1)]

@@ -34,6 +34,11 @@ c.template_context['search_context'] = {
     'repo_view_type': c.template_context.get('repo_view_type'),
 }
 
+c.template_context['attachment_store'] = {
+    'max_file_size_mb': 10,
+    'image_ext': ["png", "jpg", "gif", "jpeg"]
+}
+
 %>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
@@ -108,7 +113,7 @@ c.template_context['search_context'] = {
             <script language="javascript" type="text/javascript" src="${h.asset('js/rhodecode/routes.js', ver=c.rhodecode_version_hash)}"></script>
             <script> var alertMessagePayloads = ${h.flash.json_alerts(request=request)|n}; </script>
             ## avoide escaping the %N
-            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.js', ver=c.rhodecode_version_hash)}"></script>
+            <script language="javascript" type="text/javascript" src="${h.asset('js/scripts.min.js', ver=c.rhodecode_version_hash)}"></script>
             <script>CodeMirror.modeURL = "${h.asset('') + 'js/mode/%N/%N.js?ver='+c.rhodecode_version_hash}";</script>
 
 
@@ -126,6 +131,7 @@ c.template_context['search_context'] = {
             $(document).ready(function(){
               show_more_event();
               timeagoActivate();
+              tooltipActivate();
               clipboardActivate();
             })
             </script>

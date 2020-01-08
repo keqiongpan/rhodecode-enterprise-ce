@@ -2425,7 +2425,7 @@ class Repository(Base, BaseModel):
                 instance = get_instance_cached(*args)
 
             log.debug(
-                'Repo instance fetched in %.3fs', inv_context_manager.compute_time)
+                'Repo instance fetched in %.4fs', inv_context_manager.compute_time)
             return instance
 
     def _get_instance(self, cache=True, config=None):
@@ -2497,7 +2497,7 @@ class RepoGroup(Base, BaseModel):
 
     @classmethod
     def _generate_choice(cls, repo_group):
-        from webhelpers.html import literal as _literal
+        from webhelpers2.html import literal as _literal
         _name = lambda k: _literal(cls.CHOICES_SEPARATOR.join(k))
         return repo_group.group_id, _name(repo_group.full_path_splitted)
 
@@ -3974,7 +3974,7 @@ class PullRequest(Base, _PullRequestBase):
         shadow_repository_path = vcs_obj._get_shadow_repository_path(
             self.target_repo.repo_id, workspace_id)
         if os.path.isdir(shadow_repository_path):
-            return vcs_obj._get_shadow_instance(shadow_repository_path)
+            return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):

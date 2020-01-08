@@ -112,7 +112,7 @@ class TestArchives(BackendTestMixin):
             self.tip.archive_repo(self.temp_file, kind='wrong kind')
 
 
-@pytest.fixture
+@pytest.fixture()
 def base_commit():
     """
     Prepare a `base.BaseCommit` just enough for `_validate_archive_prefix`.

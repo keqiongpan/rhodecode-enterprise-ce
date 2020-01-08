@@ -797,7 +797,7 @@ class TestDefaultRepoSettings(object):
             assert result[setting] == 'value'
 
 
-@pytest.fixture
+@pytest.fixture()
 def fake_ui_values():
     return [
         UiSetting(

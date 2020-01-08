@@ -43,6 +43,14 @@ def includeme(config):
         pattern=ADMIN_PREFIX + '/debug_style',
         debug_style=True)
     config.add_route(
+        name='debug_style_email',
+        pattern=ADMIN_PREFIX + '/debug_style/email/{email_id}',
+        debug_style=True)
+    config.add_route(
+        name='debug_style_email_plain_rendered',
+        pattern=ADMIN_PREFIX + '/debug_style/email-rendered/{email_id}',
+        debug_style=True)
+    config.add_route(
         name='debug_style_template',
         pattern=ADMIN_PREFIX + '/debug_style/t/{t_path}',
         debug_style=True)

@@ -1,4 +1,6 @@
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
         <h3 class="panel-title">${_('My Profile')}</h3>
@@ -47,6 +49,16 @@
             <div class="input">
                 <div class="text-as-placeholder">
                     ${c.user.last_name}
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">
+                ${_('Description')}:
+            </div>
+            <div class="input">
+                <div class="text-as-placeholder">
+                    ${dt.render_description(c.user.description, c.visual.stylify_metatags)}
                 </div>
             </div>
         </div>

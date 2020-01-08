@@ -190,7 +190,7 @@ let
       postInstall = ''
         # check required files
         STATIC_CHECK="/robots.txt /502.html
-                      /js/scripts.js /js/rhodecode-components.js
+                      /js/scripts.min.js /js/rhodecode-components.js
                       /css/style.css /css/style-polymer.css /css/style-ipython.css"
 
         for file in $STATIC_CHECK;

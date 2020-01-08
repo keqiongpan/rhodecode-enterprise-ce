@@ -47,8 +47,9 @@ from rhodecode.lib.utils2 import (safe_str, safe_unicode)
 from rhodecode.lib.system_info import get_system_info
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
+    or_, false,
     Repository, CacheKey, UserFollowing, UserLog, User, RepoGroup,
-    PullRequest)
+    PullRequest, FileStore)
 from rhodecode.model.settings import VcsSettingsModel
 from rhodecode.model.validation_schema.validators import url_validator, InvalidCloneUrl
 
@@ -125,7 +126,7 @@ class _PermCheckIterator(object):
         self.obj_list = obj_list
         self.obj_attr = obj_attr
         self.perm_set = perm_set
-        self.perm_checker = perm_checker
+        self.perm_checker = perm_checker(*self.perm_set)
         self.extra_kwargs = extra_kwargs or {}
 
     def __len__(self):
@@ -135,11 +136,11 @@ class _PermCheckIterator(object):
         return '<%s (%s)>' % (self.__class__.__name__, self.__len__())
 
     def __iter__(self):
-        checker = self.perm_checker(*self.perm_set)
         for db_obj in self.obj_list:
             # check permission at this level
-            name = getattr(db_obj, self.obj_attr, None)
-            if not checker(name, self.__class__.__name__, **self.extra_kwargs):
+            # NOTE(marcink): the __dict__.get() is ~4x faster then getattr()
+            name = db_obj.__dict__.get(self.obj_attr, None)
+            if not self.perm_checker(name, self.__class__.__name__, **self.extra_kwargs):
                 continue
 
             yield db_obj
@@ -149,12 +150,11 @@ class RepoList(_PermCheckIterator):
 
     def __init__(self, db_repo_list, perm_set=None, extra_kwargs=None):
         if not perm_set:
-            perm_set = [
-                'repository.read', 'repository.write', 'repository.admin']
+            perm_set = ['repository.read', 'repository.write', 'repository.admin']
 
         super(RepoList, self).__init__(
             obj_list=db_repo_list,
-            obj_attr='repo_name', perm_set=perm_set,
+            obj_attr='_repo_name', perm_set=perm_set,
             perm_checker=HasRepoPermissionAny,
             extra_kwargs=extra_kwargs)
 
@@ -167,7 +167,7 @@ class RepoGroupList(_PermCheckIterator):
 
         super(RepoGroupList, self).__init__(
             obj_list=db_repo_group_list,
-            obj_attr='group_name', perm_set=perm_set,
+            obj_attr='_group_name', perm_set=perm_set,
             perm_checker=HasRepoGroupPermissionAny,
             extra_kwargs=extra_kwargs)
 
@@ -226,8 +226,9 @@ class ScmModel(BaseModel):
                     raise RepositoryError('Duplicate repository name %s '
                                           'found in %s' % (name, path))
                 elif path[0] in rhodecode.BACKENDS:
-                    klass = get_backend(path[0])
-                    repos[name] = klass(path[1], config=config)
+                    backend = get_backend(path[0])
+                    repos[name] = backend(path[1], config=config,
+                                          with_wire={"cache": False})
             except OSError:
                 continue
         log.debug('found %s paths with repositories', len(repos))
@@ -362,6 +363,12 @@ class ScmModel(BaseModel):
         return self.sa.query(PullRequest)\
             .filter(PullRequest.target_repo == repo)\
             .filter(PullRequest.status != PullRequest.STATUS_CLOSED).count()
+
+    def get_artifacts(self, repo):
+        repo = self._get_repo(repo)
+        return self.sa.query(FileStore)\
+            .filter(FileStore.repo == repo)\
+            .filter(or_(FileStore.hidden == None, FileStore.hidden == false())).count()
 
     def mark_as_fork(self, repo, fork, user):
         repo = self._get_repo(repo)
@@ -582,6 +589,42 @@ class ScmModel(BaseModel):
 
         return _dirs, _files
 
+    def get_quick_filter_nodes(self, repo_name, commit_id, root_path='/'):
+        """
+        Generate files for quick filter in files view
+        """
+
+        _files = list()
+        _dirs = list()
+        try:
+            _repo = self._get_repo(repo_name)
+            commit = _repo.scm_instance().get_commit(commit_id=commit_id)
+            root_path = root_path.lstrip('/')
+            for __, dirs, files in commit.walk(root_path):
+
+                for f in files:
+
+                    _data = {
+                        "name": h.escape(f.unicode_path),
+                        "type": "file",
+                        }
+
+                    _files.append(_data)
+
+                for d in dirs:
+
+                    _data = {
+                        "name": h.escape(d.unicode_path),
+                        "type": "dir",
+                        }
+
+                    _dirs.append(_data)
+        except RepositoryError:
+            log.exception("Exception in get_quick_filter_nodes")
+            raise
+
+        return _dirs, _files
+
     def get_node(self, repo_name, commit_id, file_path,
                  extended_info=False, content=False, max_file_bytes=None, cache=True):
         """
@@ -628,11 +671,14 @@ class ScmModel(BaseModel):
                 size = file_node.size
                 over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
                 full_content = None
+                all_lines = 0
                 if not file_node.is_binary and not over_size_limit:
                     full_content = safe_unicode(file_node.content)
+                    all_lines, empty_lines = file_node.count_lines(full_content)
 
                 file_data.update({
                     "content": full_content,
+                    "lines": all_lines
                 })
             elif content:
                 # get content *without* cache
@@ -641,11 +687,14 @@ class ScmModel(BaseModel):
 
                 over_size_limit = (max_file_bytes is not None and size > max_file_bytes)
                 full_content = None
+                all_lines = 0
                 if not is_binary and not over_size_limit:
                     full_content = safe_unicode(_content)
+                    all_lines, empty_lines = file_node.count_lines(full_content)
 
                 file_data.update({
                     "content": full_content,
+                    "lines": all_lines
                 })
 
         except RepositoryError:
@@ -890,6 +939,21 @@ class ScmModel(BaseModel):
     def get_unread_journal(self):
         return self.sa.query(UserLog).count()
 
+    @classmethod
+    def backend_landing_ref(cls, repo_type):
+        """
+        Return a default landing ref based on a repository type.
+        """
+
+        landing_ref = {
+            'hg': ('branch:default', 'default'),
+            'git': ('branch:master', 'master'),
+            'svn': ('rev:tip', 'latest tip'),
+            'default': ('rev:tip', 'latest tip'),
+        }
+
+        return landing_ref.get(repo_type) or landing_ref['default']
+
     def get_repo_landing_revs(self, translator, repo=None):
         """
         Generates select option with tags branches and bookmarks (for hg only)
@@ -900,41 +964,56 @@ class ScmModel(BaseModel):
         _ = translator
         repo = self._get_repo(repo)
 
-        hist_l = [
-            ['rev:tip', _('latest tip')]
+        if repo:
+            repo_type = repo.repo_type
+        else:
+            repo_type = 'default'
+
+        default_landing_ref, landing_ref_lbl = self.backend_landing_ref(repo_type)
+
+        default_ref_options = [
+            [default_landing_ref, landing_ref_lbl]
         ]
-        choices = [
-            'rev:tip'
+        default_choices = [
+            default_landing_ref
         ]
 
         if not repo:
-            return choices, hist_l
+            return default_choices, default_ref_options
 
         repo = repo.scm_instance()
 
-        branches_group = (
-            [(u'branch:%s' % safe_unicode(b), safe_unicode(b))
-                for b in repo.branches],
-            _("Branches"))
-        hist_l.append(branches_group)
+        ref_options = [('rev:tip', 'latest tip')]
+        choices = ['rev:tip']
+
+        # branches
+        branch_group = [(u'branch:%s' % safe_unicode(b), safe_unicode(b)) for b in repo.branches]
+        if not branch_group:
+            # new repo, or without maybe a branch?
+            branch_group = default_ref_options
+
+        branches_group = (branch_group, _("Branches"))
+        ref_options.append(branches_group)
         choices.extend([x[0] for x in branches_group[0]])
 
+        # bookmarks for HG
         if repo.alias == 'hg':
             bookmarks_group = (
                 [(u'book:%s' % safe_unicode(b), safe_unicode(b))
                     for b in repo.bookmarks],
                 _("Bookmarks"))
-            hist_l.append(bookmarks_group)
+            ref_options.append(bookmarks_group)
             choices.extend([x[0] for x in bookmarks_group[0]])
 
+        # tags
         tags_group = (
             [(u'tag:%s' % safe_unicode(t), safe_unicode(t))
                 for t in repo.tags],
             _("Tags"))
-        hist_l.append(tags_group)
+        ref_options.append(tags_group)
         choices.extend([x[0] for x in tags_group[0]])
 
-        return choices, hist_l
+        return choices, ref_options
 
     def get_server_info(self, environ=None):
         server_info = get_system_info(environ)

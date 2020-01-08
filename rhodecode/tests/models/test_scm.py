@@ -18,16 +18,11 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import os
-import stat
-import sys
-
 import pytest
 from mock import Mock, patch, DEFAULT
 
 import rhodecode
 from rhodecode.model import db, scm
-from rhodecode.tests import no_newline_id_generator
 
 
 def test_scm_instance_config(backend):
@@ -35,21 +30,20 @@ def test_scm_instance_config(backend):
     with patch.multiple('rhodecode.model.db.Repository',
                         _get_instance=DEFAULT,
                         _get_instance_cached=DEFAULT) as mocks:
+
         repo.scm_instance()
         mocks['_get_instance'].assert_called_with(
             config=None, cache=False)
 
-        config = {'some': 'value'}
-        repo.scm_instance(config=config)
+        repo.scm_instance(vcs_full_cache=False)
         mocks['_get_instance'].assert_called_with(
-            config=config, cache=False)
+            config=None, cache=False)
 
-        with patch.dict(rhodecode.CONFIG, {'vcs_full_cache': 'true'}):
-            repo.scm_instance(config=config)
-            mocks['_get_instance_cached'].assert_called()
+        repo.scm_instance(vcs_full_cache=True)
+        mocks['_get_instance_cached'].assert_called()
 
 
-def test__get_instance_config(backend):
+def test_get_instance_config(backend):
     repo = backend.create_repo()
     vcs_class = Mock()
     with patch.multiple('rhodecode.lib.vcs.backends',
@@ -61,13 +55,13 @@ def test__get_instance_config(backend):
             repo._get_instance()
             vcs_class.assert_called_with(
                 repo_path=repo.repo_full_path, config=config_mock,
-                create=False, with_wire={'cache': True})
+                create=False, with_wire={'cache': True, 'repo_state_uid': None})
 
         new_config = {'override': 'old_config'}
         repo._get_instance(config=new_config)
         vcs_class.assert_called_with(
             repo_path=repo.repo_full_path, config=new_config, create=False,
-            with_wire={'cache': True})
+            with_wire={'cache': True, 'repo_state_uid': None})
 
 
 def test_mark_for_invalidation_config(backend):

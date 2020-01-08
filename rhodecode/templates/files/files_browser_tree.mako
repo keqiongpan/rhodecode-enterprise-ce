@@ -1,3 +1,5 @@
+<%namespace name="base" file="/base/base.mako"/>
+
 <%
     if request.GET.get('at'):
         query={'at': request.GET.get('at')}
@@ -19,13 +21,14 @@
         <tbody id="tbody">
         <tr>
             <td colspan="5">
-
                 ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'), limit_items=True)}
-
             </td>
         </tr>
-          %for cnt,node in enumerate(c.file):
-          <tr class="parity${cnt%2}">
+
+        <% has_files = False %>
+        % for cnt,node in enumerate(c.file):
+        <% has_files = True %>
+        <tr class="parity${(cnt % 2)}">
             <td class="td-componentname">
             % if node.is_submodule():
               <span class="submodule-dir">
@@ -59,14 +62,14 @@
               </td>
               <td class="td-hash" data-attr-name="commit_id">
                   % if c.full_load:
-                  <div class="tooltip" title="${h.tooltip(node.last_commit.message)}">
+                  <div class="tooltip-hovercard" data-hovercard-alt="${node.last_commit.message}" data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=c.repo_name, commit_id=node.last_commit.raw_id)}">
                       <pre data-commit-id="${node.last_commit.raw_id}">r${node.last_commit.idx}:${node.last_commit.short_id}</pre>
                   </div>
                   % endif
               </td>
               <td class="td-user" data-attr-name="author">
                   % if c.full_load:
-                  <span data-author="${node.last_commit.author}" title="${h.tooltip(node.last_commit.author)}">${h.gravatar_with_user(request, node.last_commit.author)|n}</span>
+                  <span data-author="${node.last_commit.author}">${h.gravatar_with_user(request, node.last_commit.author, tooltip=True)|n}</span>
                   % endif
               </td>
             %else:
@@ -76,7 +79,17 @@
               <td></td>
             %endif
           </tr>
-          %endfor
+        % endfor
+
+        % if not has_files:
+        <tr>
+            <td colspan="5">
+                ##empty-dir mostly SVN
+                &nbsp;
+            </td>
+        </tr>
+        % endif
+
         </tbody>
         <tbody id="tbody_filtered"></tbody>
     </table>

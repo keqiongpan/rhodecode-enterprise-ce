@@ -26,6 +26,7 @@
 @import 'panels-bootstrap';
 @import 'panels';
 @import 'deform';
+@import 'tooltips';
 
 //--- BASE ------------------//
 .noscript-error {
@@ -105,13 +106,17 @@ input + .action-link, .action-link.first{
     cursor: inherit;
 }
 
+
 .clipboard-action {
   cursor: pointer;
-  color: @grey4;
   margin-left: 5px;
 
-  &:hover {
-    color: @grey2;
+  &:not(.no-grey) {
+
+    &:hover {
+      color: @grey2;
+    }
+    color: @grey4;
   }
 }
 
@@ -239,6 +244,7 @@ input.inline[type="file"] {
     // for the header and then remove the min-height. I chose a smaller value
     // intentionally here to avoid rendering issues in the main navigation.
     min-height: 49px;
+    min-width: 1024px;
 
 	position: relative;
 	vertical-align: bottom;
@@ -373,8 +379,9 @@ ul.auth_plugins {
   font-family: @text-bold;
 }
 
-.pr-origininfo, .pr-targetinfo {
+.pr-commit-flow  {
     position: relative;
+    font-weight: 600;
 
     .tag {
         display: inline-block;
@@ -407,17 +414,42 @@ ul.auth_plugins {
     padding: 0 0;
 }
 
-
-#pr-title-input {
-  width: 72%;
+.pr-title-input {
+  width: 80%;
   font-size: 1em;
-  margin: 0;
-  padding: 0 0 0 @padding/4;
+  margin:  0 0 4px 0;
+  padding: 0;
   line-height: 1.7em;
   color: @text-color;
   letter-spacing: .02em;
   font-weight: @text-bold-weight;
   font-family: @text-bold;
+
+  &:hover {
+    box-shadow: none;
+  }
+}
+
+#pr-title {
+  input {
+    border: 1px transparent;
+    color: black;
+    opacity: 1;
+    background: #fff;
+  }
+}
+
+.pr-title-closed-tag {
+    font-size: 16px;
+}
+
+#pr-desc {
+  padding: 10px 0;
+
+  .markdown-block {
+    padding: 0;
+    margin-bottom: -30px;
+  }
 }
 
 #pullrequest_title {
@@ -431,6 +463,31 @@ ul.auth_plugins {
     padding: @padding-large-vertical @padding-large-vertical @padding-large-vertical 0;
     text-align: left;
     overflow: hidden;
+}
+
+.pr-details-title {
+    height: 16px
+}
+
+.pr-details-title-author-pref {
+    padding-right: 10px
+}
+
+.label-pr-detail {
+  display: table-cell;
+  width: 120px;
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+  padding-right: 7.5px;
+}
+
+.source-details ul {
+  padding: 10px 16px;
+}
+
+.source-details-action {
+  color: @grey4;
+  font-size: 11px
 }
 
 .pr-submit-button {
@@ -449,6 +506,23 @@ ul.auth_plugins {
 
 .pr-description-label {
     vertical-align: top;
+}
+
+#open_edit_pullrequest {
+  padding: 0;
+}
+
+#close_edit_pullrequest {
+
+}
+
+#delete_pullrequest {
+    clear: inherit;
+
+  form {
+      display: inline;
+  }
+
 }
 
 .perms_section_head {
@@ -755,6 +829,11 @@ label {
         padding: 0 0 0 .17em;
         line-height: 1em;
     }
+
+    & + .no-margin {
+      margin: 0
+    }
+
 }
 
 .user-inline-data {
@@ -771,7 +850,7 @@ label {
     max-width: 200px;
     min-height: (@gravatar-size + @border-thickness * 2); // account for border
     display: block;
-    padding: 0 0 0 (@gravatar-size  + @basefontsize/2 + @border-thickness * 2);
+    padding: 0 0 0 (@gravatar-size  + @basefontsize/4);
 
 
     .gravatar {
@@ -800,6 +879,16 @@ label {
     }
 }
 
+.gist-type-fields {
+    line-height: 30px;
+    height: 30px;
+
+    .gist-type-fields-wrapper {
+        vertical-align: middle;
+        display: inline-block;
+        line-height: 25px;
+    }
+}
 
 // ADMIN SETTINGS
 
@@ -850,7 +939,6 @@ label {
 .notification-list {
 
 	div {
-		display: inline-block;
 		vertical-align: middle;
 	}
 
@@ -982,9 +1070,6 @@ label {
 }
 
 #graph {
-    .flag_status {
-        margin: 0;
-    }
 
     .pagination-left {
         float: left;
@@ -1069,6 +1154,9 @@ label {
     a {
       color: @grey5
     }
+    @media screen and (max-width: 1200px) {
+      display: none;
+    }
 }
 
 img {
@@ -1086,26 +1174,52 @@ label {
     }
 }
 
-.flag_status {
-    margin: 2px;
+.review-status {
     &.under_review {
-        .circle(5px, @alert3);
+        color: @alert3;
     }
     &.approved {
-        .circle(5px, @alert1);
+        color: @alert1;
     }
     &.rejected,
     &.forced_closed{
-        .circle(5px, @alert2);
+        color: @alert2;
     }
     &.not_reviewed {
-        .circle(5px, @grey5);
+        color: @grey5;
     }
 }
 
-.flag_status_comment_box {
-	margin: 5px 6px 0px 2px;
+.review-status-under_review {
+  color: @alert3;
 }
+.status-tag-under_review {
+  border-color: @alert3;
+}
+
+.review-status-approved {
+  color: @alert1;
+}
+.status-tag-approved {
+  border-color: @alert1;
+}
+
+.review-status-rejected,
+.review-status-forced_closed {
+  color: @alert2;
+}
+.status-tag-rejected,
+.status-tag-forced_closed {
+  border-color: @alert2;
+}
+
+.review-status-not_reviewed {
+  color: @grey5;
+}
+.status-tag-not_reviewed {
+  border-color: @grey5;
+}
+
 .test_pattern_preview {
 	margin: @space 0;
 
@@ -1394,11 +1508,9 @@ table.integrations {
 }
 .reviewer_status {
     display: inline-block;
-    vertical-align: top;
     width: 25px;
     min-width: 25px;
     height: 1.2em;
-    margin-top: 3px;
     line-height: 1em;
 }
 
@@ -1468,12 +1580,50 @@ table.integrations {
     }
 }
 .pr-details-content {
-    margin-top: @textmargin;
-    margin-bottom: @textmargin;
+    margin-top: @textmargin - 5;
+    margin-bottom: @textmargin - 5;
 }
 
 .pr-reviewer-rules {
    padding: 10px 0px 20px 0px;
+}
+
+.todo-resolved {
+  text-decoration: line-through;
+}
+
+.todo-table {
+  width: 100%;
+
+  td {
+    padding: 5px 0px;
+  }
+
+  .td-todo-number {
+    text-align: left;
+    white-space: nowrap;
+    width: 15%;
+  }
+
+  .td-todo-gravatar {
+    width: 5%;
+
+    img {
+      margin: -3px 0;
+    }
+  }
+
+}
+
+.todo-comment-text-wrapper {
+  display: inline-grid;
+}
+
+.todo-comment-text {
+  margin-left: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .group_members {
@@ -1507,10 +1657,6 @@ table.integrations {
 
 .subtitle-compare {
   margin: -15px 0px 0px 0px;
-}
-
-.comments-summary-td {
-  border-top: 1px dashed @grey5;
 }
 
 // new entry in group_members
@@ -1774,6 +1920,13 @@ BIN_FILENODE = 7
     margin-bottom: 20px;
 }
 
+.pull-request-merge-refresh {
+  margin: 2px 7px;
+  a {
+    color: @grey3;
+  }
+}
+
 .pull-request-merge ul {
     padding: 0px 0px;
 }
@@ -1826,17 +1979,14 @@ BIN_FILENODE = 7
 
 .pr-versions {
     font-size: 1.1em;
+    padding: 7.5px;
 
     table {
-      padding: 0px 5px;
+
     }
 
     td {
       line-height: 15px;
-    }
-
-    .flag_status {
-        margin: 0;
     }
 
     .compare-radio-button {
@@ -1880,10 +2030,6 @@ BIN_FILENODE = 7
 .table_disp {
 	.status {
 		width: auto;
-
-		.flag_status {
-			float: left;
-		}
 	}
 }
 
@@ -1924,10 +2070,6 @@ BIN_FILENODE = 7
 	.desc, .delete-notifications, .read-notifications{
 		display: table-cell;
 		text-align: left;
-	}
-
-	.desc{
-		width: 1163px;
 	}
 
 	.delete-notifications, .read-notifications{
@@ -2758,31 +2900,31 @@ form.markup-form {
 
 .dropzone,
 .dropzone-pure {
-    border: 2px dashed @grey5;
-    border-radius: 5px;
-    background: white;
-    min-height: 200px;
-    padding: 54px;
+  border: 2px dashed @grey5;
+  border-radius: 5px;
+  background: white;
+  min-height: 200px;
+  padding: 54px;
 
   .dz-message {
-      font-weight: 700;
-      text-align: center;
-      margin: 2em 0;
+    font-weight: 700;
+    text-align: center;
+    margin: 2em 0;
   }
 
 }
 
 .dz-preview {
-    margin: 10px 0 !important;
-    position: relative;
-    vertical-align: top;
-    padding: 10px;
-    border-bottom: 1px solid @grey5;
+  margin: 10px 0 !important;
+  position: relative;
+  vertical-align: top;
+  padding: 10px;
+  border-bottom: 1px solid @grey5;
 }
 
 .dz-filename {
-    font-weight: 700;
-    float:left;
+  font-weight: 700;
+  float: left;
 }
 
 .dz-sending {
@@ -2790,15 +2932,106 @@ form.markup-form {
 }
 
 .dz-response {
-  clear:both
+  clear: both
 }
 
 .dz-filename-size {
-    float:right
+  float: right
 }
 
 .dz-error-message {
-    color: @alert2;
-    padding-top: 10px;
-    clear: both;
+  color: @alert2;
+  padding-top: 10px;
+  clear: both;
+}
+
+
+.user-hovercard {
+  padding: 5px;
+}
+
+.user-hovercard-icon {
+  display: inline;
+  padding: 0;
+  box-sizing: content-box;
+  border-radius: 50%;
+  float: left;
+}
+
+.user-hovercard-name {
+  float: right;
+  vertical-align: top;
+  padding-left: 10px;
+  min-width: 150px;
+}
+
+.user-hovercard-bio {
+  clear: both;
+  padding-top: 10px;
+}
+
+.user-hovercard-header {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-hovercard-footer {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-group-hovercard {
+  padding: 5px;
+}
+
+.user-group-hovercard-icon {
+  display: inline;
+  padding: 0;
+  box-sizing: content-box;
+  border-radius: 50%;
+  float: left;
+}
+
+.user-group-hovercard-name {
+  float: left;
+  vertical-align: top;
+  padding-left: 10px;
+  min-width: 150px;
+}
+
+.user-group-hovercard-icon i {
+  border: 1px solid @grey4;
+  border-radius: 4px;
+}
+
+.user-group-hovercard-bio {
+  clear: both;
+  padding-top: 10px;
+  line-height: 1.0em;
+}
+
+.user-group-hovercard-header {
+  clear: both;
+  min-height: 10px;
+}
+
+.user-group-hovercard-footer {
+  clear: both;
+  min-height: 10px;
+}
+
+.pr-hovercard-header {
+  clear: both;
+  display: block;
+  line-height: 20px;
+}
+
+.pr-hovercard-user {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+}
+
+.pr-hovercard-title {
+  padding-top: 5px;
 }

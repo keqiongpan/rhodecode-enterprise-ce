@@ -26,6 +26,11 @@ from rhodecode.model.validation_schema.utils import convert_to_optgroup
 from rhodecode.model.validation_schema import validators, preparers, types
 
 DEFAULT_LANDING_REF = 'rev:tip'
+DEFAULT_BACKEND_LANDING_REF = {
+    'hg': 'branch:default',
+    'git': 'branch:master',
+    'svn': 'rev:tip',
+}
 
 
 def get_group_and_repo(repo_name):
@@ -74,8 +79,14 @@ def deferred_sync_uri_validator(node, kw):
 
 @colander.deferred
 def deferred_landing_ref_widget(node, kw):
-    items = kw.get(
-        'repo_ref_items', [(DEFAULT_LANDING_REF, DEFAULT_LANDING_REF)])
+    repo_type = kw.get('repo_type')
+    default_opts = []
+    if repo_type:
+        default_opts.append(
+            (DEFAULT_BACKEND_LANDING_REF[repo_type],
+             DEFAULT_BACKEND_LANDING_REF[repo_type]))
+
+    items = kw.get('repo_ref_items', default_opts)
     items = convert_to_optgroup(items)
     return deform.widget.Select2Widget(values=items)
 

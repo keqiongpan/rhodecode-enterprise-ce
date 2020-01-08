@@ -201,14 +201,11 @@ class SimpleVCS(object):
 
             # Only proceed if we got a pull request and if acl repo name from
             # URL equals the target repo name of the pull request.
-            if pull_request and \
-                    (acl_repo_name == pull_request.target_repo.repo_name):
-                repo_id = pull_request.target_repo.repo_id
+            if pull_request and (acl_repo_name == pull_request.target_repo.repo_name):
+
                 # Get file system path to shadow repository.
                 workspace_id = PullRequestModel()._workspace_id(pull_request)
-                target_vcs = pull_request.target_repo.scm_instance()
-                vcs_repo_name = target_vcs._get_shadow_repository_path(
-                    repo_id, workspace_id)
+                vcs_repo_name = pull_request.target_repo.get_shadow_repository_path(workspace_id)
 
                 # Store names for later usage.
                 self.vcs_repo_name = vcs_repo_name
@@ -225,10 +222,10 @@ class SimpleVCS(object):
     def scm_app(self):
         custom_implementation = self.config['vcs.scm_app_implementation']
         if custom_implementation == 'http':
-            log.info('Using HTTP implementation of scm app.')
+            log.debug('Using HTTP implementation of scm app.')
             scm_app_impl = scm_app_http
         else:
-            log.info('Using custom implementation of scm_app: "{}"'.format(
+            log.debug('Using custom implementation of scm_app: "{}"'.format(
                 custom_implementation))
             scm_app_impl = importlib.import_module(custom_implementation)
         return scm_app_impl
@@ -354,7 +351,7 @@ class SimpleVCS(object):
             'vcs_permissions', plugin_id, action, user.user_id, repo_name, ip_addr)
 
         auth_time = time.time() - start
-        log.debug('Permissions for plugin `%s` completed in %.3fs, '
+        log.debug('Permissions for plugin `%s` completed in %.4fs, '
                   'expiration time of fetched cache %.1fs.',
                   plugin_id, auth_time, cache_ttl)
 
@@ -657,6 +654,9 @@ class SimpleVCS(object):
         raise NotImplementedError()
 
     def _should_use_callback_daemon(self, extras, environ, action):
+        if extras.get('is_shadow_repo'):
+            # we don't want to execute hooks, and callback daemon for shadow repos
+            return False
         return True
 
     def _prepare_callback_daemon(self, extras, environ, action, txn_id=None):

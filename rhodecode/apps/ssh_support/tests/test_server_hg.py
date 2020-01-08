@@ -62,7 +62,7 @@ class MercurialServerCreator(object):
         return server
 
 
-@pytest.fixture
+@pytest.fixture()
 def hg_server(app):
     return MercurialServerCreator()
 

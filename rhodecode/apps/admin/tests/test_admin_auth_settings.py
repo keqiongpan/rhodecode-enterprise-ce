@@ -155,7 +155,7 @@ class TestAuthSettingsView(object):
         response = self._post_ldap_settings(params, override={
             'port': invalid_port_value,
         })
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         assertr.element_contains(
             '.form .field #port ~ .error-message',
             invalid_port_value)

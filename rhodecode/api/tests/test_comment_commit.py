@@ -20,7 +20,7 @@
 
 import pytest
 
-from rhodecode.model.db import ChangesetStatus
+from rhodecode.model.db import ChangesetStatus, User
 from rhodecode.api.tests.utils import (
     build_data, api_call, assert_error, assert_ok)
 
@@ -79,3 +79,38 @@ class TestCommentCommit(object):
             'success': True
         }
         assert_ok(id_, expected, given=response.body)
+
+    def test_api_comment_commit_with_extra_recipients(self, backend, user_util):
+
+        commit_id = backend.repo.scm_instance().get_commit('tip').raw_id
+
+        user1 = user_util.create_user()
+        user1_id = user1.user_id
+        user2 = user_util.create_user()
+        user2_id = user2.user_id
+
+        id_, params = build_data(
+            self.apikey, 'comment_commit', repoid=backend.repo_name,
+            commit_id=commit_id,
+            message='abracadabra',
+            extra_recipients=[user1.user_id, user2.username])
+
+        response = api_call(self.app, params)
+        repo = backend.repo.scm_instance()
+
+        expected = {
+            'msg': 'Commented on commit `%s` for repository `%s`' % (
+                repo.get_commit().raw_id, backend.repo_name),
+            'status_change': None,
+            'success': True
+        }
+
+        assert_ok(id_, expected, given=response.body)
+        # check user1/user2 inbox for notification
+        user1 = User.get(user1_id)
+        assert 1 == len(user1.notifications)
+        assert 'abracadabra' in user1.notifications[0].notification.body
+
+        user2 = User.get(user2_id)
+        assert 1 == len(user2.notifications)
+        assert 'abracadabra' in user2.notifications[0].notification.body

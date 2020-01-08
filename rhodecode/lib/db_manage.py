@@ -117,7 +117,7 @@ class DbManage(object):
         self.sa.add(ver)
         log.info('db version set to: %s', __dbversion__)
 
-    def run_pre_migration_tasks(self):
+    def run_post_migration_tasks(self):
         """
         Run various tasks before actually doing migrations
         """
@@ -172,7 +172,6 @@ class DbManage(object):
 
         notify(msg)
 
-        self.run_pre_migration_tasks()
 
         if curr_version == __dbversion__:
             log.info('This database is already at the newest version')
@@ -194,6 +193,7 @@ class DbManage(object):
 
             _step = step
 
+        self.run_post_migration_tasks()
         notify('upgrade to version %s successful' % _step)
 
     def fix_repo_paths(self):

@@ -63,7 +63,7 @@ class GitServerCreator(object):
         return server
 
 
-@pytest.fixture
+@pytest.fixture()
 def git_server(app):
     return GitServerCreator()
 

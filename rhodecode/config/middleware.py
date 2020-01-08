@@ -69,6 +69,10 @@ def should_load_all():
     Returns if all application components should be loaded. In some cases it's
     desired to skip apps loading for faster shell script execution
     """
+    ssh_cmd = os.environ.get('RC_CMD_SSH_WRAPPER')
+    if ssh_cmd:
+        return False
+
     return True
 
 
@@ -256,12 +260,12 @@ def includeme(config):
     config.include('rhodecode.apps._base.navigation')
     config.include('rhodecode.apps._base.subscribers')
     config.include('rhodecode.tweens')
-
-    config.include('rhodecode.integrations')
     config.include('rhodecode.authentication')
 
     if load_all:
-        from rhodecode.authentication import discover_legacy_plugins
+        config.include('rhodecode.integrations')
+
+    if load_all:
         # load CE authentication plugins
         config.include('rhodecode.authentication.plugins.auth_crowd')
         config.include('rhodecode.authentication.plugins.auth_headers')
@@ -272,12 +276,14 @@ def includeme(config):
         config.include('rhodecode.authentication.plugins.auth_token')
 
         # Auto discover authentication plugins and include their configuration.
-        discover_legacy_plugins(config)
+        if asbool(settings.get('auth_plugin.import_legacy_plugins', 'true')):
+            from rhodecode.authentication import discover_legacy_plugins
+            discover_legacy_plugins(config)
 
     # apps
-    config.include('rhodecode.apps._base')
-
     if load_all:
+        config.include('rhodecode.apps._base')
+        config.include('rhodecode.apps.hovercards')
         config.include('rhodecode.apps.ops')
         config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')
@@ -303,19 +309,24 @@ def includeme(config):
     settings['default_locale_name'] = settings.get('lang', 'en')
 
     # Add subscribers.
-    config.add_subscriber(inject_app_settings,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(scan_repositories_if_enabled,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(write_metadata_if_needed,
-                          pyramid.events.ApplicationCreated)
-    config.add_subscriber(write_js_routes_if_enabled,
-                          pyramid.events.ApplicationCreated)
+    if load_all:
+        config.add_subscriber(inject_app_settings,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(scan_repositories_if_enabled,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(write_metadata_if_needed,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(write_js_routes_if_enabled,
+                              pyramid.events.ApplicationCreated)
 
     # request custom methods
     config.add_request_method(
         'rhodecode.lib.partial_renderer.get_partial_renderer',
         'get_partial_renderer')
+
+    config.add_request_method(
+        'rhodecode.lib.request_counter.get_request_counter',
+        'request_count')
 
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
@@ -410,10 +421,14 @@ def sanitize_settings_and_apply_defaults(global_config, settings):
             "Using the following Mako template directories: %s",
             mako_directories)
 
+    # NOTE(marcink): fix redis requirement for schema of connection since 3.X
+    if 'beaker.session.type' in settings and settings['beaker.session.type'] == 'ext:redis':
+        raw_url = settings['beaker.session.url']
+        if not raw_url.startswith(('redis://', 'rediss://', 'unix://')):
+            settings['beaker.session.url'] = 'redis://' + raw_url
+
     # Default includes, possible to change as a user
-    pyramid_includes = settings.setdefault('pyramid.includes', [
-        'rhodecode.lib.middleware.request_wrapper',
-    ])
+    pyramid_includes = settings.setdefault('pyramid.includes', [])
     log.debug(
         "Using the following pyramid.includes: %s",
         pyramid_includes)
@@ -557,12 +572,10 @@ def _sanitize_vcs_settings(settings):
     settings.
     """
     _string_setting(settings, 'vcs.svn.compatible_version', '')
-    _string_setting(settings, 'git_rev_filter', '--all')
     _string_setting(settings, 'vcs.hooks.protocol', 'http')
     _string_setting(settings, 'vcs.hooks.host', '127.0.0.1')
     _string_setting(settings, 'vcs.scm_app_implementation', 'http')
     _string_setting(settings, 'vcs.server', '')
-    _string_setting(settings, 'vcs.server.log_level', 'debug')
     _string_setting(settings, 'vcs.server.protocol', 'http')
     _bool_setting(settings, 'startup.import_repos', 'false')
     _bool_setting(settings, 'vcs.hooks.direct_calls', 'false')

@@ -21,7 +21,7 @@
 import pytest
 
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import UserLog
+from rhodecode.model.db import UserLog, User
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 from rhodecode.api.tests.utils import (
@@ -65,9 +65,46 @@ class TestCommentPullRequest(object):
         journal = UserLog.query()\
             .filter(UserLog.user_id == author)\
             .filter(UserLog.repository_id == repo) \
-            .order_by('user_log_id') \
+            .order_by(UserLog.user_log_id.asc()) \
             .all()
         assert journal[-1].action == 'repo.pull_request.comment.create'
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_comment_pull_request_with_extra_recipients(self, pr_util, user_util):
+        pull_request = pr_util.create_pull_request()
+
+        user1 = user_util.create_user()
+        user1_id = user1.user_id
+        user2 = user_util.create_user()
+        user2_id = user2.user_id
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            message='test message',
+            extra_recipients=[user1.user_id, user2.username]
+        )
+        response = api_call(self.app, params)
+        pull_request = PullRequestModel().get(pull_request.pull_request_id)
+
+        comments = CommentsModel().get_comments(
+            pull_request.target_repo.repo_id, pull_request=pull_request)
+
+        expected = {
+            'pull_request_id': pull_request.pull_request_id,
+            'comment_id': comments[-1].comment_id,
+            'status': {'given': None, 'was_changed': None}
+        }
+        assert_ok(id_, expected, response.body)
+        # check user1/user2 inbox for notification
+        user1 = User.get(user1_id)
+        assert 1 == len(user1.notifications)
+        assert 'test message' in user1.notifications[0].notification.body
+
+        user2 = User.get(user2_id)
+        assert 1 == len(user2.notifications)
+        assert 'test message' in user2.notifications[0].notification.body
 
     @pytest.mark.backends("git", "hg")
     def test_api_comment_pull_request_change_status(

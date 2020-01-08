@@ -273,6 +273,85 @@ form.rcform {
 
 }
 
+.rcform-element {
+
+    label { display: inline; border:none; padding:0; }
+    .label { display: none; }
+
+    label:not(#ie) {
+      cursor: pointer;
+      display: inline-block;
+      position: relative;
+      background: white;
+      border-radius: 4px;
+      box-shadow: none;
+
+      &:hover::after {
+        opacity: 0.5;
+      }
+    }
+
+    input[type="radio"],
+    input[type="checkbox"] {
+        padding: 0;
+        border: none;
+    }
+
+    input[type="radio"]:not(#ie),
+    input[type="checkbox"]:not(#ie) {
+        // Hide the input, but have it still be clickable
+        opacity: 0;
+        float: left;
+        height: 0;
+        width: 0;
+        margin: 0;
+        padding: 0;
+    }
+    input[type='radio'] + label:not(#ie),
+    input[type='checkbox'] + label:not(#ie) {
+        margin: 0;
+        clear: none;
+    }
+
+    input[type='radio'] + label:not(#ie) {
+        .circle (@form-radio-width,white);
+        float: left;
+        display: inline-block;
+        height: @form-radio-width;
+        width: @form-radio-width;
+        margin: 2px 2px 2px 0;
+        border: 1px solid @grey4;
+        background-color: white;
+        box-shadow: none;
+        text-indent: -9999px;
+        transition: none;
+
+        & + .label {
+          float: left;
+          margin-top: 7px
+        }
+    }
+
+    input[type='radio']:checked + label:not(#ie) {
+        margin: 0 0px 0 -2px;
+        padding: 3px;
+        border-style: double;
+        border-color: white;
+        border-width: thick;
+        background-color: @rcblue;
+        box-shadow: none;
+    }
+
+    fieldset {
+        .label:not(#ie) {
+            display: inline;
+            margin: 0 1em 0 .5em;
+            line-height: 1em;
+        }
+    }
+
+}
+
 .badged-field {
     .user-badge {
         line-height: 25px;

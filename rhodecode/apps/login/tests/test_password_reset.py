@@ -88,7 +88,7 @@ class TestPasswordReset(TestController):
 
         response = self.app.get(route_path('reset_password'))
         
-        assert_response = AssertResponse(response)
+        assert_response = response.assert_response()
         if show_reset:
             response.mustcontain('Send password reset email')
             assert_response.one_element_exists('#email')

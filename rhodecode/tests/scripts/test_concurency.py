@@ -198,6 +198,6 @@ if __name__ == '__main__':
             print('take {}'.format(i))
             test_clone_with_credentials(repo=sys.argv[1], method=METHOD,
                                         seq=seq, backend=backend)
-        print('time taken %.3f' % (time.time() - s))
+        print('time taken %.4f' % (time.time() - s))
     except Exception as e:
         sys.exit('stop on %s' % e)

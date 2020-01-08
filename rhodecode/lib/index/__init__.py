@@ -46,6 +46,8 @@ class BaseSearcher(object):
     query_lang_doc = ''
     es_version = None
     name = None
+    DIRECTION_ASC = 'asc'
+    DIRECTION_DESC = 'desc'
 
     def __init__(self):
         pass
@@ -86,6 +88,46 @@ class BaseSearcher(object):
         Handle and escape reserved chars for search
         """
         return val
+
+    def sort_def(self, search_type, direction, sort_field):
+        """
+        Defines sorting for search. This function should decide if for given
+        search_type, sorting can be done with sort_field.
+
+        It also should translate common sort fields into backend specific. e.g elasticsearch
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_sort(search_type, search_val):
+        """
+        Method used to parse the GET search sort value to a field and direction.
+        e.g asc:lines == asc, lines
+
+        There's also a legacy support for newfirst/oldfirst which defines commit
+        sorting only
+        """
+
+        direction = BaseSearcher.DIRECTION_ASC
+        sort_field = None
+
+        if not search_val:
+            return direction, sort_field
+
+        if search_val.startswith('asc:'):
+            sort_field = search_val[4:]
+            direction = BaseSearcher.DIRECTION_ASC
+        elif search_val.startswith('desc:'):
+            sort_field = search_val[5:]
+            direction = BaseSearcher.DIRECTION_DESC
+        elif search_val == 'newfirst' and search_type == 'commit':
+            sort_field = 'date'
+            direction = BaseSearcher.DIRECTION_DESC
+        elif search_val == 'oldfirst' and search_type == 'commit':
+            sort_field = 'date'
+            direction = BaseSearcher.DIRECTION_ASC
+
+        return direction, sort_field
 
 
 def search_config(config, prefix='search.'):

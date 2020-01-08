@@ -25,6 +25,7 @@ import msgpack
 import logging
 import traceback
 import tempfile
+import glob
 
 
 log = logging.getLogger(__name__)
@@ -50,12 +51,19 @@ def exc_serialize(exc_id, tb, exc_type):
 def exc_unserialize(tb):
     return msgpack.unpackb(tb)
 
+_exc_store = None
+
 
 def get_exc_store():
     """
     Get and create exception store if it's not existing
     """
+    global _exc_store
     import rhodecode as app
+
+    if _exc_store is not None:
+        # quick global cache
+        return _exc_store
 
     exc_store_dir = app.CONFIG.get('exception_tracker.store_path', '') or tempfile.gettempdir()
     _exc_store_path = os.path.join(exc_store_dir, exc_store_dir_name)
@@ -64,6 +72,8 @@ def get_exc_store():
     if not os.path.isdir(_exc_store_path):
         os.makedirs(_exc_store_path)
         log.debug('Initializing exceptions store at %s', _exc_store_path)
+        _exc_store = _exc_store_path
+
     return _exc_store_path
 
 
@@ -105,6 +115,7 @@ def store_exception(exc_id, exc_info, prefix=global_prefix):
         exc_type_name, exc_traceback = _prepare_exception(exc_info)
         _store_exception(exc_id=exc_id, exc_type_name=exc_type_name,
                          exc_traceback=exc_traceback, prefix=prefix)
+        return exc_id, exc_type_name
     except Exception:
         log.exception('Failed to store exception `%s` information', exc_id)
         # there's no way this can fail, it will crash server badly if it does.
@@ -119,16 +130,12 @@ def _find_exc_file(exc_id, prefix=global_prefix):
         # search without a prefix
         exc_id = '{}'.format(exc_id)
 
-    # we need to search the store for such start pattern as above
-    for fname in os.listdir(exc_store_path):
-        if fname.startswith(exc_id):
-            exc_id = os.path.join(exc_store_path, fname)
-            break
-        continue
-    else:
-        exc_id = None
+    found_exc_id = None
+    matches = glob.glob(os.path.join(exc_store_path, exc_id) + '*')
+    if matches:
+        found_exc_id = matches[0]
 
-    return exc_id
+    return found_exc_id
 
 
 def _read_exception(exc_id, prefix):

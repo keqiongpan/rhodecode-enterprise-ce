@@ -27,6 +27,16 @@ from rhodecode.api.tests.utils import (
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestApiSearch(object):
 
+    @pytest.mark.parametrize("sort_dir", [
+        "asc",
+        "desc",
+    ])
+    @pytest.mark.parametrize("sort", [
+        "xxx",
+        "author_email",
+        "date",
+        "message",
+    ])
     @pytest.mark.parametrize("query, expected_hits, expected_paths", [
         ('todo', 23, [
             'vcs/backends/hg/inmemory.py',
@@ -55,10 +65,11 @@ class TestApiSearch(object):
             'vcs/tests/test_cli.py']),
         ('owner:michał test', 0, []),
     ])
-    def test_search_content_results(self, query, expected_hits, expected_paths):
+    def test_search_content_results(self, sort_dir, sort, query, expected_hits, expected_paths):
         id_, params = build_data(
             self.apikey_regular, 'search',
             search_query=query,
+            search_sort='{}:{}'.format(sort_dir, sort),
             search_type='content')
 
         response = api_call(self.app, params)
@@ -70,6 +81,16 @@ class TestApiSearch(object):
         for expected_path in expected_paths:
             assert expected_path in paths
 
+    @pytest.mark.parametrize("sort_dir", [
+        "asc",
+        "desc",
+    ])
+    @pytest.mark.parametrize("sort", [
+        "xxx",
+        "date",
+        "file",
+        "size",
+    ])
     @pytest.mark.parametrize("query, expected_hits, expected_paths", [
         ('readme.rst', 3, []),
         ('test*', 75, []),
@@ -77,10 +98,11 @@ class TestApiSearch(object):
         ('extension:rst', 48, []),
         ('extension:rst api', 24, []),
     ])
-    def test_search_file_paths(self, query, expected_hits, expected_paths):
+    def test_search_file_paths(self, sort_dir, sort, query, expected_hits, expected_paths):
         id_, params = build_data(
             self.apikey_regular, 'search',
             search_query=query,
+            search_sort='{}:{}'.format(sort_dir, sort),
             search_type='path')
 
         response = api_call(self.app, params)

@@ -35,6 +35,7 @@ import urllib
 import urlobject
 import uuid
 import getpass
+from functools import update_wrapper, partial
 
 import pygments.lexers
 import sqlalchemy
@@ -206,7 +207,7 @@ def safe_int(val, default=None):
     return val
 
 
-def safe_unicode(str_, from_encoding=None):
+def safe_unicode(str_, from_encoding=None, use_chardet=False):
     """
     safe unicode function. Does few trick to turn str_ into unicode
 
@@ -239,17 +240,19 @@ def safe_unicode(str_, from_encoding=None):
         except UnicodeDecodeError:
             pass
 
-    try:
-        import chardet
-        encoding = chardet.detect(str_)['encoding']
-        if encoding is None:
-            raise Exception()
-        return str_.decode(encoding)
-    except (ImportError, UnicodeDecodeError, Exception):
+    if use_chardet:
+        try:
+            import chardet
+            encoding = chardet.detect(str_)['encoding']
+            if encoding is None:
+                raise Exception()
+            return str_.decode(encoding)
+        except (ImportError, UnicodeDecodeError, Exception):
+            return unicode(str_, from_encoding[0], 'replace')
+    else:
         return unicode(str_, from_encoding[0], 'replace')
 
-
-def safe_str(unicode_, to_encoding=None):
+def safe_str(unicode_, to_encoding=None, use_chardet=False):
     """
     safe str function. Does few trick to turn unicode_ into string
 
@@ -282,14 +285,17 @@ def safe_str(unicode_, to_encoding=None):
         except UnicodeEncodeError:
             pass
 
-    try:
-        import chardet
-        encoding = chardet.detect(unicode_)['encoding']
-        if encoding is None:
-            raise UnicodeEncodeError()
+    if use_chardet:
+        try:
+            import chardet
+            encoding = chardet.detect(unicode_)['encoding']
+            if encoding is None:
+                raise UnicodeEncodeError()
 
-        return unicode_.encode(encoding)
-    except (ImportError, UnicodeEncodeError):
+            return unicode_.encode(encoding)
+        except (ImportError, UnicodeEncodeError):
+            return unicode_.encode(to_encoding[0], 'replace')
+    else:
         return unicode_.encode(to_encoding[0], 'replace')
 
 
@@ -364,7 +370,7 @@ def engine_from_config(configuration, prefix='sqlalchemy.', **kwargs):
     """Custom engine_from_config functions."""
     log = logging.getLogger('sqlalchemy.engine')
     use_ping_connection = asbool(configuration.pop('sqlalchemy.db1.ping_connection', None))
-    debug = asbool(configuration.get('debug'))
+    debug = asbool(configuration.pop('sqlalchemy.db1.debug_query', None))
 
     engine = sqlalchemy.engine_from_config(configuration, prefix, **kwargs)
 
@@ -628,9 +634,29 @@ def credentials_filter(uri):
     return ''.join(uri)
 
 
-def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
-    qualifed_home_url = request.route_url('home')
-    parsed_url = urlobject.URLObject(qualifed_home_url)
+def get_host_info(request):
+    """
+    Generate host info, to obtain full url e.g https://server.com
+    use this
+    `{scheme}://{netloc}`
+    """
+    if not request:
+        return {}
+
+    qualified_home_url = request.route_url('home')
+    parsed_url = urlobject.URLObject(qualified_home_url)
+    decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
+
+    return {
+        'scheme': parsed_url.scheme,
+        'netloc': parsed_url.netloc+decoded_path,
+        'hostname': parsed_url.hostname,
+    }
+
+
+def get_clone_url(request, uri_tmpl, repo_name, repo_id, repo_type, **override):
+    qualified_home_url = request.route_url('home')
+    parsed_url = urlobject.URLObject(qualified_home_url)
     decoded_path = safe_unicode(urllib.unquote(parsed_url.path.rstrip('/')))
 
     args = {
@@ -642,13 +668,18 @@ def get_clone_url(request, uri_tmpl, repo_name, repo_id, **override):
         'hostname': parsed_url.hostname,
         'prefix': decoded_path,
         'repo': repo_name,
-        'repoid': str(repo_id)
+        'repoid': str(repo_id),
+        'repo_type': repo_type
     }
     args.update(override)
     args['user'] = urllib.quote(safe_str(args['user']))
 
     for k, v in args.items():
         uri_tmpl = uri_tmpl.replace('{%s}' % k, v)
+
+    # special case for SVN clone url
+    if repo_type == 'svn':
+        uri_tmpl = uri_tmpl.replace('ssh://', 'svn+ssh://')
 
     # remove leading @ sign if it's present. Case of empty user
     url_obj = urlobject.URLObject(uri_tmpl)
@@ -1027,3 +1058,43 @@ def parse_byte_string(size_str):
     _parts = match.groups()
     num, type_ = _parts
     return long(num) * {'mb': 1024*1024, 'kb': 1024}[type_.lower()]
+
+
+class CachedProperty(object):
+    """
+    Lazy Attributes. With option to invalidate the cache by running a method
+
+    class Foo():
+
+        @CachedProperty
+        def heavy_func():
+            return 'super-calculation'
+
+    foo = Foo()
+    foo.heavy_func() # first computions
+    foo.heavy_func() # fetch from cache
+    foo._invalidate_prop_cache('heavy_func')
+    # at this point calling foo.heavy_func() will be re-computed
+    """
+
+    def __init__(self, func, func_name=None):
+
+        if func_name is None:
+            func_name = func.__name__
+        self.data = (func, func_name)
+        update_wrapper(self, func)
+
+    def __get__(self, inst, class_):
+        if inst is None:
+            return self
+
+        func, func_name = self.data
+        value = func(inst)
+        inst.__dict__[func_name] = value
+        if '_invalidate_prop_cache' not in inst.__dict__:
+            inst.__dict__['_invalidate_prop_cache'] = partial(
+                self._invalidate_prop_cache, inst)
+        return value
+
+    def _invalidate_prop_cache(self, inst, name):
+        inst.__dict__.pop(name, None)

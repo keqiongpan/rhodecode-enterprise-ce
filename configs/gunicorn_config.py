@@ -1,58 +1,26 @@
 """
-gunicorn config extension and hooks. Sets additional configuration that is
-available post the .ini config.
-
-- workers = ${cpu_number}
-- threads = 1
-- proc_name = ${gunicorn_proc_name}
-- worker_class = sync
-- worker_connections = 10
-- max_requests = 1000
-- max_requests_jitter = 30
-- timeout = 21600
-
+Gunicorn config extension and hooks. This config file adds some extra settings and memory management.
+Gunicorn configuration should be managed by .ini files entries of RhodeCode or VCSServer
 """
 
-import multiprocessing
+import gc
+import os
 import sys
+import math
 import time
-import datetime
 import threading
 import traceback
+import random
 from gunicorn.glogging import Logger
 
+
+def get_workers():
+    import multiprocessing
+    return multiprocessing.cpu_count() * 2 + 1
 
 # GLOBAL
 errorlog = '-'
 accesslog = '-'
-loglevel = 'debug'
-
-# SECURITY
-
-# The maximum size of HTTP request line in bytes.
-# 0 for unlimited
-limit_request_line = 0
-
-# Limit the number of HTTP headers fields in a request.
-# By default this value is 100 and can't be larger than 32768.
-limit_request_fields = 10240
-
-# Limit the allowed size of an HTTP request header field.
-# Value is a positive number or 0.
-# Setting it to 0 will allow unlimited header field sizes.
-limit_request_field_size = 0
-
-
-# Timeout for graceful workers restart.
-# After receiving a restart signal, workers have this much time to finish
-# serving requests. Workers still alive after the timeout (starting from the
-# receipt of the restart signal) are force killed.
-graceful_timeout = 30
-
-
-# The number of seconds to wait for requests on a Keep-Alive connection.
-# Generally set in the 1-5 seconds range.
-keepalive = 2
 
 
 # SERVER MECHANICS
@@ -63,18 +31,81 @@ tmp_upload_dir = None
 
 # Custom log format
 access_log_format = (
-    '%(t)s [%(p)-8s] GNCRN %(h)-15s rqt:%(L)s %(s)s %(b)-6s "%(m)s:%(U)s %(q)s" usr:%(u)s "%(f)s" "%(a)s"')
+    '%(t)s %(p)s INFO  [GNCRN] %(h)-15s rqt:%(L)s %(s)s %(b)-6s "%(m)s:%(U)s %(q)s" usr:%(u)s "%(f)s" "%(a)s"')
 
 # self adjust workers based on CPU count
-# workers = multiprocessing.cpu_count() * 2 + 1
+# workers = get_workers()
 
 
-def post_fork(server, worker):
-    server.log.info("[<%-10s>] WORKER spawned", worker.pid)
+def _get_process_rss(pid=None):
+    try:
+        import psutil
+        if pid:
+            proc = psutil.Process(pid)
+        else:
+            proc = psutil.Process()
+        return proc.memory_info().rss
+    except Exception:
+        return None
+
+
+def _get_config(ini_path):
+
+    try:
+        import configparser
+    except ImportError:
+        import ConfigParser as configparser
+    try:
+        config = configparser.RawConfigParser()
+        config.read(ini_path)
+        return config
+    except Exception:
+        return None
+
+
+def _time_with_offset(memory_usage_check_interval):
+    return time.time() - random.randint(0, memory_usage_check_interval/2.0)
 
 
 def pre_fork(server, worker):
     pass
+
+
+def post_fork(server, worker):
+
+    # memory spec defaults
+    _memory_max_usage = 0
+    _memory_usage_check_interval = 60
+    _memory_usage_recovery_threshold = 0.8
+
+    ini_path = os.path.abspath(server.cfg.paste)
+    conf = _get_config(ini_path)
+
+    section = 'server:main'
+    if conf and conf.has_section(section):
+
+        if conf.has_option(section, 'memory_max_usage'):
+            _memory_max_usage = conf.getint(section, 'memory_max_usage')
+
+        if conf.has_option(section, 'memory_usage_check_interval'):
+            _memory_usage_check_interval = conf.getint(section, 'memory_usage_check_interval')
+
+        if conf.has_option(section, 'memory_usage_recovery_threshold'):
+            _memory_usage_recovery_threshold = conf.getfloat(section, 'memory_usage_recovery_threshold')
+
+    worker._memory_max_usage = _memory_max_usage
+    worker._memory_usage_check_interval = _memory_usage_check_interval
+    worker._memory_usage_recovery_threshold = _memory_usage_recovery_threshold
+
+    # register memory last check time, with some random offset so we don't recycle all
+    # at once
+    worker._last_memory_check_time = _time_with_offset(_memory_usage_check_interval)
+
+    if _memory_max_usage:
+        server.log.info("[%-10s] WORKER spawned with max memory set at %s", worker.pid,
+                        _format_data_size(_memory_max_usage))
+    else:
+        server.log.info("[%-10s] WORKER spawned", worker.pid)
 
 
 def pre_exec(server):
@@ -82,19 +113,96 @@ def pre_exec(server):
 
 
 def on_starting(server):
-    server.log.info("Server is starting.")
+    server_lbl = '{} {}'.format(server.proc_name, server.address)
+    server.log.info("Server %s is starting.", server_lbl)
 
 
 def when_ready(server):
-    server.log.info("Server is ready. Spawning workers")
+    server.log.info("Server %s is ready. Spawning workers", server)
 
 
 def on_reload(server):
     pass
 
 
+def _format_data_size(size, unit="B", precision=1, binary=True):
+    """Format a number using SI units (kilo, mega, etc.).
+
+    ``size``: The number as a float or int.
+
+    ``unit``: The unit name in plural form. Examples: "bytes", "B".
+
+    ``precision``: How many digits to the right of the decimal point. Default
+    is 1.  0 suppresses the decimal point.
+
+    ``binary``: If false, use base-10 decimal prefixes (kilo = K = 1000).
+    If true, use base-2 binary prefixes (kibi = Ki = 1024).
+
+    ``full_name``: If false (default), use the prefix abbreviation ("k" or
+    "Ki").  If true, use the full prefix ("kilo" or "kibi"). If false,
+    use abbreviation ("k" or "Ki").
+
+    """
+
+    if not binary:
+        base = 1000
+        multiples = ('', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+    else:
+        base = 1024
+        multiples = ('', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi')
+
+    sign = ""
+    if size > 0:
+        m = int(math.log(size, base))
+    elif size < 0:
+        sign = "-"
+        size = -size
+        m = int(math.log(size, base))
+    else:
+        m = 0
+    if m > 8:
+        m = 8
+
+    if m == 0:
+        precision = '%.0f'
+    else:
+        precision = '%%.%df' % precision
+
+    size = precision % (size / math.pow(base, m))
+
+    return '%s%s %s%s' % (sign, size.strip(), multiples[m], unit)
+
+
+def _check_memory_usage(worker):
+    memory_max_usage = worker._memory_max_usage
+    if not memory_max_usage:
+        return
+
+    memory_usage_check_interval = worker._memory_usage_check_interval
+    memory_usage_recovery_threshold = memory_max_usage * worker._memory_usage_recovery_threshold
+
+    elapsed = time.time() - worker._last_memory_check_time
+    if elapsed > memory_usage_check_interval:
+        mem_usage = _get_process_rss()
+        if mem_usage and mem_usage > memory_max_usage:
+            worker.log.info(
+                "memory usage %s > %s, forcing gc",
+                _format_data_size(mem_usage), _format_data_size(memory_max_usage))
+            # Try to clean it up by forcing a full collection.
+            gc.collect()
+            mem_usage = _get_process_rss()
+            if mem_usage > memory_usage_recovery_threshold:
+                # Didn't clean up enough, we'll have to terminate.
+                worker.log.warning(
+                    "memory usage %s > %s after gc, quitting",
+                    _format_data_size(mem_usage), _format_data_size(memory_max_usage))
+                # This will cause worker to auto-restart itself
+                worker.alive = False
+        worker._last_memory_check_time = time.time()
+
+
 def worker_int(worker):
-    worker.log.info("[<%-10s>] worker received INT or QUIT signal", worker.pid)
+    worker.log.info("[%-10s] worker received INT or QUIT signal", worker.pid)
 
     # get traceback info, on worker crash
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
@@ -110,15 +218,15 @@ def worker_int(worker):
 
 
 def worker_abort(worker):
-    worker.log.info("[<%-10s>] worker received SIGABRT signal", worker.pid)
+    worker.log.info("[%-10s] worker received SIGABRT signal", worker.pid)
 
 
 def worker_exit(server, worker):
-    worker.log.info("[<%-10s>] worker exit", worker.pid)
+    worker.log.info("[%-10s] worker exit", worker.pid)
 
 
 def child_exit(server, worker):
-    worker.log.info("[<%-10s>] worker child exit", worker.pid)
+    worker.log.info("[%-10s] worker child exit", worker.pid)
 
 
 def pre_request(worker, req):
@@ -129,9 +237,12 @@ def pre_request(worker, req):
 
 def post_request(worker, req, environ, resp):
     total_time = time.time() - worker.start_time
+    # Gunicorn sometimes has problems with reading the status_code
+    status_code = getattr(resp, 'status_code', '')
     worker.log.debug(
-        "GNCRN POST WORKER [cnt:%s]: %s %s resp: %s, Load Time: %.3fs",
-        worker.nr, req.method, req.path, resp.status_code, total_time)
+        "GNCRN POST WORKER [cnt:%s]: %s %s resp: %s, Load Time: %.4fs",
+        worker.nr, req.method, req.path, status_code, total_time)
+    _check_memory_usage(worker)
 
 
 class RhodeCodeLogger(Logger):

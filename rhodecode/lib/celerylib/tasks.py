@@ -35,7 +35,8 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
 from rhodecode.lib.hooks_base import log_create_repository
 from rhodecode.lib.utils2 import safe_int, str2bool
-from rhodecode.model.db import Session, IntegrityError, Repository, User, true
+from rhodecode.model.db import (
+    Session, IntegrityError, true, Repository, RepoGroup, User)
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
@@ -125,6 +126,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
 def create_repo(form_data, cur_user):
     from rhodecode.model.repo import RepoModel
     from rhodecode.model.user import UserModel
+    from rhodecode.model.scm import ScmModel
     from rhodecode.model.settings import SettingsModel
 
     log = get_logger(create_repo)
@@ -139,7 +141,6 @@ def create_repo(form_data, cur_user):
     private = form_data['repo_private']
     clone_uri = form_data.get('clone_uri')
     repo_group = safe_int(form_data['repo_group'])
-    landing_rev = form_data['repo_landing_rev']
     copy_fork_permissions = form_data.get('copy_permissions')
     copy_group_permissions = form_data.get('repo_copy_permissions')
     fork_of = form_data.get('fork_parent_id')
@@ -154,6 +155,9 @@ def create_repo(form_data, cur_user):
     enable_downloads = form_data.get(
         'enable_downloads', defs.get('repo_enable_downloads'))
 
+    # set landing rev based on default branches for SCM
+    landing_ref, _label = ScmModel.backend_landing_ref(repo_type)
+
     try:
         RepoModel()._create_repo(
             repo_name=repo_name_full,
@@ -163,7 +167,7 @@ def create_repo(form_data, cur_user):
             private=private,
             clone_uri=clone_uri,
             repo_group=repo_group,
-            landing_rev=landing_rev,
+            landing_rev=landing_ref,
             fork_of=fork_of,
             copy_fork_permissions=copy_fork_permissions,
             copy_group_permissions=copy_group_permissions,
@@ -236,7 +240,7 @@ def create_repo_fork(form_data, cur_user):
     private = form_data['private']
     clone_uri = form_data.get('clone_uri')
     repo_group = safe_int(form_data['repo_group'])
-    landing_rev = form_data['landing_rev']
+    landing_ref = form_data['landing_rev']
     copy_fork_permissions = form_data.get('copy_permissions')
     fork_id = safe_int(form_data.get('fork_parent_id'))
 
@@ -250,7 +254,7 @@ def create_repo_fork(form_data, cur_user):
             private=private,
             clone_uri=clone_uri,
             repo_group=repo_group,
-            landing_rev=landing_rev,
+            landing_rev=landing_ref,
             fork_of=fork_of,
             copy_fork_permissions=copy_fork_permissions
         )
@@ -338,3 +342,24 @@ def beat_check(*args, **kwargs):
     log = get_logger(beat_check)
     log.info('Got args: %r and kwargs %r', args, kwargs)
     return time.time()
+
+
+@async_task(ignore_result=True)
+def sync_last_update(*args, **kwargs):
+
+    skip_repos = kwargs.get('skip_repos')
+    if not skip_repos:
+        repos = Repository.query() \
+            .order_by(Repository.group_id.asc())
+
+        for repo in repos:
+            repo.update_commit_cache()
+
+    skip_groups = kwargs.get('skip_groups')
+    if not skip_groups:
+        repo_groups = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == None)
+
+        for root_gr in repo_groups:
+            for repo_gr in reversed(root_gr.recursive_groups()):
+                repo_gr.update_commit_cache()

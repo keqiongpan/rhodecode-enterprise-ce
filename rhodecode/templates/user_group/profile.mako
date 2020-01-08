@@ -1,8 +1,9 @@
 <%namespace name="base" file="/base/base.mako"/>
+<%namespace name="dt" file="/data_table/_dt_elements.mako"/>
 
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User group profile')}</h3>
+        <h3 class="panel-title">${_('User Group Profile')}</h3>
         %if c.is_super_admin:
             ${h.link_to(_('Edit'), h.route_path('edit_user_group', user_group_id=c.user_group.users_group_id), class_='panel-edit')}
         %endif
@@ -21,12 +22,21 @@
         </div>
         <div class="field">
             <div class="label">
+                ${_('Description')}:
+            </div>
+            <div class="input">
+                <div class="text-as-placeholder">
+                    <div class="user-hovercard-bio">${dt.render_description(c.user_group.user_group_description, c.visual.stylify_metatags)}</div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <div class="label">
                 ${_('Owner')}:
             </div>
             <div class="group_member">
-                ${base.gravatar(c.user_group.user.email, 16)}
+                ${base.gravatar(c.user_group.user.email, 16, user=c.user_group.user, tooltip=True)}
                 <span class="username user">${h.link_to_user(c.user_group.user)}</span>
-
             </div>
         </div>
         <div class="field">
@@ -54,7 +64,7 @@
                         <tr>
                           <td id="member_user_${user.user_id}" class="td-author">
                             <div class="group_member">
-                              ${base.gravatar(user.email, 16)}
+                              ${base.gravatar(user.email, 16, user=user, tooltip=True)}
                               <span class="username user">${h.link_to(h.person(user), h.route_path('user_edit',user_id=user.user_id))}</span>
                               <input type="hidden" name="__start__" value="member:mapping">
                               <input type="hidden" name="member_user_id" value="${user.user_id}">

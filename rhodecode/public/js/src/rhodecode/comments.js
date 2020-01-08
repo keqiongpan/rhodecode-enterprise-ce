@@ -218,8 +218,8 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.initStatusChangeSelector = function(){
             var formatChangeStatus = function(state, escapeMarkup) {
                 var originalOption = state.element;
-                return '<div class="flag_status ' + $(originalOption).data('status') + ' pull-left"></div>' +
-                       '<span>' + escapeMarkup(state.text) + '</span>';
+                var tmpl = '<i class="icon-circle review-status-{0}"></i><span>{1}</span>'.format($(originalOption).data('status'), escapeMarkup(state.text));
+                return tmpl
             };
             var formatResult = function(result, container, query, escapeMarkup) {
                 return formatChangeStatus(result, escapeMarkup);
@@ -335,6 +335,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                     $('#injected_page_comments').append(o.rendered_text);
                     self.resetCommentFormState();
                     timeagoActivate();
+                    tooltipActivate();
 
                     // mark visually which comment was resolved
                     if (resolvesCommentId) {
@@ -510,14 +511,16 @@ var CommentsController = function() {
         node = $('comment-current')
       }
     }
+
     $wrapper = $(node).closest('div.comment');
-    $comment = $(node).closest(klass);
-    $comments = $(klass);
 
     // show hidden comment when referenced.
     if (!$wrapper.is(':visible')){
         $wrapper.show();
     }
+
+    $comment = $(node).closest(klass);
+    $comments = $(klass);
 
     $('.comment-selected').removeClass('comment-selected');
 
@@ -628,7 +631,7 @@ var CommentsController = function() {
       var cm = commentForm.getCmInstance();
 
       if (resolvesCommentId){
-        var placeholderText = _gettext('Leave a comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
+        var placeholderText = _gettext('Leave a resolution comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
       }
 
       setTimeout(function() {
@@ -654,6 +657,95 @@ var CommentsController = function() {
         }, 100);
       }
 
+        // add dropzone support
+        var insertAttachmentText = function (cm, attachmentName, attachmentStoreUrl, isRendered) {
+            var renderer = templateContext.visual.default_renderer;
+            if (renderer == 'rst') {
+                var attachmentUrl = '`#{0} <{1}>`_'.format(attachmentName, attachmentStoreUrl);
+                if (isRendered){
+                    attachmentUrl = '\n.. image:: {0}'.format(attachmentStoreUrl);
+                }
+            } else if (renderer == 'markdown') {
+                var attachmentUrl = '[{0}]({1})'.format(attachmentName, attachmentStoreUrl);
+                if (isRendered){
+                    attachmentUrl = '!' + attachmentUrl;
+                }
+            } else {
+                var attachmentUrl = '{}'.format(attachmentStoreUrl);
+            }
+            cm.replaceRange(attachmentUrl+'\n', CodeMirror.Pos(cm.lastLine()));
+
+            return false;
+        };
+
+        //see: https://www.dropzonejs.com/#configuration
+        var storeUrl = pyroutes.url('repo_commit_comment_attachment_upload',
+            {'repo_name': templateContext.repo_name,
+                     'commit_id': templateContext.commit_data.commit_id})
+
+        var previewTmpl = $(formElement).find('.comment-attachment-uploader-template').get(0);
+        if (previewTmpl !== undefined){
+            var selectLink = $(formElement).find('.pick-attachment').get(0);
+            $(formElement).find('.comment-attachment-uploader').dropzone({
+                url: storeUrl,
+                headers: {"X-CSRF-Token": CSRF_TOKEN},
+                paramName: function () {
+                    return "attachment"
+                }, // The name that will be used to transfer the file
+                clickable: selectLink,
+                parallelUploads: 1,
+                maxFiles: 10,
+                maxFilesize: templateContext.attachment_store.max_file_size_mb,
+                uploadMultiple: false,
+                autoProcessQueue: true, // if false queue will not be processed automatically.
+                createImageThumbnails: false,
+                previewTemplate: previewTmpl.innerHTML,
+
+                accept: function (file, done) {
+                    done();
+                },
+                init: function () {
+
+                    this.on("sending", function (file, xhr, formData) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').hide();
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').show();
+                    });
+
+                    this.on("success", function (file, response) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-text').show();
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
+
+                        var isRendered = false;
+                        var ext = file.name.split('.').pop();
+                        var imageExts = templateContext.attachment_store.image_ext;
+                        if (imageExts.indexOf(ext) !== -1){
+                            isRendered = true;
+                        }
+
+                        insertAttachmentText(cm, file.name, response.repo_fqn_access_path, isRendered)
+                    });
+
+                    this.on("error", function (file, errorMessage, xhr) {
+                        $(formElement).find('.comment-attachment-uploader').find('.dropzone-upload').hide();
+
+                        var error = null;
+
+                        if (xhr !== undefined){
+                            var httpStatus = xhr.status + " " + xhr.statusText;
+                            if (xhr !== undefined && xhr.status >= 500) {
+                                error = httpStatus;
+                            }
+                        }
+
+                        if (error === null) {
+                            error = errorMessage.error || errorMessage || httpStatus;
+                        }
+                        $(file.previewElement).find('.dz-error-message').html('ERROR: {0}'.format(error));
+
+                    });
+                }
+            });
+        }
       return commentForm;
   };
 
@@ -776,6 +868,7 @@ var CommentsController = function() {
               // re trigger the linkification of next/prev navigation
               linkifyComments($('.inline-comment-injected'));
               timeagoActivate();
+              tooltipActivate();
 
               if (window.updateSticky !== undefined) {
                   // potentially our comments change the active window size, so we

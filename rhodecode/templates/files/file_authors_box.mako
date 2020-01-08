@@ -4,13 +4,15 @@
 
 <table class="sidebar-right-content">
     % for email, user, commits in sorted(c.authors, key=lambda e: c.file_last_commit.author_email!=e[0]):
-    <tr class="file_author tooltip" title="${h.tooltip(h.author_string(email))}">
-
+    <tr class="file_author">
         <td>
+            <%
+              rc_user = h.discover_user(user)
+            %>
             % if not c.file_author:
-            ${base.gravatar(email, 16)}
+            ${base.gravatar(email, 16, user=rc_user, tooltip=True)}
             % endif
-            <span class="user commit-author">${h.link_to_user(user)}</span>
+            <span class="user commit-author">${h.link_to_user(rc_user or user)}</span>
             % if c.file_author:
                 <span class="commit-date">- ${h.age_component(c.file_last_commit.date)}</span>
                 <a href="#ShowAuthors" onclick="showAuthors(this, ${("1" if c.annotate else "0")}); return false" class="action_link"> - ${_('Load All Authors')}</a>

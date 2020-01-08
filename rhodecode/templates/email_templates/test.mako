@@ -15,7 +15,8 @@ Email Plaintext Body
 </%def>
 
 ## BODY GOES BELOW
-<b>Email Body</b>
-
-${h.short_id('0' * 40)}
-${_('Translation')}
+<strong>Email Body</strong>
+<br/>
+<br/>
+`h.short_id()`: ${h.short_id('0' * 40)}<br/>
+${_('Translation String')}<br/>

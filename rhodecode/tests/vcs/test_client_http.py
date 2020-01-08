@@ -34,7 +34,7 @@ def is_new_connection(logger, level, message):
         message.startswith('Starting new HTTP'))
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session():
     """
     Stub of `requests.Session()`.
@@ -48,7 +48,7 @@ def stub_session():
     return session
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_fail_session():
     """
     Stub of `requests.Session()`.
@@ -62,7 +62,7 @@ def stub_fail_session():
     return session
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session_factory(stub_session):
     """
     Stub of `rhodecode.lib.vcs.client_http.ThreadlocalSessionFactory`.
@@ -72,7 +72,7 @@ def stub_session_factory(stub_session):
     return session_factory
 
 
-@pytest.fixture
+@pytest.fixture()
 def stub_session_failing_factory(stub_fail_session):
     """
     Stub of `rhodecode.lib.vcs.client_http.ThreadlocalSessionFactory`.
@@ -96,7 +96,7 @@ def test_uses_persistent_http_connections(caplog, vcsbackend_hg):
 
 
 def test_repo_maker_uses_session_for_classmethods(stub_session_factory):
-    repo_maker = client_http.RepoMaker(
+    repo_maker = client_http.RemoteVCSMaker(
         'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_factory)
     repo_maker.example_call()
     stub_session_factory().post.assert_called_with(
@@ -105,9 +105,9 @@ def test_repo_maker_uses_session_for_classmethods(stub_session_factory):
 
 def test_repo_maker_uses_session_for_instance_methods(
         stub_session_factory, config):
-    repo_maker = client_http.RepoMaker(
+    repo_maker = client_http.RemoteVCSMaker(
         'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_factory)
-    repo = repo_maker('stub_path', config)
+    repo = repo_maker('stub_path', 'stub_repo_id', config)
     repo.example_call()
     stub_session_factory().post.assert_called_with(
         'http://server_and_port/endpoint', data=mock.ANY)
@@ -125,9 +125,9 @@ def test_connect_passes_in_the_same_session(
 
 def test_repo_maker_uses_session_that_throws_error(
         stub_session_failing_factory, config):
-    repo_maker = client_http.RepoMaker(
+    repo_maker = client_http.RemoteVCSMaker(
         'server_and_port', 'endpoint', 'test_dummy_scm', stub_session_failing_factory)
-    repo = repo_maker('stub_path', config)
+    repo = repo_maker('stub_path', 'stub_repo_id', config)
 
     with pytest.raises(exceptions.HttpVCSCommunicationError):
         repo.example_call()

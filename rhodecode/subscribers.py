@@ -95,8 +95,9 @@ def add_request_user_context(event):
         # skip api calls
         return
 
-    auth_user = get_auth_user(request)
+    auth_user, auth_token = get_auth_user(request)
     request.user = auth_user
+    request.user_auth_token = auth_token
     request.environ['rc_auth_user'] = auth_user
     request.environ['rc_auth_user_id'] = auth_user.user_id
     request.environ['rc_req_id'] = req_id

@@ -33,14 +33,21 @@ register_backend(
     "dogpile.cache.rc.redis", "rhodecode.lib.rc_cache.backends",
     "RedisPickleBackend")
 
+register_backend(
+    "dogpile.cache.rc.redis_msgpack", "rhodecode.lib.rc_cache.backends",
+    "RedisMsgPackBackend")
+
 
 log = logging.getLogger(__name__)
 
 from . import region_meta
 from .utils import (
-    get_default_cache_settings, key_generator, get_or_create_region,
+    get_default_cache_settings, backend_key_generator, get_or_create_region,
     clear_cache_namespace, make_region, InvalidationContext,
     FreshRegionCache, ActiveRegionCache)
+
+
+FILE_TREE_CACHE_VER = 'v2'
 
 
 def configure_dogpile_cache(settings):
@@ -61,13 +68,12 @@ def configure_dogpile_cache(settings):
     for region_name in avail_regions:
         new_region = make_region(
             name=region_name,
-            function_key_generator=key_generator
+            function_key_generator=None
         )
 
         new_region.configure_from_config(settings, 'rc_cache.{}.'.format(region_name))
-
-        log.debug('dogpile: registering a new region %s[%s]',
-                  region_name, new_region.__dict__)
+        new_region.function_key_generator = backend_key_generator(new_region.actual_backend)
+        log.debug('dogpile: registering a new region %s[%s]', region_name, new_region.__dict__)
         region_meta.dogpile_cache_regions[region_name] = new_region
 
 

@@ -272,7 +272,8 @@ class RepoFilesView(RepoAppView):
                 'rhodecode:templates/files/files_browser_tree.mako',
                 self._get_template_context(c), self.request)
 
-        return compute_file_tree('v1', self.db_repo.repo_id, commit_id, f_path, full_load)
+        return compute_file_tree(
+            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_id, commit_id, f_path, full_load)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)
@@ -304,6 +305,21 @@ class RepoFilesView(RepoAppView):
 
         pure_path = pathlib2.PurePath(*sanitized_path)
         return pure_path
+
+    def _is_lf_enabled(self, target_repo):
+        lf_enabled = False
+
+        lf_key_for_vcs_map = {
+            'hg': 'extensions_largefiles',
+            'git': 'vcs_git_lfs_enabled'
+        }
+
+        lf_key_for_vcs = lf_key_for_vcs_map.get(target_repo.repo_type)
+
+        if lf_key_for_vcs:
+            lf_enabled = self._get_repo_setting(target_repo, lf_key_for_vcs)
+
+        return lf_enabled
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
@@ -645,11 +661,18 @@ class RepoFilesView(RepoAppView):
 
             # load file content
             if c.file.is_file():
-                c.lf_node = c.file.get_largefile_node()
+                c.lf_node = {}
+
+                has_lf_enabled = self._is_lf_enabled(self.db_repo)
+                if has_lf_enabled:
+                    c.lf_node = c.file.get_largefile_node()
 
                 c.file_source_page = 'true'
                 c.file_last_commit = c.file.last_commit
-                if c.file.size < c.visual.cut_off_limit_diff:
+
+                c.file_size_too_big = c.file.size > c.visual.cut_off_limit_file
+
+                if not (c.file_size_too_big or c.file.is_binary):
                     if c.annotate:  # annotation has precedence over renderer
                         c.annotated_lines = filenode_as_annotated_lines_tokens(
                             c.file
@@ -683,6 +706,10 @@ class RepoFilesView(RepoAppView):
                 # this loads a simple tree without metadata to speed things up
                 # later via ajax we call repo_nodetree_full and fetch whole
                 c.file_tree = self._get_tree_at_commit(c, c.commit.raw_id, f_path)
+
+                c.readme_data, c.readme_file = \
+                    self._get_readme_data(self.db_repo, c.visual.default_renderer,
+                                          c.commit.raw_id, f_path)
 
         except RepositoryError as e:
             h.flash(safe_str(h.escape(e)), category='error')
@@ -825,10 +852,9 @@ class RepoFilesView(RepoAppView):
         if disposition == 'attachment':
             disposition = self._get_attachement_headers(f_path)
 
-        def stream_node():
-            yield file_node.raw_bytes
+        stream_content = file_node.stream_bytes()
 
-        response = Response(app_iter=stream_node())
+        response = Response(app_iter=stream_content)
         response.content_disposition = disposition
         response.content_type = mimetype
 
@@ -864,10 +890,9 @@ class RepoFilesView(RepoAppView):
 
         disposition = self._get_attachement_headers(f_path)
 
-        def stream_node():
-            yield file_node.raw_bytes
+        stream_content = file_node.stream_bytes()
 
-        response = Response(app_iter=stream_node())
+        response = Response(app_iter=stream_content)
         response.content_disposition = disposition
         response.content_type = file_node.mimetype
 
@@ -896,8 +921,7 @@ class RepoFilesView(RepoAppView):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
                       repo_id, commit_id, f_path)
             try:
-                _d, _f = ScmModel().get_nodes(
-                    repo_name, commit_id, f_path, flat=False)
+                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, commit_id, f_path)
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
                 h.flash(safe_str(h.escape(e)), category='error')

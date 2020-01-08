@@ -29,7 +29,8 @@ log = logging.getLogger(__name__)
 @click.option('--server', help='Server url to connect to. e.g http://rc.local.com', required=True)
 @click.option('--pages', help='load pages to visit from a file', required=True, type=click.File())
 @click.option('--repeat', help='number of times to repeat', default=10, type=int)
-def main(server, repeat, pages):
+@click.option('--timeout', help='call timeout', default=60, type=int)
+def main(server, repeat, pages, timeout):
 
     print("Repeating each URL %d times\n" % repeat)
     pages = pages.readlines()
@@ -39,11 +40,11 @@ def main(server, repeat, pages):
         url = "%s/%s" % (server, page_url.strip())
         print(url)
 
-        stmt = "requests.get('%s', timeout=120)" % url
+        stmt = "requests.get('{}', timeout={})".format(url, timeout)
         t = timeit.Timer(stmt=stmt, setup="import requests")
 
         result = t.repeat(repeat=repeat, number=1)
-        print("  %.3f (min) - %.3f (max) - %.3f (avg)\n" %
+        print("  %.4f (min) - %.4f (max) - %.4f (avg)\n" %
               (min(result), max(result), sum(result) / len(result)))
 
 

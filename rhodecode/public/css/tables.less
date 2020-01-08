@@ -29,6 +29,16 @@ table.dataTable {
         font-style: normal;
     }
 
+    .td-user {
+      .rc-user {
+        white-space: nowrap;
+      }
+    }
+
+    .td-email {
+      white-space: nowrap;
+    }
+
     th,
     td {
         height: auto;
@@ -118,6 +128,10 @@ table.dataTable {
             }
         }
 
+        &.td-sha {
+            white-space: nowrap;
+        }
+
         &.td-graphbox {
             width: 100px;
             max-width: 100px;
@@ -175,6 +189,24 @@ table.dataTable {
 
         &.td-active {
             padding-left: .65em;
+        }
+
+        &.td-issue-tracker-name {
+            width: 180px;
+            input {
+                width: 180px;
+            }
+
+        }
+
+        &.td-issue-tracker-regex {
+            white-space: nowrap;
+
+            min-width: 300px;
+            input {
+                min-width: 300px;
+            }
+
         }
 
         &.td-url {

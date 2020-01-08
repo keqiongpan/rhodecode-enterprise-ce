@@ -29,28 +29,28 @@
     ##main
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
-          <li class="${'active' if c.active=='application' else ''}">
+          <li class="${h.is_active('application', c.active)}">
             <a href="${h.route_path('admin_permissions_application')}">${_('Application')}</a>
           </li>
-          <li class="${'active' if c.active=='global' else ''}">
+          <li class="${h.is_active('global', c.active)}">
             <a href="${h.route_path('admin_permissions_global')}">${_('Global')}</a>
           </li>
-          <li class="${'active' if c.active=='objects' else ''}">
+          <li class="${h.is_active('objects', c.active)}">
             <a href="${h.route_path('admin_permissions_object')}">${_('Object')}</a>
           </li>
-          <li class="${'active' if c.active=='branch' else ''}">
+          <li class="${h.is_active('branch', c.active)}">
             <a href="${h.route_path('admin_permissions_branch')}">${_('Branch')}</a>
           </li>
-          <li class="${'active' if c.active=='ips' else ''}">
+          <li class="${h.is_active('ips', c.active)}">
             <a href="${h.route_path('admin_permissions_ips')}">${_('IP Whitelist')}</a>
           </li>
-          <li class="${'active' if c.active=='auth_token_access' else ''}">
+          <li class="${h.is_active('auth_token_access', c.active)}">
             <a href="${h.route_path('admin_permissions_auth_token_access')}">${_('AuthToken Access')}</a>
           </li>
-          <li class="${'active' if c.active=='ssh_keys' else ''}">
+          <li class="${h.is_active('ssh_keys', c.active)}">
             <a href="${h.route_path('admin_permissions_ssh_keys')}">${_('SSH Keys')}</a>
           </li>
-          <li class="${'active' if c.active=='perms' else ''}">
+          <li class="${h.is_active('perms', c.active)}">
             <a href="${h.route_path('admin_permissions_overview')}">${_('Overview')}</a>
           </li>
         </ul>

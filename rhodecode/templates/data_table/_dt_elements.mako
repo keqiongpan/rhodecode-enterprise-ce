@@ -37,6 +37,18 @@
     </table>
 </%def>
 
+<%def name="render_description(description, stylify_metatags)">
+<%
+    tags = []
+    if stylify_metatags:
+        tags, description = h.extract_metatags(description)
+%>
+% for tag_type, tag in tags:
+${h.style_metatag(tag_type, tag)|n,trim}
+% endfor
+<code style="white-space: pre-wrap">${description}</code>
+</%def>
+
 ## REPOSITORY RENDERERS
 <%def name="quick_menu(repo_name)">
   <i class="icon-more"></i>
@@ -129,10 +141,10 @@
     ${h.age_component(last_change, time_is_local=True)}
 </%def>
 
-<%def name="revision(name,rev,tip,author,last_msg, commit_date)">
+<%def name="revision(repo_name, rev, commit_id, author, last_msg, commit_date)">
   <div>
   %if rev >= 0:
-      <code><a title="${h.tooltip('%s\n%s\n\n%s' % (author, commit_date, last_msg))}" class="tooltip" href="${h.route_path('repo_commit',repo_name=name,commit_id=tip)}">${'r%s:%s' % (rev,h.short_id(tip))}</a></code>
+      <code><a class="tooltip-hovercard" data-hovercard-alt=${h.tooltip(last_msg)} data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=repo_name, commit_id=commit_id)}" href="${h.route_path('repo_commit',repo_name=repo_name,commit_id=commit_id)}">${'r{}:{}'.format(rev,h.short_id(commit_id))}</a></code>
   %else:
       ${_('No commits yet')}
   %endif
@@ -153,12 +165,6 @@
   %else:
     <a title="${h.tooltip(_('Subscribe to %s atom feed')% name)}" href="${h.route_path('atom_feed_home', repo_name=name)}"><i class="icon-rss-sign"></i></a>
   %endif
-</%def>
-
-<%def name="user_gravatar(email, size=16)">
-  <div class="rc-user tooltip" title="${h.tooltip(h.author_string(email))}">
-    ${base.gravatar(email, 16)}
-  </div>
 </%def>
 
 <%def name="repo_actions(repo_name, super_user=True)">
@@ -219,7 +225,8 @@
 <%def name="repo_group_desc(description, personal, stylify_metatags)">
 
     <%
-    tags, description = h.extract_metatags(description)
+        if stylify_metatags:
+            tags, description = h.extract_metatags(description)
     %>
 
     <div class="truncate-wrap">
@@ -282,7 +289,7 @@
 </%def>
 
 <%def name="user_profile(username)">
-    ${base.gravatar_with_user(username, 16)}
+    ${base.gravatar_with_user(username, 16, tooltip=True)}
 </%def>
 
 <%def name="user_group_name(user_group_name)">
@@ -310,7 +317,7 @@
 </%def>
 
 <%def name="gist_author(full_contact, created_on, expires)">
-    ${base.gravatar_with_user(full_contact, 16)}
+    ${base.gravatar_with_user(full_contact, 16, tooltip=True)}
 </%def>
 
 
@@ -331,8 +338,10 @@
 </%def>
 
 <%def name="gist_type(gist_type)">
-    %if gist_type != 'public':
-      <div class="tag">${_('Private')}</div>
+    %if gist_type == 'public':
+        <span class="tag tag-gist-public disabled">${_('Public Gist')}</span>
+    %else:
+        <span class="tag tag-gist-private disabled">${_('Private Gist')}</span>
     %endif
 </%def>
 
@@ -348,8 +357,9 @@
       ${h.link_to(repo_name,h.route_path('repo_summary',repo_name=repo_name))}
     </div>
 </%def>
+
 <%def name="pullrequest_status(status)">
-    <div class="${'flag_status %s' % status} pull-left"></div>
+    <i class="icon-circle review-status-${status}"></i>
 </%def>
 
 <%def name="pullrequest_title(title, description)">
@@ -360,12 +370,21 @@
     <i class="icon-comment"></i> ${comments_nr}
 </%def>
 
-<%def name="pullrequest_name(pull_request_id, target_repo_name, short=False)">
+<%def name="pullrequest_name(pull_request_id, state, is_wip, target_repo_name, short=False)">
     <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
+
       % if short:
-        #${pull_request_id}
+        !${pull_request_id}
       % else:
-        ${_('Pull request #%(pr_number)s') % {'pr_number': pull_request_id,}}
+        ${_('Pull request !{}').format(pull_request_id)}
+      % endif
+
+      % if state not in ['created']:
+          <span class="tag tag-merge-state-${state} tooltip" title="Pull request state is changing">${state}</span>
+      % endif
+
+      % if is_wip:
+          <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
       % endif
     </a>
 </%def>
@@ -375,25 +394,33 @@
 </%def>
 
 <%def name="pullrequest_author(full_contact)">
-    ${base.gravatar_with_user(full_contact, 16)}
+    ${base.gravatar_with_user(full_contact, 16, tooltip=True)}
 </%def>
 
 
 ## ARTIFACT RENDERERS
-
-<%def name="repo_artifact_uid(repo_name, file_uid)">
-    <code><a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">${file_uid}</a></code>
+<%def name="repo_artifact_name(repo_name, file_uid, artifact_display_name)">
+    <a href="${h.route_path('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}">
+        ${artifact_display_name or '_EMPTY_NAME_'}
+    </a>
 </%def>
 
-<%def name="repo_artifact_uid_action(repo_name, file_uid)">
-    <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${h.route_url('repo_artifacts_get', repo_name=repo_name, uid=file_uid)}" title="${_('Copy the full url')}"></i>
+<%def name="repo_artifact_uid(repo_name, file_uid)">
+    <code>${h.shorter(file_uid, size=24, prefix=True)}</code>
+</%def>
+
+<%def name="repo_artifact_sha256(artifact_sha256)">
+    <div class="code">${h.shorter(artifact_sha256, 12)}</div>
 </%def>
 
 <%def name="repo_artifact_actions(repo_name, file_store_id, file_uid)">
 ##  <div class="grid_edit">
 ##     <a href="#Edit" title="${_('Edit')}">${_('Edit')}</a>
 ##  </div>
-% if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
+<div class="grid_edit">
+    <a href="${h.route_path('repo_artifacts_info', repo_name=repo_name, uid=file_store_id)}" title="${_('Info')}">${_('Info')}</a>
+</div>
+    % if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
     <div class="grid_delete">
     ${h.secure_form(h.route_path('repo_artifacts_delete', repo_name=repo_name, uid=file_store_id), request=request)}
       ${h.submit('remove_',_('Delete'),id="remove_artifact_%s" % file_store_id, class_="btn btn-link btn-danger",

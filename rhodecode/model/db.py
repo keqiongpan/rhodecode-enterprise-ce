@@ -29,6 +29,7 @@ import string
 import hashlib
 import logging
 import datetime
+import uuid
 import warnings
 import ipaddress
 import functools
@@ -36,10 +37,10 @@ import traceback
 import collections
 
 from sqlalchemy import (
-    or_, and_, not_, func, TypeDecorator, event,
+    or_, and_, not_, func, cast, TypeDecorator, event,
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
-    Text, Float, PickleType)
+    Text, Float, PickleType, BigInteger)
 from sqlalchemy.sql.expression import true, false, case
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
@@ -51,10 +52,10 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 from zope.cachedescriptors.property import Lazy as LazyProperty
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
-from webhelpers.text import collapse, remove_formatting
+from webhelpers2.text import remove_formatting
 
 from rhodecode.translation import _
-from rhodecode.lib.vcs import get_vcs_instance
+from rhodecode.lib.vcs import get_vcs_instance, VCSError
 from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
@@ -66,6 +67,8 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.encrypt import AESCipher, validate_and_get_enc_data
 from rhodecode.lib.encrypt2 import Encryptor
+from rhodecode.lib.exceptions import (
+    ArtifactMetadataDuplicate, ArtifactMetadataBadValueType)
 from rhodecode.model.meta import Base, Session
 
 URL_SEP = '/'
@@ -574,6 +577,7 @@ class User(Base, BaseModel):
     _email = Column("email", String(255), nullable=True, unique=None, default=None)
     last_login = Column("last_login", DateTime(timezone=False), nullable=True, unique=None, default=None)
     last_activity = Column('last_activity', DateTime(timezone=False), nullable=True, unique=None, default=None)
+    description = Column('description', UnicodeText().with_variant(UnicodeText(1024), 'mysql'))
 
     extern_type = Column("extern_type", String(255), nullable=True, unique=None, default=None)
     extern_name = Column("extern_name", String(255), nullable=True, unique=None, default=None)
@@ -583,7 +587,7 @@ class User(Base, BaseModel):
     _user_data = Column("user_data", LargeBinary(), nullable=True)  # JSON data
 
     user_log = relationship('UserLog')
-    user_perms = relationship('UserToPerm', primaryjoin="User.user_id==UserToPerm.user_id", cascade='all')
+    user_perms = relationship('UserToPerm', primaryjoin="User.user_id==UserToPerm.user_id", cascade='all, delete-orphan')
 
     repositories = relationship('Repository')
     repository_groups = relationship('RepoGroup')
@@ -592,9 +596,9 @@ class User(Base, BaseModel):
     user_followers = relationship('UserFollowing', primaryjoin='UserFollowing.follows_user_id==User.user_id', cascade='all')
     followings = relationship('UserFollowing', primaryjoin='UserFollowing.user_id==User.user_id', cascade='all')
 
-    repo_to_perm = relationship('UserRepoToPerm', primaryjoin='UserRepoToPerm.user_id==User.user_id', cascade='all')
-    repo_group_to_perm = relationship('UserRepoGroupToPerm', primaryjoin='UserRepoGroupToPerm.user_id==User.user_id', cascade='all')
-    user_group_to_perm = relationship('UserUserGroupToPerm', primaryjoin='UserUserGroupToPerm.user_id==User.user_id', cascade='all')
+    repo_to_perm = relationship('UserRepoToPerm', primaryjoin='UserRepoToPerm.user_id==User.user_id', cascade='all, delete-orphan')
+    repo_group_to_perm = relationship('UserRepoGroupToPerm', primaryjoin='UserRepoGroupToPerm.user_id==User.user_id', cascade='all, delete-orphan')
+    user_group_to_perm = relationship('UserUserGroupToPerm', primaryjoin='UserUserGroupToPerm.user_id==User.user_id', cascade='all, delete-orphan')
 
     group_member = relationship('UserGroupMember', cascade='all')
 
@@ -614,12 +618,18 @@ class User(Base, BaseModel):
     # user pull requests
     user_pull_requests = relationship('PullRequest', cascade='all')
     # external identities
-    extenal_identities = relationship(
+    external_identities = relationship(
         'ExternalIdentity',
         primaryjoin="User.user_id==ExternalIdentity.local_user_id",
         cascade='all')
     # review rules
     user_review_rules = relationship('RepoReviewRuleUser', cascade='all')
+
+    # artifacts owned
+    artifacts = relationship('FileStore', primaryjoin='FileStore.user_id==User.user_id')
+
+    # no cascade, set NULL
+    scope_artifacts = relationship('FileStore', primaryjoin='FileStore.scope_user_id==User.user_id')
 
     def __unicode__(self):
         return u"<%s('id:%s:%s')>" % (self.__class__.__name__,
@@ -687,6 +697,17 @@ class User(Base, BaseModel):
             .all()
         return [self.email] + [x.email for x in other]
 
+    def emails_cached(self):
+        emails = UserEmailMap.query()\
+            .filter(UserEmailMap.user == self) \
+            .order_by(UserEmailMap.email_id.asc())
+
+        emails = emails.options(
+            FromCache("sql_cache_short", "get_user_{}_emails".format(self.user_id))
+        )
+
+        return [self.email] + [x.email for x in emails]
+
     @property
     def auth_tokens(self):
         auth_tokens = self.get_auth_tokens()
@@ -714,6 +735,23 @@ class User(Base, BaseModel):
         if feed_tokens:
             return feed_tokens[0].api_key
         return 'NO_FEED_TOKEN_AVAILABLE'
+
+    @LazyProperty
+    def artifact_token(self):
+        return self.get_artifact_token()
+
+    def get_artifact_token(self, cache=True):
+        artifacts_tokens = UserApiKeys.query()\
+            .filter(UserApiKeys.user == self)\
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+        if cache:
+            artifacts_tokens = artifacts_tokens.options(
+                FromCache("sql_cache_short", "get_user_artifact_token_%s" % self.user_id))
+
+        artifacts_tokens = artifacts_tokens.all()
+        if artifacts_tokens:
+            return artifacts_tokens[0].api_key
+        return 'NO_ARTIFACT_TOKEN_AVAILABLE'
 
     @classmethod
     def get(cls, user_id, cache=False):
@@ -762,7 +800,7 @@ class User(Base, BaseModel):
             else:
                 plain_token_map[token.api_key] = token
         log.debug(
-            'Found %s plain and %s encrypted user tokens to check for authentication',
+            'Found %s plain and %s encrypted tokens to check for authentication for this user',
             len(plain_token_map), len(enc_token_map))
 
         # plain token match comes first
@@ -827,6 +865,10 @@ class User(Base, BaseModel):
     @property
     def is_admin(self):
         return self.admin
+
+    @property
+    def language(self):
+        return self.user_data.get('language')
 
     def AuthUser(self, **kwargs):
         """
@@ -947,7 +989,7 @@ class User(Base, BaseModel):
         old.update(**kwargs)
         usr.user_data = old
         Session().add(usr)
-        log.debug('updated userdata with ', kwargs)
+        log.debug('updated userdata with %s', kwargs)
 
     def update_lastlogin(self):
         """Update user lastlogin"""
@@ -1020,6 +1062,7 @@ class User(Base, BaseModel):
             'username': user.username,
             'firstname': user.name,
             'lastname': user.lastname,
+            'description': user.description,
             'email': user.email,
             'emails': user.emails,
         }
@@ -1060,7 +1103,7 @@ class User(Base, BaseModel):
 class UserApiKeys(Base, BaseModel):
     __tablename__ = 'user_api_keys'
     __table_args__ = (
-        Index('uak_api_key_idx', 'api_key', unique=True),
+        Index('uak_api_key_idx', 'api_key'),
         Index('uak_api_key_expires_idx', 'api_key', 'expires'),
         base_table_args
     )
@@ -1072,9 +1115,10 @@ class UserApiKeys(Base, BaseModel):
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
     ROLE_FEED = 'token_role_feed'
+    ROLE_ARTIFACT_DOWNLOAD = 'role_artifact_download'
     ROLE_PASSWORD_RESET = 'token_password_reset'
 
-    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED]
+    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
@@ -1136,6 +1180,7 @@ class UserApiKeys(Base, BaseModel):
             cls.ROLE_VCS: _('vcs (git/hg/svn protocol)'),
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
+            cls.ROLE_ARTIFACT_DOWNLOAD: _('artifacts downloads'),
         }.get(role, role)
 
     @property
@@ -1327,7 +1372,7 @@ class UserGroup(Base, BaseModel):
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     _group_data = Column("group_data", LargeBinary(), nullable=True)  # JSON data
 
-    members = relationship('UserGroupMember', cascade="all, delete, delete-orphan", lazy="joined")
+    members = relationship('UserGroupMember', cascade="all, delete-orphan", lazy="joined")
     users_group_to_perm = relationship('UserGroupToPerm', cascade='all')
     users_group_repo_to_perm = relationship('UserGroupRepoToPerm', cascade='all')
     users_group_repo_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
@@ -1601,7 +1646,7 @@ class Repository(Base, BaseModel):
         primary_key=True)
     _repo_name = Column(
         "repo_name", Text(), nullable=False, default=None)
-    _repo_name_hash = Column(
+    repo_name_hash = Column(
         "repo_name_hash", String(255), nullable=False, unique=True)
     repo_state = Column("repo_state", String(255), nullable=True)
 
@@ -1664,25 +1709,26 @@ class Repository(Base, BaseModel):
         primaryjoin='UserFollowing.follows_repo_id==Repository.repo_id',
         cascade='all')
     extra_fields = relationship(
-        'RepositoryField', cascade="all, delete, delete-orphan")
+        'RepositoryField', cascade="all, delete-orphan")
     logs = relationship('UserLog')
     comments = relationship(
-        'ChangesetComment', cascade="all, delete, delete-orphan")
+        'ChangesetComment', cascade="all, delete-orphan")
     pull_requests_source = relationship(
         'PullRequest',
         primaryjoin='PullRequest.source_repo_id==Repository.repo_id',
-        cascade="all, delete, delete-orphan")
+        cascade="all, delete-orphan")
     pull_requests_target = relationship(
         'PullRequest',
         primaryjoin='PullRequest.target_repo_id==Repository.repo_id',
-        cascade="all, delete, delete-orphan")
+        cascade="all, delete-orphan")
     ui = relationship('RepoRhodeCodeUi', cascade="all")
     settings = relationship('RepoRhodeCodeSetting', cascade="all")
-    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete-orphan")
 
     scoped_tokens = relationship('UserApiKeys', cascade="all")
 
-    artifacts = relationship('FileStore', cascade="all")
+    # no cascade, set NULL
+    artifacts = relationship('FileStore', primaryjoin='FileStore.scope_repo_id==Repository.repo_id')
 
     def __unicode__(self):
         return u"<%s('%s:%s')>" % (self.__class__.__name__, self.repo_id,
@@ -1726,21 +1772,25 @@ class Repository(Base, BaseModel):
         else:
             self._locked = None
 
-    @hybrid_property
-    def changeset_cache(self):
+    @classmethod
+    def _load_changeset_cache(cls, repo_id, changeset_cache_raw):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         dummy = EmptyCommit().__json__()
-        if not self._changeset_cache:
-            dummy['source_repo_id'] = self.repo_id
+        if not changeset_cache_raw:
+            dummy['source_repo_id'] = repo_id
             return json.loads(json.dumps(dummy))
 
         try:
-            return json.loads(self._changeset_cache)
+            return json.loads(changeset_cache_raw)
         except TypeError:
             return dummy
         except Exception:
             log.error(traceback.format_exc())
             return dummy
+
+    @hybrid_property
+    def changeset_cache(self):
+        return self._load_changeset_cache(self.repo_id, self._changeset_cache)
 
     @changeset_cache.setter
     def changeset_cache(self, val):
@@ -1756,7 +1806,7 @@ class Repository(Base, BaseModel):
     @repo_name.setter
     def repo_name(self, value):
         self._repo_name = value
-        self._repo_name_hash = hashlib.sha1(safe_str(value)).hexdigest()
+        self.repo_name_hash = hashlib.sha1(safe_str(value)).hexdigest()
 
     @classmethod
     def normalize_repo_name(cls, repo_name):
@@ -2193,15 +2243,19 @@ class Repository(Base, BaseModel):
     def last_commit_cache_update_diff(self):
         return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
 
-    @property
-    def last_commit_change(self):
+    @classmethod
+    def _load_commit_change(cls, last_commit_cache):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
-        date_latest = self.changeset_cache.get('date', empty_date)
+        date_latest = last_commit_cache.get('date', empty_date)
         try:
             return parse_datetime(date_latest)
         except Exception:
             return empty_date
+
+    @property
+    def last_commit_change(self):
+        return self._load_commit_change(self.changeset_cache)
 
     @property
     def last_db_change(self):
@@ -2245,20 +2299,27 @@ class Repository(Base, BaseModel):
             del override['ssh']
 
         # we didn't override our tmpl from **overrides
+        request = get_current_request()
         if not uri_tmpl:
-            rc_config = SettingsModel().get_all_settings(cache=True)
+            if hasattr(request, 'call_context') and hasattr(request.call_context, 'rc_config'):
+                rc_config = request.call_context.rc_config
+            else:
+                rc_config = SettingsModel().get_all_settings(cache=True)
+
             if ssh:
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_ssh_tmpl') or self.DEFAULT_CLONE_URI_SSH
+
             else:
                 uri_tmpl = rc_config.get(
                     'rhodecode_clone_uri_tmpl') or self.DEFAULT_CLONE_URI
 
-        request = get_current_request()
         return get_clone_url(request=request,
                              uri_tmpl=uri_tmpl,
                              repo_name=self.repo_name,
-                             repo_id=self.repo_id, **override)
+                             repo_id=self.repo_id,
+                             repo_type=self.repo_type,
+                             **override)
 
     def set_state(self, state):
         self.repo_state = state
@@ -2292,9 +2353,14 @@ class Repository(Base, BaseModel):
             return self.get_commit()
         return commit
 
+    def flush_commit_cache(self):
+        self.update_commit_cache(cs_cache={'raw_id':'0'})
+        self.update_commit_cache()
+
     def update_commit_cache(self, cs_cache=None, config=None):
         """
-        Update cache of last changeset for repository, keys should be::
+        Update cache of last commit for repository
+        cache_keys should be::
 
             source_repo_id
             short_id
@@ -2308,14 +2374,20 @@ class Repository(Base, BaseModel):
 
         """
         from rhodecode.lib.vcs.backends.base import BaseChangeset
+        from rhodecode.lib.vcs.utils.helpers import parse_datetime
+        empty_date = datetime.datetime.fromtimestamp(0)
+
         if cs_cache is None:
             # use no-cache version here
-            scm_repo = self.scm_instance(cache=False, config=config)
-
+            try:
+                scm_repo = self.scm_instance(cache=False, config=config)
+            except VCSError:
+                scm_repo = None
             empty = scm_repo is None or scm_repo.is_empty()
+
             if not empty:
                 cs_cache = scm_repo.get_commit(
-                    pre_load=["author", "date", "message", "parents"])
+                    pre_load=["author", "date", "message", "parents", "branch"])
             else:
                 cs_cache = EmptyCommit()
 
@@ -2330,32 +2402,39 @@ class Repository(Base, BaseModel):
 
         # check if we have maybe already latest cached revision
         if is_outdated(cs_cache) or not self.changeset_cache:
-            _default = datetime.datetime.utcnow()
-            last_change = cs_cache.get('date') or _default
+            _current_datetime = datetime.datetime.utcnow()
+            last_change = cs_cache.get('date') or _current_datetime
             # we check if last update is newer than the new value
             # if yes, we use the current timestamp instead. Imagine you get
             # old commit pushed 1y ago, we'd set last update 1y to ago.
             last_change_timestamp = datetime_to_time(last_change)
             current_timestamp = datetime_to_time(last_change)
-            if last_change_timestamp > current_timestamp:
-                cs_cache['date'] = _default
+            if last_change_timestamp > current_timestamp and not empty:
+                cs_cache['date'] = _current_datetime
 
+            _date_latest = parse_datetime(cs_cache.get('date') or empty_date)
             cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
+            self.updated_on = last_change
             Session().add(self)
             Session().commit()
 
-            log.debug('updated repo %s with new commit cache %s',
-                      self.repo_name, cs_cache)
         else:
-            cs_cache = self.changeset_cache
+            if empty:
+                cs_cache = EmptyCommit().__json__()
+            else:
+                cs_cache = self.changeset_cache
+
+            _date_latest = parse_datetime(cs_cache.get('date') or empty_date)
+
             cs_cache['updated_on'] = time.time()
             self.changeset_cache = cs_cache
+            self.updated_on = _date_latest
             Session().add(self)
             Session().commit()
 
-            log.debug('Skipping update_commit_cache for repo:`%s` '
-                      'commit already with latest changes', self.repo_name)
+        log.debug('updated repo `%s` with new commit cache %s, and last update_date: %s',
+                  self.repo_name, cs_cache, _date_latest)
 
     @property
     def tip(self):
@@ -2437,11 +2516,18 @@ class Repository(Base, BaseModel):
         # for repo2dbmapper
         config = kwargs.pop('config', None)
         cache = kwargs.pop('cache', None)
-        full_cache = str2bool(rhodecode.CONFIG.get('vcs_full_cache'))
+        vcs_full_cache = kwargs.pop('vcs_full_cache', None)
+        if vcs_full_cache is not None:
+            # allows override global config
+            full_cache = vcs_full_cache
+        else:
+            full_cache = str2bool(rhodecode.CONFIG.get('vcs_full_cache'))
         # if cache is NOT defined use default global, else we have a full
         # control over cache behaviour
         if cache is None and full_cache and not config:
+            log.debug('Initializing pure cached instance for %s', self.repo_path)
             return self._get_instance_cached()
+
         # cache here is sent to the "vcs server"
         return self._get_instance(cache=bool(cache), config=config)
 
@@ -2454,8 +2540,8 @@ class Repository(Base, BaseModel):
         region = rc_cache.get_or_create_region('cache_repo_longterm', cache_namespace_uid)
 
         @region.conditional_cache_on_arguments(namespace=cache_namespace_uid)
-        def get_instance_cached(repo_id, context_id):
-            return self._get_instance()
+        def get_instance_cached(repo_id, context_id, _cache_state_uid):
+            return self._get_instance(repo_state_uid=_cache_state_uid)
 
         # we must use thread scoped cache here,
         # because each thread of gevent needs it's own not shared connection and cache
@@ -2464,20 +2550,25 @@ class Repository(Base, BaseModel):
             uid=cache_namespace_uid, invalidation_namespace=invalidation_namespace,
             thread_scoped=True)
         with inv_context_manager as invalidation_context:
-            args = (self.repo_id, inv_context_manager.cache_key)
+            cache_state_uid = invalidation_context.cache_data['cache_state_uid']
+            args = (self.repo_id, inv_context_manager.cache_key, cache_state_uid)
+
             # re-compute and store cache if we get invalidate signal
             if invalidation_context.should_invalidate():
                 instance = get_instance_cached.refresh(*args)
             else:
                 instance = get_instance_cached(*args)
 
-            log.debug('Repo instance fetched in %.3fs', inv_context_manager.compute_time)
+            log.debug('Repo instance fetched in %.4fs', inv_context_manager.compute_time)
             return instance
 
-    def _get_instance(self, cache=True, config=None):
+    def _get_instance(self, cache=True, config=None, repo_state_uid=None):
+        log.debug('Initializing %s instance `%s` with cache flag set to: %s',
+                  self.repo_type, self.repo_path, cache)
         config = config or self._config
         custom_wire = {
-            'cache': cache  # controls the vcs.remote cache
+            'cache': cache,  # controls the vcs.remote cache
+            'repo_state_uid': repo_state_uid
         }
         repo = get_vcs_instance(
             repo_path=safe_str(self.repo_full_path),
@@ -2488,6 +2579,12 @@ class Repository(Base, BaseModel):
         if repo is not None:
             repo.count()  # cache rebuild
         return repo
+
+    def get_shadow_repository_path(self, workspace_id):
+        from rhodecode.lib.vcs.backends.base import BaseRepository
+        shadow_repo_path = BaseRepository._get_shadow_repository_path(
+            self.repo_full_path, self.repo_id, workspace_id)
+        return shadow_repo_path
 
     def __json__(self):
         return {'landing_rev': self.landing_rev}
@@ -2522,14 +2619,16 @@ class RepoGroup(Base, BaseModel):
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     updated_on = Column('updated_on', DateTime(timezone=False), nullable=True, unique=None, default=datetime.datetime.now)
     personal = Column('personal', Boolean(), nullable=True, unique=None, default=None)
-    _changeset_cache = Column(
-        "changeset_cache", LargeBinary(), nullable=True)  # JSON data
+    _changeset_cache = Column("changeset_cache", LargeBinary(), nullable=True)  # JSON data
 
     repo_group_to_perm = relationship('UserRepoGroupToPerm', cascade='all', order_by='UserRepoGroupToPerm.group_to_perm_id')
     users_group_to_perm = relationship('UserGroupRepoGroupToPerm', cascade='all')
     parent_group = relationship('RepoGroup', remote_side=group_id)
     user = relationship('User')
-    integrations = relationship('Integration', cascade="all, delete, delete-orphan")
+    integrations = relationship('Integration', cascade="all, delete-orphan")
+
+    # no cascade, set NULL
+    scope_artifacts = relationship('FileStore', primaryjoin='FileStore.scope_repo_group_id==RepoGroup.group_id')
 
     def __init__(self, group_name='', parent_group=None):
         self.group_name = group_name
@@ -2548,21 +2647,25 @@ class RepoGroup(Base, BaseModel):
         self._group_name = value
         self.group_name_hash = self.hash_repo_group_name(value)
 
-    @hybrid_property
-    def changeset_cache(self):
+    @classmethod
+    def _load_changeset_cache(cls, repo_id, changeset_cache_raw):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         dummy = EmptyCommit().__json__()
-        if not self._changeset_cache:
-            dummy['source_repo_id'] = ''
+        if not changeset_cache_raw:
+            dummy['source_repo_id'] = repo_id
             return json.loads(json.dumps(dummy))
 
         try:
-            return json.loads(self._changeset_cache)
+            return json.loads(changeset_cache_raw)
         except TypeError:
             return dummy
         except Exception:
             log.error(traceback.format_exc())
             return dummy
+
+    @hybrid_property
+    def changeset_cache(self):
+        return self._load_changeset_cache('', self._changeset_cache)
 
     @changeset_cache.setter
     def changeset_cache(self, val):
@@ -2600,7 +2703,7 @@ class RepoGroup(Base, BaseModel):
 
     @classmethod
     def _generate_choice(cls, repo_group):
-        from webhelpers.html import literal as _literal
+        from webhelpers2.html import literal as _literal
         _name = lambda k: _literal(cls.CHOICES_SEPARATOR.join(k))
         return repo_group.group_id, _name(repo_group.full_path_splitted)
 
@@ -2666,7 +2769,7 @@ class RepoGroup(Base, BaseModel):
         return q.all()
 
     @property
-    def parents(self, parents_recursion_limit = 10):
+    def parents(self, parents_recursion_limit=10):
         groups = []
         if self.parent_group is None:
             return groups
@@ -2692,15 +2795,19 @@ class RepoGroup(Base, BaseModel):
     def last_commit_cache_update_diff(self):
         return time.time() - (safe_int(self.changeset_cache.get('updated_on')) or 0)
 
-    @property
-    def last_commit_change(self):
+    @classmethod
+    def _load_commit_change(cls, last_commit_cache):
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
         empty_date = datetime.datetime.fromtimestamp(0)
-        date_latest = self.changeset_cache.get('date', empty_date)
+        date_latest = last_commit_cache.get('date', empty_date)
         try:
             return parse_datetime(date_latest)
         except Exception:
             return empty_date
+
+    @property
+    def last_commit_change(self):
+        return self._load_commit_change(self.changeset_cache)
 
     @property
     def last_db_change(self):
@@ -2792,7 +2899,8 @@ class RepoGroup(Base, BaseModel):
 
     def update_commit_cache(self, config=None):
         """
-        Update cache of last changeset for newest repository inside this group, keys should be::
+        Update cache of last commit for newest repository inside this repository group.
+        cache_keys should be::
 
             source_repo_id
             short_id
@@ -2805,47 +2913,37 @@ class RepoGroup(Base, BaseModel):
 
         """
         from rhodecode.lib.vcs.utils.helpers import parse_datetime
-
-        def repo_groups_and_repos():
-            all_entries = OrderedDefaultDict(list)
-
-            def _get_members(root_gr, pos=0):
-
-                for repo in root_gr.repositories:
-                    all_entries[root_gr].append(repo)
-
-                # fill in all parent positions
-                for parent_group in root_gr.parents:
-                    all_entries[parent_group].extend(all_entries[root_gr])
-
-                children_groups = root_gr.children.all()
-                if children_groups:
-                    for cnt, gr in enumerate(children_groups, 1):
-                        _get_members(gr, pos=pos+cnt)
-
-            _get_members(root_gr=self)
-            return all_entries
-
         empty_date = datetime.datetime.fromtimestamp(0)
-        for repo_group, repos in repo_groups_and_repos().items():
 
-            latest_repo_cs_cache = {}
-            for repo in repos:
-                repo_cs_cache = repo.changeset_cache
-                date_latest = latest_repo_cs_cache.get('date', empty_date)
-                date_current = repo_cs_cache.get('date', empty_date)
-                current_timestamp = datetime_to_time(parse_datetime(date_latest))
-                if current_timestamp < datetime_to_time(parse_datetime(date_current)):
-                    latest_repo_cs_cache = repo_cs_cache
-                    latest_repo_cs_cache['source_repo_id'] = repo.repo_id
+        def repo_groups_and_repos(root_gr):
+            for _repo in root_gr.repositories:
+                yield _repo
+            for child_group in root_gr.children.all():
+                yield child_group
 
-            latest_repo_cs_cache['updated_on'] = time.time()
-            repo_group.changeset_cache = latest_repo_cs_cache
-            Session().add(repo_group)
-            Session().commit()
+        latest_repo_cs_cache = {}
+        for obj in repo_groups_and_repos(self):
+            repo_cs_cache = obj.changeset_cache
+            date_latest = latest_repo_cs_cache.get('date', empty_date)
+            date_current = repo_cs_cache.get('date', empty_date)
+            current_timestamp = datetime_to_time(parse_datetime(date_latest))
+            if current_timestamp < datetime_to_time(parse_datetime(date_current)):
+                latest_repo_cs_cache = repo_cs_cache
+                if hasattr(obj, 'repo_id'):
+                    latest_repo_cs_cache['source_repo_id'] = obj.repo_id
+                else:
+                    latest_repo_cs_cache['source_repo_id'] = repo_cs_cache.get('source_repo_id')
 
-            log.debug('updated repo group %s with new commit cache %s',
-                      repo_group.group_name, latest_repo_cs_cache)
+        _date_latest = parse_datetime(latest_repo_cs_cache.get('date') or empty_date)
+
+        latest_repo_cs_cache['updated_on'] = time.time()
+        self.changeset_cache = latest_repo_cs_cache
+        self.updated_on = _date_latest
+        Session().add(self)
+        Session().commit()
+
+        log.debug('updated repo group `%s` with new commit cache %s, and last update_date: %s',
+                  self.group_name, latest_repo_cs_cache, _date_latest)
 
     def permissions(self, with_admins=True, with_owner=True,
                     expand_from_user_groups=False):
@@ -3248,7 +3346,7 @@ class UserRepoToPerm(Base, BaseModel):
     repository = relationship('Repository')
     permission = relationship('Permission')
 
-    branch_perm_entry = relationship('UserToRepoBranchPermission', cascade="all, delete, delete-orphan", lazy='joined')
+    branch_perm_entry = relationship('UserToRepoBranchPermission', cascade="all, delete-orphan", lazy='joined')
 
     @classmethod
     def create(cls, user, repository, permission):
@@ -3489,7 +3587,7 @@ class CacheKey(Base, BaseModel):
     )
 
     CACHE_TYPE_FEED = 'FEED'
-    CACHE_TYPE_README = 'README'
+
     # namespaces used to register process/thread aware caches
     REPO_INVALIDATION_NAMESPACE = 'repo_cache:{repo_id}'
     SETTINGS_INVALIDATION_NAMESPACE = 'system_settings'
@@ -3497,12 +3595,15 @@ class CacheKey(Base, BaseModel):
     cache_id = Column("cache_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     cache_key = Column("cache_key", String(255), nullable=True, unique=None, default=None)
     cache_args = Column("cache_args", String(255), nullable=True, unique=None, default=None)
+    cache_state_uid = Column("cache_state_uid", String(255), nullable=True, unique=None, default=None)
     cache_active = Column("cache_active", Boolean(), nullable=True, unique=None, default=False)
 
-    def __init__(self, cache_key, cache_args=''):
+    def __init__(self, cache_key, cache_args='', cache_state_uid=None):
         self.cache_key = cache_key
         self.cache_args = cache_args
         self.cache_active = False
+        # first key should be same for all entries, since all workers should share it
+        self.cache_state_uid = cache_state_uid or self.generate_new_state_uid()
 
     def __unicode__(self):
         return u"<%s('%s:%s[%s]')>" % (
@@ -3531,6 +3632,13 @@ class CacheKey(Base, BaseModel):
         return self._cache_key_partition()[2]
 
     @classmethod
+    def generate_new_state_uid(cls, based_on=None):
+        if based_on:
+            return str(uuid.uuid5(uuid.NAMESPACE_URL, safe_str(based_on)))
+        else:
+            return str(uuid.uuid4())
+
+    @classmethod
     def delete_all_cache(cls):
         """
         Delete all cache keys from database.
@@ -3553,7 +3661,8 @@ class CacheKey(Base, BaseModel):
                 log.debug('cache objects deleted for cache args %s',
                           safe_str(cache_uid))
             else:
-                qry.update({"cache_active": False})
+                qry.update({"cache_active": False,
+                            "cache_state_uid": cls.generate_new_state_uid()})
                 log.debug('cache objects marked as invalid for cache args %s',
                           safe_str(cache_uid))
 
@@ -3570,6 +3679,12 @@ class CacheKey(Base, BaseModel):
         if inv_obj:
             return inv_obj
         return None
+
+    @classmethod
+    def get_namespace_map(cls, namespace):
+        return {
+            x.cache_key: x
+            for x in cls.query().filter(cls.cache_args == namespace)}
 
 
 class ChangesetComment(Base, BaseModel):
@@ -3607,7 +3722,7 @@ class ChangesetComment(Base, BaseModel):
 
     author = relationship('User', lazy='joined')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete, delete-orphan", lazy='joined')
+    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='joined')
     pull_request = relationship('PullRequest', lazy='joined')
     pull_request_version = relationship('PullRequestVersion')
 
@@ -3802,6 +3917,7 @@ class _SetState(object):
             log.exception('Failed to set PullRequest %s state to %s', self._pr, pr_state)
             raise
 
+
 class _PullRequestBase(BaseModel):
     """
     Common attributes of pull request and version entries.
@@ -3906,6 +4022,14 @@ class _PullRequestBase(BaseModel):
     def reviewer_data_json(self):
         return json.dumps(self.reviewer_data)
 
+    @property
+    def work_in_progress(self):
+        """checks if pull request is work in progress by checking the title"""
+        title = self.title.upper()
+        if re.match(r'^(\[WIP\]\s*|WIP:\s*|WIP\s+)', title):
+            return True
+        return False
+
     @hybrid_property
     def description_safe(self):
         from rhodecode.lib import helpers as h
@@ -3917,7 +4041,7 @@ class _PullRequestBase(BaseModel):
 
     @revisions.setter
     def revisions(self, val):
-        self._revisions = ':'.join(val)
+        self._revisions = u':'.join(val)
 
     @hybrid_property
     def last_merge_status(self):
@@ -4080,14 +4204,10 @@ class PullRequest(Base, _PullRequestBase):
         else:
             return '<DB:PullRequest at %#x>' % id(self)
 
-    reviewers = relationship('PullRequestReviewers',
-                             cascade="all, delete, delete-orphan")
-    statuses = relationship('ChangesetStatus',
-                            cascade="all, delete, delete-orphan")
-    comments = relationship('ChangesetComment',
-                            cascade="all, delete, delete-orphan")
-    versions = relationship('PullRequestVersion',
-                            cascade="all, delete, delete-orphan",
+    reviewers = relationship('PullRequestReviewers', cascade="all, delete-orphan")
+    statuses = relationship('ChangesetStatus', cascade="all, delete-orphan")
+    comments = relationship('ChangesetComment', cascade="all, delete-orphan")
+    versions = relationship('PullRequestVersion', cascade="all, delete-orphan",
                             lazy='dynamic')
 
     @classmethod
@@ -4125,6 +4245,9 @@ class PullRequest(Base, _PullRequestBase):
             def is_closed(self):
                 return pull_request_obj.is_closed()
 
+            def is_state_changing(self):
+                return pull_request_obj.is_state_changing()
+
             @property
             def pull_request_version_id(self):
                 return getattr(pull_request_obj, 'pull_request_version_id', None)
@@ -4156,6 +4279,9 @@ class PullRequest(Base, _PullRequestBase):
     def is_closed(self):
         return self.status == self.STATUS_CLOSED
 
+    def is_state_changing(self):
+        return self.pull_request_state != PullRequest.STATE_CREATED
+
     def __json__(self):
         return {
             'revisions': self.revisions,
@@ -4176,11 +4302,10 @@ class PullRequest(Base, _PullRequestBase):
 
     def get_shadow_repo(self):
         workspace_id = self.workspace_id
-        vcs_obj = self.target_repo.scm_instance()
-        shadow_repository_path = vcs_obj._get_shadow_repository_path(
-            self.target_repo.repo_id, workspace_id)
+        shadow_repository_path = self.target_repo.get_shadow_repository_path(workspace_id)
         if os.path.isdir(shadow_repository_path):
-            return vcs_obj._get_shadow_instance(shadow_repository_path)
+            vcs_obj = self.target_repo.scm_instance()
+            return vcs_obj.get_shadow_instance(shadow_repository_path)
 
 
 class PullRequestVersion(Base, _PullRequestBase):
@@ -4213,6 +4338,9 @@ class PullRequestVersion(Base, _PullRequestBase):
     def is_closed(self):
         # calculate from original
         return self.pull_request.status == self.STATUS_CLOSED
+
+    def is_state_changing(self):
+        return self.pull_request.pull_request_state != PullRequest.STATE_CREATED
 
     def calculated_review_status(self):
         return self.pull_request.calculated_review_status()
@@ -4293,6 +4421,7 @@ class Notification(Base, BaseModel):
     TYPE_REGISTRATION = u'registration'
     TYPE_PULL_REQUEST = u'pull_request'
     TYPE_PULL_REQUEST_COMMENT = u'pull_request_comment'
+    TYPE_PULL_REQUEST_UPDATE = u'pull_request_update'
 
     notification_id = Column('notification_id', Integer(), nullable=False, primary_key=True)
     subject = Column('subject', Unicode(512), nullable=True)
@@ -4303,7 +4432,7 @@ class Notification(Base, BaseModel):
 
     created_by_user = relationship('User')
     notifications_to_users = relationship('UserNotification', lazy='joined',
-                                          cascade="all, delete, delete-orphan")
+                                          cascade="all, delete-orphan")
 
     @property
     def recipients(self):
@@ -4958,8 +5087,7 @@ class _BaseBranchPerms(BaseModel):
 class UserToRepoBranchPermission(Base, _BaseBranchPerms):
     __tablename__ = 'user_to_repo_branch_permissions'
     __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
+        base_table_args
     )
 
     branch_rule_id = Column('branch_rule_id', Integer(), primary_key=True)
@@ -4985,8 +5113,7 @@ class UserToRepoBranchPermission(Base, _BaseBranchPerms):
 class UserGroupToRepoBranchPermission(Base, _BaseBranchPerms):
     __tablename__ = 'user_group_to_repo_branch_permissions'
     __table_args__ = (
-        {'extend_existing': True, 'mysql_engine': 'InnoDB',
-         'mysql_charset': 'utf8', 'sqlite_autoincrement': True,}
+        base_table_args
     )
 
     branch_rule_id = Column('branch_rule_id', Integer(), primary_key=True)
@@ -5040,16 +5167,22 @@ class UserBookmark(Base, BaseModel):
             .filter(UserBookmark.position == position).scalar()
 
     @classmethod
-    def get_bookmarks_for_user(cls, user_id):
-        return cls.query() \
+    def get_bookmarks_for_user(cls, user_id, cache=True):
+        bookmarks = cls.query() \
             .filter(UserBookmark.user_id == user_id) \
             .options(joinedload(UserBookmark.repository)) \
             .options(joinedload(UserBookmark.repository_group)) \
-            .order_by(UserBookmark.position.asc()) \
-            .all()
+            .order_by(UserBookmark.position.asc())
+
+        if cache:
+            bookmarks = bookmarks.options(
+                FromCache("sql_cache_short", "get_user_{}_bookmarks".format(user_id))
+            )
+
+        return bookmarks.all()
 
     def __unicode__(self):
-        return u'<UserBookmark(%d @ %r)>' % (self.position, self.redirect_url)
+        return u'<UserBookmark(%s @ %r)>' % (self.position, self.redirect_url)
 
 
 class FileStore(Base, BaseModel):
@@ -5066,7 +5199,7 @@ class FileStore(Base, BaseModel):
 
     # sha256 hash
     file_hash = Column('file_hash', String(512), nullable=False)
-    file_size = Column('file_size', Integer(), nullable=False)
+    file_size = Column('file_size', BigInteger(), nullable=False)
 
     created_on = Column('created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     accessed_on = Column('accessed_on', DateTime(timezone=False), nullable=True)
@@ -5077,8 +5210,13 @@ class FileStore(Base, BaseModel):
     # if repo/repo_group reference is set, check for permissions
     check_acl = Column('check_acl', Boolean(), nullable=False, default=True)
 
+    # hidden defines an attachment that should be hidden from showing in artifact listing
+    hidden = Column('hidden', Boolean(), nullable=False, default=False)
+
     user_id = Column('user_id', Integer(), ForeignKey('users.user_id'), nullable=False)
     upload_user = relationship('User', lazy='joined', primaryjoin='User.user_id==FileStore.user_id')
+
+    file_metadata = relationship('FileStoreMetadata', lazy='joined')
 
     # scope limited to user, which requester have access to
     scope_user_id = Column(
@@ -5105,9 +5243,13 @@ class FileStore(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     @classmethod
+    def get_by_store_uid(cls, file_store_uid):
+        return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
+
+    @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
-               file_description='', enabled=True, check_acl=True, user_id=None,
-               scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
+               file_description='', enabled=True, hidden=False, check_acl=True,
+               user_id=None, scope_user_id=None, scope_repo_id=None, scope_repo_group_id=None):
 
         store_entry = FileStore()
         store_entry.file_uid = file_uid
@@ -5119,12 +5261,50 @@ class FileStore(Base, BaseModel):
 
         store_entry.check_acl = check_acl
         store_entry.enabled = enabled
+        store_entry.hidden = hidden
 
         store_entry.user_id = user_id
         store_entry.scope_user_id = scope_user_id
         store_entry.scope_repo_id = scope_repo_id
         store_entry.scope_repo_group_id = scope_repo_group_id
+
         return store_entry
+
+    @classmethod
+    def store_metadata(cls, file_store_id, args, commit=True):
+        file_store = FileStore.get(file_store_id)
+        if file_store is None:
+            return
+
+        for section, key, value, value_type in args:
+            has_key = FileStoreMetadata().query() \
+                .filter(FileStoreMetadata.file_store_id == file_store.file_store_id) \
+                .filter(FileStoreMetadata.file_store_meta_section == section) \
+                .filter(FileStoreMetadata.file_store_meta_key == key) \
+                .scalar()
+            if has_key:
+                msg = 'key `{}` already defined under section `{}` for this file.'\
+                    .format(key, section)
+                raise ArtifactMetadataDuplicate(msg, err_section=section, err_key=key)
+
+            # NOTE(marcink): raises ArtifactMetadataBadValueType
+            FileStoreMetadata.valid_value_type(value_type)
+
+            meta_entry = FileStoreMetadata()
+            meta_entry.file_store = file_store
+            meta_entry.file_store_meta_section = section
+            meta_entry.file_store_meta_key = key
+            meta_entry.file_store_meta_value_type = value_type
+            meta_entry.file_store_meta_value = value
+
+            Session().add(meta_entry)
+
+        try:
+            if commit:
+                Session().commit()
+        except IntegrityError:
+            Session().rollback()
+            raise ArtifactMetadataDuplicate('Duplicate section/key found for this file.')
 
     @classmethod
     def bump_access_counter(cls, file_uid, commit=True):
@@ -5135,8 +5315,143 @@ class FileStore(Base, BaseModel):
         if commit:
             Session().commit()
 
+    def __json__(self):
+        data = {
+            'filename': self.file_display_name,
+            'filename_org': self.file_org_name,
+            'file_uid': self.file_uid,
+            'description': self.file_description,
+            'hidden': self.hidden,
+            'size': self.file_size,
+            'created_on': self.created_on,
+            'uploaded_by': self.upload_user.get_api_data(details='basic'),
+            'downloaded_times': self.accessed_count,
+            'sha256': self.file_hash,
+            'metadata': self.file_metadata,
+        }
+
+        return data
+
     def __repr__(self):
         return '<FileStore({})>'.format(self.file_store_id)
+
+
+class FileStoreMetadata(Base, BaseModel):
+    __tablename__ = 'file_store_metadata'
+    __table_args__ = (
+        UniqueConstraint('file_store_id', 'file_store_meta_section_hash', 'file_store_meta_key_hash'),
+        Index('file_store_meta_section_idx', 'file_store_meta_section', mysql_length=255),
+        Index('file_store_meta_key_idx', 'file_store_meta_key', mysql_length=255),
+        base_table_args
+    )
+    SETTINGS_TYPES = {
+        'str': safe_str,
+        'int': safe_int,
+        'unicode': safe_unicode,
+        'bool': str2bool,
+        'list': functools.partial(aslist, sep=',')
+    }
+
+    file_store_meta_id = Column(
+        "file_store_meta_id", Integer(), nullable=False, unique=True, default=None,
+        primary_key=True)
+    _file_store_meta_section = Column(
+        "file_store_meta_section", UnicodeText().with_variant(UnicodeText(1024), 'mysql'),
+        nullable=True, unique=None, default=None)
+    _file_store_meta_section_hash = Column(
+        "file_store_meta_section_hash", String(255),
+        nullable=True, unique=None, default=None)
+    _file_store_meta_key = Column(
+        "file_store_meta_key", UnicodeText().with_variant(UnicodeText(1024), 'mysql'),
+        nullable=True, unique=None, default=None)
+    _file_store_meta_key_hash = Column(
+        "file_store_meta_key_hash", String(255), nullable=True, unique=None, default=None)
+    _file_store_meta_value = Column(
+        "file_store_meta_value", UnicodeText().with_variant(UnicodeText(20480), 'mysql'),
+        nullable=True, unique=None, default=None)
+    _file_store_meta_value_type = Column(
+        "file_store_meta_value_type", String(255), nullable=True, unique=None,
+        default='unicode')
+
+    file_store_id = Column(
+        'file_store_id', Integer(), ForeignKey('file_store.file_store_id'),
+        nullable=True, unique=None, default=None)
+
+    file_store = relationship('FileStore', lazy='joined')
+
+    @classmethod
+    def valid_value_type(cls, value):
+        if value.split('.')[0] not in cls.SETTINGS_TYPES:
+            raise ArtifactMetadataBadValueType(
+                'value_type must be one of %s got %s' % (cls.SETTINGS_TYPES.keys(), value))
+
+    @hybrid_property
+    def file_store_meta_section(self):
+        return self._file_store_meta_section
+
+    @file_store_meta_section.setter
+    def file_store_meta_section(self, value):
+        self._file_store_meta_section = value
+        self._file_store_meta_section_hash = _hash_key(value)
+
+    @hybrid_property
+    def file_store_meta_key(self):
+        return self._file_store_meta_key
+
+    @file_store_meta_key.setter
+    def file_store_meta_key(self, value):
+        self._file_store_meta_key = value
+        self._file_store_meta_key_hash = _hash_key(value)
+
+    @hybrid_property
+    def file_store_meta_value(self):
+        val = self._file_store_meta_value
+
+        if self._file_store_meta_value_type:
+            # e.g unicode.encrypted == unicode
+            _type = self._file_store_meta_value_type.split('.')[0]
+            # decode the encrypted value if it's encrypted field type
+            if '.encrypted' in self._file_store_meta_value_type:
+                cipher = EncryptedTextValue()
+                val = safe_unicode(cipher.process_result_value(val, None))
+            # do final type conversion
+            converter = self.SETTINGS_TYPES.get(_type) or self.SETTINGS_TYPES['unicode']
+            val = converter(val)
+
+        return val
+
+    @file_store_meta_value.setter
+    def file_store_meta_value(self, val):
+        val = safe_unicode(val)
+        # encode the encrypted value
+        if '.encrypted' in self.file_store_meta_value_type:
+            cipher = EncryptedTextValue()
+            val = safe_unicode(cipher.process_bind_param(val, None))
+        self._file_store_meta_value = val
+
+    @hybrid_property
+    def file_store_meta_value_type(self):
+        return self._file_store_meta_value_type
+
+    @file_store_meta_value_type.setter
+    def file_store_meta_value_type(self, val):
+        # e.g unicode.encrypted
+        self.valid_value_type(val)
+        self._file_store_meta_value_type = val
+
+    def __json__(self):
+        data = {
+            'artifact': self.file_store.file_uid,
+            'section': self.file_store_meta_section,
+            'key': self.file_store_meta_key,
+            'value': self.file_store_meta_value,
+        }
+
+        return data
+
+    def __repr__(self):
+        return '<%s[%s]%s=>%s]>' % (self.__class__.__name__, self.file_store_meta_section,
+                                    self.file_store_meta_key, self.file_store_meta_value)
 
 
 class DbMigrateVersion(Base, BaseModel):

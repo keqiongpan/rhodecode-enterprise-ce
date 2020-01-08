@@ -30,7 +30,6 @@ import subprocess32
 import time
 import uuid
 import dateutil.tz
-import functools
 
 import mock
 import pyramid.testing
@@ -57,7 +56,6 @@ from rhodecode.model.integration import IntegrationModel
 from rhodecode.integrations import integration_type_registry
 from rhodecode.integrations.types.base import IntegrationTypeBase
 from rhodecode.lib.utils import repo2db_mapper
-from rhodecode.lib.vcs import create_vcsserver_proxy
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.tests import (
@@ -67,6 +65,7 @@ from rhodecode.tests import (
 from rhodecode.tests.utils import CustomTestApp, set_anonymous_access
 from rhodecode.tests.fixture import Fixture
 from rhodecode.config import utils as config_utils
+
 
 def _split_comma(value):
     return value.split(',')
@@ -119,16 +118,34 @@ def pytest_collection_modifyitems(session, config, items):
         i for i in items if getattr(i.obj, '__test__', True)]
     items[:] = remaining
 
+    # NOTE(marcink): custom test ordering, db tests and vcstests are slowes and should
+    # be executed at the end for faster test feedback
+    def sorter(item):
+        pos = 0
+        key = item._nodeid
+        if key.startswith('rhodecode/tests/database'):
+            pos = 1
+        elif key.startswith('rhodecode/tests/vcs_operations'):
+            pos = 2
+
+        return pos
+
+    items.sort(key=sorter)
+
 
 def pytest_generate_tests(metafunc):
+
     # Support test generation based on --backend parameter
     if 'backend_alias' in metafunc.fixturenames:
         backends = get_backends_from_metafunc(metafunc)
         scope = None
         if not backends:
             pytest.skip("Not enabled for any of selected backends")
+
         metafunc.parametrize('backend_alias', backends, scope=scope)
-    elif hasattr(metafunc.function, 'backends'):
+
+    backend_mark = metafunc.definition.get_closest_marker('backends')
+    if backend_mark:
         backends = get_backends_from_metafunc(metafunc)
         if not backends:
             pytest.skip("Not enabled for any of selected backends")
@@ -136,10 +153,11 @@ def pytest_generate_tests(metafunc):
 
 def get_backends_from_metafunc(metafunc):
     requested_backends = set(metafunc.config.getoption('--backends'))
-    if hasattr(metafunc.function, 'backends'):
+    backend_mark = metafunc.definition.get_closest_marker('backends')
+    if backend_mark:
         # Supported backends by this test function, created from
         # pytest.mark.backends
-        backends = metafunc.definition.get_closest_marker('backends').args
+        backends = backend_mark.args
     elif hasattr(metafunc.cls, 'backend_alias'):
         # Support class attribute "backend_alias", this is mainly
         # for legacy reasons for tests not yet using pytest.mark.backends
@@ -165,7 +183,7 @@ def activate_example_rcextensions(request):
         rhodecode.EXTENSIONS = old_extensions
 
 
-@pytest.fixture
+@pytest.fixture()
 def capture_rcextensions():
     """
     Returns the recorded calls to entry points in rcextensions.
@@ -193,7 +211,7 @@ def plain_http_host_stub():
     return 'example.com:80'
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_host_stub():
     """
     Value of HTTP_HOST in the test run.
@@ -208,7 +226,7 @@ def plain_http_host_only_stub():
     return plain_http_host_stub().split(':')[0]
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_host_only_stub():
     """
     Value of HTTP_HOST in the test run.
@@ -233,7 +251,7 @@ def plain_http_environ():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_environ():
     """
     HTTP extra environ keys.
@@ -295,7 +313,7 @@ def _autologin_user(app, *args):
     return LoginData(csrf_token, session['rhodecode_user'])
 
 
-@pytest.fixture
+@pytest.fixture()
 def autologin_user(app):
     """
     Utility fixture which makes sure that the admin user is logged in
@@ -303,7 +321,7 @@ def autologin_user(app):
     return _autologin_user(app)
 
 
-@pytest.fixture
+@pytest.fixture()
 def autologin_regular_user(app):
     """
     Utility fixture which makes sure that the regular user is logged in
@@ -322,7 +340,7 @@ def xhr_header(request):
     return {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
 
 
-@pytest.fixture
+@pytest.fixture()
 def real_crypto_backend(monkeypatch):
     """
     Switch the production crypto backend on for this test.
@@ -357,7 +375,7 @@ def tests_tmp_path(request):
     return TESTS_TMP_PATH
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_repo_group(request):
     """
     Create a temporary repository group, and destroy it after
@@ -374,7 +392,7 @@ def test_repo_group(request):
     return repo_group
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_user_group(request):
     """
     Create a temporary user group, and destroy it after
@@ -432,11 +450,11 @@ class TestRepoContainer(object):
 
     def _create_repo(self, dump_name, backend_alias, config):
         repo_name = '%s-%s' % (backend_alias, dump_name)
-        backend_class = get_backend(backend_alias)
+        backend = get_backend(backend_alias)
         dump_extractor = self.dump_extractors[backend_alias]
         repo_path = dump_extractor(dump_name, repo_name)
 
-        vcs_repo = backend_class(repo_path, config=config)
+        vcs_repo = backend(repo_path, config=config)
         repo2db_mapper({repo_name: vcs_repo})
 
         repo = RepoModel().get_by_repo_name(repo_name)
@@ -465,7 +483,7 @@ def backend_base(request, backend_alias, baseapp, test_repo):
     return backend
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend(request, backend_alias, baseapp, test_repo):
     """
     Parametrized fixture which represents a single backend implementation.
@@ -480,22 +498,22 @@ def backend(request, backend_alias, baseapp, test_repo):
     return backend_base(request, backend_alias, baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_git(request, baseapp, test_repo):
     return backend_base(request, 'git', baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_hg(request, baseapp, test_repo):
     return backend_base(request, 'hg', baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_svn(request, baseapp, test_repo):
     return backend_base(request, 'svn', baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_random(backend_git):
     """
     Use this to express that your tests need "a backend.
@@ -512,7 +530,7 @@ def backend_random(backend_git):
     return backend_git
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_stub(backend_git):
     """
     Use this to express that your tests need a backend stub
@@ -523,7 +541,7 @@ def backend_stub(backend_git):
     return backend_git
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_stub(backend_stub):
     """
     Use this to express that your tests need a repository stub
@@ -723,7 +741,7 @@ def vcsbackend_base(request, backend_alias, tests_tmp_path, baseapp, test_repo):
     return backend
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
     """
     Parametrized fixture which represents a single vcs backend implementation.
@@ -737,22 +755,22 @@ def vcsbackend(request, backend_alias, tests_tmp_path, baseapp, test_repo):
     return vcsbackend_base(request, backend_alias, tests_tmp_path, baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcsbackend_git(request, tests_tmp_path, baseapp, test_repo):
     return vcsbackend_base(request, 'git', tests_tmp_path, baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcsbackend_hg(request, tests_tmp_path, baseapp, test_repo):
     return vcsbackend_base(request, 'hg', tests_tmp_path, baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcsbackend_svn(request, tests_tmp_path, baseapp, test_repo):
     return vcsbackend_base(request, 'svn', tests_tmp_path, baseapp, test_repo)
 
 
-@pytest.fixture
+@pytest.fixture()
 def vcsbackend_stub(vcsbackend_git):
     """
     Use this to express that your test just needs a stub of a vcsbackend.
@@ -834,7 +852,7 @@ class VcsBackend(object):
         imc.add(FileNode(filename, content=content))
         imc.commit(
             message=u'Automatic commit from vcsbackend fixture',
-            author=u'Automatic')
+            author=u'Automatic <automatic@rhodecode.com>')
 
     def ensure_file(self, filename, content='Test content\n'):
         assert self._cleanup_repos, "Avoid writing into vcs_test repos"
@@ -869,7 +887,7 @@ def _add_commits_to_repo(vcs_repo, commits):
 
         commit = imc.commit(
             message=message,
-            author=unicode(commit.get('author', 'Automatic')),
+            author=unicode(commit.get('author', 'Automatic <automatic@rhodecode.com>')),
             date=commit.get('date'),
             branch=commit.get('branch'),
             parents=parents)
@@ -879,7 +897,7 @@ def _add_commits_to_repo(vcs_repo, commits):
     return commit_ids
 
 
-@pytest.fixture
+@pytest.fixture()
 def reposerver(request):
     """
     Allows to serve a backend repository
@@ -917,7 +935,7 @@ class RepoServer(object):
             proc.terminate()
 
 
-@pytest.fixture
+@pytest.fixture()
 def pr_util(backend, request, config_stub):
     """
     Utility for tests of models and for functional tests around pull requests.
@@ -1029,7 +1047,7 @@ class PRTestUtility(object):
     def add_one_commit(self, head=None):
         self.update_source_repository(head=head)
         old_commit_ids = set(self.pull_request.revisions)
-        PullRequestModel().update_commits(self.pull_request)
+        PullRequestModel().update_commits(self.pull_request, self.pull_request.author)
         commit_ids = set(self.pull_request.revisions)
         new_commit_ids = commit_ids - old_commit_ids
         assert len(new_commit_ids) == 1
@@ -1048,7 +1066,7 @@ class PRTestUtility(object):
             kwargs = {}
         source_vcs.strip(removed_commit_id, **kwargs)
 
-        PullRequestModel().update_commits(self.pull_request)
+        PullRequestModel().update_commits(self.pull_request, self.pull_request.author)
         assert len(self.pull_request.revisions) == 1
         return removed_commit_id
 
@@ -1118,7 +1136,7 @@ class PRTestUtility(object):
             self.mergeable_patcher.stop()
 
 
-@pytest.fixture
+@pytest.fixture()
 def user_admin(baseapp):
     """
     Provides the default admin test user as an instance of `db.User`.
@@ -1127,7 +1145,7 @@ def user_admin(baseapp):
     return user
 
 
-@pytest.fixture
+@pytest.fixture()
 def user_regular(baseapp):
     """
     Provides the default regular test user as an instance of `db.User`.
@@ -1136,7 +1154,7 @@ def user_regular(baseapp):
     return user
 
 
-@pytest.fixture
+@pytest.fixture()
 def user_util(request, db_connection):
     """
     Provides a wired instance of `UserUtility` with integrated cleanup.
@@ -1398,82 +1416,7 @@ def testrun():
     }
 
 
-@pytest.fixture(autouse=True)
-def collect_appenlight_stats(request, testrun):
-    """
-    This fixture reports memory consumtion of single tests.
-
-    It gathers data based on `psutil` and sends them to Appenlight. The option
-    ``--ae`` has te be used to enable this fixture and the API key for your
-    application has to be provided in ``--ae-key``.
-    """
-    try:
-        # cygwin cannot have yet psutil support.
-        import psutil
-    except ImportError:
-        return
-
-    if not request.config.getoption('--appenlight'):
-        return
-    else:
-        # Only request the baseapp fixture if appenlight tracking is
-        # enabled. This will speed up a test run of unit tests by 2 to 3
-        # seconds if appenlight is not enabled.
-        baseapp = request.getfuncargvalue("baseapp")
-    url = '{}/api/logs'.format(request.config.getoption('--appenlight-url'))
-    client = AppenlightClient(
-        url=url,
-        api_key=request.config.getoption('--appenlight-api-key'),
-        namespace=request.node.nodeid,
-        request=str(testrun['uuid']),
-        testrun=testrun)
-
-    client.collect({
-        'message': "Starting",
-    })
-
-    server_and_port = baseapp.config.get_settings()['vcs.server']
-    protocol = baseapp.config.get_settings()['vcs.server.protocol']
-    server = create_vcsserver_proxy(server_and_port, protocol)
-    with server:
-        vcs_pid = server.get_pid()
-        server.run_gc()
-    vcs_process = psutil.Process(vcs_pid)
-    mem = vcs_process.memory_info()
-    client.tag_before('vcsserver.rss', mem.rss)
-    client.tag_before('vcsserver.vms', mem.vms)
-
-    test_process = psutil.Process()
-    mem = test_process.memory_info()
-    client.tag_before('test.rss', mem.rss)
-    client.tag_before('test.vms', mem.vms)
-
-    client.tag_before('time', time.time())
-
-    @request.addfinalizer
-    def send_stats():
-        client.tag_after('time', time.time())
-        with server:
-            gc_stats = server.run_gc()
-        for tag, value in gc_stats.items():
-            client.tag_after(tag, value)
-        mem = vcs_process.memory_info()
-        client.tag_after('vcsserver.rss', mem.rss)
-        client.tag_after('vcsserver.vms', mem.vms)
-
-        mem = test_process.memory_info()
-        client.tag_after('test.rss', mem.rss)
-        client.tag_after('test.vms', mem.vms)
-
-        client.collect({
-            'message': "Finished",
-        })
-        client.send_stats()
-
-    return client
-
-
-class AppenlightClient():
+class AppenlightClient(object):
 
     url_template = '{url}?protocol_version=0.5'
 
@@ -1544,7 +1487,7 @@ class AppenlightClient():
             raise Exception('Sending to appenlight failed')
 
 
-@pytest.fixture
+@pytest.fixture()
 def gist_util(request, db_connection):
     """
     Provides a wired instance of `GistUtility` with integrated cleanup.
@@ -1569,13 +1512,13 @@ class GistUtility(object):
             self.fixture.destroy_gists(str(id_))
 
 
-@pytest.fixture
+@pytest.fixture()
 def enabled_backends(request):
     backends = request.config.option.backends
     return backends[:]
 
 
-@pytest.fixture
+@pytest.fixture()
 def settings_util(request, db_connection):
     """
     Provides a wired instance of `SettingsUtility` with integrated cleanup.
@@ -1667,7 +1610,7 @@ class SettingsUtility(object):
         Session().commit()
 
 
-@pytest.fixture
+@pytest.fixture()
 def no_notifications(request):
     notification_patcher = mock.patch(
         'rhodecode.model.notification.NotificationModel.create')
@@ -1686,12 +1629,12 @@ def repeat(request):
     return request.config.getoption('--repeat')
 
 
-@pytest.fixture
+@pytest.fixture()
 def rhodecode_fixtures():
     return Fixture()
 
 
-@pytest.fixture
+@pytest.fixture()
 def context_stub():
     """
     Stub context object.
@@ -1700,7 +1643,7 @@ def context_stub():
     return context
 
 
-@pytest.fixture
+@pytest.fixture()
 def request_stub():
     """
     Stub request object.
@@ -1710,7 +1653,7 @@ def request_stub():
     return request
 
 
-@pytest.fixture
+@pytest.fixture()
 def config_stub(request, request_stub):
     """
     Set up pyramid.testing and return the Configurator.
@@ -1725,7 +1668,7 @@ def config_stub(request, request_stub):
     return config
 
 
-@pytest.fixture
+@pytest.fixture()
 def StubIntegrationType():
     class _StubIntegrationType(IntegrationTypeBase):
         """ Test integration type class """
@@ -1762,7 +1705,7 @@ def StubIntegrationType():
     integration_type_registry.register_integration_type(_StubIntegrationType)
     return _StubIntegrationType
 
-@pytest.fixture
+@pytest.fixture()
 def stub_integration_settings():
     return {
         'test_string_field': 'some data',
@@ -1770,7 +1713,7 @@ def stub_integration_settings():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_integration_stub(request, repo_stub, StubIntegrationType,
         stub_integration_settings):
     integration = IntegrationModel().create(
@@ -1785,7 +1728,7 @@ def repo_integration_stub(request, repo_stub, StubIntegrationType,
     return integration
 
 
-@pytest.fixture
+@pytest.fixture()
 def repogroup_integration_stub(request, test_repo_group, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
@@ -1800,7 +1743,7 @@ def repogroup_integration_stub(request, test_repo_group, StubIntegrationType,
     return integration
 
 
-@pytest.fixture
+@pytest.fixture()
 def repogroup_recursive_integration_stub(request, test_repo_group,
     StubIntegrationType, stub_integration_settings):
     integration = IntegrationModel().create(
@@ -1815,7 +1758,7 @@ def repogroup_recursive_integration_stub(request, test_repo_group,
     return integration
 
 
-@pytest.fixture
+@pytest.fixture()
 def global_integration_stub(request, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
@@ -1830,7 +1773,7 @@ def global_integration_stub(request, StubIntegrationType,
     return integration
 
 
-@pytest.fixture
+@pytest.fixture()
 def root_repos_integration_stub(request, StubIntegrationType,
     stub_integration_settings):
     integration = IntegrationModel().create(
@@ -1845,7 +1788,7 @@ def root_repos_integration_stub(request, StubIntegrationType,
     return integration
 
 
-@pytest.fixture
+@pytest.fixture()
 def local_dt_to_utc():
     def _factory(dt):
         return dt.replace(tzinfo=dateutil.tz.tzlocal()).astimezone(
@@ -1853,7 +1796,7 @@ def local_dt_to_utc():
     return _factory
 
 
-@pytest.fixture
+@pytest.fixture()
 def disable_anonymous_user(request, baseapp):
     set_anonymous_access(False)
 
@@ -1867,7 +1810,7 @@ def rc_fixture(request):
     return Fixture()
 
 
-@pytest.fixture
+@pytest.fixture()
 def repo_groups(request):
     fixture = Fixture()
 
@@ -1886,17 +1829,3 @@ def repo_groups(request):
         fixture.destroy_repo_group(parent_group)
 
     return zombie_group, parent_group, child_group
-
-
-@pytest.fixture(scope="session")
-def tmp_path_factory(request):
-    """Return a :class:`_pytest.tmpdir.TempPathFactory` instance for the test session.
-    """
-
-    class TempPathFactory:
-
-        def mktemp(self, basename):
-            import tempfile
-            return tempfile.mktemp(basename)
-
-    return TempPathFactory()

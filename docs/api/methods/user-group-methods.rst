@@ -72,7 +72,9 @@ create_user_group
    :param active: Set this group as active.
    :type active: Optional(``True`` | ``False``)
    :param sync: Set enabled or disabled the automatically sync from
-       external authentication types like ldap.
+       external authentication types like ldap. If User Group will be named like
+       one from e.g ldap and sync flag is enabled members will be synced automatically.
+       Sync type when enabled via API is set to `manual_api`
    :type sync: Optional(``True`` | ``False``)
 
    Example output:
@@ -391,7 +393,9 @@ update_user_group
    :param active: Set the group as active.
    :type active: Optional(``True`` | ``False``)
    :param sync: Set enabled or disabled the automatically sync from
-       external authentication types like ldap.
+       external authentication types like ldap. If User Group will be named like
+       one from e.g ldap and sync flag is enabled members will be synced automatically.
+       Sync type when enabled via API is set to `manual_api`
    :type sync: Optional(``True`` | ``False``)
 
    Example output:

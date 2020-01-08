@@ -67,18 +67,6 @@
                     </div>
                 </div>
 
-                <div class="field">
-                    <div class="label label-checkbox">
-                        <label for="repo_group_enable_locking">${_('Enable Repository Locking')}:</label>
-                    </div>
-                    <div class="checkboxes">
-                        ${c.form['repo_group_enable_locking'].render(css_class='medium', oid='repo_group_enable_locking')|n}
-                        ${c.form.render_error(request, c.form['repo_group_enable_locking'])|n}
-
-                        <span class="help-block">${_('Repository locking will be enabled on all subgroups and repositories inside this repository group. Pulling from a repository locks it, and it is unlocked by pushing back by the same user.')}</span>
-                    </div>
-                </div>
-
                 <div class="buttons">
                   ${h.submit('save',_('Save'),class_="btn")}
                   ${h.reset('reset',_('Reset'),class_="btn")}

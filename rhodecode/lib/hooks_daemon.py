@@ -106,11 +106,11 @@ class DummyHooksCallbackDaemon(object):
         self.hooks_module = Hooks.__module__
 
     def __enter__(self):
-        log.debug('Running dummy hooks callback daemon')
+        log.debug('Running `%s` callback daemon', self.__class__.__name__)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        log.debug('Exiting dummy hooks callback daemon')
+        log.debug('Exiting `%s` callback daemon', self.__class__.__name__)
 
 
 class ThreadedHookCallbackDaemon(object):
@@ -123,11 +123,12 @@ class ThreadedHookCallbackDaemon(object):
         self._prepare(txn_id=txn_id, host=None, port=port)
 
     def __enter__(self):
+        log.debug('Running `%s` callback daemon', self.__class__.__name__)
         self._run()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        log.debug('Callback daemon exiting now...')
+        log.debug('Exiting `%s` callback daemon', self.__class__.__name__)
         self._stop()
 
     def _prepare(self, txn_id=None, host=None, port=None):

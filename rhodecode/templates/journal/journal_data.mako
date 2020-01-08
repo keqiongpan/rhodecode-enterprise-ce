@@ -36,16 +36,10 @@
         %endfor
     %endfor
 
-  <div class="pagination-wh pagination-left" >
-  ${c.journal_pager.pager('$link_previous ~2~ $link_next')}
+  <div class="pagination-wh pagination-left">
+  ${c.journal_pager.render()}
   </div>
-    <script type="text/javascript">
-      $(document).pjax('#journal .pager_link','#journal');
-      $(document).on('pjax:success',function(){
-        show_more_event();
-        timeagoActivate();
-      });
-    </script>
+
 %else:
   <div>
       ${_('No entries yet')}

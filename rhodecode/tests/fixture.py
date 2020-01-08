@@ -231,6 +231,7 @@ class Fixture(object):
             'email': '%s+test@rhodecode.org' % name,
             'firstname': 'TestUser',
             'lastname': 'Test',
+            'description': 'test description',
             'active': True,
             'admin': False,
             'extern_type': 'rhodecode',

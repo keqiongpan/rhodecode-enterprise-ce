@@ -43,12 +43,11 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    _hash_key, joinedload, or_, Repository, UserRepoToPerm, UserGroupRepoToPerm,
+    _hash_key, func, case, joinedload, or_, in_filter_generator,
+    Session, Repository, UserRepoToPerm, UserGroupRepoToPerm,
     UserRepoGroupToPerm, UserGroupRepoGroupToPerm, User, Permission,
     Statistics, UserGroup, RepoGroup, RepositoryField, UserLog)
-
 from rhodecode.model.settings import VcsSettingsModel
-
 
 log = logging.getLogger(__name__)
 
@@ -217,8 +216,11 @@ class RepoModel(BaseModel):
 
         def last_change(last_change):
             if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                last_change = last_change + datetime.timedelta(seconds=
-                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
+
             return _render("last_change", last_change)
 
         def rss_lnk(repo_name):
@@ -246,26 +248,27 @@ class RepoModel(BaseModel):
 
         repos_data = []
         for repo in repo_list:
-            cs_cache = repo.changeset_cache
+            # NOTE(marcink): because we use only raw column we need to load it like that
+            changeset_cache = Repository._load_changeset_cache(
+                repo.repo_id, repo._changeset_cache)
+
             row = {
                 "menu": quick_menu(repo.repo_name),
 
                 "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
                                  repo.private, repo.archived, repo.fork),
-                "name_raw": repo.repo_name.lower(),
 
-                "last_change": last_change(repo.last_commit_change),
-                "last_change_raw": datetime_to_time(repo.last_commit_change),
+                "desc": desc(repo.description),
 
-                "last_changeset": last_rev(repo.repo_name, cs_cache),
-                "last_changeset_raw": cs_cache.get('revision'),
+                "last_change": last_change(repo.updated_on),
 
-                "desc": desc(repo.description_safe),
-                "owner": user_profile(repo.user.username),
+                "last_changeset": last_rev(repo.repo_name, changeset_cache),
+                "last_changeset_raw": changeset_cache.get('revision'),
+
+                "owner": user_profile(repo.User.username),
 
                 "state": state(repo.repo_state),
                 "rss": rss_lnk(repo.repo_name),
-
                 "atom": atom_lnk(repo.repo_name),
             }
             if admin:
@@ -275,6 +278,87 @@ class RepoModel(BaseModel):
             repos_data.append(row)
 
         return repos_data
+
+    def get_repos_data_table(
+            self, draw, start, limit,
+            search_q, order_by, order_dir,
+            auth_user, repo_group_id):
+        from rhodecode.model.scm import RepoList
+
+        _perms = ['repository.read', 'repository.write', 'repository.admin']
+
+        repos = Repository.query() \
+            .filter(Repository.group_id == repo_group_id) \
+            .all()
+        auth_repo_list = RepoList(
+            repos, perm_set=_perms,
+            extra_kwargs=dict(user=auth_user))
+
+        allowed_ids = [-1]
+        for repo in auth_repo_list:
+            allowed_ids.append(repo.repo_id)
+
+        repos_data_total_count = Repository.query() \
+            .filter(Repository.group_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .count()
+
+        base_q = Session.query(
+            Repository.repo_id,
+            Repository.repo_name,
+            Repository.description,
+            Repository.repo_type,
+            Repository.repo_state,
+            Repository.private,
+            Repository.archived,
+            Repository.fork,
+            Repository.updated_on,
+            Repository._changeset_cache,
+            User,
+            ) \
+            .filter(Repository.group_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(Repository.repo_id, allowed_ids))
+            ) \
+            .join(User, User.user_id == Repository.user_id) \
+            .group_by(Repository, User)
+
+        repos_data_total_filtered_count = base_q.count()
+
+        sort_defined = False
+        if order_by == 'repo_name':
+            sort_col = func.lower(Repository.repo_name)
+            sort_defined = True
+        elif order_by == 'user_username':
+            sort_col = User.username
+        else:
+            sort_col = getattr(Repository, order_by, None)
+
+        if sort_defined or sort_col:
+            if order_dir == 'asc':
+                sort_col = sort_col.asc()
+            else:
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        repos_list = base_q.all()
+
+        repos_data = RepoModel().get_repos_as_dict(
+            repo_list=repos_list, admin=False)
+
+        data = ({
+            'draw': draw,
+            'data': repos_data,
+            'recordsTotal': repos_data_total_count,
+            'recordsFiltered': repos_data_total_filtered_count,
+        })
+        return data
 
     def _get_defaults(self, repo_name):
         """
@@ -381,7 +465,7 @@ class RepoModel(BaseModel):
                 if ex_field:
                     ex_field.field_value = kwargs[field]
                     self.sa.add(ex_field)
-            cur_repo.updated_on = datetime.datetime.now()
+
             self.sa.add(cur_repo)
 
             if source_repo_name != new_name:
@@ -824,7 +908,7 @@ class RepoModel(BaseModel):
 
     def _create_filesystem_repo(self, repo_name, repo_type, repo_group,
                                 clone_uri=None, repo_store_location=None,
-                                use_global_config=False):
+                                use_global_config=False, install_hooks=True):
         """
         makes repository on filesystem. It's group aware means it'll create
         a repository within a group, and alter the paths accordingly of
@@ -883,13 +967,15 @@ class RepoModel(BaseModel):
         # TODO: johbo: Unify this, hardcoded "bare=True" does not look nice
         if repo_type == 'git':
             repo = backend(
-                repo_path, config=config, create=True, src_url=clone_uri,
-                bare=True)
+                repo_path, config=config, create=True, src_url=clone_uri, bare=True,
+                with_wire={"cache": False})
         else:
             repo = backend(
-                repo_path, config=config, create=True, src_url=clone_uri)
+                repo_path, config=config, create=True, src_url=clone_uri,
+                with_wire={"cache": False})
 
-        repo.install_hooks()
+        if install_hooks:
+            repo.install_hooks()
 
         log.debug('Created repo %s with %s backend',
                   safe_unicode(repo_name), safe_unicode(repo_type))

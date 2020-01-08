@@ -10,6 +10,18 @@
     width: 100%;
 }
 
+.comments-heading {
+    margin-bottom: -1px;
+    background: @grey6;
+    display: block;
+    padding: 10px 0px;
+    font-size: 18px
+}
+
+#comment-tr-show {
+    padding: 5px 0;
+}
+
 tr.inline-comments div {
     max-width: 100%;
 
@@ -219,11 +231,6 @@ tr.inline-comments div {
         }
     }
 
-    .flag_status {
-        display: inline-block;
-        margin: -2px .5em 0 .25em
-    }
-
     .delete-comment {
         display: inline-block;
         color: @rcblue;
@@ -384,8 +391,12 @@ form.comment-form {
         display: inline-block;
     }
 
+    .status_box {
+        margin-left: 10px;
+    }
+
     .action-buttons {
-        float: right;
+        float: left;
         display: inline-block;
     }
 
@@ -418,7 +429,7 @@ form.comment-form {
     }
 
     .comment-footer {
-        margin-bottom: 110px;
+        margin-bottom: 50px;
         margin-top: 10px;
     }
 }
@@ -514,7 +525,7 @@ form.comment-form {
 }
 
 .comment-area {
-    padding: 8px 12px;
+    padding: 6px 8px;
     border: 1px solid @grey5;
     .border-radius(@border-radius);
 
@@ -522,6 +533,14 @@ form.comment-form {
         padding: 1px 0px 0px 6px;
     }
 
+}
+
+comment-area-text {
+    color: @grey3;
+}
+
+.comment-area-header {
+    height: 35px;
 }
 
 .comment-area-header .nav-links {
@@ -532,11 +551,38 @@ form.comment-form {
 }
 
 .comment-area-footer {
-    display: flex;
+    min-height: 30px;
 }
 
 .comment-footer .toolbar {
 
+}
+
+.comment-attachment-uploader {
+    border: 1px dashed white;
+    border-radius: @border-radius;
+    margin-top: -10px;
+    line-height: 30px;
+    &.dz-drag-hover {
+        border-color: @grey3;
+    }
+
+    .dz-error-message {
+        padding-top: 0;
+    }
+}
+
+.comment-attachment-text {
+    clear: both;
+    font-size: 11px;
+    color: #8F8F8F;
+    width: 100%;
+    .pick-attachment {
+        color: #8F8F8F;
+    }
+    .pick-attachment:hover {
+        color: @rcblue;
+    }
 }
 
 .nav-links {
@@ -571,8 +617,13 @@ form.comment-form {
 }
 
 .toolbar-text {
-    float: left;
-    margin: -5px 0px 0px 0px;
-    font-size: 12px;
+    float: right;
+    font-size: 11px;
+    color: @grey4;
+    text-align: right;
+
+    a {
+        color: @grey4;
+    }
 }
 

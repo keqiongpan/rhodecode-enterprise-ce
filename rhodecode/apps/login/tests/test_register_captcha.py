@@ -90,7 +90,7 @@ class TestRegisterCaptcha(object):
 
         response = app.get(ADMIN_PREFIX + '/register')
 
-        assertr = AssertResponse(response)
+        assertr = response.assert_response()
         if active:
             assertr.one_element_exists('#recaptcha_field')
         else:
@@ -128,6 +128,6 @@ class TestRegisterCaptcha(object):
         else:
             # If captche input is invalid we expect to stay on the registration
             # page with an error message displayed.
-            assertr = AssertResponse(response)
+            assertr = response.assert_response()
             assert response.status_int == 200
             assertr.one_element_exists('#recaptcha_field ~ span.error-message')

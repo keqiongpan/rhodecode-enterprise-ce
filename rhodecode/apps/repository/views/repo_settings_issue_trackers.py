@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.view import view_config
 import formencode
 
@@ -31,7 +31,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.model.forms import IssueTrackerPatternsForm
 from rhodecode.model.meta import Session
-from rhodecode.model.settings import IssueTrackerSettingsModel
+from rhodecode.model.settings import IssueTrackerSettingsModel, SettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     @CSRFRequired()
     @view_config(
         route_name='edit_repo_issuetracker_test', request_method='POST',
-        xhr=True, renderer='string')
+        renderer='string', xhr=True)
     def repo_issuetracker_test(self):
         return h.urlify_commit_message(
             self.request.POST.get('test_text', ''),
@@ -75,7 +75,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     @CSRFRequired()
     @view_config(
         route_name='edit_repo_issuetracker_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+        renderer='json_ext', xhr=True)
     def repo_issuetracker_delete(self):
         _ = self.request.translate
         uid = self.request.POST.get('uid')
@@ -85,10 +85,12 @@ class RepoSettingsIssueTrackersView(RepoAppView):
         except Exception:
             h.flash(_('Error occurred during deleting issue tracker entry'),
                     category='error')
-        else:
-            h.flash(_('Removed issue tracker entry'), category='success')
-        raise HTTPFound(
-            h.route_path('edit_repo_issuetracker', repo_name=self.db_repo_name))
+            raise HTTPNotFound()
+
+        SettingsModel().invalidate_settings_cache()
+        h.flash(_('Removed issue tracker entry.'), category='success')
+
+        return {'deleted': uid}
 
     def _update_patterns(self, form, repo_settings):
         for uid in form['delete_patterns']:

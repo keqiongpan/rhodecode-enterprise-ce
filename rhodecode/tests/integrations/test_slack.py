@@ -26,7 +26,7 @@ from rhodecode.model.db import Session, Integration
 from rhodecode.integrations.types.slack import SlackIntegrationType
 
 
-@pytest.fixture
+@pytest.fixture()
 def slack_settings():
     return {
         "service": "mock://slackintegration",
@@ -40,7 +40,7 @@ def slack_settings():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def slack_integration(request, app, slack_settings):
     integration = Integration()
     integration.name = 'test slack integration'

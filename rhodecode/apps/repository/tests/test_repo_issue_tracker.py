@@ -84,7 +84,7 @@ class TestRepoIssueTracker(object):
             extra_environ=xhr_header, params=data)
 
         assert response.body == \
-               'example of <a class="issue-tracker-link" href="http://url">prefix</a> replacement'
+               'example of <a class="tooltip issue-tracker-link" href="http://url" title="description">prefix</a> replacement'
 
         @request.addfinalizer
         def cleanup():
@@ -125,7 +125,7 @@ class TestRepoIssueTracker(object):
             self.settings_model.delete_entries(self.uid)
 
     def test_delete_issuetracker_pattern(
-            self, autologin_user, backend, csrf_token, settings_util):
+            self, autologin_user, backend, csrf_token, settings_util, xhr_header):
         repo = backend.create_repo()
         repo_name = repo.repo_name
         entry_key = 'issuetracker_pat_'
@@ -141,8 +141,9 @@ class TestRepoIssueTracker(object):
                 repo_name=backend.repo.repo_name),
             {
                 'uid': uid,
-                'csrf_token': csrf_token
-            }, status=302)
+                'csrf_token': csrf_token,
+                '': ''
+            }, extra_environ=xhr_header, status=200)
         settings = IssueTrackerSettingsModel(
             repo=Repository.get_by_repo_name(repo_name)).get_repo_settings()
         assert 'rhodecode_%s%s' % (entry_key, uid) not in settings

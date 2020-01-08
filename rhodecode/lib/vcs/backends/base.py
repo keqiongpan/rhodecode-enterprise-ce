@@ -33,12 +33,12 @@ import collections
 import warnings
 
 from zope.cachedescriptors.property import Lazy as LazyProperty
-from zope.cachedescriptors.property import CachedProperty
 
 from pyramid import compat
 
+import rhodecode
 from rhodecode.translation import lazy_ugettext
-from rhodecode.lib.utils2 import safe_str, safe_unicode
+from rhodecode.lib.utils2 import safe_str, safe_unicode, CachedProperty
 from rhodecode.lib.vcs import connection
 from rhodecode.lib.vcs.utils import author_name, author_email
 from rhodecode.lib.vcs.conf import settings
@@ -153,7 +153,7 @@ class MergeResponse(object):
             u'This pull request cannot be merged because of an unhandled exception. '
             u'{exception}'),
         MergeFailureReason.MERGE_FAILED: lazy_ugettext(
-            u'This pull request cannot be merged because of merge conflicts.'),
+            u'This pull request cannot be merged because of merge conflicts. {unresolved_files}'),
         MergeFailureReason.PUSH_FAILED: lazy_ugettext(
             u'This pull request could not be merged because push to '
             u'target:`{target}@{merge_commit}` failed.'),
@@ -264,7 +264,9 @@ class BaseRepository(object):
     EMPTY_COMMIT_ID = '0' * 40
 
     path = None
-    _commit_ids_ver = 0
+
+    _is_empty = None
+    _commit_ids = {}
 
     def __init__(self, repo_path, config=None, create=False, **kwargs):
         """
@@ -386,8 +388,23 @@ class BaseRepository(object):
         commit = self.get_commit(commit_id)
         return commit.size
 
+    def _check_for_empty(self):
+        no_commits = len(self._commit_ids) == 0
+        if no_commits:
+            # check on remote to be sure
+            return self._remote.is_empty()
+        else:
+            return False
+
     def is_empty(self):
-        return self._remote.is_empty()
+        if rhodecode.is_test:
+            return self._check_for_empty()
+
+        if self._is_empty is None:
+            # cache empty for production, but not tests
+            self._is_empty = self._check_for_empty()
+
+        return self._is_empty
 
     @staticmethod
     def check_url(url, config):
@@ -408,14 +425,17 @@ class BaseRepository(object):
     # COMMITS
     # ==========================================================================
 
-    @CachedProperty('_commit_ids_ver')
+    @CachedProperty
     def commit_ids(self):
         raise NotImplementedError
 
     def append_commit_id(self, commit_id):
         if commit_id not in self.commit_ids:
             self._rebuild_cache(self.commit_ids + [commit_id])
-            self._commit_ids_ver = time.time()
+
+        # clear cache
+        self._invalidate_prop_cache('commit_ids')
+        self._is_empty = False
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
         """
@@ -625,24 +645,26 @@ class BaseRepository(object):
         """
         raise NotImplementedError
 
-    def _get_legacy_shadow_repository_path(self, workspace_id):
+    @classmethod
+    def _get_legacy_shadow_repository_path(cls, repo_path, workspace_id):
         """
         Legacy version that was used before. We still need it for
         backward compat
         """
         return os.path.join(
-            os.path.dirname(self.path),
-            '.__shadow_%s_%s' % (os.path.basename(self.path), workspace_id))
+            os.path.dirname(repo_path),
+            '.__shadow_%s_%s' % (os.path.basename(repo_path), workspace_id))
 
-    def _get_shadow_repository_path(self, repo_id, workspace_id):
+    @classmethod
+    def _get_shadow_repository_path(cls, repo_path, repo_id, workspace_id):
         # The name of the shadow repository must start with '.', so it is
         # skipped by 'rhodecode.lib.utils.get_filesystem_repos'.
-        legacy_repository_path = self._get_legacy_shadow_repository_path(workspace_id)
+        legacy_repository_path = cls._get_legacy_shadow_repository_path(repo_path, workspace_id)
         if os.path.exists(legacy_repository_path):
             return legacy_repository_path
         else:
             return os.path.join(
-                os.path.dirname(self.path),
+                os.path.dirname(repo_path),
                 '.__shadow_repo_%s_%s' % (repo_id, workspace_id))
 
     def cleanup_merge_workspace(self, repo_id, workspace_id):
@@ -654,7 +676,8 @@ class BaseRepository(object):
 
         :param workspace_id: `workspace_id` unique identifier.
         """
-        shadow_repository_path = self._get_shadow_repository_path(repo_id, workspace_id)
+        shadow_repository_path = self._get_shadow_repository_path(
+            self.path, repo_id, workspace_id)
         shadow_repository_path_del = '{}.{}.delete'.format(
             shadow_repository_path, time.time())
 
@@ -712,7 +735,7 @@ class BaseRepository(object):
 
     def _validate_commit_id(self, commit_id):
         if not isinstance(commit_id, compat.string_types):
-            raise TypeError("commit_id must be a string value")
+            raise TypeError("commit_id must be a string value got {} instead".format(type(commit_id)))
 
     def _validate_commit_idx(self, commit_idx):
         if not isinstance(commit_idx, (int, long)):
@@ -1034,9 +1057,21 @@ class BaseCommit(object):
         """
         raise NotImplementedError
 
+    def is_node_binary(self, path):
+        """
+        Returns ``True`` is given path is a binary file
+        """
+        raise NotImplementedError
+
     def get_file_content(self, path):
         """
         Returns content of the file at the given `path`.
+        """
+        raise NotImplementedError
+
+    def get_file_content_streamed(self, path):
+        """
+        returns a streaming response from vcsserver with file content
         """
         raise NotImplementedError
 
@@ -1610,6 +1645,9 @@ class EmptyCommit(BaseCommit):
 
     def get_file_content(self, path):
         return u''
+
+    def get_file_content_streamed(self, path):
+        yield self.get_file_content()
 
     def get_file_size(self, path):
         return 0

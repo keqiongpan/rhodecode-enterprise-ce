@@ -33,22 +33,21 @@ from rhodecode import forms
 from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired, \
-    HasRepoPermissionAny, HasRepoGroupPermissionAny
+from rhodecode.lib.auth import (
+    LoginRequired, NotAnonymous, CSRFRequired,
+    HasRepoPermissionAny, HasRepoGroupPermissionAny, AuthUser)
 from rhodecode.lib.channelstream import (
     channelstream_request, ChannelstreamException)
 from rhodecode.lib.utils2 import safe_int, md5, str2bool
 from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    IntegrityError, joinedload,
+    IntegrityError, or_, in_filter_generator,
     Repository, UserEmailMap, UserApiKeys, UserFollowing,
     PullRequest, UserBookmark, RepoGroup)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
-from rhodecode.model.scm import RepoList
 from rhodecode.model.user import UserModel
-from rhodecode.model.repo import RepoModel
 from rhodecode.model.user_group import UserGroupModel
 from rhodecode.model.validation_schema.schemas import user_schema
 
@@ -345,22 +344,59 @@ class MyAccountView(BaseAppView, DataGridAppView):
                             'You should see a new live message now.'}
 
     def _load_my_repos_data(self, watched=False):
-        if watched:
-            admin = False
-            follows_repos = Session().query(UserFollowing)\
-                .filter(UserFollowing.user_id == self._rhodecode_user.user_id)\
-                .options(joinedload(UserFollowing.follows_repository))\
-                .all()
-            repo_list = [x.follows_repository for x in follows_repos]
-        else:
-            admin = True
-            repo_list = Repository.get_all_repos(
-                user_id=self._rhodecode_user.user_id)
-            repo_list = RepoList(repo_list, perm_set=[
-                'repository.read', 'repository.write', 'repository.admin'])
 
-        repos_data = RepoModel().get_repos_as_dict(
-            repo_list=repo_list, admin=admin, short_name=False)
+        allowed_ids = [-1] + self._rhodecode_user.repo_acl_ids_from_stack(AuthUser.repo_read_perms)
+
+        if watched:
+            # repos user watch
+            repo_list = Session().query(
+                    Repository
+                ) \
+                .join(
+                    (UserFollowing, UserFollowing.follows_repo_id == Repository.repo_id)
+                ) \
+                .filter(
+                    UserFollowing.user_id == self._rhodecode_user.user_id
+                ) \
+                .filter(or_(
+                    # generate multiple IN to fix limitation problems
+                    *in_filter_generator(Repository.repo_id, allowed_ids))
+                ) \
+                .order_by(Repository.repo_name) \
+                .all()
+
+        else:
+            # repos user is owner of
+            repo_list = Session().query(
+                    Repository
+                ) \
+                .filter(
+                    Repository.user_id == self._rhodecode_user.user_id
+                ) \
+                .filter(or_(
+                    # generate multiple IN to fix limitation problems
+                    *in_filter_generator(Repository.repo_id, allowed_ids))
+                ) \
+                .order_by(Repository.repo_name) \
+                .all()
+
+        _render = self.request.get_partial_renderer(
+            'rhodecode:templates/data_table/_dt_elements.mako')
+
+        def repo_lnk(name, rtype, rstate, private, archived, fork_of):
+            return _render('repo_name', name, rtype, rstate, private, archived, fork_of,
+                           short_name=False, admin=False)
+
+        repos_data = []
+        for repo in repo_list:
+            row = {
+                "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
+                                 repo.private, repo.archived, repo.fork),
+                "name_raw": repo.repo_name.lower(),
+            }
+
+            repos_data.append(row)
+
         # json used to render the grid
         return json.dumps(repos_data)
 
@@ -398,16 +434,19 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def my_account_bookmarks(self):
         c = self.load_default_context()
         c.active = 'bookmarks'
+        c.bookmark_items = UserBookmark.get_bookmarks_for_user(
+            self._rhodecode_db_user.user_id, cache=False)
         return self._get_template_context(c)
 
-    def _process_entry(self, entry, user_id):
+    def _process_bookmark_entry(self, entry, user_id):
         position = safe_int(entry.get('position'))
+        cur_position = safe_int(entry.get('cur_position'))
         if position is None:
             return
 
         # check if this is an existing entry
         is_new = False
-        db_entry = UserBookmark().get_by_position_for_user(position, user_id)
+        db_entry = UserBookmark().get_by_position_for_user(cur_position, user_id)
 
         if db_entry and str2bool(entry.get('remove')):
             log.debug('Marked bookmark %s for deletion', db_entry)
@@ -446,12 +485,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
             should_save = True
 
         if should_save:
-            log.debug('Saving bookmark %s, new:%s', db_entry, is_new)
             # mark user and position
             db_entry.user_id = user_id
             db_entry.position = position
             db_entry.title = entry.get('title')
             db_entry.redirect_url = entry.get('redirect_url') or default_redirect_url
+            log.debug('Saving bookmark %s, new:%s', db_entry, is_new)
 
             Session().add(db_entry)
 
@@ -468,15 +507,31 @@ class MyAccountView(BaseAppView, DataGridAppView):
         controls = peppercorn.parse(self.request.POST.items())
         user_id = c.user.user_id
 
+        # validate positions
+        positions = {}
+        for entry in controls.get('bookmarks', []):
+            position = safe_int(entry['position'])
+            if position is None:
+                continue
+
+            if position in positions:
+                h.flash(_("Position {} is defined twice. "
+                          "Please correct this error.").format(position), category='error')
+                return HTTPFound(h.route_path('my_account_bookmarks'))
+
+            entry['position'] = position
+            entry['cur_position'] = safe_int(entry.get('cur_position'))
+            positions[position] = entry
+
         try:
-            for entry in controls.get('bookmarks', []):
-                self._process_entry(entry, user_id)
+            for entry in positions.values():
+                self._process_bookmark_entry(entry, user_id)
 
             Session().commit()
             h.flash(_("Update Bookmarks"), category='success')
         except IntegrityError:
             h.flash(_("Failed to update bookmarks. "
-                      "Make sure an unique position is used"), category='error')
+                      "Make sure an unique position is used."), category='error')
 
         return HTTPFound(h.route_path('my_account_bookmarks'))
 
@@ -582,6 +637,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
             'email': c.user.email,
             'firstname': c.user.firstname,
             'lastname': c.user.lastname,
+            'description': c.user.description,
         }
         c.form = forms.RcForm(
             schema, appstruct=appstruct,
@@ -664,7 +720,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 'target_repo': _render('pullrequest_target_repo',
                                        pr.target_repo.repo_name),
                 'name': _render('pullrequest_name',
-                                pr.pull_request_id, pr.target_repo.repo_name,
+                                pr.pull_request_id, pr.pull_request_state,
+                                pr.work_in_progress, pr.target_repo.repo_name,
                                 short=True),
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',

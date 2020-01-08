@@ -23,7 +23,7 @@
 
     <div class="title">
         <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-        <span id="repo_group_count">0</span> ${_('repository groups')}
+        <span id="repo_group_count"></span>
 
         <ul class="links">
         %if c.can_create_repo_group:
@@ -71,12 +71,12 @@ $(document).ready(function() {
       order: [[ 0, "asc" ]],
       columns: [
          { data: {"_": "name",
-                  "sort": "name_raw"}, title: "${_('Name')}", className: "td-componentname" },
+                  "sort": "name"}, title: "${_('Name')}", className: "td-componentname" },
          { data: 'menu', "bSortable": false, className: "quick_repo_menu" },
          { data: {"_": "desc",
                   "sort": "desc"}, title: "${_('Description')}", className: "td-description" },
          { data: {"_": "last_change",
-                  "sort": "last_change_raw",
+                  "sort": "last_change",
                   "type": Number}, title: "${_('Last Change')}", className: "td-time" },
          { data: {"_": "top_level_repos",
                   "sort": "top_level_repos"}, title: "${_('Number of top level repositories')}" },
@@ -108,6 +108,7 @@ $(document).ready(function() {
             ).draw();
         })
     );
+
 });
 
 </script>

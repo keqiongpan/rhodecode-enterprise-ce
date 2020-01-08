@@ -28,6 +28,8 @@ from pyramid.renderers import render
 from pyramid.response import Response
 
 from rhodecode.apps._base import RepoAppView
+from rhodecode.apps.file_store import utils as store_utils
+from rhodecode.apps.file_store.exceptions import FileNotAllowedException, FileOverSizeException
 
 from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import (
@@ -43,7 +45,7 @@ from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError)
-from rhodecode.model.db import ChangesetComment, ChangesetStatus
+from rhodecode.model.db import ChangesetComment, ChangesetStatus, FileStore
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
@@ -55,9 +57,6 @@ log = logging.getLogger(__name__)
 def _update_with_GET(params, request):
     for k in ['diff1', 'diff2', 'diff']:
         params[k] += request.GET.getall(k)
-
-
-
 
 
 class RepoCommitsView(RepoAppView):
@@ -93,6 +92,8 @@ class RepoCommitsView(RepoAppView):
         try:
             pre_load = ['affected_files', 'author', 'branch', 'date',
                         'message', 'parents']
+            if self.rhodecode_vcs_repo.alias == 'hg':
+                pre_load += ['hidden', 'obsolete', 'phase']
 
             if len(commit_range) == 2:
                 commits = self.rhodecode_vcs_repo.get_commits(
@@ -129,6 +130,7 @@ class RepoCommitsView(RepoAppView):
         c.statuses = []
         c.comments = []
         c.unresolved_comments = []
+        c.resolved_comments = []
         if len(c.commit_ranges) == 1:
             commit = c.commit_ranges[0]
             c.comments = CommentsModel().get_comments(
@@ -149,6 +151,8 @@ class RepoCommitsView(RepoAppView):
 
             c.unresolved_comments = CommentsModel()\
                 .get_commit_unresolved_todos(commit.raw_id)
+            c.resolved_comments = CommentsModel()\
+                .get_commit_resolved_todos(commit.raw_id)
 
         diff = None
         # Iterate over ranges (default commit view is always one commit)
@@ -412,8 +416,104 @@ class RepoCommitsView(RepoAppView):
         text = self.request.POST.get('text')
         renderer = self.request.POST.get('renderer') or 'rst'
         if text:
-            return h.render(text, renderer=renderer, mentions=True)
+            return h.render(text, renderer=renderer, mentions=True,
+                            repo_name=self.db_repo_name)
         return ''
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='repo_commit_comment_attachment_upload', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def repo_commit_comment_attachment_upload(self):
+        c = self.load_default_context()
+        upload_key = 'attachment'
+
+        file_obj = self.request.POST.get(upload_key)
+
+        if file_obj is None:
+            self.request.response.status = 400
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': '{} data field is missing'.format(upload_key)}
+
+        if not hasattr(file_obj, 'filename'):
+            self.request.response.status = 400
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': 'filename cannot be read from the data field'}
+
+        filename = file_obj.filename
+        file_display_name = filename
+
+        metadata = {
+            'user_uploaded': {'username': self._rhodecode_user.username,
+                              'user_id': self._rhodecode_user.user_id,
+                              'ip': self._rhodecode_user.ip_addr}}
+
+        # TODO(marcink): allow .ini configuration for allowed_extensions, and file-size
+        allowed_extensions = [
+            'gif', '.jpeg', '.jpg', '.png', '.docx', '.gz', '.log', '.pdf',
+            '.pptx', '.txt', '.xlsx', '.zip']
+        max_file_size = 10 * 1024 * 1024  # 10MB, also validated via dropzone.js
+
+        try:
+            storage = store_utils.get_file_storage(self.request.registry.settings)
+            store_uid, metadata = storage.save_file(
+                file_obj.file, filename, extra_metadata=metadata,
+                extensions=allowed_extensions, max_filesize=max_file_size)
+        except FileNotAllowedException:
+            self.request.response.status = 400
+            permitted_extensions = ', '.join(allowed_extensions)
+            error_msg = 'File `{}` is not allowed. ' \
+                        'Only following extensions are permitted: {}'.format(
+                            filename, permitted_extensions)
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': error_msg}
+        except FileOverSizeException:
+            self.request.response.status = 400
+            limit_mb = h.format_byte_size_binary(max_file_size)
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': 'File {} is exceeding allowed limit of {}.'.format(
+                        filename, limit_mb)}
+
+        try:
+            entry = FileStore.create(
+                file_uid=store_uid, filename=metadata["filename"],
+                file_hash=metadata["sha256"], file_size=metadata["size"],
+                file_display_name=file_display_name,
+                file_description=u'comment attachment `{}`'.format(safe_unicode(filename)),
+                hidden=True, check_acl=True, user_id=self._rhodecode_user.user_id,
+                scope_repo_id=self.db_repo.repo_id
+            )
+            Session().add(entry)
+            Session().commit()
+            log.debug('Stored upload in DB as %s', entry)
+        except Exception:
+            log.exception('Failed to store file %s', filename)
+            self.request.response.status = 400
+            return {'store_fid': None,
+                    'access_path': None,
+                    'error': 'File {} failed to store in DB.'.format(filename)}
+
+        Session().commit()
+
+        return {
+            'store_fid': store_uid,
+            'access_path': h.route_path(
+                'download_file', fid=store_uid),
+            'fqn_access_path': h.route_url(
+                'download_file', fid=store_uid),
+            'repo_access_path': h.route_path(
+                'repo_artifacts_get', repo_name=self.db_repo_name, uid=store_uid),
+            'repo_fqn_access_path': h.route_url(
+                'repo_artifacts_get', repo_name=self.db_repo_name, uid=store_uid),
+        }
 
     @LoginRequired()
     @NotAnonymous()

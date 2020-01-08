@@ -28,6 +28,7 @@ import datetime
 import itertools
 import logging
 import shutil
+import time
 import traceback
 import string
 
@@ -35,8 +36,8 @@ from zope.cachedescriptors.property import Lazy as LazyProperty
 
 from rhodecode import events
 from rhodecode.model import BaseModel
-from rhodecode.model.db import (_hash_key,
-    RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
+from rhodecode.model.db import (_hash_key, func, or_, in_filter_generator,
+    Session, RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
@@ -519,7 +520,7 @@ class RepoGroupModel(BaseModel):
 
             if 'user' in form_data:
                 repo_group.user = User.get_by_username(form_data['user'])
-            repo_group.updated_on = datetime.datetime.now()
+
             self.sa.add(repo_group)
 
             # iterate over all members of this groups and do fixes
@@ -536,7 +537,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing group %s to new name %s',
                               obj.group_name, new_name)
                     obj.group_name = new_name
-                    obj.updated_on = datetime.datetime.now()
+
                 elif isinstance(obj, Repository):
                     # we need to get all repositories from this new group and
                     # rename them accordingly to new group path
@@ -544,7 +545,7 @@ class RepoGroupModel(BaseModel):
                     log.debug('Fixing repo %s to new name %s',
                               obj.repo_name, new_name)
                     obj.repo_name = new_name
-                    obj.updated_on = datetime.datetime.now()
+
                 self.sa.add(obj)
 
             self._rename_group(old_path, new_path)
@@ -697,6 +698,8 @@ class RepoGroupModel(BaseModel):
         for repo_group in repo_groups:
             repo_group.update_commit_cache()
 
+
+
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
@@ -714,14 +717,11 @@ class RepoGroupModel(BaseModel):
 
         def last_change(last_change):
             if admin and isinstance(last_change, datetime.datetime) and not last_change.tzinfo:
-                last_change = last_change + datetime.timedelta(seconds=
-                    (datetime.datetime.now() - datetime.datetime.utcnow()).seconds)
+                ts = time.time()
+                utc_offset = (datetime.datetime.fromtimestamp(ts)
+                              - datetime.datetime.utcfromtimestamp(ts)).total_seconds()
+                last_change = last_change + datetime.timedelta(seconds=utc_offset)
             return _render("last_change", last_change)
-
-        def last_rev(repo_name, cs_cache):
-            return _render('revision', repo_name, cs_cache.get('revision'),
-                           cs_cache.get('raw_id'), cs_cache.get('author'),
-                           cs_cache.get('message'), cs_cache.get('date'))
 
         def desc(desc, personal):
             return _render(
@@ -739,22 +739,23 @@ class RepoGroupModel(BaseModel):
 
         repo_group_data = []
         for group in repo_group_list:
-            cs_cache = group.changeset_cache
-            last_repo_name = cs_cache.get('source_repo_name')
-
+            # NOTE(marcink): because we use only raw column we need to load it like that
+            changeset_cache = RepoGroup._load_changeset_cache(
+                '', group._changeset_cache)
+            last_commit_change = RepoGroup._load_commit_change(changeset_cache)
             row = {
                 "menu": quick_menu(group.group_name),
                 "name": repo_group_lnk(group.group_name),
                 "name_raw": group.group_name,
-                "last_change": last_change(group.last_commit_change),
-                "last_change_raw": datetime_to_time(group.last_commit_change),
+
+                "last_change": last_change(last_commit_change),
 
                 "last_changeset": "",
                 "last_changeset_raw": "",
 
-                "desc": desc(group.description_safe, group.personal),
+                "desc": desc(group.group_description, group.personal),
                 "top_level_repos": 0,
-                "owner": user_profile(group.user.username)
+                "owner": user_profile(group.User.username)
             }
             if admin:
                 repo_count = group.repositories.count()
@@ -772,6 +773,84 @@ class RepoGroupModel(BaseModel):
             repo_group_data.append(row)
 
         return repo_group_data
+
+    def get_repo_groups_data_table(
+            self, draw, start, limit,
+            search_q, order_by, order_dir,
+            auth_user, repo_group_id):
+        from rhodecode.model.scm import RepoGroupList
+
+        _perms = ['group.read', 'group.write', 'group.admin']
+        repo_groups = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .all()
+        auth_repo_group_list = RepoGroupList(
+            repo_groups, perm_set=_perms,
+            extra_kwargs=dict(user=auth_user))
+
+        allowed_ids = [-1]
+        for repo_group in auth_repo_group_list:
+            allowed_ids.append(repo_group.group_id)
+
+        repo_groups_data_total_count = RepoGroup.query() \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(RepoGroup.group_id, allowed_ids))
+            ) \
+            .count()
+
+        base_q = Session.query(
+            RepoGroup.group_name,
+            RepoGroup.group_name_hash,
+            RepoGroup.group_description,
+            RepoGroup.group_id,
+            RepoGroup.personal,
+            RepoGroup.updated_on,
+            RepoGroup._changeset_cache,
+            User,
+            ) \
+            .filter(RepoGroup.group_parent_id == repo_group_id) \
+            .filter(or_(
+                # generate multiple IN to fix limitation problems
+                *in_filter_generator(RepoGroup.group_id, allowed_ids))
+            ) \
+            .join(User, User.user_id == RepoGroup.user_id) \
+            .group_by(RepoGroup, User)
+
+        repo_groups_data_total_filtered_count = base_q.count()
+
+        sort_defined = False
+
+        if order_by == 'group_name':
+            sort_col = func.lower(RepoGroup.group_name)
+            sort_defined = True
+        elif order_by == 'user_username':
+            sort_col = User.username
+        else:
+            sort_col = getattr(RepoGroup, order_by, None)
+
+        if sort_defined or sort_col:
+            if order_dir == 'asc':
+                sort_col = sort_col.asc()
+            else:
+                sort_col = sort_col.desc()
+
+        base_q = base_q.order_by(sort_col)
+        base_q = base_q.offset(start).limit(limit)
+
+        repo_group_list = base_q.all()
+
+        repo_groups_data = RepoGroupModel().get_repo_groups_as_dict(
+            repo_group_list=repo_group_list, admin=False)
+
+        data = ({
+            'draw': draw,
+            'data': repo_groups_data,
+            'recordsTotal': repo_groups_data_total_count,
+            'recordsFiltered': repo_groups_data_total_filtered_count,
+        })
+        return data
 
     def _get_defaults(self, repo_group_name):
         repo_group = RepoGroup.get_by_group_name(repo_group_name)

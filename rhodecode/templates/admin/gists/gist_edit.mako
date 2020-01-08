@@ -8,9 +8,7 @@
     %endif
 </%def>
 
-<%def name="breadcrumbs_links()">
-    ${_('Edit Gist')} &middot; ${c.gist.gist_access_id}
-</%def>
+<%def name="breadcrumbs_links()"></%def>
 
 <%def name="menu_bar_nav()">
     ${self.menu_items(active='gists')}
@@ -20,17 +18,14 @@
 <div class="box">
     <!-- box / title -->
     <div class="title">
-        ${self.breadcrumbs()}
+
     </div>
 
     <div class="table">
-
         <div id="files_data">
           ${h.secure_form(h.route_path('gist_update', gist_id=c.gist.gist_access_id), id='eform', request=request)}
             <div>
                 <input type="hidden" value="${c.file_last_commit.raw_id}" name="parent_hash">
-                <textarea id="description" name="description"
-                          placeholder="${_('Gist description ...')}">${c.gist.gist_description}</textarea>
                 <div>
                     <span class="gist-gravatar">
                       ${self.gravatar(h.email_or_none(c.rhodecode_user.full_contact), 30)}
@@ -40,6 +35,9 @@
 
                     <label for='gist_acl_level'>${_('Gist access level')}</label>
                     ${h.dropdownmenu('gist_acl_level', c.gist.acl_level, c.acl_options)}
+
+                    <textarea style="margin-top: 5px; border-color: #dbd9da" id="description" name="description"
+                          placeholder="${_('Gist description ...')}">${c.gist.gist_description}</textarea>
                 </div>
             </div>
 
@@ -97,7 +95,7 @@
             %endfor
             <input type="hidden" name="__end__" />
 
-            <div class="pull-right">
+            <div class="pull-left">
             ${h.submit('update',_('Update Gist'),class_="btn btn-success")}
             <a class="btn" href="${h.route_path('gist_show', gist_id=c.gist.gist_access_id)}">${_('Cancel')}</a>
             </div>

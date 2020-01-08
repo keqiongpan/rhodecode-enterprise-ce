@@ -50,6 +50,7 @@ class TestGetMethod(object):
                     {'apiuser': '<RequiredType>',
                      'comment_type': "<Optional:u'note'>",
                      'commit_id': '<RequiredType>',
+                     'extra_recipients': '<Optional:[]>',
                      'message': '<RequiredType>',
                      'repoid': '<RequiredType>',
                      'request': '<RequiredType>',

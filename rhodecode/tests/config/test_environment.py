@@ -25,7 +25,7 @@ import pytest
 from rhodecode.config import environment
 
 
-@pytest.fixture
+@pytest.fixture()
 def _external_calls_patcher(request):
     # TODO: mikhail: This is a temporary solution. Ideally load_environment
     # should be split into multiple small testable functions.

@@ -60,6 +60,20 @@
     <i class="icon-repo-group"></i>
 </%def>
 
+
+<%def name="field_sort(field_name)">
+
+    <%
+    if c.sort.startswith('asc:'):
+        return h.current_route_path(request, sort='desc:{}'.format(field_name))
+    elif c.sort.startswith('desc:'):
+        return h.current_route_path(request, sort='asc:{}'.format(field_name))
+
+    return h.current_route_path(request, sort='asc:{}'.format(field_name))
+    %>
+</%def>
+
+
 <%def name="main()">
 <div class="box">
     %if c.repo_name:
@@ -114,6 +128,16 @@
                 </span>
             %endif
 
+            % if c.sort_tag:
+                <span class="tag tag8">
+                    % if c.sort_tag_dir == 'asc':
+                        <i class="icon-angle-down"></i>
+                    % elif c.sort_tag_dir == 'desc':
+                        <i class="icon-angle-up"></i>
+                    % endif
+                    ${_('sort')}:${c.sort_tag}
+                </span>
+            % endif
 
             % for search_tag in c.search_tags:
                 <br/><span class="tag disabled" style="margin-top: 3px">${search_tag}</span>
@@ -130,7 +154,7 @@
               </span>
             % endfor
             <div class="field">
-                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Query Langague examples')}</p>
+                <p class="filterexample" style="position: inherit" onclick="$('#search-help').toggle()">${_('Query Language examples')}</p>
 <pre id="search-help" style="display: none">\
 
 % if c.searcher.name == 'whoosh':

@@ -39,7 +39,7 @@
     </script>
 
     <div>
-        <div id="files_data">
+        <div>
             <%include file='files_pjax.mako'/>
         </div>
     </div>
@@ -193,6 +193,8 @@
                     container: '#file_history_container',
                     push: false,
                     timeout: 5000
+                }).complete(function () {
+                    tooltipActivate();
                 });
             });
 
@@ -341,6 +343,7 @@
 
         $(document).ready(function() {
             timeagoActivate();
+            tooltipActivate();
 
             if ($('#trimmed_message_box').height() < 50) {
                 $('#message_expand').hide();

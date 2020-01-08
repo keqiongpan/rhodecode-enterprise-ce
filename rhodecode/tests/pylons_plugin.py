@@ -235,7 +235,7 @@ def available_port_factory():
     return get_available_port
 
 
-@pytest.fixture
+@pytest.fixture()
 def available_port(available_port_factory):
     """
     Gives you one free port for the current test.

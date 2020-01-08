@@ -538,6 +538,7 @@ Pull request updated. Auto status change to |under_review|
         'added_files': [],
         'modified_files': [],
         'removed_files': [],
+        'ancestor_commit_id': 'aaabbbcccdddeee',
     }
     renderer = RstTemplateRenderer()
     rendered = renderer.render('pull_request_update.mako', **params)
@@ -557,11 +558,11 @@ Pull request updated. Auto status change to |under_review|
     * :removed:`3 removed`
 
   Changed files:
-    * `A /path/a.py <#a_c--68ed34923b68>`_
-    * `A /path/b.js <#a_c--64f90608b607>`_
-    * `M /path/d.js <#a_c--85842bf30c6e>`_
-    * `M /path/ę.py <#a_c--d713adf009cd>`_
-    * R /path/ź.py
+    * `A /path/a.py <#a_c-aaabbbcccddd-68ed34923b68>`_
+    * `A /path/b.js <#a_c-aaabbbcccddd-64f90608b607>`_
+    * `M /path/d.js <#a_c-aaabbbcccddd-85842bf30c6e>`_
+    * `M /path/ę.py <#a_c-aaabbbcccddd-d713adf009cd>`_
+    * `R /path/ź.py`
 
 .. |under_review| replace:: *"NEW STATUS"*'''
 
@@ -577,6 +578,7 @@ Pull request updated. Auto status change to |under_review|
         'added_files': added,
         'modified_files': modified,
         'removed_files': removed,
+        'ancestor_commit_id': 'aaabbbcccdddeee',
     }
     renderer = RstTemplateRenderer()
     rendered = renderer.render('pull_request_update.mako', **params)
