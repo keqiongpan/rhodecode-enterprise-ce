@@ -1,16 +1,6 @@
 """
-gunicorn config extension and hooks. Sets additional configuration that is
-available post the .ini config.
-
-- workers = ${cpu_number}
-- threads = 1
-- proc_name = ${gunicorn_proc_name}
-- worker_class = sync
-- worker_connections = 10
-- max_requests = 1000
-- max_requests_jitter = 30
-- timeout = 21600
-
+Gunicorn config extension and hooks. This config file adds some extra settings and memory management.
+Gunicorn configuration should be managed by .ini files entries of RhodeCode or VCSServer
 """
 
 import gc
@@ -247,9 +237,11 @@ def pre_request(worker, req):
 
 def post_request(worker, req, environ, resp):
     total_time = time.time() - worker.start_time
+    # Gunicorn sometimes has problems with reading the status_code
+    status_code = getattr(resp, 'status_code', '')
     worker.log.debug(
         "GNCRN POST WORKER [cnt:%s]: %s %s resp: %s, Load Time: %.4fs",
-        worker.nr, req.method, req.path, resp.status_code, total_time)
+        worker.nr, req.method, req.path, status_code, total_time)
     _check_memory_usage(worker)
 
 
