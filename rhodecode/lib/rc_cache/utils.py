@@ -21,7 +21,6 @@ import os
 import time
 import logging
 import functools
-from decorator import decorate
 import threading
 
 from dogpile.cache import CacheRegion
@@ -36,6 +35,13 @@ from rhodecode.lib.rc_cache import cache_key_meta
 from rhodecode.lib.rc_cache import region_meta
 
 log = logging.getLogger(__name__)
+
+
+def isCython(func):
+    """
+    Private helper that checks if a function is a cython function.
+    """
+    return func.__class__.__name__ == 'cython_function_or_method'
 
 
 class RhodeCodeCacheRegion(CacheRegion):
@@ -56,6 +62,61 @@ class RhodeCodeCacheRegion(CacheRegion):
 
         if function_key_generator is None:
             function_key_generator = self.function_key_generator
+
+        # workaround for py2 and cython problems, this block should be removed
+        # once we've migrated to py3
+        if 'cython' == 'cython':
+            def decorator(fn):
+                if to_str is compat.string_type:
+                    # backwards compatible
+                    key_generator = function_key_generator(namespace, fn)
+                else:
+                    key_generator = function_key_generator(namespace, fn, to_str=to_str)
+
+                @functools.wraps(fn)
+                def decorate(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+
+                    @functools.wraps(fn)
+                    def creator():
+                        return fn(*arg, **kw)
+
+                    if not condition:
+                        return creator()
+
+                    timeout = expiration_time() if expiration_time_is_callable \
+                        else expiration_time
+
+                    return self.get_or_create(key, creator, timeout, should_cache_fn)
+
+                def invalidate(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    self.delete(key)
+
+                def set_(value, *arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    self.set(key, value)
+
+                def get(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    return self.get(key)
+
+                def refresh(*arg, **kw):
+                    key = key_generator(*arg, **kw)
+                    value = fn(*arg, **kw)
+                    self.set(key, value)
+                    return value
+
+                decorate.set = set_
+                decorate.invalidate = invalidate
+                decorate.refresh = refresh
+                decorate.get = get
+                decorate.original = fn
+                decorate.key_generator = key_generator
+                decorate.__wrapped__ = fn
+
+                return decorate
+            return decorator
 
         def get_or_create_for_user_func(key_generator, user_func, *arg, **kw):
 
@@ -107,8 +168,7 @@ class RhodeCodeCacheRegion(CacheRegion):
             user_func.original = user_func
 
             # Use `decorate` to preserve the signature of :param:`user_func`.
-
-            return decorate(user_func, functools.partial(
+            return decorator.decorate(user_func, functools.partial(
                 get_or_create_for_user_func, key_generator))
 
         return cache_decorator
