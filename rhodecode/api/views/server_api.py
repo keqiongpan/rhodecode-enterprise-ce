@@ -18,7 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import inspect
 import logging
 import itertools
 import base64
@@ -334,6 +333,9 @@ def get_method(request, apiuser, pattern=Optional('*')):
       ]
       error :  null
     """
+    from rhodecode.config.patches import inspect_getargspec
+    inspect = inspect_getargspec()
+
     if not has_superadmin_permission(apiuser):
         raise JSONRPCForbidden()
 

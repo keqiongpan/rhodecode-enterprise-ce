@@ -95,3 +95,5 @@ def inspect_getargspec():
         return inspect.ArgSpec(args, varargs, varkw, func.func_defaults)
 
     inspect.getargspec = custom_getargspec
+
+    return inspect

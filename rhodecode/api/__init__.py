@@ -18,7 +18,6 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import inspect
 import itertools
 import logging
 import sys
@@ -186,10 +185,12 @@ def request_view(request):
     Main request handling method. It handles all logic to call a specific
     exposed method
     """
+    # cython compatible inspect
+    from rhodecode.config.patches import inspect_getargspec
+    inspect = inspect_getargspec()
 
     # check if we can find this session using api_key, get_by_auth_token
     # search not expired tokens only
-
     try:
         api_user = User.get_by_auth_token(request.rpc_api_key)
 
