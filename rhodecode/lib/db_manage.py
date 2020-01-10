@@ -421,9 +421,20 @@ class DbManage(object):
 
         :param skip_existing:
         """
+        defaults = [
+            ('auth_plugins',
+             'egg:rhodecode-enterprise-ce#token,egg:rhodecode-enterprise-ce#rhodecode',
+             'list'),
 
-        for k, v, t in [('auth_plugins', 'egg:rhodecode-enterprise-ce#rhodecode', 'list'),
-                        ('auth_rhodecode_enabled', 'True', 'bool')]:
+            ('auth_authtoken_enabled',
+             'True',
+             'bool'),
+
+            ('auth_rhodecode_enabled',
+             'True',
+             'bool'),
+        ]
+        for k, v, t in defaults:
             if (skip_existing and
                     SettingsModel().get_setting_by_name(k) is not None):
                 log.debug('Skipping option %s', k)
@@ -568,19 +579,32 @@ class DbManage(object):
             ('title', '', 'unicode'),
             ('pre_code', '', 'unicode'),
             ('post_code', '', 'unicode'),
+
+            # Visual
             ('show_public_icon', True, 'bool'),
             ('show_private_icon', True, 'bool'),
             ('stylify_metatags', False, 'bool'),
             ('dashboard_items', 100, 'int'),
             ('admin_grid_items', 25, 'int'),
+
+            ('markup_renderer', 'markdown', 'unicode'),
+
             ('show_version', True, 'bool'),
-            ('use_gravatar', False, 'bool'),
-            ('gravatar_url', User.DEFAULT_GRAVATAR_URL, 'unicode'),
-            ('clone_uri_tmpl', Repository.DEFAULT_CLONE_URI, 'unicode'),
-            ('support_url', '', 'unicode'),
-            ('update_url', RhodeCodeSetting.DEFAULT_UPDATE_URL, 'unicode'),
             ('show_revision_number', True, 'bool'),
             ('show_sha_length', 12, 'int'),
+
+            ('use_gravatar', False, 'bool'),
+            ('gravatar_url', User.DEFAULT_GRAVATAR_URL, 'unicode'),
+
+            ('clone_uri_tmpl', Repository.DEFAULT_CLONE_URI, 'unicode'),
+            ('clone_uri_ssh_tmpl', Repository.DEFAULT_CLONE_URI_SSH, 'unicode'),
+            ('support_url', '', 'unicode'),
+            ('update_url', RhodeCodeSetting.DEFAULT_UPDATE_URL, 'unicode'),
+
+            # VCS Settings
+            ('pr_merge_enabled', True, 'bool'),
+            ('use_outdated_comments', True, 'bool'),
+            ('diff_cache', True, 'bool'),
         ]
 
         for key, val, type_ in settings:
