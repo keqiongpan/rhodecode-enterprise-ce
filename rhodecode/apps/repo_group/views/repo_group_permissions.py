@@ -101,7 +101,7 @@ class RepoGroupPermissionsView(RepoGroupAppView):
         affected_user_ids = None
         if changes.get('default_user_changed', False):
             # if we change the default user, we need to flush everyone permissions
-            affected_user_ids = [x.user_id for x in User.get_all()]
+            affected_user_ids = User.get_all_user_ids()
         PermissionModel().flush_user_permission_caches(
             changes, affected_user_ids=affected_user_ids)
 

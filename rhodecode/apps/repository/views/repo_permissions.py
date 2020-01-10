@@ -94,7 +94,7 @@ class RepoSettingsPermissionsView(RepoAppView):
         affected_user_ids = None
         if changes.get('default_user_changed', False):
             # if we change the default user, we need to flush everyone permissions
-            affected_user_ids = [x.user_id for x in User.get_all()]
+            affected_user_ids = User.get_all_user_ids()
         PermissionModel().flush_user_permission_caches(
             changes, affected_user_ids=affected_user_ids)
 
@@ -126,7 +126,7 @@ class RepoSettingsPermissionsView(RepoAppView):
                 self.db_repo_name), category='error')
 
         # NOTE(dan): we change repo private mode we need to notify all USERS
-        affected_user_ids = [x.user_id for x in User.get_all()]
+        affected_user_ids = User.get_all_user_ids()
         PermissionModel().trigger_permission_flush(affected_user_ids)
 
         return {

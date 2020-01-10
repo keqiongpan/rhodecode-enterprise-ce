@@ -1025,6 +1025,17 @@ class User(Base, BaseModel):
         return qry.all()
 
     @classmethod
+    def get_all_user_ids(cls, only_active=True):
+        """
+        Returns all users IDs
+        """
+        qry = Session().query(User.user_id)
+
+        if only_active:
+            qry = qry.filter(User.active == true())
+        return [x.user_id for x in qry]
+
+    @classmethod
     def get_default_user(cls, cache=False, refresh=False):
         user = User.get_by_username(User.DEFAULT_USER, cache=cache)
         if user is None:
