@@ -28,6 +28,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.db import User
 from rhodecode.model.forms import RepoPermsForm
 from rhodecode.model.meta import Session
@@ -110,9 +111,11 @@ class RepoSettingsPermissionsView(RepoAppView):
         _ = self.request.translate
         self.load_default_context()
 
+        private_flag = str2bool(self.request.POST.get('private'))
+
         try:
             RepoModel().update(
-                self.db_repo, **{'repo_private': True, 'repo_name': self.db_repo_name})
+                self.db_repo, **{'repo_private': private_flag, 'repo_name': self.db_repo_name})
             Session().commit()
 
             h.flash(_('Repository `{}` private mode set successfully').format(self.db_repo_name),
@@ -128,5 +131,5 @@ class RepoSettingsPermissionsView(RepoAppView):
 
         return {
             'redirect_url': h.route_path('edit_repo_perms', repo_name=self.db_repo_name),
-            'private': True
+            'private': private_flag
         }
