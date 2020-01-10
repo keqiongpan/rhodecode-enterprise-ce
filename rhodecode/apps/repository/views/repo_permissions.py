@@ -122,6 +122,10 @@ class RepoSettingsPermissionsView(RepoAppView):
             h.flash(_('Error occurred during update of repository {}').format(
                 self.db_repo_name), category='error')
 
+        # NOTE(dan): we change repo private mode we need to notify all USERS
+        affected_user_ids = [x.user_id for x in User.get_all()]
+        PermissionModel().trigger_permission_flush(affected_user_ids)
+
         return {
             'redirect_url': h.route_path('edit_repo_perms', repo_name=self.db_repo_name),
             'private': True
