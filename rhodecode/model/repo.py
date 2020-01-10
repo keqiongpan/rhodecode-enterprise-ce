@@ -619,13 +619,26 @@ class RepoModel(BaseModel):
         changes = {
             'added': [],
             'updated': [],
-            'deleted': []
+            'deleted': [],
+            'default_user_changed': None
         }
+
+        repo = self._get_repo(repo)
+
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
             if member_type == 'user':
                 member_name = User.get(member_id).username
+                if member_name == User.DEFAULT_USER:
+                    # NOTE(dan): detect if we changed permissions for default user
+                    perm_obj = self.sa.query(UserRepoToPerm) \
+                        .filter(UserRepoToPerm.user_id == member_id) \
+                        .filter(UserRepoToPerm.repository == repo) \
+                        .scalar()
+                    if perm_obj and perm_obj.permission.permission_name != perm:
+                        changes['default_user_changed'] = True
+
                 # this updates also current one if found
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)

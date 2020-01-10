@@ -28,6 +28,7 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+from rhodecode.model.db import User
 from rhodecode.model.forms import RepoPermsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
@@ -89,7 +90,12 @@ class RepoSettingsPermissionsView(RepoAppView):
         Session().commit()
         h.flash(_('Repository access permissions updated'), category='success')
 
-        PermissionModel().flush_user_permission_caches(changes)
+        affected_user_ids = None
+        if changes.get('default_user_changed', False):
+            # if we change the default user, we need to flush everyone permissions
+            affected_user_ids = [x.user_id for x in User.get_all()]
+        PermissionModel().flush_user_permission_caches(
+            changes, affected_user_ids=affected_user_ids)
 
         raise HTTPFound(
             h.route_path('edit_repo_perms', repo_name=self.db_repo_name))

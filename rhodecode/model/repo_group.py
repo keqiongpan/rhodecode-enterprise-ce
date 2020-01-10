@@ -353,7 +353,8 @@ class RepoGroupModel(BaseModel):
         changes = {
             'added': [],
             'updated': [],
-            'deleted': []
+            'deleted': [],
+            'default_user_changed': None
         }
 
         def _set_perm_user(obj, user, perm):
@@ -430,6 +431,15 @@ class RepoGroupModel(BaseModel):
                 member_id = int(member_id)
                 if member_type == 'user':
                     member_name = User.get(member_id).username
+                    if isinstance(obj, RepoGroup) and obj == repo_group and member_name == User.DEFAULT_USER:
+                        # NOTE(dan): detect if we changed permissions for default user
+                        perm_obj = self.sa.query(UserRepoGroupToPerm) \
+                            .filter(UserRepoGroupToPerm.user_id == member_id) \
+                            .filter(UserRepoGroupToPerm.group == repo_group) \
+                            .scalar()
+                        if perm_obj and perm_obj.permission.permission_name != perm:
+                            changes['default_user_changed'] = True
+
                     # this updates also current one if found
                     _set_perm_user(obj, user=member_id, perm=perm)
                 elif member_type == 'user_group':
