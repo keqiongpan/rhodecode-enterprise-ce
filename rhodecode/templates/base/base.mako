@@ -405,10 +405,6 @@
                     %endif
                 %endif
             </ul>
-          % else:
-            <a class="menulink disabled">
-              <div class="menulabel">${_('Options')}<div class="show_more"></div></div>
-            </a>
           % endif
         </li>
 
