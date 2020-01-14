@@ -151,20 +151,22 @@ def _store_log(action_name, action_data, user_id, username, user_data,
 
 
 def store_web(*args, **kwargs):
-    if 'action_data' not in kwargs:
-        kwargs['action_data'] = {}
-    kwargs['action_data'].update({
-        'source': SOURCE_WEB
-    })
+    action_data = {}
+    org_action_data = kwargs.pop('action_data', {})
+    action_data.update(org_action_data)
+    action_data['source'] = SOURCE_WEB
+    kwargs['action_data'] = action_data
+
     return store(*args, **kwargs)
 
 
 def store_api(*args, **kwargs):
-    if 'action_data' not in kwargs:
-        kwargs['action_data'] = {}
-    kwargs['action_data'].update({
-        'source': SOURCE_API
-    })
+    action_data = {}
+    org_action_data = kwargs.pop('action_data', {})
+    action_data.update(org_action_data)
+    action_data['source'] = SOURCE_API
+    kwargs['action_data'] = action_data
+
     return store(*args, **kwargs)
 
 
