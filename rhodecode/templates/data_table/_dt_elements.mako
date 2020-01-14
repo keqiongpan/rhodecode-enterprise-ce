@@ -310,9 +310,9 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 
 <%def name="gist_access_id(gist_access_id, full_contact)">
     <div>
-      <b>
-        <a href="${h.route_path('gist_show', gist_id=gist_access_id)}">gist: ${gist_access_id}</a>
-      </b>
+      <code>
+        <a href="${h.route_path('gist_show', gist_id=gist_access_id)}">${gist_access_id}</a>
+      </code>
     </div>
 </%def>
 
