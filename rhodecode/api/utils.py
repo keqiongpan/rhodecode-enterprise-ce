@@ -308,7 +308,11 @@ def get_perm_or_error(permid, prefix=None):
 
     perm = PermissionModel.cls.get_by_key(permid)
     if perm is None:
-        raise JSONRPCError('permission `%s` does not exist' % (permid,))
+        msg = 'permission `{}` does not exist.'.format(permid)
+        if prefix:
+            msg += ' Permission should start with prefix: `{}`'.format(prefix)
+        raise JSONRPCError(msg)
+
     if prefix:
         if not perm.permission_name.startswith(prefix):
             raise JSONRPCError('permission `%s` is invalid, '
