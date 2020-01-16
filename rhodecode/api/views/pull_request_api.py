@@ -73,6 +73,7 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None),
             "status" :           "<status>",
             "created_on":        "<date_time_created>",
             "updated_on":        "<date_time_updated>",
+            "versions":          "<number_or_versions_of_pr>",
             "commit_ids":        [
                                      ...
                                      "<commit_id>",

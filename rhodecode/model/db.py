@@ -4296,6 +4296,7 @@ class PullRequest(Base, _PullRequestBase):
     def __json__(self):
         return {
             'revisions': self.revisions,
+            'versions': self.versions_count
         }
 
     def calculated_review_status(self):
@@ -4317,6 +4318,14 @@ class PullRequest(Base, _PullRequestBase):
         if os.path.isdir(shadow_repository_path):
             vcs_obj = self.target_repo.scm_instance()
             return vcs_obj.get_shadow_instance(shadow_repository_path)
+
+    @property
+    def versions_count(self):
+        """
+        return number of versions this PR have, e.g a PR that once been
+        updated will have 2 versions
+        """
+        return self.versions.count() + 1
 
 
 class PullRequestVersion(Base, _PullRequestBase):
