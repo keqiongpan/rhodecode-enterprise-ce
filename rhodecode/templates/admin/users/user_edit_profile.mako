@@ -73,7 +73,7 @@
                <div class="input textarea editor">
                    ${h.textarea('description', rows=10, class_="medium")}
                     <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
-                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span class="help-block">${_('Plain text format with support of {metatags}.').format(metatags=metatags_url)|n}</span>
                     <span id="meta-tags-desc" style="display: none">
                         <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                         ${dt.metatags_help()}
