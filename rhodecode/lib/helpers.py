@@ -1514,6 +1514,9 @@ def get_active_pattern_entries(repo_name):
     return active_entries
 
 
+pr_pattern_re = re.compile(r'(?:(?:^!)|(?: !))(\d+)')
+
+
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
     allowed_formats = ['html', 'rst', 'markdown',
@@ -1572,7 +1575,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     pr_url_func = partial(
         _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None,
         link_format=link_format+'+hovercard')
-    new_text = re.compile(r'(?:(?:^!)|(?: !))(\d+)').sub(pr_url_func, new_text)
+    new_text = pr_pattern_re.sub(pr_url_func, new_text)
     log.debug('processed !pr pattern')
 
     return new_text, issues_data
