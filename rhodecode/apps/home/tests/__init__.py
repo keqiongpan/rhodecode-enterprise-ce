@@ -33,7 +33,7 @@ def assert_and_get_main_filter_content(result):
         if data_item['type'] == 'search':
             display_val = data_item['value_display']
             if data_item['id'] == -1:
-                assert 'File search for:' in display_val, display_val
+                assert 'File content search for:' in display_val, display_val
             elif data_item['id'] == -2:
                 assert 'Commit search for:' in display_val, display_val
             else:
