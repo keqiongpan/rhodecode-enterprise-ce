@@ -37,7 +37,7 @@ from rhodecode.model import user_group
 from rhodecode.model import user
 from rhodecode.model.db import User
 from rhodecode.model.scm import ScmModel
-from rhodecode.model.settings import VcsSettingsModel
+from rhodecode.model.settings import VcsSettingsModel, IssueTrackerSettingsModel
 from rhodecode.model.repo import ReadmeFinder
 
 log = logging.getLogger(__name__)
@@ -226,6 +226,7 @@ class RepoAppView(BaseAppView):
         self.db_repo_name = self.db_repo.repo_name
         self.db_repo_pull_requests = ScmModel().get_pull_requests(self.db_repo)
         self.db_repo_artifacts = ScmModel().get_artifacts(self.db_repo)
+        self.db_repo_patterns = IssueTrackerSettingsModel(repo=self.db_repo)
 
     def _handle_missing_requirements(self, error):
         log.error(
