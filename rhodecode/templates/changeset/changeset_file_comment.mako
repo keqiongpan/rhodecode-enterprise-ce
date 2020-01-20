@@ -5,7 +5,7 @@
 ##
 <%namespace name="base" file="/base/base.mako"/>
 
-<%def name="comment_block(comment, inline=False)">
+<%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
   <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
   <% latest_ver = len(getattr(c, 'versions', [])) %>
   % if inline:
@@ -156,7 +156,7 @@
           </div>
       </div>
       <div class="text">
-          ${h.render(comment.text, renderer=comment.renderer, mentions=True, repo_name=getattr(c, 'repo_name', None))}
+          ${h.render(comment.text, renderer=comment.renderer, mentions=True, repo_name=getattr(c, 'repo_name', None), active_pattern_entries=active_pattern_entries)}
       </div>
 
   </div>
@@ -164,13 +164,17 @@
 
 ## generate main comments
 <%def name="generate_comments(comments, include_pull_request=False, is_pull_request=False)">
+  <%
+    active_pattern_entries = h.get_active_pattern_entries(getattr(c, 'repo_name', None))
+  %>
+
   <div class="general-comments" id="comments">
     %for comment in comments:
         <div id="comment-tr-${comment.comment_id}">
           ## only render comments that are not from pull request, or from
           ## pull request and a status change
           %if not comment.pull_request or (comment.pull_request and comment.status_change) or include_pull_request:
-          ${comment_block(comment)}
+          ${comment_block(comment, active_pattern_entries=active_pattern_entries)}
           %endif
         </div>
     %endfor

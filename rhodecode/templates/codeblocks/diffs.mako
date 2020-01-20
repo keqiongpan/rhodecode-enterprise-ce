@@ -60,12 +60,16 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 <%
     diffset_container_id = h.md5(diffset.target_ref)
     collapse_all = len(diffset.files) > collapse_when_files_over
+    active_pattern_entries = h.get_active_pattern_entries(getattr(c, 'repo_name', None))
 %>
 
 %if use_comments:
+
+## Template for injecting comments
 <div id="cb-comments-inline-container-template" class="js-template">
-  ${inline_comments_container([], inline_comments)}
+  ${inline_comments_container([])}
 </div>
+
 <div class="js-template" id="cb-comment-inline-form-template">
     <div class="comment-inline-form ac">
 
@@ -259,7 +263,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         ## new/deleted/empty content case
         % if not filediff.hunks:
             ## Comment container, on "fakes" hunk that contains all data to render comments
-            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], filediff.hunk_ops, use_comments=use_comments, inline_comments=inline_comments, active_pattern_entries=active_pattern_entries)}
         % endif
 
         %if filediff.limited_diff:
@@ -299,7 +303,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     ${hunk.section_header}
                 </td>
             </tr>
-            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments)}
+            ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments, active_pattern_entries=active_pattern_entries)}
         % endfor
 
         <% unmatched_comments = (inline_comments or {}).get(filediff.patch['filename'], {}) %>
@@ -323,7 +327,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     <td class="cb-lineno cb-context"></td>
                     <td class="cb-lineno cb-context"></td>
                     <td class="cb-content cb-context">
-                        ${inline_comments_container(comments, inline_comments)}
+                        ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries)}
                     </td>
                 </tr>
             %elif c.user_session_attrs["diffmode"] == 'sideside':
@@ -348,7 +352,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     <td class="cb-lineno cb-context"></td>
                     <td class="cb-content cb-context">
                         % if lineno.startswith('o'):
-                            ${inline_comments_container(comments, inline_comments)}
+                            ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries)}
                         % endif
                     </td>
 
@@ -356,7 +360,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     <td class="cb-lineno cb-context"></td>
                     <td class="cb-content cb-context">
                         % if lineno.startswith('n'):
-                            ${inline_comments_container(comments, inline_comments)}
+                            ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries)}
                         % endif
                     </td>
                 </tr>
@@ -415,7 +419,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-content cb-context">
-                            ${inline_comments_container(comments_dict['comments'], inline_comments)}
+                            ${inline_comments_container(comments_dict['comments'], active_pattern_entries=active_pattern_entries)}
                         </td>
                     </tr>
                     %elif c.user_session_attrs["diffmode"] == 'sideside':
@@ -427,7 +431,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                         <td class="cb-data cb-context"></td>
                         <td class="cb-lineno cb-context"></td>
                         <td class="cb-content cb-context">
-                            ${inline_comments_container(comments_dict['comments'], inline_comments)}
+                            ${inline_comments_container(comments_dict['comments'], active_pattern_entries=active_pattern_entries)}
                         </td>
                     </tr>
                     %endif
@@ -584,10 +588,11 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 
-<%def name="inline_comments_container(comments, inline_comments)">
+<%def name="inline_comments_container(comments, active_pattern_entries=None)">
+
 <div class="inline-comments">
     %for comment in comments:
-        ${commentblock.comment_block(comment, inline=True)}
+        ${commentblock.comment_block(comment, inline=True, active_pattern_entries=active_pattern_entries)}
     %endfor
     % if comments and comments[-1].outdated:
     <span class="btn btn-secondary cb-comment-add-button comment-outdated}" style="display: none;}">
@@ -619,7 +624,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             return data
 %>
 
-<%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None)">
+<%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None, active_pattern_entries=None)">
     %for i, line in enumerate(hunk.sideside):
     <%
     old_line_anchor, new_line_anchor = None, None
@@ -669,7 +674,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <span class="cb-code"><span class="cb-action ${action_class(line.original.action)}"></span>${line.original.content or '' | n}</span>
 
             %if use_comments and line.original.lineno and line_old_comments:
-                ${inline_comments_container(line_old_comments, inline_comments)}
+                ${inline_comments_container(line_old_comments, active_pattern_entries=active_pattern_entries)}
             %endif
 
         </td>
@@ -711,7 +716,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %endif
             <span class="cb-code"><span class="cb-action ${action_class(line.modified.action)}"></span>${line.modified.content or '' | n}</span>
             %if use_comments and line.modified.lineno and line_new_comments:
-            ${inline_comments_container(line_new_comments, inline_comments)}
+            ${inline_comments_container(line_new_comments, active_pattern_entries=active_pattern_entries)}
             %endif
         </td>
     </tr>
@@ -719,7 +724,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </%def>
 
 
-<%def name="render_hunk_lines_unified(filediff, hunk, use_comments=False,  inline_comments=None)">
+<%def name="render_hunk_lines_unified(filediff, hunk, use_comments=False,  inline_comments=None, active_pattern_entries=None)">
     %for old_line_no, new_line_no, action, content, comments_args in hunk.unified:
 
     <%
@@ -777,7 +782,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %endif
             <span class="cb-code"><span class="cb-action ${action_class(action)}"></span> ${content or '' | n}</span>
             %if use_comments and comments:
-            ${inline_comments_container(comments, inline_comments)}
+            ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries)}
             %endif
         </td>
     </tr>
@@ -785,11 +790,11 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </%def>
 
 
-<%def name="render_hunk_lines(filediff, diff_mode, hunk, use_comments, inline_comments)">
+<%def name="render_hunk_lines(filediff, diff_mode, hunk, use_comments, inline_comments, active_pattern_entries)">
     % if diff_mode == 'unified':
-        ${render_hunk_lines_unified(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        ${render_hunk_lines_unified(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments, active_pattern_entries=active_pattern_entries)}
     % elif diff_mode == 'sideside':
-        ${render_hunk_lines_sideside(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments)}
+        ${render_hunk_lines_sideside(filediff, hunk, use_comments=use_comments, inline_comments=inline_comments, active_pattern_entries=active_pattern_entries)}
     % else:
         <tr class="cb-line">
             <td>unknown diff mode</td>

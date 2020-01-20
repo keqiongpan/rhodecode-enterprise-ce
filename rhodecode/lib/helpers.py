@@ -1522,7 +1522,10 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         raise ValueError('Link format can be only one of:{} got {}'.format(
                          allowed_formats, link_format))
 
-    active_entries = active_entries or get_active_pattern_entries(repo_name)
+    if active_entries is None:
+        log.debug('Fetch active patterns for repo: %s', repo_name)
+        active_entries = get_active_pattern_entries(repo_name)
+
     issues_data = []
     new_text = text_string
 
@@ -1580,6 +1583,7 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
     """
+
     def escaper(_text):
         return _text.replace('<', '&lt;').replace('>', '&gt;')
 
@@ -1636,7 +1640,7 @@ def renderer_from_filename(filename, exclude=None):
 
 
 def render(source, renderer='rst', mentions=False, relative_urls=None,
-           repo_name=None):
+           repo_name=None, active_pattern_entries=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_urls:
@@ -1651,7 +1655,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
-                source, repo_name, link_format='rst')
+                source, repo_name, link_format='rst',
+                active_entries=active_pattern_entries)
 
         return literal(
             '<div class="rst-block">%s</div>' %
@@ -1662,7 +1667,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
-                source, repo_name, link_format='markdown')
+                source, repo_name, link_format='markdown',
+                active_entries=active_pattern_entries)
 
         return literal(
             '<div class="markdown-block">%s</div>' %
