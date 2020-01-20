@@ -43,6 +43,9 @@ class TestIssueTrackerSettingsModel(object):
             settings_mock.return_value = input_settings
             result = model.get_global_settings(cache=True)
         get_settings.assert_called_once_with(cache=True)
+        for k, v in result.items():
+            v.pop('pat_compiled', None)
+
         assert expected_result == result
 
     def test_get_repo_settings_raise_exception_when_repo_is_not_set(self):
@@ -68,6 +71,8 @@ class TestIssueTrackerSettingsModel(object):
             settings_mock.return_value = input_settings
             result = model.get_repo_settings(cache=True)
         get_settings.assert_called_once_with(cache=True)
+        for k, v in result.items():
+            v.pop('pat_compiled', None)
         assert expected_result == result
 
     @pytest.mark.parametrize("inherit_settings, method", [

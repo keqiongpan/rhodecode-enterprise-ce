@@ -21,6 +21,7 @@
 import os
 import hashlib
 import logging
+import re
 from collections import namedtuple
 from functools import wraps
 import bleach
@@ -372,9 +373,15 @@ class IssueTrackerSettingsModel(object):
         for uid in issuetracker_entries:
             url_data = qs.get(self._get_keyname('url', uid, 'rhodecode_'))
 
+            pat = qs.get(self._get_keyname('pat', uid, 'rhodecode_'))
+            try:
+                pat_compiled = re.compile(r'%s' % pat)
+            except re.error:
+                pat_compiled = None
+
             issuetracker_entries[uid] = AttributeDict({
-                'pat': qs.get(
-                    self._get_keyname('pat', uid, 'rhodecode_')),
+                'pat': pat,
+                'pat_compiled': pat_compiled,
                 'url': url_cleaner(
                     qs.get(self._get_keyname('url', uid, 'rhodecode_')) or ''),
                 'pref': bleach.clean(

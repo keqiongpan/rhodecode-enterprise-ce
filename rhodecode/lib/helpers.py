@@ -1543,11 +1543,14 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         log.debug('issue tracker entry: uid: `%s` PAT:%s URL:%s PREFIX:%s',
                   uid, entry['pat'], entry['url'], entry['pref'])
 
-        try:
-            pattern = re.compile(r'%s' % entry['pat'])
-        except re.error:
-            log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
-            continue
+        if entry.get('pat_compiled'):
+            pattern = entry['pat_compiled']
+        else:
+            try:
+                pattern = re.compile(r'%s' % entry['pat'])
+            except re.error:
+                log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
+                continue
 
         data_func = partial(
             _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
