@@ -1551,7 +1551,7 @@ def comment_commit(
         request, apiuser, repoid, commit_id, message, status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
         resolves_comment_id=Optional(None), extra_recipients=Optional([]),
-        userid=Optional(OAttr('apiuser'))):
+        userid=Optional(OAttr('apiuser')), send_email=Optional(True)):
     """
     Set a commit comment, and optionally change the status of the commit.
 
@@ -1575,6 +1575,8 @@ def comment_commit(
     :type extra_recipients: Optional(list)
     :param userid: Set the user name of the comment creator.
     :type userid: Optional(str or int)
+    :param send_email: Define if this comment should also send email notification
+    :type send_email: Optional(bool)
 
     Example error output:
 
@@ -1610,6 +1612,7 @@ def comment_commit(
     comment_type = Optional.extract(comment_type)
     resolves_comment_id = Optional.extract(resolves_comment_id)
     extra_recipients = Optional.extract(extra_recipients)
+    send_email = Optional.extract(send_email, binary=True)
 
     allowed_statuses = [x[0] for x in ChangesetStatus.STATUSES]
     if status and status not in allowed_statuses:
@@ -1639,7 +1642,8 @@ def comment_commit(
             comment_type=comment_type,
             resolves_comment_id=resolves_comment_id,
             auth_user=apiuser,
-            extra_recipients=extra_recipients
+            extra_recipients=extra_recipients,
+            send_email=send_email
         )
         if status:
             # also do a status change
