@@ -218,6 +218,11 @@ Upgrade notes
   Please review vcsserver.ini settings under:
   `rc_cache.repo_object.backend = dogpile.cache.rc.redis_msgpack`
 
+- Gunicorn configuration now moved to .ini files.
+  Upgrading to 4.18.X will overwrite the gunicorn_conf.py file. If there are any custom changes in that file
+  they will be lost. Recommended way to configure gunicorn is now via the .ini files. Please check `rhodecode.template.ini` file
+  for example gunicorn configuration.
+
 - New memory monitoring for Gunicorn workers. Starting from 4.18 release a option was added
   to limit the maximum amount of memory used by a worker.
   Please review new settings in `[server:main]` section for memory management in both
