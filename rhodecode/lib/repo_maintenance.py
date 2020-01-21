@@ -148,6 +148,15 @@ class HGUpdateCaches(MaintenanceTask):
         return res
 
 
+class HGRebuildFnCaches(MaintenanceTask):
+    human_name = 'HG rebuild fn caches'
+
+    def run(self):
+        instance = self.db_repo.scm_instance()
+        res = instance.hg_rebuild_fn_cache()
+        return res
+
+
 class SVNVerify(MaintenanceTask):
     human_name = 'SVN Verify repo'
 
@@ -162,7 +171,7 @@ class RepoMaintenance(object):
     Performs maintenance of repository based on it's type
     """
     tasks = {
-        'hg': [HGVerify, HGUpdateCaches],
+        'hg': [HGVerify, HGUpdateCaches, HGRebuildFnCaches],
         'git': [GitFSCK, GitGC, GitRepack],
         'svn': [SVNVerify],
     }
