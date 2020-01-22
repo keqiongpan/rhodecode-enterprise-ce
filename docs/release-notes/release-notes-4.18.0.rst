@@ -193,6 +193,10 @@ Fixes
 Upgrade notes
 ^^^^^^^^^^^^^
 
+- Major Celery Version upgrade. The 4.18.X release includes a major Celery version.
+  It's recommended to run `rccontrol self-stop && rccontrol self-init` after the
+  upgrade to ensure celery workers are restarted and updated.
+
 - New Automation task. We've changed the logic for updating latest change inside repository group.
   New logic includes scanning for changes in all nested objects. Since this is a heavy task
   a new dedicated scheduler task has been created to update it automatically on a scheduled base.
