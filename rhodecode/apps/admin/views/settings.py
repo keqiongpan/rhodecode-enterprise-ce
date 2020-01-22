@@ -573,7 +573,7 @@ class AdminSettingsView(BaseAppView):
 
         email_kwargs = {
             'date': datetime.datetime.now(),
-            'user': c.rhodecode_user
+            'user': self._rhodecode_db_user
         }
 
         (subject, headers, email_body,
