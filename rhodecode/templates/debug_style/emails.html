@@ -21,7 +21,7 @@
         <ul>
           % for elem in sorted(c.email_types.keys()):
                <li>
-                    <a href="${request.route_path('debug_style_email', email_id=elem, _query={'user':c.rhodecode_user.username})}">${elem}</a>
+                    <a href="${request.route_path('debug_style_email', email_id=elem, _query={'user':c.rhodecode_user.username, 'email': ''})}">${elem}</a>
                     |
                     <a href="${request.route_path('debug_style_email_plain_rendered', email_id=elem, _query={'user':c.rhodecode_user.username})}">plain rendered</a>
                </li>
