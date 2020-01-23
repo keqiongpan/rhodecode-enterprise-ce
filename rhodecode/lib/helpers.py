@@ -598,9 +598,10 @@ class _Message(object):
     * ``category``: the category specified when the message was created.
     """
 
-    def __init__(self, category, message):
+    def __init__(self, category, message, sub_data=None):
         self.category = category
         self.message = message
+        self.sub_data = sub_data or {}
 
     def __str__(self):
         return self.message
@@ -663,7 +664,17 @@ class Flash(object):
         # of strings.
         for cat in self.categories:
             for msg in session.pop_flash(queue=cat):
-                messages.append(_Message(cat, msg))
+                sub_data = {}
+                if hasattr(msg, 'rsplit'):
+                    flash_data = msg.rsplit('|DELIM|', 1)
+                    org_message = flash_data[0]
+                    if len(flash_data) > 1:
+                        sub_data = json.loads(flash_data[1])
+                else:
+                    org_message = msg
+
+                messages.append(_Message(cat, org_message, sub_data=sub_data))
+
         # Map messages from the default queue to the 'notice' category.
         for msg in session.pop_flash():
             messages.append(_Message('notice', msg))
@@ -673,25 +684,16 @@ class Flash(object):
 
     def json_alerts(self, session=None, request=None):
         payloads = []
-        messages = flash.pop_messages(session=session, request=request)
-        if messages:
-            for message in messages:
-                subdata = {}
-                if hasattr(message.message, 'rsplit'):
-                    flash_data = message.message.rsplit('|DELIM|', 1)
-                    org_message = flash_data[0]
-                    if len(flash_data) > 1:
-                        subdata = json.loads(flash_data[1])
-                else:
-                    org_message = message.message
-                payloads.append({
-                    'message': {
-                        'message': u'{}'.format(org_message),
-                        'level': message.category,
-                        'force': True,
-                        'subdata': subdata
-                    }
-                })
+        messages = flash.pop_messages(session=session, request=request) or []
+        for message in messages:
+            payloads.append({
+                'message': {
+                    'message': u'{}'.format(message.message),
+                    'level': message.category,
+                    'force': True,
+                    'subdata': message.sub_data
+                }
+            })
         return json.dumps(payloads)
 
     def __call__(self, message, category=None, ignore_duplicate=True,
