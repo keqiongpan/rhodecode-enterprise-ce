@@ -25,7 +25,7 @@ import re
 from collections import namedtuple
 from functools import wraps
 import bleach
-from pyramid.threadlocal import get_current_request
+from pyramid.threadlocal import get_current_request, get_current_registry
 
 from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import (
@@ -213,6 +213,8 @@ class SettingsModel(BaseModel):
         CacheKey.set_invalidate(invalidation_namespace)
 
     def get_all_settings(self, cache=False, from_request=True):
+        from rhodecode.authentication.base import get_authn_registry
+
         # defines if we use GLOBAL, or PER_REPO
         repo = self._get_repo(self.repo) if self.repo else None
         key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
@@ -253,6 +255,11 @@ class SettingsModel(BaseModel):
                 # are anyway very short lived and it's a safest way.
                 region = rc_cache.get_or_create_region('sql_cache_short')
                 region.invalidate()
+                registry = get_current_registry()
+                if registry:
+                    authn_registry = get_authn_registry(registry)
+                    if authn_registry:
+                        authn_registry.invalidate_plugins_for_auth()
 
             result = _get_all_settings('rhodecode_settings', key)
             log.debug('Fetching app settings for key: %s took: %.4fs', key,

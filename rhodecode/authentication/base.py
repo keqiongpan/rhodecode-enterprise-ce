@@ -150,6 +150,7 @@ class RhodeCodeAuthPluginBase(object):
 
     def __init__(self, plugin_id):
         self._plugin_id = plugin_id
+        self._settings = {}
 
     def __str__(self):
         return self.get_id()
@@ -226,16 +227,25 @@ class RhodeCodeAuthPluginBase(object):
         """
         return AuthnPluginSettingsSchemaBase()
 
-    def get_settings(self):
-        """
-        Returns the plugin settings as dictionary.
-        """
+    def _propagate_settings(self, raw_settings):
         settings = {}
-        raw_settings = SettingsModel().get_all_settings()
         for node in self.get_settings_schema():
             settings[node.name] = self.get_setting_by_name(
                 node.name, plugin_cached_settings=raw_settings)
         return settings
+
+    def get_settings(self, use_cache=True):
+        """
+        Returns the plugin settings as dictionary.
+        """
+        if self._settings != {} and use_cache:
+            return self._settings
+
+        raw_settings = SettingsModel().get_all_settings()
+        settings = self._propagate_settings(raw_settings)
+
+        self._settings = settings
+        return self._settings
 
     def get_setting_by_name(self, name, default=None, plugin_cached_settings=None):
         """
@@ -667,7 +677,7 @@ def loadplugin(plugin_id):
 
 def get_authn_registry(registry=None):
     registry = registry or get_current_registry()
-    authn_registry = registry.getUtility(IAuthnPluginRegistry)
+    authn_registry = registry.queryUtility(IAuthnPluginRegistry)
     return authn_registry
 
 
@@ -690,6 +700,7 @@ def authenticate(username, password, environ=None, auth_type=None,
     headers_only = environ and not (username and password)
 
     authn_registry = get_authn_registry(registry)
+
     plugins_to_check = authn_registry.get_plugins_for_authentication()
     log.debug('Starting ordered authentication chain using %s plugins',
               [x.name for x in plugins_to_check])
