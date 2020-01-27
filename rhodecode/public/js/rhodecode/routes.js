@@ -31,6 +31,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_integrations_create', '/%(repo_name)s/settings/integrations/%(integration)s/new', ['repo_name', 'integration']);
     pyroutes.register('repo_integrations_edit', '/%(repo_name)s/settings/integrations/%(integration)s/%(integration_id)s', ['repo_name', 'integration', 'integration_id']);
     pyroutes.register('hovercard_user', '/_hovercard/user/%(user_id)s', ['user_id']);
+    pyroutes.register('hovercard_username', '/_hovercard/username/%(username)s', ['username']);
     pyroutes.register('hovercard_user_group', '/_hovercard/user_group/%(user_group_id)s', ['user_group_id']);
     pyroutes.register('hovercard_pull_request', '/_hovercard/pull_request/%(pull_request_id)s', ['pull_request_id']);
     pyroutes.register('hovercard_repo_commit', '/_hovercard/commit/%(repo_name)s/%(commit_id)s', ['repo_name', 'commit_id']);

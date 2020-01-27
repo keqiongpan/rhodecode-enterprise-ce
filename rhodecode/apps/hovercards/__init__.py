@@ -26,6 +26,10 @@ def includeme(config):
         pattern='/_hovercard/user/{user_id}')
 
     config.add_route(
+        name='hovercard_username',
+        pattern='/_hovercard/username/{username}')
+
+    config.add_route(
         name='hovercard_user_group',
         pattern='/_hovercard/user_group/{user_group_id}')
 

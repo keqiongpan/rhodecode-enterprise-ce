@@ -47,6 +47,14 @@ log = logging.getLogger(__name__)
 # default renderer used to generate automated comments
 DEFAULT_COMMENTS_RENDERER = 'rst'
 
+try:
+    from lxml.html import fromstring
+    from lxml.html import tostring
+except ImportError:
+    log.exception('Failed to import lxml')
+    fromstring = None
+    tostring = None
+
 
 class CustomHTMLTranslator(writers.html4css1.HTMLTranslator):
     """
@@ -81,11 +89,7 @@ def relative_links(html_source, server_paths):
     if not html_source:
         return html_source
 
-    try:
-        from lxml.html import fromstring
-        from lxml.html import tostring
-    except ImportError:
-        log.exception('Failed to import lxml')
+    if not fromstring and tostring:
         return html_source
 
     try:
@@ -209,6 +213,8 @@ class MarkupRenderer(object):
 
     URL_PAT = re.compile(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]'
                          r'|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)')
+
+    MENTION_PAT = re.compile(MENTIONS_REGEX)
 
     extensions = ['markdown.extensions.codehilite', 'markdown.extensions.extra',
                   'markdown.extensions.def_list', 'markdown.extensions.sane_lists']
@@ -348,6 +354,26 @@ class MarkupRenderer(object):
         return cls.URL_PAT.sub(url_func, text)
 
     @classmethod
+    def convert_mentions(cls, text, mode):
+        mention_pat = cls.MENTION_PAT
+
+        def wrapp(match_obj):
+            uname = match_obj.groups()[0]
+            hovercard_url = "pyroutes.url('hovercard_username', {'username': '%s'});" % uname
+
+            if mode == 'markdown':
+                tmpl = '<strong class="tooltip-hovercard" data-hovercard-alt="{uname}" data-hovercard-url="{hovercard_url}">@{uname}</strong>'
+            elif mode == 'rst':
+                tmpl = ' **@{uname}** '
+            else:
+                raise ValueError('mode must be rst or markdown')
+
+            return tmpl.format(**{'uname': uname,
+                                  'hovercard_url': hovercard_url})
+
+        return mention_pat.sub(wrapp, text).strip()
+
+    @classmethod
     def plain(cls, source, universal_newline=True, leading_newline=True):
         source = safe_unicode(source)
         if universal_newline:
@@ -378,12 +404,7 @@ class MarkupRenderer(object):
                 cls.extensions, cls.output_format)
 
         if mentions:
-            mention_pat = re.compile(MENTIONS_REGEX)
-
-            def wrapp(match_obj):
-                uname = match_obj.groups()[0]
-                return ' **@%(uname)s** ' % {'uname': uname}
-            mention_hl = mention_pat.sub(wrapp, source).strip()
+            mention_hl = cls.convert_mentions(source, mode='markdown')
             # we extracted mentions render with this using Mentions false
             return cls.markdown(mention_hl, safe=safe, flavored=flavored,
                                 mentions=False)
@@ -409,12 +430,7 @@ class MarkupRenderer(object):
     @classmethod
     def rst(cls, source, safe=True, mentions=False, clean_html=False):
         if mentions:
-            mention_pat = re.compile(MENTIONS_REGEX)
-
-            def wrapp(match_obj):
-                uname = match_obj.groups()[0]
-                return ' **@%(uname)s** ' % {'uname': uname}
-            mention_hl = mention_pat.sub(wrapp, source).strip()
+            mention_hl = cls.convert_mentions(source, mode='rst')
             # we extracted mentions render with this using Mentions false
             return cls.rst(mention_hl, safe=safe, mentions=False)
 
@@ -443,7 +459,7 @@ class MarkupRenderer(object):
         except Exception:
             log.exception('Error when rendering RST')
             if safe:
-                log.debug('Fallbacking to render in plain mode')
+                log.debug('Fallback to render in plain mode')
                 return cls.plain(source)
             else:
                 raise
