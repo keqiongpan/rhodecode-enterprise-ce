@@ -63,7 +63,12 @@
                             ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
-                                    ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
+                                    ${h.DEFAULT_USER}
+                                    % if _user.active:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in and anonymous users')}</span>
+                                    % else:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
+                                    % endif
                                 % else:
                                     ${h.link_to_user(_user.username)}
                                     %if getattr(_user, 'duplicate_perm', None):
@@ -106,7 +111,12 @@
                             ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
-                                    ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
+                                    ${h.DEFAULT_USER}
+                                    % if _user.active:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in and anonymous users')}</span>
+                                    % else:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
+                                    % endif
                                 % else:
                                     ${h.link_to_user(_user.username)}
                                     %if getattr(_user, 'duplicate_perm', None):
