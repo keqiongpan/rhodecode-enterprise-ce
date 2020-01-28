@@ -38,8 +38,7 @@ from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
-    get_current_rhodecode_user, safe_int, datetime_to_time,
-    action_logger_generic)
+    get_current_rhodecode_user, safe_int, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
@@ -199,9 +198,11 @@ class RepoModel(BaseModel):
 
     def get_repos_as_dict(self, repo_list=None, admin=False,
                           super_user_actions=False, short_name=None):
+
         _render = get_current_request().get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
+        h = _render.get_helpers()
 
         def quick_menu(repo_name):
             return _render('quick_menu', repo_name)
@@ -258,7 +259,7 @@ class RepoModel(BaseModel):
                 "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
                                  repo.private, repo.archived, repo.fork),
 
-                "desc": desc(repo.description),
+                "desc": desc(h.escape(repo.description)),
 
                 "last_change": last_change(repo.updated_on),
 

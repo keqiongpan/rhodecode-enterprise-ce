@@ -41,7 +41,7 @@ from rhodecode.model.db import (_hash_key, func, or_, in_filter_generator,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.utils2 import action_logger_generic, datetime_to_time
+from rhodecode.lib.utils2 import action_logger_generic
 
 log = logging.getLogger(__name__)
 
@@ -708,8 +708,6 @@ class RepoGroupModel(BaseModel):
         for repo_group in repo_groups:
             repo_group.update_commit_cache()
 
-
-
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
@@ -763,7 +761,7 @@ class RepoGroupModel(BaseModel):
                 "last_changeset": "",
                 "last_changeset_raw": "",
 
-                "desc": desc(group.group_description, group.personal),
+                "desc": desc(h.escape(group.group_description), group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.User.username)
             }
