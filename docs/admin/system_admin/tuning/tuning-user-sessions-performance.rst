@@ -48,7 +48,7 @@ uses, or if required it can be a different one. We recommend to use the same dat
 
 
 
-To switch to reds-based user sessions uncomment the following section in
+To switch to redis-based user sessions uncomment the following section in
 your :file:`/home/{user}/.rccontrol/{instance-id}/rhodecode.ini` file.
 
 .. code-block:: ini
