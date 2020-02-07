@@ -2,7 +2,11 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User Group Permissions')}</h3>
+        <h3 class="panel-title">
+            <i class="icon-user-group" title="${_('User group')}"></i>
+            ${h.link_to_group(c.user_group.users_group_name)}
+            - ${_('Access Permissions')}
+        </h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_user_group_perms_update', user_group_id=c.user_group.users_group_id), request=request)}

@@ -230,13 +230,13 @@
 </%def>
 
 
-<%def name="gravatar_with_user(contact, size=16, show_disabled=False, tooltip=False)">
+<%def name="gravatar_with_user(contact, size=16, show_disabled=False, tooltip=False, _class='rc-user')">
   <%
       email = h.email_or_none(contact)
       rc_user = h.discover_user(contact)
   %>
 
-  <div class="rc-user">
+  <div class="${_class}">
     ${self.gravatar(email, size, tooltip=tooltip, tooltip_alt=contact, user=rc_user)}
     <span class="${('user user-disabled' if show_disabled else 'user')}"> ${h.link_to_user(rc_user or contact)}</span>
   </div>
