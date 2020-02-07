@@ -514,6 +514,7 @@
         // Flush changes into textarea
         codeMirrorInstance.save();
         prButtonLock(true, null, 'all');
+        $pullRequestSubmit.val(_gettext('Please wait creating pull request...'));
     });
 
    prButtonLock(true, "${_('Please select source and target')}", 'all');
