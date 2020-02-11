@@ -3901,8 +3901,8 @@ class _SetState(object):
         self._current_state = None
 
     def __enter__(self):
-        log.debug('StateLock: entering set state context, setting state to: `%s`',
-                  self._pr_state)
+        log.debug('StateLock: entering set state context of pr %s, setting state to: `%s`',
+                  self._pr, self._pr_state)
         self.set_pr_state(self._pr_state)
         return self
 
@@ -3912,8 +3912,9 @@ class _SetState(object):
             return None
 
         self.set_pr_state(self._org_state)
-        log.debug('StateLock: exiting set state context, setting state to: `%s`',
-                  self._org_state)
+        log.debug('StateLock: exiting set state context of pr %s, setting state to: `%s`',
+                  self._pr, self._org_state)
+
     @property
     def state(self):
         return self._current_state
