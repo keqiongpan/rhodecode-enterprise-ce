@@ -21,8 +21,7 @@
 """
 permissions model for RhodeCode
 """
-
-
+import collections
 import logging
 import traceback
 
@@ -556,6 +555,27 @@ class PermissionModel(BaseModel):
             log.exception('Failed to set default branch permissions')
             self.sa.rollback()
             raise
+
+    def get_users_with_repo_write(self, db_repo):
+        write_plus = ['repository.write', 'repository.admin']
+        default_user_id = User.get_default_user().user_id
+        user_write_permissions = collections.OrderedDict()
+
+        # write+ and DEFAULT user for inheritance
+        for perm in db_repo.permissions():
+            if perm.permission in write_plus or perm.user_id == default_user_id:
+                user_write_permissions[perm.user_id] = perm
+        return user_write_permissions
+
+    def get_user_groups_with_repo_write(self, db_repo):
+        write_plus = ['repository.write', 'repository.admin']
+        user_group_write_permissions = collections.OrderedDict()
+
+        # write+ and DEFAULT user for inheritance
+        for p in db_repo.permission_user_groups():
+            if p.permission in write_plus:
+                user_group_write_permissions[p.users_group_id] = p
+        return user_group_write_permissions
 
     def trigger_permission_flush(self, affected_user_ids):
         events.trigger(events.UserPermissionsChange(affected_user_ids))
