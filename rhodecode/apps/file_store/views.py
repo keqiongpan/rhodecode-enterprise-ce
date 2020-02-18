@@ -93,6 +93,9 @@ class FileStoreView(BaseAppView):
 
         file_path = self.storage.store_path(file_uid)
         return FileResponse(file_path)
+        # For file store we don't submit any session data, this logic tells the
+        # Session lib to skip it
+        setattr(self.request, '_file_response', True)
 
     @LoginRequired()
     @NotAnonymous()
