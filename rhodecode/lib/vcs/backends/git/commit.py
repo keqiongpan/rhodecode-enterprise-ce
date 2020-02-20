@@ -472,7 +472,7 @@ class GitCommit(base.BaseCommit):
                 for line in _content.splitlines():
                     yield line
 
-            parser = configparser.ConfigParser()
+            parser = configparser.RawConfigParser()
             parser.read_file(iter_content(submodules_node.content))
 
             for section in parser.sections():
