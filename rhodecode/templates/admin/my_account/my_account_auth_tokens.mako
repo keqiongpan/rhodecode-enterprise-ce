@@ -71,7 +71,7 @@
                     <div class="input">
                         ${h.text('description', class_='medium', placeholder=_('Description'))}
                         ${h.hidden('lifetime')}
-                        ${h.select('role', '', c.role_options)}
+                        ${h.select('role', request.GET.get('token_role', ''), c.role_options)}
 
                         % if c.allow_scoped_tokens:
                             ${h.hidden('scope_repo_id')}
