@@ -68,7 +68,14 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             <div class="textarea editor">
                 ${h.textarea('repo_description',cols=23,rows=5,class_="medium")}
                 <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
-                <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                <span class="help-block">
+                    % if c.visual.stylify_metatags:
+                        ${_('Plain text format with {metatags} support.').format(metatags=metatags_url)|n}
+                    % else:
+                        ${_('Plain text format.')}
+                    % endif
+                    ${_('Add a README file for longer descriptions')}
+                </span>
                 <span id="meta-tags-desc" style="display: none">
                     <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                     ${dt.metatags_help()}
