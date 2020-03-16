@@ -432,8 +432,11 @@ class GitCommit(base.BaseCommit):
         """
         if not self.parents:
             return list(self._get_file_nodes())
-        return AddedFileNodesGenerator(
-            [n for n in self._get_paths_for_status('added')], self)
+        return AddedFileNodesGenerator(self.added_paths, self)
+
+    @LazyProperty
+    def added_paths(self):
+        return [n for n in self._get_paths_for_status('added')]
 
     @LazyProperty
     def changed(self):
@@ -442,8 +445,11 @@ class GitCommit(base.BaseCommit):
         """
         if not self.parents:
             return []
-        return ChangedFileNodesGenerator(
-            [n for n in self._get_paths_for_status('modified')], self)
+        return ChangedFileNodesGenerator(self.changed_paths, self)
+
+    @LazyProperty
+    def changed_paths(self):
+        return [n for n in self._get_paths_for_status('modified')]
 
     @LazyProperty
     def removed(self):
@@ -452,8 +458,11 @@ class GitCommit(base.BaseCommit):
         """
         if not self.parents:
             return []
-        return RemovedFileNodesGenerator(
-            [n for n in self._get_paths_for_status('deleted')], self)
+        return RemovedFileNodesGenerator(self.removed_paths, self)
+
+    @LazyProperty
+    def removed_paths(self):
+        return [n for n in self._get_paths_for_status('deleted')]
 
     def _get_submodule_url(self, submodule_path):
         git_modules_path = '.gitmodules'

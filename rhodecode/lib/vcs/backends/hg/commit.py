@@ -372,18 +372,30 @@ class MercurialCommit(base.BaseCommit):
         """
         Returns list of added ``FileNode`` objects.
         """
-        return AddedFileNodesGenerator([n for n in self.status[1]], self)
+        return AddedFileNodesGenerator(self.added_paths, self)
+
+    @LazyProperty
+    def added_paths(self):
+        return [n for n in self.status[1]]
 
     @property
     def changed(self):
         """
         Returns list of modified ``FileNode`` objects.
         """
-        return ChangedFileNodesGenerator([n for n in self.status[0]], self)
+        return ChangedFileNodesGenerator(self.changed_paths, self)
+
+    @LazyProperty
+    def changed_paths(self):
+        return [n for n in self.status[0]]
 
     @property
     def removed(self):
         """
         Returns list of removed ``FileNode`` objects.
         """
-        return RemovedFileNodesGenerator([n for n in self.status[2]], self)
+        return RemovedFileNodesGenerator(self.removed_paths, self)
+
+    @LazyProperty
+    def removed_paths(self):
+        return [n for n in self.status[2]]

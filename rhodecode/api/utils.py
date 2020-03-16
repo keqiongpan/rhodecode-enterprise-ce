@@ -355,12 +355,12 @@ def get_pull_request_or_error(pullrequestid):
 def build_commit_data(commit, detail_level):
     parsed_diff = []
     if detail_level == 'extended':
-        for f in commit.added:
-            parsed_diff.append(_get_commit_dict(filename=f.path, op='A'))
-        for f in commit.changed:
-            parsed_diff.append(_get_commit_dict(filename=f.path, op='M'))
-        for f in commit.removed:
-            parsed_diff.append(_get_commit_dict(filename=f.path, op='D'))
+        for f_path in commit.added_paths:
+            parsed_diff.append(_get_commit_dict(filename=f_path, op='A'))
+        for f_path in commit.changed_paths:
+            parsed_diff.append(_get_commit_dict(filename=f_path, op='M'))
+        for f_path in commit.removed_paths:
+            parsed_diff.append(_get_commit_dict(filename=f_path, op='D'))
 
     elif detail_level == 'full':
         from rhodecode.lib.diffs import DiffProcessor
