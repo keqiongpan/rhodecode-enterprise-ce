@@ -124,6 +124,7 @@ permission issues could occur. To do this edit the ``/etc/apache2/envvars``
         LogLevel info
         # allows custom host names, prevents 400 errors on checkout
         HttpProtocolOptions Unsafe
+        # Most likely this will be: /home/user/.rccontrol/enterprise-1/mod_dav_svn.conf
         Include /home/user/.rccontrol/enterprise-1/mod_dav_svn.conf
     </VirtualHost>
 
