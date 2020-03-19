@@ -604,19 +604,19 @@ class AuthLdapBase(object):
             if not full_resolve:
                 return '{}:{}'.format(host, port)
 
-            log.debug('LDAP: Resolving IP for LDAP host %s', host)
+            log.debug('LDAP: Resolving IP for LDAP host `%s`', host)
             try:
                 ip = socket.gethostbyname(host)
-                log.debug('Got LDAP server %s ip %s', host, ip)
+                log.debug('LDAP: Got LDAP host `%s` ip %s', host, ip)
             except Exception:
-                raise LdapConnectionError(
-                    'Failed to resolve host: `{}`'.format(host))
+                raise LdapConnectionError('Failed to resolve host: `{}`'.format(host))
 
             log.debug('LDAP: Checking if IP %s is accessible', ip)
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 s.connect((ip, int(port)))
                 s.shutdown(socket.SHUT_RD)
+                log.debug('LDAP: connection to %s successful', ip)
             except Exception:
                 raise LdapConnectionError(
                     'Failed to connect to host: `{}:{}`'.format(host, port))

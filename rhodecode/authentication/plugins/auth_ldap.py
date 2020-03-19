@@ -145,16 +145,16 @@ class AuthLdap(AuthLdapBase):
             log.debug('Trying simple_bind with password and given login DN: %r',
                       self.LDAP_BIND_DN)
             ldap_conn.simple_bind_s(self.LDAP_BIND_DN, self.LDAP_BIND_PASS)
-
+        log.debug('simple_bind successful')
         return ldap_conn
 
     def fetch_attrs_from_simple_bind(self, server, dn, username, password):
         try:
             log.debug('Trying simple bind with %r', dn)
             server.simple_bind_s(dn, safe_str(password))
-            user = server.search_ext_s(
+            _dn, attrs = server.search_ext_s(
                 dn, ldap.SCOPE_BASE, '(objectClass=*)', )[0]
-            _, attrs = user
+
             return attrs
 
         except ldap.INVALID_CREDENTIALS:
@@ -206,7 +206,7 @@ class AuthLdap(AuthLdapBase):
                     break
             else:
                 raise LdapPasswordError(
-                    'Failed to authenticate user `{}`'
+                    'Failed to authenticate user `{}` '
                     'with given password'.format(username))
 
         except ldap.NO_SUCH_OBJECT:
@@ -249,7 +249,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         colander.Int(),
         default=389,
         description=_('Custom port that the LDAP server is listening on. '
-                      'Default value is: 389, use 689 for LDAPS(SSL)'),
+                      'Default value is: 389, use 689 for LDAPS (SSL)'),
         preparer=strip_whitespace,
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),
@@ -272,7 +272,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
                       'uid=root,cn=users,dc=mydomain,dc=com, or admin@mydomain.com'),
         missing='',
         preparer=strip_whitespace,
-        title=_('Account'),
+        title=_('Bind account'),
         widget='string')
     dn_pass = colander.SchemaNode(
         colander.String(),
@@ -280,7 +280,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         description=_('Password to authenticate for given user DN.'),
         missing='',
         preparer=strip_whitespace,
-        title=_('Password'),
+        title=_('Bind account password'),
         widget='password')
     tls_kind = colander.SchemaNode(
         colander.String(),
@@ -318,7 +318,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         colander.String(),
         default='',
         description=_('Base DN to search. Dynamic bind is supported. Add `$login` marker '
-                      'in it to be replaced with current user credentials \n'
+                      'in it to be replaced with current user username \n'
                       '(e.g., dc=mydomain,dc=com, or ou=Users,dc=mydomain,dc=com)'),
         missing='',
         preparer=strip_whitespace,
