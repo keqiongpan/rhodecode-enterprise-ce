@@ -57,5 +57,5 @@ Each lines should represent a single name e.g `repo_name_1` or `repo_group/repo_
 Run this line from CLI to execute the code from the `repo_delete_task.py` file and
 exit the ishell after the execution::
 
-    echo "%run repo_delete_task.py" | rccontrol ishell Enterprise-1
+    echo "%run repo_delete_task.py" | rccontrol ishell enterprise-1
 
