@@ -1,10 +1,11 @@
 
-.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build generate-pkgs
+.PHONY: clean docs docs-clean docs-cleanup test test-clean test-only test-only-postgres test-only-mysql web-build generate-pkgs pip-packages
 
 NODE_PATH=./node_modules
 WEBPACK=./node_binaries/webpack
 GRUNT=./node_binaries/grunt
-
+# set by: PATH_TO_OUTDATED_PACKAGES=/some/path/outdated_packages.py
+OUTDATED_PACKAGES = ${PATH_TO_OUTDATED_PACKAGES}
 
 clean:
 	make test-clean
@@ -54,6 +55,9 @@ web-build:
 
 generate-pkgs:
 	nix-shell pkgs/shell-generate.nix --command "pip2nix generate --licenses"
+
+pip-packages:
+	python ${OUTDATED_PACKAGES}
 
 generate-js-pkgs:
 	rm -rf node_modules && \
