@@ -598,9 +598,10 @@ class _Message(object):
     * ``category``: the category specified when the message was created.
     """
 
-    def __init__(self, category, message):
+    def __init__(self, category, message, sub_data=None):
         self.category = category
         self.message = message
+        self.sub_data = sub_data or {}
 
     def __str__(self):
         return self.message
@@ -663,7 +664,17 @@ class Flash(object):
         # of strings.
         for cat in self.categories:
             for msg in session.pop_flash(queue=cat):
-                messages.append(_Message(cat, msg))
+                sub_data = {}
+                if hasattr(msg, 'rsplit'):
+                    flash_data = msg.rsplit('|DELIM|', 1)
+                    org_message = flash_data[0]
+                    if len(flash_data) > 1:
+                        sub_data = json.loads(flash_data[1])
+                else:
+                    org_message = msg
+
+                messages.append(_Message(cat, org_message, sub_data=sub_data))
+
         # Map messages from the default queue to the 'notice' category.
         for msg in session.pop_flash():
             messages.append(_Message('notice', msg))
@@ -673,25 +684,16 @@ class Flash(object):
 
     def json_alerts(self, session=None, request=None):
         payloads = []
-        messages = flash.pop_messages(session=session, request=request)
-        if messages:
-            for message in messages:
-                subdata = {}
-                if hasattr(message.message, 'rsplit'):
-                    flash_data = message.message.rsplit('|DELIM|', 1)
-                    org_message = flash_data[0]
-                    if len(flash_data) > 1:
-                        subdata = json.loads(flash_data[1])
-                else:
-                    org_message = message.message
-                payloads.append({
-                    'message': {
-                        'message': u'{}'.format(org_message),
-                        'level': message.category,
-                        'force': True,
-                        'subdata': subdata
-                    }
-                })
+        messages = flash.pop_messages(session=session, request=request) or []
+        for message in messages:
+            payloads.append({
+                'message': {
+                    'message': u'{}'.format(message.message),
+                    'level': message.category,
+                    'force': True,
+                    'subdata': message.sub_data
+                }
+            })
         return json.dumps(payloads)
 
     def __call__(self, message, category=None, ignore_duplicate=True,
@@ -1514,6 +1516,9 @@ def get_active_pattern_entries(repo_name):
     return active_entries
 
 
+pr_pattern_re = re.compile(r'(?:(?:^!)|(?: !))(\d+)')
+
+
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
     allowed_formats = ['html', 'rst', 'markdown',
@@ -1522,7 +1527,10 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         raise ValueError('Link format can be only one of:{} got {}'.format(
                          allowed_formats, link_format))
 
-    active_entries = active_entries or get_active_pattern_entries(repo_name)
+    if active_entries is None:
+        log.debug('Fetch active patterns for repo: %s', repo_name)
+        active_entries = get_active_pattern_entries(repo_name)
+
     issues_data = []
     new_text = text_string
 
@@ -1537,11 +1545,14 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         log.debug('issue tracker entry: uid: `%s` PAT:%s URL:%s PREFIX:%s',
                   uid, entry['pat'], entry['url'], entry['pref'])
 
-        try:
-            pattern = re.compile(r'%s' % entry['pat'])
-        except re.error:
-            log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
-            continue
+        if entry.get('pat_compiled'):
+            pattern = entry['pat_compiled']
+        else:
+            try:
+                pattern = re.compile(r'%s' % entry['pat'])
+            except re.error:
+                log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
+                continue
 
         data_func = partial(
             _process_url_func, repo_name=repo_name, entry=entry, uid=uid,
@@ -1569,7 +1580,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     pr_url_func = partial(
         _process_url_func, repo_name=repo_name, entry=pr_entry, uid=None,
         link_format=link_format+'+hovercard')
-    new_text = re.compile(r'(?:(?:^!)|(?: !))(\d+)').sub(pr_url_func, new_text)
+    new_text = pr_pattern_re.sub(pr_url_func, new_text)
     log.debug('processed !pr pattern')
 
     return new_text, issues_data
@@ -1580,6 +1591,7 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
     """
+
     def escaper(_text):
         return _text.replace('<', '&lt;').replace('>', '&gt;')
 
@@ -1636,7 +1648,7 @@ def renderer_from_filename(filename, exclude=None):
 
 
 def render(source, renderer='rst', mentions=False, relative_urls=None,
-           repo_name=None):
+           repo_name=None, active_pattern_entries=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_urls:
@@ -1651,7 +1663,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
-                source, repo_name, link_format='rst')
+                source, repo_name, link_format='rst',
+                active_entries=active_pattern_entries)
 
         return literal(
             '<div class="rst-block">%s</div>' %
@@ -1662,7 +1675,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
         if repo_name:
             # process patterns on comments if we pass in repo name
             source, issues = process_patterns(
-                source, repo_name, link_format='markdown')
+                source, repo_name, link_format='markdown',
+                active_entries=active_pattern_entries)
 
         return literal(
             '<div class="markdown-block">%s</div>' %

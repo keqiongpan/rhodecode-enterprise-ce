@@ -66,11 +66,12 @@ markdown_tags = [
 markdown_attrs = {
     "*": ["class", "style", "align"],
     "img": ["src", "alt", "title"],
-    "a": ["href", "alt", "title", "name"],
+    "a": ["href", "alt", "title", "name", "data-hovercard-alt", "data-hovercard-url"],
     "abbr": ["title"],
     "acronym": ["title"],
     "pre": ["lang"],
-    "input": ["type", "disabled", "checked"]
+    "input": ["type", "disabled", "checked"],
+    "strong": ["title", "data-hovercard-alt", "data-hovercard-url"],
 }
 
 standard_styles = [

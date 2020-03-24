@@ -3,9 +3,13 @@
 .readme-title {
     border: 1px solid @grey6;
     padding: 10px 5px;
-    font-weight: 600;
     margin-top: 30px;
     margin-bottom: -1px;
+
+    a {
+        font-weight: 600;
+        font-size: 13px
+    }
 }
 
 div.readme_box {
@@ -34,14 +38,11 @@ div.readme_box h2 {
 div.readme_box h1 {
     font-size: 32px;
     margin: 15px 0 15px 0 !important;
-    padding-bottom: 5px !important;
 }
 
 div.readme_box h2 {
     font-size: 24px !important;
     margin: 34px 0 10px 0 !important;
-    padding-top: 15px !important;
-    padding-bottom: 8px !important;
 }
 
 div.readme_box h3 {
@@ -74,6 +75,20 @@ div.readme_box hr {
     margin-bottom: 13px;
 }
 
+div.readme_box blockquote {
+  color: #424242 !important;
+  padding: 8px 21px;
+  margin: 12px 0;
+  border-left: 4px solid @grey6;
+}
+
+div.readme_box blockquote p {
+  color: #424242 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.5;
+}
+
 div.readme_box ol,
 div.readme_box ul,
 div.readme_box p,
@@ -81,13 +96,11 @@ div.readme_box blockquote,
 div.readme_box dl,
 div.readme_box li,
 div.readme_box table {
-    margin: 3px 0px 13px 0px !important;
     color: #424242 !important;
     font-size: 13px !important;
     font-family: @text-regular;
     font-weight: normal  !important;
     overflow: visible !important;
-    line-height: 140% !important;
 }
 
 div.readme_box pre {

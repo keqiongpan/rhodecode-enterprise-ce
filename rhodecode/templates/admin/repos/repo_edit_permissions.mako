@@ -58,7 +58,11 @@
                         <td class="private_repo_msg">
                             ${base.gravatar(h.DEFAULT_USER_EMAIL, 16)}
                             ${h.DEFAULT_USER} - ${_('only users/user groups explicitly added here will have access')}</td>
-                        <td></td>
+                        <td class="td-action">
+                            <span class="tooltip btn btn-link btn-default" onclick="setPrivateRepo(false); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
+                            ${_('un-set private mode')}
+                            </span>
+                        </td>
                         <td class="quick_repo_menu">
                             % if c.rhodecode_user.is_admin:
                                 <i class="icon-more"></i>
@@ -83,7 +87,12 @@
                             ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
-                                    ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
+                                    ${h.DEFAULT_USER}
+                                    % if _user.active:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in and anonymous users')}</span>
+                                    % else:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
+                                    % endif
                                 % else:
                                     ${h.link_to_user(_user.username)}
                                     %if getattr(_user, 'duplicate_perm', None):
@@ -106,7 +115,7 @@
                             ${_('Remove')}
                             </span>
                           %elif _user.username == h.DEFAULT_USER:
-                            <span class="tooltip btn btn-link btn-default" onclick="enablePrivateRepo(); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators.')}">
+                            <span class="tooltip btn btn-link btn-default" onclick="setPrivateRepo(true); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
                             ${_('set private mode')}
                             </span>
                           %endif
@@ -204,9 +213,10 @@
     });
     quick_repo_menu();
 
-    var enablePrivateRepo = function () {
+    var setPrivateRepo = function (private) {
         var postData = {
-            'csrf_token': CSRF_TOKEN
+            'csrf_token': CSRF_TOKEN,
+            'private': private
         };
 
         var success = function(o) {

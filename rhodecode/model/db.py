@@ -1025,6 +1025,17 @@ class User(Base, BaseModel):
         return qry.all()
 
     @classmethod
+    def get_all_user_ids(cls, only_active=True):
+        """
+        Returns all users IDs
+        """
+        qry = Session().query(User.user_id)
+
+        if only_active:
+            qry = qry.filter(User.active == true())
+        return [x.user_id for x in qry]
+
+    @classmethod
     def get_default_user(cls, cache=False, refresh=False):
         user = User.get_by_username(User.DEFAULT_USER, cache=cache)
         if user is None:
@@ -3890,8 +3901,8 @@ class _SetState(object):
         self._current_state = None
 
     def __enter__(self):
-        log.debug('StateLock: entering set state context, setting state to: `%s`',
-                  self._pr_state)
+        log.debug('StateLock: entering set state context of pr %s, setting state to: `%s`',
+                  self._pr, self._pr_state)
         self.set_pr_state(self._pr_state)
         return self
 
@@ -3901,8 +3912,9 @@ class _SetState(object):
             return None
 
         self.set_pr_state(self._org_state)
-        log.debug('StateLock: exiting set state context, setting state to: `%s`',
-                  self._org_state)
+        log.debug('StateLock: exiting set state context of pr %s, setting state to: `%s`',
+                  self._pr, self._org_state)
+
     @property
     def state(self):
         return self._current_state
@@ -4285,6 +4297,7 @@ class PullRequest(Base, _PullRequestBase):
     def __json__(self):
         return {
             'revisions': self.revisions,
+            'versions': self.versions_count
         }
 
     def calculated_review_status(self):
@@ -4306,6 +4319,14 @@ class PullRequest(Base, _PullRequestBase):
         if os.path.isdir(shadow_repository_path):
             vcs_obj = self.target_repo.scm_instance()
             return vcs_obj.get_shadow_instance(shadow_repository_path)
+
+    @property
+    def versions_count(self):
+        """
+        return number of versions this PR have, e.g a PR that once been
+        updated will have 2 versions
+        """
+        return self.versions.count() + 1
 
 
 class PullRequestVersion(Base, _PullRequestBase):

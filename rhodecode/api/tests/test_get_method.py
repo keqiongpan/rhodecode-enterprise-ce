@@ -56,5 +56,6 @@ class TestGetMethod(object):
                      'request': '<RequiredType>',
                      'resolves_comment_id': '<Optional:None>',
                      'status': '<Optional:None>',
-                     'userid': '<Optional:<OptionalAttr:apiuser>>'}]
+                     'userid': '<Optional:<OptionalAttr:apiuser>>',
+                     'send_email': '<Optional:True>'}]
         assert_ok(id_, expected, given=response.body)

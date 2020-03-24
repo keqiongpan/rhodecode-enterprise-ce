@@ -76,6 +76,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def my_account_profile(self):
         c = self.load_default_context()
         c.active = 'profile'
+        c.extern_type = c.user.extern_type
         return self._get_template_context(c)
 
     @LoginRequired()

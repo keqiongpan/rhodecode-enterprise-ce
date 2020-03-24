@@ -2,7 +2,11 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User Group Permissions')}</h3>
+        <h3 class="panel-title">
+            <i class="icon-user-group" title="${_('User group')}"></i>
+            ${h.link_to_group(c.user_group.users_group_name)}
+            - ${_('Access Permissions')}
+        </h3>
     </div>
     <div class="panel-body">
         ${h.secure_form(h.route_path('edit_user_group_perms_update', user_group_id=c.user_group.users_group_id), request=request)}
@@ -63,7 +67,12 @@
                             ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
-                                    ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
+                                    ${h.DEFAULT_USER}
+                                    % if _user.active:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in and anonymous users')}</span>
+                                    % else:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
+                                    % endif
                                 % else:
                                     ${h.link_to_user(_user.username)}
                                     %if getattr(_user, 'duplicate_perm', None):
@@ -106,7 +115,12 @@
                             ${base.gravatar(_user.email, 16, user=_user, tooltip=True)}
                             <span class="user">
                                 % if _user.username == h.DEFAULT_USER:
-                                    ${h.DEFAULT_USER} <span class="user-perm-help-text"> - ${_('permission for all other users')}</span>
+                                    ${h.DEFAULT_USER}
+                                    % if _user.active:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in and anonymous users')}</span>
+                                    % else:
+                                        <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
+                                    % endif
                                 % else:
                                     ${h.link_to_user(_user.username)}
                                     %if getattr(_user, 'duplicate_perm', None):

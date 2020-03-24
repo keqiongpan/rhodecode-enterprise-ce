@@ -1,6 +1,11 @@
+<%namespace name="base" file="/base/base.mako"/>
+
 <div class="panel panel-default">
     <div class="panel-heading">
-      <h3 class="panel-title">${_('Authentication Tokens')}</h3>
+      <h3 class="panel-title">
+          ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
+          &nbsp;- ${_('Authentication Tokens')}
+      </h3>
     </div>
     <div class="panel-body">
         <div class="apikeys_wrap">

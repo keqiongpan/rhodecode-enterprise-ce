@@ -28,7 +28,7 @@
     <div class="sidebar">
         <ul class="nav nav-pills nav-stacked">
           <li class="${h.is_active('settings', c.active)}"><a href="${h.route_path('edit_repo_group', repo_group_name=c.repo_group.group_name)}">${_('Settings')}</a></li>
-          <li class="${h.is_active('permissions', c.active)}"><a href="${h.route_path('edit_repo_group_perms', repo_group_name=c.repo_group.group_name)}">${_('Permissions')}</a></li>
+          <li class="${h.is_active('permissions', c.active)}"><a href="${h.route_path('edit_repo_group_perms', repo_group_name=c.repo_group.group_name)}">${_('Access Permissions')}</a></li>
           <li class="${h.is_active('advanced', c.active)}"><a href="${h.route_path('edit_repo_group_advanced', repo_group_name=c.repo_group.group_name)}">${_('Advanced')}</a></li>
           <li class="${h.is_active('integrations', c.active)}"><a href="${h.route_path('repo_group_integrations_home', repo_group_name=c.repo_group.group_name)}">${_('Integrations')}</a></li>
         </ul>

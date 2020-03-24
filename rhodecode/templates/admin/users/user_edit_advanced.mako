@@ -25,7 +25,10 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User: {}').format(c.user.username)}</h3>
+        <h3 class="panel-title">
+            ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
+            &nbsp;- ${_('Access Permissions')}
+        </h3>
     </div>
     <div class="panel-body">
         <table class="rctable">

@@ -38,8 +38,7 @@ from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
     safe_str, safe_unicode, remove_prefix, obfuscate_url_pw,
-    get_current_rhodecode_user, safe_int, datetime_to_time,
-    action_logger_generic)
+    get_current_rhodecode_user, safe_int, action_logger_generic)
 from rhodecode.lib.vcs.backends import get_backend
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
@@ -199,9 +198,11 @@ class RepoModel(BaseModel):
 
     def get_repos_as_dict(self, repo_list=None, admin=False,
                           super_user_actions=False, short_name=None):
+
         _render = get_current_request().get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
         c = _render.get_call_context()
+        h = _render.get_helpers()
 
         def quick_menu(repo_name):
             return _render('quick_menu', repo_name)
@@ -258,7 +259,7 @@ class RepoModel(BaseModel):
                 "name": repo_lnk(repo.repo_name, repo.repo_type, repo.repo_state,
                                  repo.private, repo.archived, repo.fork),
 
-                "desc": desc(repo.description),
+                "desc": desc(h.escape(repo.description)),
 
                 "last_change": last_change(repo.updated_on),
 
@@ -619,13 +620,26 @@ class RepoModel(BaseModel):
         changes = {
             'added': [],
             'updated': [],
-            'deleted': []
+            'deleted': [],
+            'default_user_changed': None
         }
+
+        repo = self._get_repo(repo)
+
         # update permissions
         for member_id, perm, member_type in perm_updates:
             member_id = int(member_id)
             if member_type == 'user':
                 member_name = User.get(member_id).username
+                if member_name == User.DEFAULT_USER:
+                    # NOTE(dan): detect if we changed permissions for default user
+                    perm_obj = self.sa.query(UserRepoToPerm) \
+                        .filter(UserRepoToPerm.user_id == member_id) \
+                        .filter(UserRepoToPerm.repository == repo) \
+                        .scalar()
+                    if perm_obj and perm_obj.permission.permission_name != perm:
+                        changes['default_user_changed'] = True
+
                 # this updates also current one if found
                 self.grant_user_permission(
                     repo=repo, user=member_id, perm=perm)

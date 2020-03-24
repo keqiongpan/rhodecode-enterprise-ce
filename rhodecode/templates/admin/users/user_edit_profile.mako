@@ -2,7 +2,10 @@
 
 <div class="panel panel-default user-profile">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User Profile')}</h3>
+        <h3 class="panel-title">
+            ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
+            &nbsp;- ${_('User Profile')}
+        </h3>
     </div>
     <div class="panel-body">
         <div class="user-profile-content">
@@ -73,7 +76,13 @@
                <div class="input textarea editor">
                    ${h.textarea('description', rows=10, class_="medium")}
                     <% metatags_url = h.literal('''<a href="#metatagsShow" onclick="$('#meta-tags-desc').toggle();return false">meta-tags</a>''') %>
-                    <span class="help-block">${_('Plain text format with support of {metatags}. Add a README file for longer descriptions').format(metatags=metatags_url)|n}</span>
+                    <span class="help-block">
+                        % if c.visual.stylify_metatags:
+                            ${_('Plain text format with {metatags} support.').format(metatags=metatags_url)|n}
+                        % else:
+                            ${_('Plain text format.')}
+                        % endif
+                    </span>
                     <span id="meta-tags-desc" style="display: none">
                         <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
                         ${dt.metatags_help()}

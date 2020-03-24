@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 
 class SshKeyModel(BaseModel):
     cls = UserSshKeys
+    DEFAULT_PRIVATE_KEY_FORMAT = 'pkcs8'
 
     def parse_key(self, key_data):
         """
@@ -66,16 +67,23 @@ class SshKeyModel(BaseModel):
             log.error("Key Parse error: %s", err)
             raise
 
-    def generate_keypair(self, comment=None):
+    def generate_keypair(self, comment=None, private_format=DEFAULT_PRIVATE_KEY_FORMAT):
 
         key = rsa.generate_private_key(
             backend=crypto_default_backend(),
             public_exponent=65537,
             key_size=2048
         )
+        if private_format == self.DEFAULT_PRIVATE_KEY_FORMAT:
+            private_format = crypto_serialization.PrivateFormat.PKCS8
+        else:
+            # legacy format that can be used by older systems, use if pkcs8 have
+            # problems
+            private_format = crypto_serialization.PrivateFormat.TraditionalOpenSSL
+
         private_key = key.private_bytes(
             crypto_serialization.Encoding.PEM,
-            crypto_serialization.PrivateFormat.PKCS8,
+            private_format,
             crypto_serialization.NoEncryption())
         public_key = key.public_key().public_bytes(
             crypto_serialization.Encoding.OpenSSH,

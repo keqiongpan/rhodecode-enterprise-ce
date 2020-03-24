@@ -209,6 +209,8 @@ def enable_auth_plugins(request, baseapp, csrf_token):
                 Session().add(setting)
             Session().commit()
 
+        SettingsModel().invalidate_settings_cache()
+
     def cleanup():
         _enable_plugins(['egg:rhodecode-enterprise-ce#rhodecode'])
 

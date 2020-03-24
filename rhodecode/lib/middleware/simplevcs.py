@@ -133,15 +133,16 @@ class SimpleVCS(object):
         self.config = config
         # re-populated by specialized middleware
         self.repo_vcs_config = base.Config()
-        self.rhodecode_settings = SettingsModel().get_all_settings(cache=True)
 
-        registry.rhodecode_settings = self.rhodecode_settings
+        rc_settings = SettingsModel().get_all_settings(cache=True, from_request=False)
+        realm = rc_settings.get('rhodecode_realm') or 'RhodeCode AUTH'
+
         # authenticate this VCS request using authfunc
         auth_ret_code_detection = \
             str2bool(self.config.get('auth_ret_code_detection', False))
         self.authenticate = BasicAuth(
             '', authenticate, registry, config.get('auth_ret_code'),
-            auth_ret_code_detection)
+            auth_ret_code_detection, rc_realm=realm)
         self.ip_addr = '0.0.0.0'
 
     @LazyProperty

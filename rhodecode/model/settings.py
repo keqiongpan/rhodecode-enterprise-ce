@@ -21,9 +21,11 @@
 import os
 import hashlib
 import logging
+import re
 from collections import namedtuple
 from functools import wraps
 import bleach
+from pyramid.threadlocal import get_current_request, get_current_registry
 
 from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import (
@@ -210,7 +212,23 @@ class SettingsModel(BaseModel):
         invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
         CacheKey.set_invalidate(invalidation_namespace)
 
-    def get_all_settings(self, cache=False):
+    def get_all_settings(self, cache=False, from_request=True):
+        from rhodecode.authentication.base import get_authn_registry
+
+        # defines if we use GLOBAL, or PER_REPO
+        repo = self._get_repo(self.repo) if self.repo else None
+        key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
+
+        # initially try the requests context, this is the fastest
+        # we only fetch global config
+        if from_request:
+            request = get_current_request()
+
+            if request and not repo and hasattr(request, 'call_context') and hasattr(request.call_context, 'rc_config'):
+                rc_config = request.call_context.rc_config
+                if rc_config:
+                    return rc_config
+
         region = rc_cache.get_or_create_region('sql_cache_short')
         invalidation_namespace = CacheKey.SETTINGS_INVALIDATION_NAMESPACE
 
@@ -226,9 +244,6 @@ class SettingsModel(BaseModel):
             }
             return settings
 
-        repo = self._get_repo(self.repo) if self.repo else None
-        key = "settings_repo.{}".format(repo.repo_id) if repo else "settings_app"
-
         inv_context_manager = rc_cache.InvalidationContext(
             uid='cache_settings', invalidation_namespace=invalidation_namespace)
         with inv_context_manager as invalidation_context:
@@ -240,6 +255,11 @@ class SettingsModel(BaseModel):
                 # are anyway very short lived and it's a safest way.
                 region = rc_cache.get_or_create_region('sql_cache_short')
                 region.invalidate()
+                registry = get_current_registry()
+                if registry:
+                    authn_registry = get_authn_registry(registry)
+                    if authn_registry:
+                        authn_registry.invalidate_plugins_for_auth()
 
             result = _get_all_settings('rhodecode_settings', key)
             log.debug('Fetching app settings for key: %s took: %.4fs', key,
@@ -360,9 +380,15 @@ class IssueTrackerSettingsModel(object):
         for uid in issuetracker_entries:
             url_data = qs.get(self._get_keyname('url', uid, 'rhodecode_'))
 
+            pat = qs.get(self._get_keyname('pat', uid, 'rhodecode_'))
+            try:
+                pat_compiled = re.compile(r'%s' % pat)
+            except re.error:
+                pat_compiled = None
+
             issuetracker_entries[uid] = AttributeDict({
-                'pat': qs.get(
-                    self._get_keyname('pat', uid, 'rhodecode_')),
+                'pat': pat,
+                'pat_compiled': pat_compiled,
                 'url': url_cleaner(
                     qs.get(self._get_keyname('url', uid, 'rhodecode_')) or ''),
                 'pref': bleach.clean(

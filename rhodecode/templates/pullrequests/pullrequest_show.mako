@@ -438,6 +438,11 @@
 
     <h2 style="text-align: center">
         ${_('Cannot show diff when pull request state is changing. Current progress state')}: <span class="tag tag-merge-state-${c.pull_request.state}">${c.pull_request.state}</span>
+
+        % if c.is_super_admin:
+        <br/>
+        If you think this is an error try <a href="${h.current_route_path(request, force_state='created')}">forced state reset</a> to <span class="tag tag-merge-state-created">created</span> state.
+        % endif
     </h2>
 
   % else:

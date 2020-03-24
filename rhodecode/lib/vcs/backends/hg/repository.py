@@ -290,6 +290,12 @@ class MercurialRepository(BaseRepository):
         self._remote.invalidate_vcs_cache()
         return update_cache
 
+    def hg_rebuild_fn_cache(self):
+        update_cache = self._remote.hg_rebuild_fn_cache()
+
+        self._remote.invalidate_vcs_cache()
+        return update_cache
+
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
         if commit_id1 == commit_id2:
             return commit_id1

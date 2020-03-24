@@ -38,6 +38,7 @@ class AuthenticationPluginRegistry(object):
 
     def __init__(self, settings):
         self._plugins = {}
+        self._plugins_for_auth = None
         self._fallback_plugin = settings.get(self.fallback_plugin_key, None)
 
     def add_authn_plugin(self, config, plugin):
@@ -63,6 +64,10 @@ class AuthenticationPluginRegistry(object):
             if plugin.uid == plugin_uid:
                 return plugin
 
+    def invalidate_plugins_for_auth(self):
+        log.debug('Invalidating cached plugins for authentication')
+        self._plugins_for_auth = None
+
     def get_plugins_for_authentication(self):
         """
         Returns a list of plugins which should be consulted when authenticating
@@ -70,6 +75,9 @@ class AuthenticationPluginRegistry(object):
         Additionally it includes the fallback plugin from the INI file, if
         `rhodecode.auth_plugin_fallback` is set to a plugin ID.
         """
+        if self._plugins_for_auth is not None:
+            return self._plugins_for_auth
+
         plugins = []
 
         # Add all enabled and active plugins to the list. We iterate over the
@@ -80,6 +88,9 @@ class AuthenticationPluginRegistry(object):
             plugin = self.get_plugin(plugin_id)
             if plugin is not None and plugin.is_active(
                     plugin_cached_settings=raw_settings):
+
+                # inject settings into plugin, we can re-use the DB fetched settings here
+                plugin._settings = plugin._propagate_settings(raw_settings)
                 plugins.append(plugin)
 
         # Add the fallback plugin from ini file.
@@ -89,6 +100,8 @@ class AuthenticationPluginRegistry(object):
                 self._fallback_plugin)
             plugin = self.get_plugin(self._fallback_plugin)
             if plugin is not None and plugin not in plugins:
+                plugin._settings = plugin._propagate_settings(raw_settings)
                 plugins.append(plugin)
 
-        return plugins
+        self._plugins_for_auth = plugins
+        return self._plugins_for_auth

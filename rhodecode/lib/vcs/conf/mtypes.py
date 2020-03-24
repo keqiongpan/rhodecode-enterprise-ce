@@ -18,6 +18,19 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+DEFAULTS = {
+ 'encodings_map': {'.gz': 'gzip',
+                   '.Z': 'compress',
+                   '.bz2': 'bzip2',
+                   '.xz': 'xz'},
+ 'suffix_map': {'.svgz': '.svg.gz',
+                '.tgz': '.tar.gz',
+                '.taz': '.tar.gz',
+                '.tz': '.tar.gz',
+                '.tbz2': '.tar.bz2',
+                '.txz': '.tar.xz'},
+}
+
 TYPES_MAP = [
  {'.jpg': 'image/jpg',
   '.mid': 'audio/midi',
@@ -1203,4 +1216,6 @@ def get_mimetypes_db(extra_types=None):
         types_map[1].update(extra_types)
     db = mimetypes.MimeTypes()
     db.types_map = types_map
+    db.encodings_map.update(DEFAULTS['encodings_map'])
+    db.suffix_map.update(DEFAULTS['suffix_map'])
     return db

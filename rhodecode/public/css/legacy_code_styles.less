@@ -134,14 +134,11 @@ div.markdown-block h2 {
 div.markdown-block h1 {
     font-size: 32px;
     margin: 15px 0 15px 0 !important;
-    padding-bottom: 5px !important;
 }
 
 div.markdown-block h2 {
     font-size: 24px !important;
     margin: 34px 0 10px 0 !important;
-    padding-top: 15px !important;
-    padding-bottom: 8px !important;
 }
 
 div.markdown-block h3 {
@@ -174,6 +171,21 @@ div.markdown-block hr {
     margin-bottom: 13px;
 }
 
+div.markdown-block blockquote {
+  color: #424242 !important;
+  padding: 8px 21px;
+  margin: 12px 0;
+  border-left: 4px solid @grey6;
+}
+
+div.markdown-block blockquote p {
+  color: #424242 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.5;
+}
+
+
 div.markdown-block ol,
 div.markdown-block ul,
 div.markdown-block p,
@@ -181,13 +193,11 @@ div.markdown-block blockquote,
 div.markdown-block dl,
 div.markdown-block li,
 div.markdown-block table {
-    margin: 3px 0px 13px 0px !important;
     color: #424242 !important;
     font-size: 13px !important;
     font-family: @text-regular;
     font-weight: normal  !important;
     overflow: visible !important;
-    line-height: 140% !important;
 }
 
 div.markdown-block pre {
@@ -245,14 +255,6 @@ div.markdown-block ol li {
     list-style: decimal !important;
 }
 
-/*
-div.markdown-block a,
-div.markdown-block a:visited {
-    color: #4183C4 !important;
-    background-color: inherit;
-    text-decoration: none;
-}
-*/
 
 div.markdown-block #message {
     .border-radius(@border-radius);

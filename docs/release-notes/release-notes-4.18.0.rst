@@ -193,6 +193,10 @@ Fixes
 Upgrade notes
 ^^^^^^^^^^^^^
 
+- Major Celery Version upgrade. The 4.18.X release includes a major Celery version.
+  It's recommended to run `rccontrol self-stop && rccontrol self-init` after the
+  upgrade to ensure celery workers are restarted and updated.
+
 - New Automation task. We've changed the logic for updating latest change inside repository group.
   New logic includes scanning for changes in all nested objects. Since this is a heavy task
   a new dedicated scheduler task has been created to update it automatically on a scheduled base.
@@ -217,6 +221,11 @@ Upgrade notes
   Redis instead for better Performance and scalability
   Please review vcsserver.ini settings under:
   `rc_cache.repo_object.backend = dogpile.cache.rc.redis_msgpack`
+
+- Gunicorn configuration now moved to .ini files.
+  Upgrading to 4.18.X will overwrite the gunicorn_conf.py file. If there are any custom changes in that file
+  they will be lost. Recommended way to configure gunicorn is now via the .ini files. Please check `rhodecode.template.ini` file
+  for example gunicorn configuration.
 
 - New memory monitoring for Gunicorn workers. Starting from 4.18 release a option was added
   to limit the maximum amount of memory used by a worker.

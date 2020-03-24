@@ -26,6 +26,8 @@ pull request model for RhodeCode
 
 import json
 import logging
+import os
+
 import datetime
 import urllib
 import collections
@@ -632,6 +634,7 @@ class PullRequestModel(BaseModel):
         repo_id = pull_request.target_repo.repo_id
         use_rebase = self._use_rebase_for_merging(pull_request)
         close_branch = self._close_branch_before_merging(pull_request)
+        user_name = self._user_name_for_merging(pull_request, user)
 
         target_ref = self._refresh_reference(
             pull_request.target_ref_parts, target_vcs)
@@ -647,7 +650,6 @@ class PullRequestModel(BaseModel):
             target_vcs.config.set(
                 'rhodecode', 'RC_SCM_DATA', json.dumps(extras))
 
-            user_name = user.short_contact
             merge_state = target_vcs.merge(
                 repo_id, workspace_id, target_ref, source_vcs,
                 pull_request.source_ref_parts,
@@ -1663,6 +1665,16 @@ class PullRequestModel(BaseModel):
                 pull_request, 'rhodecode_git_use_rebase_for_merging')
 
         return False
+
+    def _user_name_for_merging(self, pull_request, user):
+        env_user_name_attr = os.environ.get('RC_MERGE_USER_NAME_ATTR', '')
+        if env_user_name_attr and hasattr(user, env_user_name_attr):
+            user_name_attr = env_user_name_attr
+        else:
+            user_name_attr = 'short_contact'
+
+        user_name = getattr(user, user_name_attr)
+        return user_name
 
     def _close_branch_before_merging(self, pull_request):
         repo_type = pull_request.target_repo.repo_type

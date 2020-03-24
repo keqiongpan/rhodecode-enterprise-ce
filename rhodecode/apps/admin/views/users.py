@@ -872,7 +872,10 @@ class UsersView(UserAppView):
 
         c.active = 'ssh_keys_generate'
         comment = 'RhodeCode-SSH {}'.format(c.user.email or '')
-        c.private, c.public = SshKeyModel().generate_keypair(comment=comment)
+        private_format = self.request.GET.get('private_format') \
+                         or SshKeyModel.DEFAULT_PRIVATE_KEY_FORMAT
+        c.private, c.public = SshKeyModel().generate_keypair(
+            comment=comment, private_format=private_format)
 
         return self._get_template_context(c)
 

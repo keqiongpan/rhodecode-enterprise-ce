@@ -18,7 +18,11 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('User Group: %s') % c.user_group.users_group_name}</h3>
+        <h3 class="panel-title">
+            <i class="icon-user-group" title="${_('User group')}"></i>
+            ${h.link_to_group(c.user_group.users_group_name)}
+            - ${_('Advanced')}
+        </h3>
     </div>
     <div class="panel-body">
         ${base.dt_info_panel(elems)}

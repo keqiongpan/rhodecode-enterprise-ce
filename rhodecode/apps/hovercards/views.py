@@ -65,6 +65,19 @@ class HoverCardsView(BaseAppView):
 
     @LoginRequired()
     @view_config(
+        route_name='hovercard_username', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_user.mako')
+    def hovercard_username(self):
+        c = self.load_default_context()
+        username = self.request.matchdict['username']
+        c.user = User.get_by_username(username)
+        if not c.user:
+            raise HTTPNotFound()
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @view_config(
         route_name='hovercard_user_group', request_method='GET', xhr=True,
         renderer='rhodecode:templates/hovercards/hovercard_user_group.mako')
     def hovercard_user_group(self):

@@ -73,6 +73,7 @@ def get_pull_request(request, apiuser, pullrequestid, repoid=Optional(None),
             "status" :           "<status>",
             "created_on":        "<date_time_created>",
             "updated_on":        "<date_time_updated>",
+            "versions":          "<number_or_versions_of_pr>",
             "commit_ids":        [
                                      ...
                                      "<commit_id>",
@@ -452,7 +453,7 @@ def comment_pull_request(
         message=Optional(None), commit_id=Optional(None), status=Optional(None),
         comment_type=Optional(ChangesetComment.COMMENT_TYPE_NOTE),
         resolves_comment_id=Optional(None), extra_recipients=Optional([]),
-        userid=Optional(OAttr('apiuser'))):
+        userid=Optional(OAttr('apiuser')), send_email=Optional(True)):
     """
     Comment on the pull request specified with the `pullrequestid`,
     in the |repo| specified by the `repoid`, and optionally change the
@@ -483,6 +484,8 @@ def comment_pull_request(
     :type extra_recipients: Optional(list)
     :param userid: Comment on the pull request as this user
     :type userid: Optional(str or int)
+    :param send_email: Define if this comment should also send email notification
+    :type send_email: Optional(bool)
 
     Example output:
 
@@ -527,6 +530,7 @@ def comment_pull_request(
     comment_type = Optional.extract(comment_type)
     resolves_comment_id = Optional.extract(resolves_comment_id)
     extra_recipients = Optional.extract(extra_recipients)
+    send_email = Optional.extract(send_email, binary=True)
 
     if not message and not status:
         raise JSONRPCError(
@@ -587,7 +591,8 @@ def comment_pull_request(
         comment_type=comment_type,
         resolves_comment_id=resolves_comment_id,
         auth_user=auth_user,
-        extra_recipients=extra_recipients
+        extra_recipients=extra_recipients,
+        send_email=send_email
     )
 
     if allowed_to_change_status and status:

@@ -1,11 +1,16 @@
+<%namespace name="base" file="/base/base.mako"/>
+
 <div class="panel panel-default">
     <div class="panel-heading">
-         <h3 class="panel-title">${_('New SSH Key generation')}</h3>
+         <h3 class="panel-title">
+          ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
+          &nbsp;- ${_('New SSH Key generation')}
+         </h3>
     </div>
     <div class="panel-body">
         %if c.ssh_enabled and c.ssh_key_generator_enabled:
             <p>
-                ${_('Below is a 2048 bit generated SSH RSA key.')}<br/>
+                ${_('Below is a 2048 bit generated SSH RSA key.')}<br/>${_('If you use older systems please try to generate a')} <a href="${h.current_route_path(request, private_format='legacy')}">${_('legacy format')}</a> ssh key.<br/>
                 ${_('If You wish to use it to access RhodeCode via the SSH please save the private key and click `Use this generated key` at the bottom.')}
             </p>
             <h4>${_('Private key')}</h4>

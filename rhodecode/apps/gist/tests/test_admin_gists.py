@@ -105,11 +105,11 @@ class TestGistsController(TestController):
         g4 = create_gist('gist4', gist_type='private').gist_access_id
         response = self.app.get(route_path('gists_show'))
 
-        response.mustcontain('gist: %s' % g1.gist_access_id)
-        response.mustcontain('gist: %s' % g2.gist_access_id)
-        response.mustcontain('gist: %s' % g3.gist_access_id)
+        response.mustcontain(g1.gist_access_id)
+        response.mustcontain(g2.gist_access_id)
+        response.mustcontain(g3.gist_access_id)
         response.mustcontain('gist3-desc')
-        response.mustcontain(no=['gist: %s' % g4])
+        response.mustcontain(no=[g4])
 
         # Expiration information should be visible
         expires_tag = '%s' % h.age_component(
@@ -122,7 +122,7 @@ class TestGistsController(TestController):
         response = self.app.get(route_path('gists_show', params=dict(private=1)))
 
         # and privates
-        response.mustcontain('gist: %s' % gist.gist_access_id)
+        response.mustcontain(gist.gist_access_id)
 
     def test_index_show_all(self, create_gist):
         self.log_user()
@@ -136,7 +136,7 @@ class TestGistsController(TestController):
         assert len(GistModel.get_all()) == 4
         # and privates
         for gist in GistModel.get_all():
-            response.mustcontain('gist: %s' % gist.gist_access_id)
+            response.mustcontain(gist.gist_access_id)
 
     def test_index_show_all_hidden_from_regular(self, create_gist):
         self.log_user(TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
@@ -150,7 +150,7 @@ class TestGistsController(TestController):
         # since we don't have access to private in this view, we
         # should see nothing
         for gist in GistModel.get_all():
-            response.mustcontain(no=['gist: %s' % gist.gist_access_id])
+            response.mustcontain(no=[gist.gist_access_id])
 
     def test_create(self):
         self.log_user()

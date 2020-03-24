@@ -275,6 +275,20 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         c.state_progressing = pull_request.is_state_changing()
 
+        _new_state = {
+            'created': PullRequest.STATE_CREATED,
+        }.get(self.request.GET.get('force_state'))
+        if c.is_super_admin and _new_state:
+            with pull_request.set_state(PullRequest.STATE_UPDATING, final_state=_new_state):
+                h.flash(
+                    _('Pull Request state was force changed to `{}`').format(_new_state),
+                    category='success')
+                Session().commit()
+
+            raise HTTPFound(h.route_path(
+                'pullrequest_show', repo_name=self.db_repo_name,
+                pull_request_id=pull_request_id))
+
         version = self.request.GET.get('version')
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')

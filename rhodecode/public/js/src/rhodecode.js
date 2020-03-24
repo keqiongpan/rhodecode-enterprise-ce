@@ -299,6 +299,10 @@ var tooltipActivate = function () {
                 var altHovercard =$origin.data('hovercardAlt');
 
                 if (hovercardUrl !== undefined && hovercardUrl !== "") {
+                    if (hovercardUrl.substr(0,12) === 'pyroutes.url'){
+                        hovercardUrl = eval(hovercardUrl)
+                    }
+
                     var loaded = loadHoverCard(hovercardUrl, altHovercard, function (data) {
                         instance.content(data);
                     })

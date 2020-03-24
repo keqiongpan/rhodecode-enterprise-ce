@@ -99,11 +99,12 @@ class AuthnPluginViewBase(BaseAppView):
         for name, value in valid_data.items():
             self.plugin.create_or_update_setting(name, value)
         Session().commit()
+        SettingsModel().invalidate_settings_cache()
 
         # Display success message and redirect.
         h.flash(_('Auth settings updated successfully.'), category='success')
-        redirect_to = self.request.resource_path(
-            self.context, route_name='auth_home')
+        redirect_to = self.request.resource_path(self.context, route_name='auth_home')
+
         return HTTPFound(redirect_to)
 
 
@@ -159,7 +160,7 @@ class AuthSettingsView(BaseAppView):
                 'auth_plugins', plugins)
             Session().add(setting)
             Session().commit()
-
+            SettingsModel().invalidate_settings_cache()
             h.flash(_('Auth settings updated successfully.'), category='success')
         except formencode.Invalid as errors:
             e = errors.error_dict or {}
@@ -174,6 +175,6 @@ class AuthSettingsView(BaseAppView):
             h.flash(_('Error occurred during update of auth settings.'),
                     category='error')
 
-        redirect_to = self.request.resource_path(
-            self.context, route_name='auth_home')
+        redirect_to = self.request.resource_path(self.context, route_name='auth_home')
+
         return HTTPFound(redirect_to)

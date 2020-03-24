@@ -102,7 +102,7 @@ $(document).ready(function() {
          { data: {"_": "author",
                   "sort": "author_raw"}, title: "${_("Author")}", width: "250px", className: "td-user" },
          { data: {"_": "type",
-                  "sort": "type"}, title: "${_("Type")}", width: "70px", className: "td-tags" },
+                  "sort": "type"}, title: "${_("Type")}", width: "100px", className: "td-gist-type" },
          { data: {"_": "access_id",
                   "sort": "access_id"}, title: "${_("Name")}", width:"150px", className: "td-componentname" },
          { data: {"_": "description",
@@ -110,7 +110,7 @@ $(document).ready(function() {
          { data: {"_": "created_on",
                   "sort": "created_on_raw"}, title: "${_("Created on")}", className: "td-time" },
          { data: {"_": "expires",
-                  "sort": "expires"}, title: "${_("Expires")}", className: "td-exp" }
+                  "sort": "expires"}, title: "${_("Expires")}", width: "200px", className: "td-expire" }
       ],
       language: {
           paginate: DEFAULT_GRID_PAGINATION,

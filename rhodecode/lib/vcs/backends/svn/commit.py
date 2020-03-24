@@ -218,18 +218,27 @@ class SubversionCommit(base.BaseCommit):
 
     @property
     def added(self):
-        return nodes.AddedFileNodesGenerator(
-            self._changes_cache['added'], self)
+        return nodes.AddedFileNodesGenerator(self.added_paths, self)
+
+    @LazyProperty
+    def added_paths(self):
+        return [n for n in self._changes_cache['added']]
 
     @property
     def changed(self):
-        return nodes.ChangedFileNodesGenerator(
-            self._changes_cache['changed'], self)
+        return nodes.ChangedFileNodesGenerator(self.changed_paths, self)
+
+    @LazyProperty
+    def changed_paths(self):
+        return [n for n in self._changes_cache['changed']]
 
     @property
     def removed(self):
-        return nodes.RemovedFileNodesGenerator(
-            self._changes_cache['removed'], self)
+        return nodes.RemovedFileNodesGenerator(self.removed_paths, self)
+
+    @LazyProperty
+    def removed_paths(self):
+        return [n for n in self._changes_cache['removed']]
 
 
 def _date_from_svn_properties(properties):

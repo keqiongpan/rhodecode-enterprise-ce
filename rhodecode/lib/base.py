@@ -211,8 +211,9 @@ def vcs_operation_context(
 class BasicAuth(AuthBasicAuthenticator):
 
     def __init__(self, realm, authfunc, registry, auth_http_code=None,
-                 initial_call_detection=False, acl_repo_name=None):
+                 initial_call_detection=False, acl_repo_name=None, rc_realm=''):
         self.realm = realm
+        self.rc_realm = rc_realm
         self.initial_call = initial_call_detection
         self.authfunc = authfunc
         self.registry = registry
@@ -227,7 +228,7 @@ class BasicAuth(AuthBasicAuthenticator):
             return HTTPForbidden
 
     def get_rc_realm(self):
-        return safe_str(self.registry.rhodecode_settings.get('rhodecode_realm'))
+        return safe_str(self.rc_realm)
 
     def build_authentication(self):
         head = WWW_AUTHENTICATE.tuples('Basic realm="%s"' % self.realm)
@@ -288,7 +289,7 @@ def attach_context_attributes(context, request, user_id=None):
     """
     config = request.registry.settings
 
-    rc_config = SettingsModel().get_all_settings(cache=True)
+    rc_config = SettingsModel().get_all_settings(cache=True, from_request=False)
     context.rc_config = rc_config
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')

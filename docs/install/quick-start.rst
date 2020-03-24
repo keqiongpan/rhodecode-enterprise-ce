@@ -33,6 +33,15 @@ To get |RCE| up and running, run through the below steps:
     Do you accept the RhodeCode Control license?
     Press [Y] to accept license and [V] to view license text: y
 
+
+.. important::
+
+   We recommend running RhodeCode as a non-root user, such as `rhodecode`;
+   this user must have a proper home directory.
+   Either log in as that user to install the software, or do it as root
+   with `sudo -i -u rhodecode ./RhodeCode-installer-linux-*`
+
+
 3. Install a VCS Server, and configure it to start at boot.
 
 .. code-block:: bash

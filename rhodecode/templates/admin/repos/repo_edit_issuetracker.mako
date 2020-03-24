@@ -23,43 +23,48 @@
             <div class="panel-heading">
                 <h3 class="panel-title">${_('Inherited Issue Tracker Patterns')}</h3>
             </div>
-            <div class="panel-body">
-                <table class="rctable issuetracker readonly">
-          <tr>
-              <th>${_('Description')}</th>
-              <th>${_('Pattern')}</th>
-              <th>${_('Url')}</th>
-              <th>${_('Prefix')}</th>
-              <th ></th>
-          </tr>
-              %for uid, entry in c.global_patterns.items():
-            <tr id="${uid}">
-                <td class="td-description issuetracker_desc">
-                  <span class="entry">
-                    ${entry.desc}
-                  </span>
-                </td>
-                <td class="td-regex issuetracker_pat">
-                  <span class="entry">
-                    ${entry.pat}
-                  </span>
-                </td>
-                <td class="td-url issuetracker_url">
-                  <span class="entry">
-                    ${entry.url}
-                  </span>
-                </td>
-                <td class="td-prefix issuetracker_pref">
-                  <span class="entry">
-                    ${entry.pref}
-                  </span>
-                </td>
-                <td class="td-action">
-                </td>
-            </tr>
-          %endfor
 
-          </table>
+            <div class="panel-body">
+            <table class="rctable issuetracker readonly">
+              <tr>
+                  <th>${_('Description')}</th>
+                  <th>${_('Pattern')}</th>
+                  <th>${_('Url')}</th>
+                  <th>${_('Prefix')}</th>
+                  <th></th>
+              </tr>
+
+              % for uid, entry in c.global_patterns.items():
+              <tr id="${uid}">
+                    <td class="td-description issuetracker_desc">
+                      <span class="entry">
+                        ${entry.desc}
+                      </span>
+                    </td>
+                    <td class="td-regex issuetracker_pat">
+                      <span class="entry">
+                        ${entry.pat}
+                      </span>
+                    </td>
+                    <td class="td-url issuetracker_url">
+                      <span class="entry">
+                        ${entry.url}
+                      </span>
+                    </td>
+                    <td class="td-prefix issuetracker_pref">
+                      <span class="entry">
+                        ${entry.pref}
+                      </span>
+                    </td>
+                    <td class="td-action">
+                    </td>
+                </tr>
+              % endfor
+
+            </table>
+                  <div class="buttons">
+                      <button type="submit" class="btn btn-primary save-inheritance" id="save">${_('Save')}</button>
+                  </div>
             </div>
         </div>
       </div>
@@ -77,7 +82,6 @@
                     )}
                   <div class="buttons">
                       <button type="submit" class="btn btn-primary save-inheritance" id="save">${_('Save')}</button>
-                      <button type="reset" class="btn reset-inheritance">${_('Reset')}</button>
                   </div>
             </div>
         </div>

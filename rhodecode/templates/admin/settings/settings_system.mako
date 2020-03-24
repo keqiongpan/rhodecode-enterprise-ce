@@ -1,5 +1,5 @@
 
-<div id="update_notice" style="display: none; margin: -40px 0px 20px 0px">
+<div id="update_notice" style="display: none; margin: 0px 0px 30px 0px">
     <div>${_('Checking for updates...')}</div>
 </div>
 

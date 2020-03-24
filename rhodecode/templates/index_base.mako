@@ -14,32 +14,50 @@
         <div class="title">
 
         </div>
+
         <!-- end box / title -->
         <div id="no_grid_data" class="table" style="display: none">
-            <h2 class="no-object-border">
+            <h2>
                  ${_('No repositories or repositories groups exists here.')}
             </h2>
         </div>
 
+        <div id="grid_data_loading" class="table" style="display: none">
+            <i class="icon-spin animate-spin"></i>
+            ${_('loading...')}
+        </div>
+
         <div class="table">
-            <div id="groups_list_wrap" style="min-height: 200px;">
+            <div id="groups_list_wrap" style="min-height: 200px;display: none">
                 <table id="group_list_table" class="display" style="width: 100%;"></table>
             </div>
         </div>
 
         <div class="table">
-            <div id="repos_list_wrap" style="min-height: 200px;">
+            <div id="repos_list_wrap" style="min-height: 200px;display: none">
                 <table id="repo_list_table" class="display" style="width: 100%;"></table>
             </div>
         </div>
 
     </div>
+
     <script>
     $(document).ready(function () {
+        var noRepoData = null;
+        var noGroupData = null;
+        var $gridDataLoading = $('#grid_data_loading');
 
-        // repo group list
+        // global show loading of hidden grids
+        $(document).on('preInit.dt', function (e, settings) {
+            $gridDataLoading.show();
+        });
+
+        ## repo group list
         var $groupListTable = $('#group_list_table');
 
+        $groupListTable.on('xhr.dt', function (e, settings, json, xhr) {
+            $gridDataLoading.hide();
+        });
         $groupListTable.DataTable({
             processing: true,
             serverSide: true,
@@ -97,11 +115,12 @@
                 emptyTable: _gettext("No repository groups present.")
             },
             "drawCallback": function (settings, json) {
+
                 // hide grid if it's empty
                 if (settings.fnRecordsDisplay() === 0) {
-                    $('#groups_list_wrap').hide();
+                    noGroupData = true;
                     // both hidden, show no-data
-                    if ($('#repos_list_wrap').is(':hidden')) {
+                    if (noRepoData === true) {
                         $('#no_grid_data').show();
                     }
                 } else {
@@ -119,18 +138,13 @@
             },
         });
 
-        $groupListTable.on('xhr.dt', function (e, settings, json, xhr) {
-            $groupListTable.css('opacity', 1);
-        });
 
-        $groupListTable.on('preXhr.dt', function (e, settings, data) {
-            $groupListTable.css('opacity', 0.3);
-        });
-
-
-        ##  // repo list
+        ##  repo list
         var $repoListTable = $('#repo_list_table');
 
+        $repoListTable.on('xhr.dt', function (e, settings, json, xhr) {
+            $gridDataLoading.hide();
+        });
         $repoListTable.DataTable({
             processing: true,
             serverSide: true,
@@ -188,11 +202,13 @@
                 emptyTable: _gettext("No repositories present.")
             },
             "drawCallback": function (settings, json) {
+
                 // hide grid if it's empty
                 if (settings.fnRecordsDisplay() == 0) {
-                    $('#repos_list_wrap').hide()
+                    noRepoData = true;
+
                     // both hidden, show no-data
-                    if ($('#groups_list_wrap').is(':hidden')) {
+                    if (noGroupData === true) {
                         $('#no_grid_data').show()
                     }
                 } else {
@@ -208,14 +224,6 @@
                 }
 
             },
-        });
-
-        $repoListTable.on('xhr.dt', function (e, settings, json, xhr) {
-            $repoListTable.css('opacity', 1);
-        });
-
-        $repoListTable.on('preXhr.dt', function (e, settings, data) {
-            $repoListTable.css('opacity', 0.3);
         });
 
     });

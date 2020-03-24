@@ -28,6 +28,8 @@ from rhodecode.lib import helpers as h
 from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
+from rhodecode.lib.utils2 import str2bool
+from rhodecode.model.db import User
 from rhodecode.model.forms import RepoPermsForm
 from rhodecode.model.meta import Session
 from rhodecode.model.permission import PermissionModel
@@ -89,7 +91,12 @@ class RepoSettingsPermissionsView(RepoAppView):
         Session().commit()
         h.flash(_('Repository access permissions updated'), category='success')
 
-        PermissionModel().flush_user_permission_caches(changes)
+        affected_user_ids = None
+        if changes.get('default_user_changed', False):
+            # if we change the default user, we need to flush everyone permissions
+            affected_user_ids = User.get_all_user_ids()
+        PermissionModel().flush_user_permission_caches(
+            changes, affected_user_ids=affected_user_ids)
 
         raise HTTPFound(
             h.route_path('edit_repo_perms', repo_name=self.db_repo_name))
@@ -104,9 +111,11 @@ class RepoSettingsPermissionsView(RepoAppView):
         _ = self.request.translate
         self.load_default_context()
 
+        private_flag = str2bool(self.request.POST.get('private'))
+
         try:
             RepoModel().update(
-                self.db_repo, **{'repo_private': True, 'repo_name': self.db_repo_name})
+                self.db_repo, **{'repo_private': private_flag, 'repo_name': self.db_repo_name})
             Session().commit()
 
             h.flash(_('Repository `{}` private mode set successfully').format(self.db_repo_name),
@@ -116,7 +125,11 @@ class RepoSettingsPermissionsView(RepoAppView):
             h.flash(_('Error occurred during update of repository {}').format(
                 self.db_repo_name), category='error')
 
+        # NOTE(dan): we change repo private mode we need to notify all USERS
+        affected_user_ids = User.get_all_user_ids()
+        PermissionModel().trigger_permission_flush(affected_user_ids)
+
         return {
             'redirect_url': h.route_path('edit_repo_perms', repo_name=self.db_repo_name),
-            'private': True
+            'private': private_flag
         }

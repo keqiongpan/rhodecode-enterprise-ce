@@ -63,8 +63,8 @@ ${css_style}\
 
 ## Constants
 <%
-text_regular = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;"
-text_monospace = "'Menlo', 'Liberation Mono', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', 'andale mono', 'lucida console', monospace;"
+text_regular = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', Helvetica, sans-serif"
+text_monospace = "'Menlo', 'Liberation Mono', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', 'andale mono', 'lucida console', monospace"
 
 %>
 
@@ -100,7 +100,7 @@ ${self.plaintext_footer()}
             -ms-text-size-adjust: 100%;
             margin: 0;
             padding: 0;
-            font-family: ${text_regular|n}
+            font-family: ${text_regular|n};
         }
 
         /* Prevent Webkit and Windows Mobile platforms from changing default font sizes.*/
@@ -184,6 +184,13 @@ ${self.plaintext_footer()}
             mso-table-rspace: 0pt;
         }
 
+        table tr {
+            display: table-row;
+            vertical-align: inherit;
+            border-color: inherit;
+            border-spacing: 0 3px;
+        }
+
         table td {
             padding: .65em 1em .65em 0;
             border-collapse: collapse;
@@ -200,6 +207,10 @@ ${self.plaintext_footer()}
 
         input:focus {
             outline: 1px solid #979797
+        }
+
+        code {
+            font-family: ${text_monospace|n};
         }
 
         @media only screen and (-webkit-min-device-pixel-ratio: 2) {
@@ -283,7 +294,7 @@ ${self.plaintext_footer()}
             margin: 3px 0 13px 0 !important;
             color: #424242 !important;
             font-size: 13px !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            font-family: ${text_regular|n};
             font-weight: normal !important;
             overflow: visible !important;
             line-height: 140% !important
@@ -361,7 +372,7 @@ ${self.plaintext_footer()}
         }
 
         div.markdown-block code, div.markdown-block pre, div.markdown-block #ws, div.markdown-block #message {
-            font-family: 'Menlo', 'Liberation Mono', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', 'Courier New', 'andale mono', 'lucida console', monospace;
+            font-family: ${text_monospace|n};
             font-size: 11px;
             -webkit-border-radius: 2px;
             -moz-border-radius: 2px;
@@ -490,8 +501,10 @@ ${self.plaintext_footer()}
     <![endif]-->
 </head>
 <body>
+
+<div>
 <!-- Wrapper/Container Table: Use a wrapper table to control the width and the background color consistently of your email. Use this approach instead of setting attributes on the body tag. -->
-<table cellpadding="0" cellspacing="0" border="0" id="backgroundTable" align="left" style="margin:1%;width:97%;padding:0;font-family:sans-serif;font-weight:100;border:1px solid #dbd9da">
+<table cellpadding="0" cellspacing="0" border="0" id="backgroundTable" align="left" style="margin:1%;width:97%;padding:0;font-family:${text_regular|n};font-weight:100;border:1px solid #dbd9da">
     <tr>
         <td valign="top" style="padding:0;">
             <table cellpadding="0" cellspacing="0" border="0" align="left" width="100%">
@@ -513,11 +526,13 @@ ${self.plaintext_footer()}
     </tr>
 </table>  
 <!-- End of wrapper table -->
+</div>
 
-<div style="clear: both"></div>
-<div style="margin-left:1%;font-weight:100;font-size:11px;color:#666666;text-decoration:none;font-family:${text_monospace}">
+<div style="width:100%; clear: both; height: 1px">&nbsp;</div>
+
+<div style="margin-left:1%;font-weight:100;font-size:11px;color:#666666;text-decoration:none;font-family:${text_monospace};">
     ${_('This is a notification from RhodeCode.')}
-    <a style="font-weight:100;font-size:11px;color:#666666;text-decoration:none;font-family:${text_monospace}" href="${instance_url}">
+    <a style="font-weight:100;font-size:11px;color:#666666;text-decoration:none;font-family:${text_monospace};" href="${instance_url}">
         ${instance_url}
     </a>
 </div>

@@ -132,7 +132,7 @@ class TestGrantUserPermissionFromRepoGroup(object):
             perm=perm)
         response = api_call(self.app, params)
 
-        expected = 'permission `%s` does not exist' % (perm,)
+        expected = 'permission `%s` does not exist. Permission should start with prefix: `group.`' % (perm,)
         assert_error(id_, expected, given=response.body)
 
     @mock.patch.object(RepoGroupModel, 'grant_user_permission', crash)

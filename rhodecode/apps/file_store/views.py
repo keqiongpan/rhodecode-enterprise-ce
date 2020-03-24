@@ -33,6 +33,7 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.auth import (
     CSRFRequired, NotAnonymous, HasRepoPermissionAny, HasRepoGroupPermissionAny,
     LoginRequired)
+from rhodecode.lib.vcs.conf.mtypes import get_mimetypes_db
 from rhodecode.model.db import Session, FileStore, UserApiKeys
 
 log = logging.getLogger(__name__)
@@ -45,6 +46,15 @@ class FileStoreView(BaseAppView):
         c = self._get_local_tmpl_context()
         self.storage = utils.get_file_storage(self.request.registry.settings)
         return c
+
+    def _guess_type(self, file_name):
+        """
+        Our own type guesser for mimetypes using the rich DB
+        """
+        if not hasattr(self, 'db'):
+            self.db = get_mimetypes_db()
+        _content_type, _encoding = self.db.guess_type(file_name, strict=False)
+        return _content_type, _encoding
 
     def _serve_file(self, file_uid):
 
@@ -92,7 +102,18 @@ class FileStoreView(BaseAppView):
         FileStore.bump_access_counter(file_uid)
 
         file_path = self.storage.store_path(file_uid)
-        return FileResponse(file_path)
+        content_type = 'application/octet-stream'
+        content_encoding = None
+
+        _content_type, _encoding = self._guess_type(file_path)
+        if _content_type:
+            content_type = _content_type
+
+        # For file store we don't submit any session data, this logic tells the
+        # Session lib to skip it
+        setattr(self.request, '_file_response', True)
+        return FileResponse(file_path, request=self.request,
+                            content_type=content_type, content_encoding=content_encoding)
 
     @LoginRequired()
     @NotAnonymous()

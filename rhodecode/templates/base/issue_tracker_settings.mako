@@ -59,14 +59,14 @@ examples = [
 
     (
     'Pivotal Tracker',
-    '(?:pivot-)(?<project_id>\d+)-(?<story>\d+)',
+    '(?:pivot-)(?P<project_id>\d+)-(?P<story>\d+)',
     'https://www.pivotaltracker.com/s/projects/${project_id}/stories/${story}',
     'PIV-',
     ),
 
     (
     'Trello',
-    '(?:trello-)(?<card_id>[a-zA-Z0-9]+)',
+    '(?:trello-)(?P<card_id>[a-zA-Z0-9]+)',
     'https://trello.com/example.com/${card_id}',
     'TRELLO-',
     ),

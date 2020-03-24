@@ -2,7 +2,10 @@
 
 <div class="panel panel-default">
     <div class="panel-heading">
-        <h3 class="panel-title">${_('Additional Email Addresses')}</h3>
+        <h3 class="panel-title">
+          ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
+          &nbsp;- ${_('Additional Email Addresses')}
+        </h3>
     </div>
     <div class="panel-body">
         <div class="emails_wrap">

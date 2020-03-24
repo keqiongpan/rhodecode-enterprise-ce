@@ -41,7 +41,7 @@ from rhodecode.model.db import (_hash_key, func, or_, in_filter_generator,
     UserGroup, Repository)
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
-from rhodecode.lib.utils2 import action_logger_generic, datetime_to_time
+from rhodecode.lib.utils2 import action_logger_generic
 
 log = logging.getLogger(__name__)
 
@@ -353,7 +353,8 @@ class RepoGroupModel(BaseModel):
         changes = {
             'added': [],
             'updated': [],
-            'deleted': []
+            'deleted': [],
+            'default_user_changed': None
         }
 
         def _set_perm_user(obj, user, perm):
@@ -430,6 +431,15 @@ class RepoGroupModel(BaseModel):
                 member_id = int(member_id)
                 if member_type == 'user':
                     member_name = User.get(member_id).username
+                    if isinstance(obj, RepoGroup) and obj == repo_group and member_name == User.DEFAULT_USER:
+                        # NOTE(dan): detect if we changed permissions for default user
+                        perm_obj = self.sa.query(UserRepoGroupToPerm) \
+                            .filter(UserRepoGroupToPerm.user_id == member_id) \
+                            .filter(UserRepoGroupToPerm.group == repo_group) \
+                            .scalar()
+                        if perm_obj and perm_obj.permission.permission_name != perm:
+                            changes['default_user_changed'] = True
+
                     # this updates also current one if found
                     _set_perm_user(obj, user=member_id, perm=perm)
                 elif member_type == 'user_group':
@@ -698,8 +708,6 @@ class RepoGroupModel(BaseModel):
         for repo_group in repo_groups:
             repo_group.update_commit_cache()
 
-
-
     def get_repo_groups_as_dict(self, repo_group_list=None, admin=False,
                                 super_user_actions=False):
 
@@ -753,7 +761,7 @@ class RepoGroupModel(BaseModel):
                 "last_changeset": "",
                 "last_changeset_raw": "",
 
-                "desc": desc(group.group_description, group.personal),
+                "desc": desc(h.escape(group.group_description), group.personal),
                 "top_level_repos": 0,
                 "owner": user_profile(group.User.username)
             }

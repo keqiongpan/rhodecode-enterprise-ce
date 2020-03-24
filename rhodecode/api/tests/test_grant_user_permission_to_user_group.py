@@ -130,7 +130,7 @@ class TestGrantUserPermissionFromUserGroup(object):
             perm=perm)
         response = api_call(self.app, params)
 
-        expected = 'permission `%s` does not exist' % perm
+        expected = 'permission `%s` does not exist. Permission should start with prefix: `usergroup.`' % perm
         assert_error(id_, expected, given=response.body)
 
     def test_api_grant_user_permission_to_user_group_exception_when_adding(

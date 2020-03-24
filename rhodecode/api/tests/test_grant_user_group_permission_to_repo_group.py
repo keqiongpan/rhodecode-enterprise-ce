@@ -132,8 +132,7 @@ class TestGrantUserGroupPermissionFromRepoGroup(object):
                 RepoGroupModel().revoke_user_group_permission(
                     repo_group.group_id, user_group.users_group_id)
         else:
-            expected = 'repository group `%s` does not exist' % (
-                repo_group.name,)
+            expected = 'repository group `%s` does not exist' % (repo_group.name,)
             assert_error(id_, expected, given=response.body)
 
     def test_api_grant_user_group_permission_to_repo_group_wrong_permission(
@@ -149,7 +148,7 @@ class TestGrantUserGroupPermissionFromRepoGroup(object):
             perm=perm)
         response = api_call(self.app, params)
 
-        expected = 'permission `%s` does not exist' % (perm,)
+        expected = 'permission `%s` does not exist. Permission should start with prefix: `group.`' % (perm,)
         assert_error(id_, expected, given=response.body)
 
     @mock.patch.object(RepoGroupModel, 'grant_user_group_permission', crash)

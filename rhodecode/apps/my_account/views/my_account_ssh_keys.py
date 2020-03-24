@@ -72,8 +72,11 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
 
         c.active = 'ssh_keys_generate'
         if c.ssh_key_generator_enabled:
+            private_format = self.request.GET.get('private_format') \
+                             or SshKeyModel.DEFAULT_PRIVATE_KEY_FORMAT
             comment = 'RhodeCode-SSH {}'.format(c.user.email or '')
-            c.private, c.public = SshKeyModel().generate_keypair(comment=comment)
+            c.private, c.public = SshKeyModel().generate_keypair(
+                comment=comment, private_format=private_format)
             c.target_form_url = h.route_path(
                 'my_account_ssh_keys', _query=dict(default_key=c.public))
         return self._get_template_context(c)

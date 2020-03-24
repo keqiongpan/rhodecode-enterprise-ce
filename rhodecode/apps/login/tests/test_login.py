@@ -108,7 +108,8 @@ class TestLoginController(object):
 
     def test_login_regular_forbidden_when_super_admin_restriction(self):
         from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
-        with fixture.auth_restriction(RhodeCodeAuthPlugin.AUTH_RESTRICTION_SUPER_ADMIN):
+        with fixture.auth_restriction(self.app._pyramid_registry,
+                                      RhodeCodeAuthPlugin.AUTH_RESTRICTION_SUPER_ADMIN):
             response = self.app.post(route_path('login'),
                                      {'username': 'test_regular',
                                       'password': 'test12'})
@@ -118,7 +119,8 @@ class TestLoginController(object):
 
     def test_login_regular_forbidden_when_scope_restriction(self):
         from rhodecode.authentication.plugins.auth_rhodecode import RhodeCodeAuthPlugin
-        with fixture.scope_restriction(RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_VCS):
+        with fixture.scope_restriction(self.app._pyramid_registry,
+                                       RhodeCodeAuthPlugin.AUTH_RESTRICTION_SCOPE_VCS):
             response = self.app.post(route_path('login'),
                                      {'username': 'test_regular',
                                       'password': 'test12'})

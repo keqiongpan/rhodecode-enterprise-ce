@@ -24,7 +24,6 @@ authentication and permission libraries
 
 import os
 import time
-import inspect
 import collections
 import fnmatch
 import hashlib
@@ -2013,6 +2012,7 @@ class PermsFunction(object):
         self.user_group_name = None
 
     def __bool__(self):
+        import inspect
         frame = inspect.currentframe()
         stack_trace = traceback.format_stack(frame)
         log.error('Checking bool value on a class instance of perm '

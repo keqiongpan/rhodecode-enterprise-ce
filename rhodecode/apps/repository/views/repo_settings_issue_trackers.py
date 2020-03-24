@@ -31,7 +31,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
 from rhodecode.model.forms import IssueTrackerPatternsForm
 from rhodecode.model.meta import Session
-from rhodecode.model.settings import IssueTrackerSettingsModel, SettingsModel
+from rhodecode.model.settings import SettingsModel
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
         c.active = 'issuetracker'
         c.data = 'data'
 
-        c.settings_model = IssueTrackerSettingsModel(repo=self.db_repo)
+        c.settings_model = self.db_repo_patterns
         c.global_patterns = c.settings_model.get_global_settings()
         c.repo_patterns = c.settings_model.get_repo_settings()
 
@@ -79,7 +79,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     def repo_issuetracker_delete(self):
         _ = self.request.translate
         uid = self.request.POST.get('uid')
-        repo_settings = IssueTrackerSettingsModel(repo=self.db_repo_name)
+        repo_settings = self.db_repo_patterns
         try:
             repo_settings.delete_entries(uid)
         except Exception:
@@ -113,7 +113,7 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     def repo_issuetracker_update(self):
         _ = self.request.translate
         # Save inheritance
-        repo_settings = IssueTrackerSettingsModel(repo=self.db_repo_name)
+        repo_settings = self.db_repo_patterns
         inherited = (
             self.request.POST.get('inherit_global_issuetracker') == "inherited")
         repo_settings.inherit_global_settings = inherited

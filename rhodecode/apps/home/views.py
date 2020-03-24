@@ -453,7 +453,7 @@ class HomeView(BaseAppView, DataGridAppView):
                 qry = query
                 return {'q': qry, 'type': 'content'}
 
-            label = u'File search for `{}`'.format(h.escape(query))
+            label = u'File content search for `{}`'.format(h.escape(query))
             file_qry = {
                 'id': -10,
                 'value': query,
@@ -497,7 +497,7 @@ class HomeView(BaseAppView, DataGridAppView):
                 qry = query
                 return {'q': qry, 'type': 'content'}
 
-            label = u'File search for `{}`'.format(query)
+            label = u'File content search for `{}`'.format(query)
             file_qry = {
                 'id': -30,
                 'value': query,
@@ -541,7 +541,7 @@ class HomeView(BaseAppView, DataGridAppView):
                 {
                     'id': -1,
                     'value': query,
-                    'value_display': u'File search for: `{}`'.format(query),
+                    'value_display': u'File content search for: `{}`'.format(query),
                     'value_icon': '<i class="icon-code"></i>',
                     'type': 'search',
                     'subtype': 'global',

@@ -32,10 +32,14 @@ def BeakerSessionFactoryConfig(**options):
 
             def session_callback(request, response):
                 exception = getattr(request, 'exception', None)
-                if (exception is None or self._cookie_on_exception) and self.accessed():
+                file_response = getattr(request, '_file_response', None)
+
+                if file_response is None \
+                        and (exception is None or self._cookie_on_exception) \
+                        and self.accessed():
                     self.persist()
                     headers = self.__dict__['_headers']
-                    if headers['set_cookie'] and headers['cookie_out']:
+                    if headers.get('set_cookie') and headers.get('cookie_out'):
                         response.headerlist.append(('Set-Cookie', headers['cookie_out']))
             request.add_response_callback(session_callback)
 
