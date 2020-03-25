@@ -2020,11 +2020,11 @@ self: super: {
     };
   };
   "sqlalchemy" = super.buildPythonPackage {
-    name = "sqlalchemy-1.3.11";
+    name = "sqlalchemy-1.3.15";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/34/5c/0e1d7ad0ca52544bb12f9cb8d5cc454af45821c92160ffedd38db0a317f6/SQLAlchemy-1.3.11.tar.gz";
-      sha256 = "12izpqqgy738ndn7qqn962qxi8qw2xb9vg2i880x12paklg599dg";
+      url = "https://files.pythonhosted.org/packages/8c/30/4134e726dd5ed13728ff814fa91fc01c447ad8700504653fe99d91fdd34b/SQLAlchemy-1.3.15.tar.gz";
+      sha256 = "0iglkvymfp35zm5pxy5kzqvcv96kkas0chqdx7xpla86sspa9k64";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
