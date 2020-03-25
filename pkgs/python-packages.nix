@@ -2277,7 +2277,7 @@ self: super: {
     };
   };
   "webtest" = super.buildPythonPackage {
-    name = "webtest-2.0.33";
+    name = "webtest-2.0.34";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
@@ -2286,8 +2286,8 @@ self: super: {
       self."beautifulsoup4"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/a8/b0/ffc9413b637dbe26e291429bb0f6ed731e518d0cd03da28524a8fe2e8a8f/WebTest-2.0.33.tar.gz";
-      sha256 = "1l3z0cwqslsf4rcrhi2gr8kdfh74wn2dw76376i4g9i38gz8wd21";
+      url = "https://files.pythonhosted.org/packages/2c/74/a0e63feee438735d628631e2b70d82280276a930637ac535479e5fad9427/WebTest-2.0.34.tar.gz";
+      sha256 = "0x1y2c8z4fmpsny4hbp6ka37si2g10r5r2jwxhvv5mx7g3blq4bi";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
