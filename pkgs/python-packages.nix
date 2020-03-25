@@ -1724,11 +1724,11 @@ self: super: {
     };
   };
   "redis" = super.buildPythonPackage {
-    name = "redis-3.3.11";
+    name = "redis-3.4.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/06/ca/00557c74279d2f256d3c42cabf237631355f3a132e4c74c2000e6647ad98/redis-3.3.11.tar.gz";
-      sha256 = "1hicqbi5xl92hhml82awrr2rxl9jar5fp8nbcycj9qgmsdwc43wd";
+      url = "https://files.pythonhosted.org/packages/ef/2e/2c0f59891db7db087a7eeaa79bc7c7f2c039e71a2b5b0a41391e9d462926/redis-3.4.1.tar.gz";
+      sha256 = "07yaj0j9fs7xdkg5bg926fa990khyigjbp31si8ai20vj8sv7kqd";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];

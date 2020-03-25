@@ -55,7 +55,7 @@ pytz==2019.3
 tzlocal==1.5.1
 pyzmq==14.6.0
 py-gfm==0.1.4
-redis==3.3.11
+redis==3.4.1
 repoze.lru==0.7
 requests==2.22.0
 routes==2.4.1
