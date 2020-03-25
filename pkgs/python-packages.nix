@@ -1646,15 +1646,15 @@ self: super: {
     };
   };
   "python-ldap" = super.buildPythonPackage {
-    name = "python-ldap-3.1.0";
+    name = "python-ldap-3.2.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyasn1"
       self."pyasn1-modules"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/7f/1c/28d721dff2fcd2fef9d55b40df63a00be26ec8a11e8c6fc612ae642f9cfd/python-ldap-3.1.0.tar.gz";
-      sha256 = "1i97nwfnraylyn0myxlf3vciicrf5h6fymrcff9c00k581wmx5s1";
+      url = "https://files.pythonhosted.org/packages/ea/93/596f875e003c770447f4b99267820a0c769dd2dc3ae3ed19afe460fcbad0/python-ldap-3.2.0.tar.gz";
+      sha256 = "13nvrhp85yr0jyxixcjj012iw8l9wynxxlykm9j3alss6waln73x";
     };
     meta = {
       license = [ pkgs.lib.licenses.psfl ];

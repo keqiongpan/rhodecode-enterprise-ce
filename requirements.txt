@@ -47,7 +47,7 @@ pyramid-mako==1.1.0
 pyramid==1.10.4
 pyramid_mailer==0.15.1
 python-dateutil==2.8.1
-python-ldap==3.1.0
+python-ldap==3.2.0
 python-memcached==1.59
 python-pam==1.8.4
 python-saml==2.4.2
