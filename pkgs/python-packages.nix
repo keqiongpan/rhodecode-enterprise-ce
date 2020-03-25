@@ -1114,11 +1114,11 @@ self: super: {
     };
   };
   "pastedeploy" = super.buildPythonPackage {
-    name = "pastedeploy-2.0.1";
+    name = "pastedeploy-2.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/19/a0/5623701df7e2478a68a1b685d1a84518024eef994cde7e4da8449a31616f/PasteDeploy-2.0.1.tar.gz";
-      sha256 = "02imfbbx1mi2h546f3sr37m47dk9qizaqhzzlhx8bkzxa6fzn8yl";
+      url = "https://files.pythonhosted.org/packages/c4/e9/972a1c20318b3ae9edcab11a6cef64308fbae5d0d45ab52c6f8b2b8f35b8/PasteDeploy-2.1.0.tar.gz";
+      sha256 = "16qsq5y6mryslmbp5pn35x4z8z3ndp5rpgl42h226879nrw9hmg7";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
