@@ -711,17 +711,17 @@ self: super: {
     };
   };
   "importlib-metadata" = super.buildPythonPackage {
-    name = "importlib-metadata-0.23";
+    name = "importlib-metadata-1.5.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."zipp"
+      self."pathlib2"
       self."contextlib2"
       self."configparser"
-      self."pathlib2"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/5d/44/636bcd15697791943e2dedda0dbe098d8530a38d113b202817133e0b06c0/importlib_metadata-0.23.tar.gz";
-      sha256 = "09mdqdfv5rdrwz80jh9m379gxmvk2vhjfz0fg53hid00icvxf65a";
+      url = "https://files.pythonhosted.org/packages/0d/e4/638f3bde506b86f62235c595073066e7b8472fc9ee2b8c6491347f31d726/importlib_metadata-1.5.0.tar.gz";
+      sha256 = "00ikdj4gjhankdljnz7g5ggak4k9lql2926x0x117ir9j2lv7x86";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];
