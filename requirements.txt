@@ -36,7 +36,7 @@ paste==3.4.0
 pastedeploy==2.1.0
 pastescript==3.2.0
 peppercorn==0.6
-psutil==5.6.5
+psutil==5.7.0
 py-bcrypt==0.4
 pycurl==7.43.0.3
 pycrypto==2.6.1
