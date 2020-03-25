@@ -1,7 +1,7 @@
 sphinx==1.8.2
 six==1.11.0
 sphinx_rtd_theme==0.4.1
-docutils==0.14.0
+docutils==0.16.0
 pygments==2.3.0
 markupsafe==1.0.0
 jinja2==2.9.6
