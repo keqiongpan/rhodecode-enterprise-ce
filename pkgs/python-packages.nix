@@ -1702,11 +1702,11 @@ self: super: {
     };
   };
   "pytz" = super.buildPythonPackage {
-    name = "pytz-2019.2";
+    name = "pytz-2019.3";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/27/c0/fbd352ca76050952a03db776d241959d5a2ee1abddfeb9e2a53fdb489be4/pytz-2019.2.tar.gz";
-      sha256 = "0ckb27hhjc8i8gcdvk4d9avld62b7k52yjijc60s2m3y8cpb7h16";
+      url = "https://files.pythonhosted.org/packages/82/c3/534ddba230bd4fbbd3b7a3d35f3341d014cca213f369a9940925e7e5f691/pytz-2019.3.tar.gz";
+      sha256 = "1ghrk1wg45d3nymj7bf4zj03n3bh64xmczhk4pfi577hdkdhcb5h";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
