@@ -2212,11 +2212,11 @@ self: super: {
     };
   };
   "wcwidth" = super.buildPythonPackage {
-    name = "wcwidth-0.1.7";
+    name = "wcwidth-0.1.9";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/55/11/e4a2bb08bb450fdbd42cc709dd40de4ed2c472cf0ccb9e64af22279c5495/wcwidth-0.1.7.tar.gz";
-      sha256 = "0pn6dflzm609m4r3i8ik5ni9ijjbb5fa3vg1n7hn6vkd49r77wrx";
+      url = "https://files.pythonhosted.org/packages/25/9d/0acbed6e4a4be4fc99148f275488580968f44ddb5e69b8ceb53fc9df55a0/wcwidth-0.1.9.tar.gz";
+      sha256 = "1wf5ycjx8s066rdvr0fgz4xds9a8zhs91c4jzxvvymm1c8l8cwzf";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
