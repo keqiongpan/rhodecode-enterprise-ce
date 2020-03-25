@@ -1074,15 +1074,15 @@ self: super: {
     };
   };
   "packaging" = super.buildPythonPackage {
-    name = "packaging-19.2";
+    name = "packaging-20.3";
     doCheck = false;
     propagatedBuildInputs = [
       self."pyparsing"
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/5a/2f/449ded84226d0e2fda8da9252e5ee7731bdf14cd338f622dfcd9934e0377/packaging-19.2.tar.gz";
-      sha256 = "0izwlz9h0bw171a1chr311g2y7n657zjaf4mq4rgm8pp9lbj9f98";
+      url = "https://files.pythonhosted.org/packages/65/37/83e3f492eb52d771e2820e88105f605335553fe10422cba9d256faeb1702/packaging-20.3.tar.gz";
+      sha256 = "18xpablq278janh03bai9xd4kz9b0yfp6vflazn725ns9x3jna9w";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "BSD or Apache License, Version 2.0"; } pkgs.lib.licenses.asl20 ];
