@@ -2234,7 +2234,7 @@ self: super: {
     };
   };
   "weberror" = super.buildPythonPackage {
-    name = "weberror-0.10.3";
+    name = "weberror-0.13.1";
     doCheck = false;
     propagatedBuildInputs = [
       self."webob"
@@ -2243,8 +2243,8 @@ self: super: {
       self."paste"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/35/76/e7e5c2ce7e9c7f31b54c1ff295a495886d1279a002557d74dd8957346a79/WebError-0.10.3.tar.gz";
-      sha256 = "0frg4kvycqpj5bi8asfqfs6bxsr2cvjvb6b56c4d1ai1z57kbjx6";
+      url = "https://files.pythonhosted.org/packages/07/0a/09ca5eb0fab5c0d17b380026babe81c96ecebb13f2b06c3203432dd7be72/WebError-0.13.1.tar.gz";
+      sha256 = "0r4qvnf2r92gfnpa1kwygh4j2x6j3axg2i4an6hyxwg2gpaqp7y1";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
