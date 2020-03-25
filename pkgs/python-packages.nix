@@ -1100,14 +1100,14 @@ self: super: {
     };
   };
   "paste" = super.buildPythonPackage {
-    name = "paste-3.2.1";
+    name = "paste-3.4.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0d/86/7008b5563594e8a63763f05212a3eb84c85f0b2eff834e5697716e56bca9/Paste-3.2.1.tar.gz";
-      sha256 = "1vjxr8n1p31c9x9rh8g0f34yisa9028cxpvn36q7g1s0m2b9x71x";
+      url = "https://files.pythonhosted.org/packages/79/4a/45821b71dd40000507549afd1491546afad8279c0a87527c88776a794158/Paste-3.4.0.tar.gz";
+      sha256 = "16sichvhyci1gaarkjs35mai8vphh7b244qm14hj1isw38nx4c03";
     };
     meta = {
       license = [ pkgs.lib.licenses.mit ];
