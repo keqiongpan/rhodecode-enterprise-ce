@@ -10,7 +10,7 @@ configparser==4.0.2
 contextlib2==0.6.0.post1
 ecdsa==0.13.2
 gnureadline==6.3.8
-hupper==1.9.1
+hupper==1.10.2
 ipaddress==1.0.23
 importlib-metadata==0.23
 jinja2==2.9.6
