@@ -27,7 +27,6 @@ import traceback
 import tempfile
 import glob
 
-
 log = logging.getLogger(__name__)
 
 # NOTE: Any changes should be synced with exc_tracking at vcsserver.lib.exc_tracking
@@ -77,10 +76,11 @@ def get_exc_store():
     return _exc_store_path
 
 
-def _store_exception(exc_id, exc_type_name, exc_traceback, prefix):
+def _store_exception(exc_id, exc_type_name, exc_traceback, prefix, send_email=None):
     """
     Low level function to store exception in the exception tracker
     """
+    import rhodecode as app
 
     exc_store_path = get_exc_store()
     exc_data, org_data = exc_serialize(exc_id, exc_traceback, exc_type_name)
@@ -91,6 +91,50 @@ def _store_exception(exc_id, exc_type_name, exc_traceback, prefix):
     with open(stored_exc_path, 'wb') as f:
         f.write(exc_data)
     log.debug('Stored generated exception %s as: %s', exc_id, stored_exc_path)
+
+    if send_email is None:
+        # NOTE(marcink): read app config unless we specify explicitly
+        send_email = app.CONFIG.get('exception_tracker.send_email', False)
+
+    if send_email:
+        try:
+            send_exc_email(exc_id, exc_type_name)
+        except Exception:
+            log.exception('Failed to send exception email')
+            pass
+
+
+def send_exc_email(exc_id, exc_type_name):
+    import rhodecode as app
+    from pyramid.threadlocal import get_current_request
+    from rhodecode.apps._base import TemplateArgs
+    from rhodecode.lib.utils2 import aslist
+    from rhodecode.lib.celerylib import run_task, tasks
+    from rhodecode.lib.base import attach_context_attributes
+    from rhodecode.model.notification import EmailNotificationModel
+
+    request = get_current_request()
+
+    recipients = aslist(app.CONFIG.get('exception_tracker.send_email_recipients', ''))
+    log.debug('Sending Email exception to: `%s`', recipients or 'all super admins')
+
+    # NOTE(marcink): needed for email template rendering
+    attach_context_attributes(TemplateArgs(), request, request.user.user_id)
+
+    email_kwargs = {
+        'email_prefix': app.CONFIG.get('exception_tracker.email_prefix', '') or '[RHODECODE ERROR]',
+        'exc_url': request.route_url('admin_settings_exception_tracker_show', exception_id=exc_id),
+        'exc_id': exc_id,
+        'exc_type_name': exc_type_name,
+        'exc_traceback': read_exception(exc_id, prefix=None),
+    }
+
+    (subject, headers, email_body,
+     email_body_plaintext) = EmailNotificationModel().render_email(
+        EmailNotificationModel.TYPE_EMAIL_EXCEPTION, **email_kwargs)
+
+    run_task(tasks.send_email, recipients, subject,
+             email_body_plaintext, email_body)
 
 
 def _prepare_exception(exc_info):

@@ -88,6 +88,15 @@ Check if we should use full-topic or mini-topic.
             'modified': ['b/modified_file.rst'],
             'removed': ['.idea'],
         })
+
+        exc_traceback = {
+            'exc_utc_date': '2020-03-26T12:54:50.683281',
+            'exc_id': 139638856342656,
+            'exc_timestamp': '1585227290.683288',
+            'version': 'v1',
+            'exc_message': 'Traceback (most recent call last):\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/tweens.py", line 41, in excview_tween\n    response = handler(request)\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/router.py", line 148, in handle_request\n    registry, request, context, context_iface, view_name\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/view.py", line 667, in _call_view\n    response = view_callable(context, request)\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/config/views.py", line 188, in attr_view\n    return view(context, request)\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/config/views.py", line 214, in predicate_wrapper\n    return view(context, request)\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/viewderivers.py", line 401, in viewresult_to_response\n    result = view(context, request)\n  File "/nix/store/s43k2r9rysfbzmsjdqnxgzvvb7zjhkxb-python2.7-pyramid-1.10.4/lib/python2.7/site-packages/pyramid/viewderivers.py", line 132, in _class_view\n    response = getattr(inst, attr)()\n  File "/mnt/hgfs/marcink/workspace/rhodecode-enterprise-ce/rhodecode/apps/debug_style/views.py", line 355, in render_email\n    template_type, **email_kwargs.get(email_id, {}))\n  File "/mnt/hgfs/marcink/workspace/rhodecode-enterprise-ce/rhodecode/model/notification.py", line 402, in render_email\n    body = email_template.render(None, **_kwargs)\n  File "/mnt/hgfs/marcink/workspace/rhodecode-enterprise-ce/rhodecode/lib/partial_renderer.py", line 95, in render\n    return self._render_with_exc(tmpl, args, kwargs)\n  File "/mnt/hgfs/marcink/workspace/rhodecode-enterprise-ce/rhodecode/lib/partial_renderer.py", line 79, in _render_with_exc\n    return render_func.render(*args, **kwargs)\n  File "/nix/store/dakh34sxz4yfr435c0cwjz0sd6hnd5g3-python2.7-mako-1.1.0/lib/python2.7/site-packages/mako/template.py", line 476, in render\n    return runtime._render(self, self.callable_, args, data)\n  File "/nix/store/dakh34sxz4yfr435c0cwjz0sd6hnd5g3-python2.7-mako-1.1.0/lib/python2.7/site-packages/mako/runtime.py", line 883, in _render\n    **_kwargs_for_callable(callable_, data)\n  File "/nix/store/dakh34sxz4yfr435c0cwjz0sd6hnd5g3-python2.7-mako-1.1.0/lib/python2.7/site-packages/mako/runtime.py", line 920, in _render_context\n    _exec_template(inherit, lclcontext, args=args, kwargs=kwargs)\n  File "/nix/store/dakh34sxz4yfr435c0cwjz0sd6hnd5g3-python2.7-mako-1.1.0/lib/python2.7/site-packages/mako/runtime.py", line 947, in _exec_template\n    callable_(context, *args, **kwargs)\n  File "rhodecode_templates_email_templates_base_mako", line 63, in render_body\n  File "rhodecode_templates_email_templates_exception_tracker_mako", line 43, in render_body\nAttributeError: \'str\' object has no attribute \'get\'\n',
+            'exc_type': 'AttributeError'
+        }
         email_kwargs = {
             'test': {},
             'message': {
@@ -96,6 +105,13 @@ Check if we should use full-topic or mini-topic.
             'email_test': {
                 'user': user,
                 'date': datetime.datetime.now(),
+            },
+            'exception': {
+                'email_prefix': '[RHODECODE ERROR]',
+                'exc_id': exc_traceback['exc_id'],
+                'exc_url': 'http://server-url/{}'.format(exc_traceback['exc_id']),
+                'exc_type_name': 'NameError',
+                'exc_traceback': exc_traceback,
             },
             'password_reset': {
                 'password_reset_url': 'http://example.com/reset-rhodecode-password/token',
