@@ -171,6 +171,17 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "cachetools" = super.buildPythonPackage {
+    name = "cachetools-3.1.1";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/ae/37/7fd45996b19200e0cb2027a0b6bef4636951c4ea111bfad36c71287247f6/cachetools-3.1.1.tar.gz";
+      sha256 = "16m69l6n6y1r1y7cklm92rr7v69ldig2n3lbl3j323w5jz7d78lf";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "celery" = super.buildPythonPackage {
     name = "celery-4.3.0";
     doCheck = false;
@@ -370,6 +381,17 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
+  "cssutils" = super.buildPythonPackage {
+    name = "cssutils-1.0.2";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/5c/0b/c5f29d29c037e97043770b5e7c740b6252993e4b57f029b3cd03c78ddfec/cssutils-1.0.2.tar.gz";
+      sha256 = "1bxchrbqzapwijap0yhlxdil1w9bmwvgx77aizlkhc2mcxjg1z52";
+    };
+    meta = {
+      license = [ { fullName = "GNU Library or Lesser General Public License (LGPL)"; } { fullName = "LGPL 2.1 or later, see also http://cthedot.de/cssutils/"; } ];
     };
   };
   "decorator" = super.buildPythonPackage {
@@ -1237,6 +1259,24 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "premailer" = super.buildPythonPackage {
+    name = "premailer-3.6.1";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."lxml"
+      self."cssselect"
+      self."cssutils"
+      self."requests"
+      self."cachetools"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/62/da/2f43cdf9d3d79c80c4856a12389a1f257d65fe9ccc44bc6b4383c8a18e33/premailer-3.6.1.tar.gz";
+      sha256 = "08pshx7a110k4ll20x0xhpvyn3kkipkrbgxjjn7ncdxs54ihdhgw";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl { fullName = "Python"; } ];
+    };
+  };
   "prompt-toolkit" = super.buildPythonPackage {
     name = "prompt-toolkit-1.0.18";
     doCheck = false;
@@ -1833,6 +1873,7 @@ self: super: {
       self."pastedeploy"
       self."pastescript"
       self."peppercorn"
+      self."premailer"
       self."psutil"
       self."py-bcrypt"
       self."pycurl"

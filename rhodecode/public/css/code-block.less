@@ -594,9 +594,21 @@ div.annotatediv { margin-left: 2px; margin-right: 4px; }
 .CodeMirror ::-moz-selection { background: @rchighlightblue; }
 
 .code { display: block; border:0px !important; }
+
 .code-highlight, /* TODO: dan: merge codehilite into code-highlight */
-/* This can be generated with `pygmentize -S default -f html` */
 .codehilite {
+    /*ElasticMatch is custom RhodeCode TAG*/
+
+    .c-ElasticMatch {
+        background-color: #faffa6;
+        padding: 0.2em;
+    }
+}
+
+/* This can be generated with `pygmentize -S default -f html` */
+.code-highlight,
+.codehilite {
+    /*ElasticMatch is custom RhodeCode TAG*/
     .c-ElasticMatch { background-color: #faffa6; padding: 0.2em;}
     .hll { background-color: #ffffcc }
     .c { color: #408080; font-style: italic } /* Comment */

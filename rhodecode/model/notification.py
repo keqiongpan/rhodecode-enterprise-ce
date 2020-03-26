@@ -26,6 +26,7 @@ Model for notifications
 import logging
 import traceback
 
+import premailer
 from pyramid.threadlocal import get_current_request
 from sqlalchemy.sql.expression import false, true
 
@@ -328,6 +329,12 @@ class EmailNotificationModel(BaseModel):
             'rhodecode:templates/email_templates/pull_request_update.mako',
     }
 
+    premailer_instance = premailer.Premailer(
+        cssutils_logging_level=logging.DEBUG,
+        cssutils_logging_handler=logging.getLogger().handlers[0]
+        if logging.getLogger().handlers else None,
+    )
+
     def __init__(self):
         """
         Example usage::
@@ -390,5 +397,12 @@ class EmailNotificationModel(BaseModel):
 
         # render WHOLE template
         body = email_template.render(None, **_kwargs)
+
+        try:
+            # Inline CSS styles and conversion
+            body = self.premailer_instance.transform(body)
+        except Exception:
+            log.exception('Failed to parse body with premailer')
+            pass
 
         return subject, headers, body, body_plaintext
