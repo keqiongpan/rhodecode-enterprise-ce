@@ -477,7 +477,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                 <% final_path = filediff.target_file_path %>
             %endif
         %endif
-        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
+        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy file path')}" onclick="return false;"></i>
     </span>
     ## anchor link
     <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
