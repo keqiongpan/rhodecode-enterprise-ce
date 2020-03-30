@@ -119,7 +119,10 @@ def send_exc_email(exc_id, exc_type_name):
     log.debug('Sending Email exception to: `%s`', recipients or 'all super admins')
 
     # NOTE(marcink): needed for email template rendering
-    attach_context_attributes(TemplateArgs(), request, request.user.user_id)
+    user_id = None
+    if request:
+        user_id = request.user.user_id
+    attach_context_attributes(TemplateArgs(), request, user_id=user_id, is_api=True)
 
     email_kwargs = {
         'email_prefix': app.CONFIG.get('exception_tracker.email_prefix', '') or '[RHODECODE ERROR]',

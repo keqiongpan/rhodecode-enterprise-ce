@@ -283,7 +283,7 @@ def get_current_lang(request):
     return getattr(request, '_LOCALE_', request.locale_name)
 
 
-def attach_context_attributes(context, request, user_id=None):
+def attach_context_attributes(context, request, user_id=None, is_api=None):
     """
     Attach variables into template context called `c`.
     """
@@ -379,7 +379,8 @@ def attach_context_attributes(context, request, user_id=None):
         "sideside": "sideside"
     }.get(request.GET.get('diffmode'))
 
-    is_api = hasattr(request, 'rpc_user')
+    if is_api is not None:
+        is_api = hasattr(request, 'rpc_user')
     session_attrs = {
         # defaults
         "clone_url_format": "http",
