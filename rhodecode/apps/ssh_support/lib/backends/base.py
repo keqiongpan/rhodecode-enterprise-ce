@@ -66,9 +66,8 @@ class VcsServer(object):
 
     def _check_permissions(self, action):
         permission = self.user_permissions.get(self.repo_name)
-        log.debug(
-            'permission for %s on %s are: %s',
-            self.user, self.repo_name, permission)
+        log.debug('permission for %s on %s are: %s',
+                  self.user, self.repo_name, permission)
 
         if not permission:
             log.error('user `%s` permissions to repo:%s are empty. Forbidding access.',

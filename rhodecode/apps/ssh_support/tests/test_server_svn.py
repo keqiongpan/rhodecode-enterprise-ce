@@ -89,6 +89,86 @@ class TestSubversionServer(object):
         result = server._check_permissions(action)
         assert result is code
 
+    @pytest.mark.parametrize('permissions, access_paths, expected_match', [
+        # not matched repository name
+        ({
+             'test-svn': ''
+         }, ['test-svn-1', 'test-svn-1/subpath'],
+         None),
+
+        # exact match
+        ({
+             'test-svn': ''
+         },
+         ['test-svn'],
+         'test-svn'),
+
+        # subdir commits
+        ({
+             'test-svn': ''
+         },
+         ['test-svn/foo',
+          'test-svn/foo/test-svn',
+          'test-svn/trunk/development.txt',
+          ],
+         'test-svn'),
+
+        # subgroups + similar patterns
+        ({
+             'test-svn': '',
+             'test-svn-1': '',
+             'test-svn-subgroup/test-svn': '',
+
+         },
+         ['test-svn-1',
+          'test-svn-1/foo/test-svn',
+          'test-svn-1/test-svn',
+          ],
+         'test-svn-1'),
+
+        # subgroups + similar patterns
+        ({
+             'test-svn-1': '',
+             'test-svn-10': '',
+             'test-svn-100': '',
+         },
+         ['test-svn-10',
+          'test-svn-10/foo/test-svn',
+          'test-svn-10/test-svn',
+          ],
+         'test-svn-10'),
+
+        # subgroups + similar patterns
+        ({
+             'name': '',
+             'nameContains': '',
+             'nameContainsThis': '',
+         },
+         ['nameContains',
+          'nameContains/This',
+          'nameContains/This/test-svn',
+          ],
+         'nameContains'),
+
+        # subgroups + similar patterns
+        ({
+             'test-svn': '',
+             'test-svn-1': '',
+             'test-svn-subgroup/test-svn': '',
+
+         },
+         ['test-svn-subgroup/test-svn',
+          'test-svn-subgroup/test-svn/foo/test-svn',
+          'test-svn-subgroup/test-svn/trunk/example.txt',
+          ],
+         'test-svn-subgroup/test-svn'),
+    ])
+    def test_repo_extraction_on_subdir(self, svn_server, permissions, access_paths, expected_match):
+        server = svn_server.create(user_permissions=permissions)
+        for path in access_paths:
+            repo_name = server.tunnel._match_repo_name(path)
+            assert repo_name == expected_match
+
     def test_run_returns_executes_command(self, svn_server):
         server = svn_server.create()
         from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper

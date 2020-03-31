@@ -95,9 +95,8 @@ class SubversionTunnelWrapper(object):
         signal.alarm(self.timeout)
         first_response = self._read_first_client_response()
         signal.alarm(0)
-        return (
-            self._parse_first_client_response(first_response)
-            if first_response else None)
+        return (self._parse_first_client_response(first_response)
+                if first_response else None)
 
     def patch_first_client_response(self, response, **kwargs):
         self.create_hooks_env()
@@ -112,9 +111,8 @@ class SubversionTunnelWrapper(object):
         self.process.stdin.write(buffer_)
 
     def fail(self, message):
-        print(
-            "( failure ( ( 210005 {message} 0: 0 ) ) )".format(
-                message=self._svn_string(message)))
+        print("( failure ( ( 210005 {message} 0: 0 ) ) )".format(
+            message=self._svn_string(message)))
         self.remove_configs()
         self.process.kill()
         return 1
@@ -139,6 +137,7 @@ class SubversionTunnelWrapper(object):
                 brackets_stack.pop()
             elif next_byte == " " and not brackets_stack:
                 break
+
         return buffer_
 
     def _parse_first_client_response(self, buffer_):
@@ -149,8 +148,7 @@ class SubversionTunnelWrapper(object):
         ( version:number ( cap:word ... ) url:string ? ra-client:string
            ( ? client:string ) )
 
-        Please check https://svn.apache.org/repos/asf/subversion/trunk/
-           subversion/libsvn_ra_svn/protocol
+        Please check https://svn.apache.org/repos/asf/subversion/trunk/subversion/libsvn_ra_svn/protocol
         """
         version_re = r'(?P<version>\d+)'
         capabilities_re = r'\(\s(?P<capabilities>[\w\d\-\ ]+)\s\)'
@@ -163,7 +161,34 @@ class SubversionTunnelWrapper(object):
                 version=version_re, capabilities=capabilities_re,
                 url=url_re, ra_client=ra_client_re, client=client_re))
         matcher = regex.match(buffer_)
+
         return matcher.groupdict() if matcher else None
+
+    def _match_repo_name(self, url):
+        """
+        Given an server url, try to match it against ALL known repository names.
+        This handles a tricky SVN case for SSH and subdir commits.
+        E.g if our repo name is my-svn-repo, a svn commit on file in a subdir would
+        result in the url with this subdir added.
+        """
+        # case 1 direct match, we don't do any "heavy" lookups
+        if url in self.server.user_permissions:
+            return url
+
+        log.debug('Extracting repository name from subdir path %s', url)
+        # case 2 we check all permissions, and match closes possible case...
+        # NOTE(dan): In this case we only know that url has a subdir parts, it's safe
+        # to assume that it will have the repo name as prefix, we ensure the prefix
+        # for similar repositories isn't matched by adding a /
+        # e.g subgroup/repo-name/ and subgroup/repo-name-1/ would work correct.
+        for repo_name in self.server.user_permissions:
+            repo_name_prefix = repo_name + '/'
+            if url.startswith(repo_name_prefix):
+                log.debug('Found prefix %s match, returning proper repository name',
+                          repo_name_prefix)
+                return repo_name
+
+        return
 
     def run(self, extras):
         action = 'pull'
@@ -175,7 +200,8 @@ class SubversionTunnelWrapper(object):
             return self.fail("Repository name cannot be extracted")
 
         url_parts = urlparse.urlparse(first_response['url'])
-        self.server.repo_name = url_parts.path.strip('/')
+
+        self.server.repo_name = self._match_repo_name(url_parts.path.strip('/'))
 
         exit_code = self.server._check_permissions(action)
         if exit_code:
@@ -200,10 +226,10 @@ class SubversionServer(VcsServer):
             .__init__(user, user_permissions, config, env)
         self.store = store
         self.ini_path = ini_path
-        # this is set in .run() from input stream
+        # NOTE(dan): repo_name at this point is empty,
+        # this is set later in .run() based from parsed input stream
         self.repo_name = repo_name
-        self._path = self.svn_path = config.get(
-            'app:main', 'ssh.executable.svn')
+        self._path = self.svn_path = config.get('app:main', 'ssh.executable.svn')
 
         self.tunnel = SubversionTunnelWrapper(server=self)
 

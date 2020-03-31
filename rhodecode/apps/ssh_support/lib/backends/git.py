@@ -68,8 +68,7 @@ class GitServer(VcsServer):
         self.store = store
         self.ini_path = ini_path
         self.repo_name = repo_name
-        self._path = self.git_path = config.get(
-            'app:main', 'ssh.executable.git')
+        self._path = self.git_path = config.get('app:main', 'ssh.executable.git')
 
         self.repo_mode = repo_mode
         self.tunnel = GitTunnelWrapper(server=self)

@@ -91,7 +91,6 @@ class SshWrapper(object):
 
     def get_repo_details(self, mode):
         vcs_type = mode if mode in ['svn', 'hg', 'git'] else None
-        mode = mode
         repo_name = None
 
         hg_pattern = r'^hg\s+\-R\s+(\S+)\s+serve\s+\-\-stdio$'
@@ -101,8 +100,7 @@ class SshWrapper(object):
             repo_name = hg_match.group(1).strip('/')
             return vcs_type, repo_name, mode
 
-        git_pattern = (
-            r'^git-(receive-pack|upload-pack)\s\'[/]?(\S+?)(|\.git)\'$')
+        git_pattern = r'^git-(receive-pack|upload-pack)\s\'[/]?(\S+?)(|\.git)\'$'
         git_match = re.match(git_pattern, self.command)
         if git_match is not None:
             vcs_type = 'git'
@@ -115,7 +113,8 @@ class SshWrapper(object):
 
         if svn_match is not None:
             vcs_type = 'svn'
-            # Repo name should be extracted from the input stream
+            # Repo name should be extracted from the input stream, we're unable to
+            # extract it at this point in execution
             return vcs_type, repo_name, mode
 
         return vcs_type, repo_name, mode
@@ -188,8 +187,7 @@ class SshWrapper(object):
         log.debug('SSH Connection info %s', self.get_connection_info())
 
         if shell and self.command is None:
-            log.info(
-                'Dropping to shell, no command given and shell is allowed')
+            log.info('Dropping to shell, no command given and shell is allowed')
             os.execl('/bin/bash', '-l')
             exit_code = 1
 
@@ -216,8 +214,7 @@ class SshWrapper(object):
             exit_code = -1
 
         else:
-            log.error(
-                'Unhandled Command: "%s" Aborting.', self.command)
+            log.error('Unhandled Command: "%s" Aborting.', self.command)
             exit_code = -1
 
         return exit_code
