@@ -396,7 +396,11 @@ class PathFilter(object):
     def path_access_allowed(self, path):
         log.debug('Checking ACL permissions for PathFilter for `%s`', path)
         if self.permission_checker:
-            return path and self.permission_checker.has_access(path)
+            has_access = path and self.permission_checker.has_access(path)
+            log.debug('ACL Permissions checker enabled, ACL Check has_access: %s', has_access)
+            return has_access
+
+        log.debug('ACL permissions checker not enabled, skipping...')
         return True
 
     def filter_patchset(self, patchset):
