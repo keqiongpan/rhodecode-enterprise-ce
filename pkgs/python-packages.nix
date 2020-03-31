@@ -787,15 +787,15 @@ self: super: {
     };
   };
   "ipdb" = super.buildPythonPackage {
-    name = "ipdb-0.12";
+    name = "ipdb-0.13.2";
     doCheck = false;
     propagatedBuildInputs = [
       self."setuptools"
       self."ipython"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/6d/43/c3c2e866a8803e196d6209595020a4a6db1a3c5d07c01455669497ae23d0/ipdb-0.12.tar.gz";
-      sha256 = "1khr2n7xfy8hg65kj1bsrjq9g7656pp0ybfa8abpbzpdawji3qnw";
+      url = "https://files.pythonhosted.org/packages/2c/bb/a3e1a441719ebd75c6dac8170d3ddba884b7ee8a5c0f9aefa7297386627a/ipdb-0.13.2.tar.gz";
+      sha256 = "0jcd849rx30y3wcgzsqbn06v0yjlzvb9x3076q0yxpycdwm1ryvp";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];

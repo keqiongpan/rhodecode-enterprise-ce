@@ -106,7 +106,7 @@ gunicorn==19.9.0
 waitress==1.3.1
 
 ## debug
-ipdb==0.12.0
+ipdb==0.13.2
 ipython==5.1.0
 
 ## rhodecode-tools, special case, use file://PATH.tar.gz#egg=rhodecode-tools==X.Y.Z, to test local version
