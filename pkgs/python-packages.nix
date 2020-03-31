@@ -733,7 +733,7 @@ self: super: {
     };
   };
   "importlib-metadata" = super.buildPythonPackage {
-    name = "importlib-metadata-1.5.0";
+    name = "importlib-metadata-1.6.0";
     doCheck = false;
     propagatedBuildInputs = [
       self."zipp"
@@ -742,8 +742,8 @@ self: super: {
       self."configparser"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/0d/e4/638f3bde506b86f62235c595073066e7b8472fc9ee2b8c6491347f31d726/importlib_metadata-1.5.0.tar.gz";
-      sha256 = "00ikdj4gjhankdljnz7g5ggak4k9lql2926x0x117ir9j2lv7x86";
+      url = "https://files.pythonhosted.org/packages/b4/1b/baab42e3cd64c9d5caac25a9d6c054f8324cdc38975a44d600569f1f7158/importlib_metadata-1.6.0.tar.gz";
+      sha256 = "07icyggasn38yv2swdrd8z6i0plazmc9adavsdkbqqj91j53ll9l";
     };
     meta = {
       license = [ pkgs.lib.licenses.asl20 ];

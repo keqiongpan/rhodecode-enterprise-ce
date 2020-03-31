@@ -12,7 +12,7 @@ ecdsa==0.13.2
 gnureadline==6.3.8
 hupper==1.10.2
 ipaddress==1.0.23
-importlib-metadata==1.5.0
+importlib-metadata==1.6.0
 jinja2==2.9.6
 jsonschema==2.6.0
 pluggy==0.13.1
