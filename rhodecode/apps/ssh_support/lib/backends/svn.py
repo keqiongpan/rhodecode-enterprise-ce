@@ -67,9 +67,12 @@ class SubversionTunnelWrapper(object):
 
     def command(self):
         root = self.server.get_root_store()
+        username = self.server.user.username
+
         command = [
             self.server.svn_path, '-t',
             '--config-file', self.svn_conf_path,
+            '--tunnel-user', username,
             '-r', root]
         log.debug("Final CMD: %s", ' '.join(command))
         return command

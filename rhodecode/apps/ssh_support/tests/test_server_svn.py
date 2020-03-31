@@ -70,8 +70,10 @@ class TestSubversionServer(object):
     def test_command(self, svn_server):
         server = svn_server.create()
         expected_command = [
-            svn_server.svn_path, '-t', '--config-file',
-            server.tunnel.svn_conf_path, '-r', svn_server.root
+            svn_server.svn_path, '-t',
+            '--config-file', server.tunnel.svn_conf_path,
+            '--tunnel-user', svn_server.user.username,
+            '-r', svn_server.root
         ]
 
         assert expected_command == server.tunnel.command()
