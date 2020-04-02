@@ -147,6 +147,11 @@
            onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
             ${_('Update Hooks')}
         </a>
+        % if c.hooks_outdated:
+            <span class="alert-error" style="padding: 10px">
+                ${_('Outdated hooks detected, please update hooks using `Update Hooks` action.')}
+            </span>
+        % endif
     </div>
 </div>
 

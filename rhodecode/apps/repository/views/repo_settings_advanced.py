@@ -22,6 +22,7 @@ import logging
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
+from packaging.version import Version
 
 from rhodecode import events
 from rhodecode.apps._base import RepoAppView
@@ -70,6 +71,13 @@ class RepoSettingsView(RepoAppView):
             .filter(UserFollowing.follows_repository == self.db_repo).scalar()
 
         c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
+        c.hooks_outdated = False
+
+        try:
+            if Version(c.ver_info_dict['pre_version']) < Version(c.rhodecode_version):
+                c.hooks_outdated = True
+        except Exception:
+            pass
 
         # update commit cache if GET flag is present
         if self.request.GET.get('update_commit_cache'):
