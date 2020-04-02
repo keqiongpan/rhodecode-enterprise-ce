@@ -95,6 +95,8 @@ def _store_exception(exc_id, exc_type_name, exc_traceback, prefix, send_email=No
     if send_email is None:
         # NOTE(marcink): read app config unless we specify explicitly
         send_email = app.CONFIG.get('exception_tracker.send_email', False)
+        mail_server = app.CONFIG.get('smtp_server') or None
+        send_email = send_email and mail_server
 
     if send_email:
         try:
