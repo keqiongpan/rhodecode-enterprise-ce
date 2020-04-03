@@ -15,5 +15,4 @@
         'webapp_location': '${h.route_url('home').rstrip('/')}'
     };
     %endif
-
 </script>

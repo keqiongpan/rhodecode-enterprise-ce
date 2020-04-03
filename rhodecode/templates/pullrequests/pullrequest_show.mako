@@ -11,15 +11,6 @@
 
 <%def name="breadcrumbs_links()">
 
-    <div id="pr-title">
-        % if c.pull_request.is_closed():
-            <span class="pr-title-closed-tag tag">${_('Closed')}</span>
-        % endif
-        <input class="pr-title-input large disabled" disabled="disabled" name="pullrequest_title" type="text" value="${c.pull_request.title}">
-    </div>
-    <div id="pr-title-edit" class="input" style="display: none;">
-        <input class="pr-title-input large" id="pr-title-input" name="pullrequest_title" type="text" value="${c.pull_request.title}">
-    </div>
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -40,11 +31,19 @@
 
 <div class="box">
 
-  ${self.breadcrumbs()}
-
   <div class="box pr-summary">
 
     <div class="summary-details block-left">
+        <div id="pr-title">
+            % if c.pull_request.is_closed():
+                <span class="pr-title-closed-tag tag">${_('Closed')}</span>
+            % endif
+            <input class="pr-title-input large disabled" disabled="disabled" name="pullrequest_title" type="text" value="${c.pull_request.title}">
+        </div>
+        <div id="pr-title-edit" class="input" style="display: none;">
+            <input class="pr-title-input large" id="pr-title-input" name="pullrequest_title" type="text" value="${c.pull_request.title}">
+        </div>
+
     <% summary = lambda n:{False:'summary-short'}.get(n) %>
     <div class="pr-details-title">
         <div class="pull-left">
@@ -295,7 +294,7 @@
     </div>
 
     ## REVIEWERS
-    <div class="reviewers-title block-right">
+    <div class="reviewers-title first-panel block-right">
       <div class="pr-details-title">
           ${_('Pull request reviewers')}
           %if c.allowed_to_update:

@@ -419,8 +419,8 @@ ul.auth_plugins {
 }
 
 .pr-title-input {
-  width: 80%;
-  font-size: 1em;
+  width: 100%;
+  font-size: 18px;
   margin:  0 0 4px 0;
   padding: 0;
   line-height: 1.7em;
@@ -440,6 +440,7 @@ ul.auth_plugins {
     color: black;
     opacity: 1;
     background: #fff;
+    font-size: 18px;
   }
 }
 
@@ -1483,10 +1484,16 @@ table.integrations {
     border-bottom: @border-thickness solid @grey5;
     margin-bottom: @space;
 }
+
 .reviewers-title {
-    width: 25%;
-    min-width: 200px;
+  width: 25%;
+  min-width: 200px;
+
+  &.first-panel {
+    margin-top: 34px;
+  }
 }
+
 .reviewers {
     width: 25%;
     min-width: 200px;
