@@ -961,6 +961,9 @@ class RepoFilesView(RepoAppView):
         return commit_id
 
     def _symbolic_reference_svn(self, commit_id, name, f_path, ref_type):
+        return commit_id
+
+        # NOTE(dan): old code we used in "diff" mode compare
         new_f_path = vcspath.join(name, f_path)
         return u'%s@%s' % (new_f_path, commit_id)
 
