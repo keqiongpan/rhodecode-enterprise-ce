@@ -333,7 +333,7 @@ class EmailNotificationModel(BaseModel):
     }
 
     premailer_instance = premailer.Premailer(
-        cssutils_logging_level=logging.DEBUG,
+        cssutils_logging_level=logging.WARNING,
         cssutils_logging_handler=logging.getLogger().handlers[0]
         if logging.getLogger().handlers else None,
     )
