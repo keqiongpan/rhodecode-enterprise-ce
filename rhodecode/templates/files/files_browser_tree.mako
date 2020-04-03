@@ -41,7 +41,6 @@
                 % endif
               </span>
             % else:
-
               <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path), _query=query)}">
                 <i class="${('icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir')}"></i>${node.name}
               </a>

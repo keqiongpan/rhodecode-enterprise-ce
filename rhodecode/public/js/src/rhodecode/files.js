@@ -372,8 +372,12 @@ var getFilesMetadata = function() {
     var url_data = {
         'repo_name': templateContext.repo_name,
         'commit_id': state.commit_id,
-        'f_path': state.f_path
+        'f_path': state.f_path,
     };
+
+    if (atRef !== '') {
+        url_data['at'] = atRef
+    }
 
     var url = pyroutes.url('repo_nodetree_full', url_data);
 

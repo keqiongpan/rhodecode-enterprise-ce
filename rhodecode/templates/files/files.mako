@@ -158,18 +158,24 @@
 
             select2FileHistorySwitcher('#file_refs_filter', loadUrl, initialCommitData);
 
+            // switcher for files
             $('#file_refs_filter').on('change', function(e) {
                 var data = $('#file_refs_filter').select2('data');
                 var commit_id = data.id;
+                var params = {
+                    'repo_name': templateContext.repo_name,
+                    'commit_id': commit_id,
+                    'f_path': state.f_path
+                };
+
+                if(data.at_rev !== undefined && data.at_rev !== "") {
+                    params['at'] = data.at_rev;
+                }
 
                 if ("${c.annotate}" === "True") {
-                    var url = pyroutes.url('repo_files:annotated',
-                            {'repo_name': templateContext.repo_name,
-                             'commit_id': commit_id, 'f_path': state.f_path});
+                    var url = pyroutes.url('repo_files:annotated', params);
                 } else {
-                    var url = pyroutes.url('repo_files',
-                            {'repo_name': templateContext.repo_name,
-                             'commit_id': commit_id, 'f_path': state.f_path});
+                    var url = pyroutes.url('repo_files', params);
                 }
                 window.location = url;
 
@@ -334,6 +340,7 @@
 
             select2RefFileSwitcher('#refs_filter', loadUrl, initialCommitData);
 
+            // switcher for file tree
             $('#refs_filter').on('change', function(e) {
                 var data = $('#refs_filter').select2('data');
                 window.location = data.files_url
