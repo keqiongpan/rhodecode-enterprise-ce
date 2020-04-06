@@ -85,7 +85,7 @@ class AuthLdap(AuthLdapBase):
         self.TLS_KIND = tls_kind
 
         if self.TLS_KIND == 'LDAPS':
-            port = port or 689
+            port = port or 636
             self.ldap_server_type += 's'
 
         OPT_X_TLS_DEMAND = 2
@@ -249,7 +249,7 @@ class LdapSettingsSchema(AuthnPluginSettingsSchemaBase):
         colander.Int(),
         default=389,
         description=_('Custom port that the LDAP server is listening on. '
-                      'Default value is: 389, use 689 for LDAPS (SSL)'),
+                      'Default value is: 389, use 636 for LDAPS (SSL)'),
         preparer=strip_whitespace,
         title=_('Port'),
         validator=colander.Range(min=0, max=65536),

@@ -68,7 +68,7 @@ Below is example setup that can be used with Active Directory and LDAP server wi
     #  Multiple servers can be specified using commas
 
     *option*: `port` => `389`
-    # Custom port that the LDAP server is listening on. Default value is: 389, use 689 for LDAPS(SSL)
+    # Custom port that the LDAP server is listening on. Default value is: 389, use 636 for LDAPS(SSL)
 
     *option*: `timeout` => `300`
     # Timeout for LDAP connection
