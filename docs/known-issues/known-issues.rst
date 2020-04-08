@@ -3,20 +3,6 @@
 Known Issues
 ============
 
-Subversion Issues
------------------
-
-Limited |svn| support has been achieved for this release,
-|release|. The following known issues are in development for improvement.
-
-* |svn| |repo| creation:
-  Terminating the VCS Server during remote importation of |svn| |repos| leaves
-  the the process still running in the background.
-
-* |svn| |repo| checkin/checkout:
-  |svn| cloning support is not enabled by default. Please contact support if
-  you want it enabled.
-
 Windows Upload
 --------------
 
