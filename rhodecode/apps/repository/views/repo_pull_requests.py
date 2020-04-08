@@ -396,6 +396,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             pull_request_latest, auth_user=self._rhodecode_user,
             translator=self.request.translate,
             force_shadow_repo_refresh=force_refresh)
+
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
@@ -537,6 +538,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 (ancestor_commit, commit_cache, missing_requirements,
                  source_commit, target_commit) = cached_diff['commits']
         else:
+            # NOTE(marcink): we reach potentially unreachable errors when a PR has
+            # merge errors resulting in potentially hidden commits in the shadow repo.
+            maybe_unreachable = _merge_check.MERGE_CHECK in _merge_check.error_details \
+                                and _merge_check.merge_response
+            maybe_unreachable = maybe_unreachable \
+                                and _merge_check.merge_response.metadata.get('unresolved_files')
+            log.debug("Using unreachable commits due to MERGE_CHECK in merge simulation")
             diff_commit_cache = \
                 (ancestor_commit, commit_cache, missing_requirements,
                  source_commit, target_commit) = self.get_commits(
@@ -547,7 +555,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     source_scm,
                     target_commit,
                     target_ref_id,
-                    target_scm)
+                    target_scm, maybe_unreachable=maybe_unreachable)
 
         # register our commit range
         for comm in commit_cache.values():
@@ -698,15 +706,22 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def get_commits(
             self, commits_source_repo, pull_request_at_ver, source_commit,
-            source_ref_id, source_scm, target_commit, target_ref_id, target_scm):
+            source_ref_id, source_scm, target_commit, target_ref_id, target_scm,
+            maybe_unreachable=False):
+
         commit_cache = collections.OrderedDict()
         missing_requirements = False
+
         try:
             pre_load = ["author", "date", "message", "branch", "parents"]
-            show_revs = pull_request_at_ver.revisions
-            for rev in show_revs:
-                comm = commits_source_repo.get_commit(
-                    commit_id=rev, pre_load=pre_load)
+
+            pull_request_commits = pull_request_at_ver.revisions
+            log.debug('Loading %s commits from %s',
+                      len(pull_request_commits), commits_source_repo)
+
+            for rev in pull_request_commits:
+                comm = commits_source_repo.get_commit(commit_id=rev, pre_load=pre_load,
+                                                      maybe_unreachable=maybe_unreachable)
                 commit_cache[comm.raw_id] = comm
 
             # Order here matters, we first need to get target, and then
@@ -715,14 +730,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 commit_id=safe_str(target_ref_id))
 
             source_commit = commits_source_repo.get_commit(
-                commit_id=safe_str(source_ref_id))
+                commit_id=safe_str(source_ref_id), maybe_unreachable=True)
         except CommitDoesNotExistError:
-            log.warning(
-                'Failed to get commit from `{}` repo'.format(
-                    commits_source_repo), exc_info=True)
+            log.warning('Failed to get commit from `{}` repo'.format(
+                commits_source_repo), exc_info=True)
         except RepositoryRequirementError:
-            log.warning(
-                'Failed to get all required data from repo', exc_info=True)
+            log.warning('Failed to get all required data from repo', exc_info=True)
             missing_requirements = True
         ancestor_commit = None
         try:

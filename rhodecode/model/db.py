@@ -2339,9 +2339,10 @@ class Repository(Base, BaseModel):
     # SCM PROPERTIES
     #==========================================================================
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, maybe_unreachable=False):
         return get_commit_safe(
-            self.scm_instance(), commit_id, commit_idx, pre_load=pre_load)
+            self.scm_instance(), commit_id, commit_idx, pre_load=pre_load,
+            maybe_unreachable=maybe_unreachable)
 
     def get_changeset(self, rev=None, pre_load=None):
         warnings.warn("Use get_commit", DeprecationWarning)
@@ -4024,6 +4025,10 @@ class _PullRequestBase(BaseModel):
     _last_merge_target_rev = Column(
         'last_merge_other_rev', String(40), nullable=True)
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
+    last_merge_metadata = Column(
+        'last_merge_metadata', MutationObj.as_mutable(
+            JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
     reviewer_data = Column(
@@ -4123,10 +4128,11 @@ class _PullRequestBase(BaseModel):
 
         pull_request = self
         if with_merge_state:
-            merge_status = PullRequestModel().merge_status(pull_request)
+            merge_response, merge_status, msg = \
+                PullRequestModel().merge_status(pull_request)
             merge_state = {
-                'status': merge_status[0],
-                'message': safe_unicode(merge_status[1]),
+                'status': merge_status,
+                'message': safe_unicode(msg),
             }
         else:
             merge_state = {'status': 'not_available',

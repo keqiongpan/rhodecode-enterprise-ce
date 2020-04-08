@@ -169,7 +169,7 @@ class TestPullRequestModel(object):
         assert pull_request._last_merge_target_rev is None
         assert pull_request.last_merge_status is None
 
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
         assert msg == 'This pull request can be automatically merged.'
         self.merge_mock.assert_called_with(
@@ -184,7 +184,7 @@ class TestPullRequestModel(object):
         assert pull_request.last_merge_status is MergeFailureReason.NONE
 
         self.merge_mock.reset_mock()
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is True
         assert msg == 'This pull request can be automatically merged.'
         assert self.merge_mock.called is False
@@ -198,7 +198,7 @@ class TestPullRequestModel(object):
         assert pull_request._last_merge_target_rev is None
         assert pull_request.last_merge_status is None
 
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert msg == 'This pull request cannot be merged because of merge conflicts. file1'
         self.merge_mock.assert_called_with(
@@ -213,9 +213,9 @@ class TestPullRequestModel(object):
         assert pull_request.last_merge_status is MergeFailureReason.MERGE_FAILED
 
         self.merge_mock.reset_mock()
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
-        assert msg == 'This pull request cannot be merged because of merge conflicts. '
+        assert msg == 'This pull request cannot be merged because of merge conflicts. file1'
         assert self.merge_mock.called is False
 
     def test_merge_status_unknown_failure(self, pull_request):
@@ -227,7 +227,7 @@ class TestPullRequestModel(object):
         assert pull_request._last_merge_target_rev is None
         assert pull_request.last_merge_status is None
 
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert msg == (
             'This pull request cannot be merged because of an unhandled exception. '
@@ -244,7 +244,7 @@ class TestPullRequestModel(object):
         assert pull_request.last_merge_status is None
 
         self.merge_mock.reset_mock()
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert msg == (
             'This pull request cannot be merged because of an unhandled exception. '
@@ -253,7 +253,7 @@ class TestPullRequestModel(object):
 
     def test_merge_status_when_target_is_locked(self, pull_request):
         pull_request.target_repo.locked = [1, u'12345.50', 'lock_web']
-        status, msg = PullRequestModel().merge_status(pull_request)
+        merge_response, status, msg = PullRequestModel().merge_status(pull_request)
         assert status is False
         assert msg == (
             'This pull request cannot be merged because the target repository '
@@ -266,7 +266,7 @@ class TestPullRequestModel(object):
 
         patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
-            status, msg = PullRequestModel().merge_status(pull_request)
+            merge_response, status, msg = PullRequestModel().merge_status(pull_request)
 
         assert status is False
         assert msg == 'Target repository large files support is disabled.'
@@ -278,7 +278,7 @@ class TestPullRequestModel(object):
 
         patcher = mock.patch.object(PullRequestModel, '_has_largefiles', has_largefiles)
         with patcher:
-            status, msg = PullRequestModel().merge_status(pull_request)
+            merge_response, status, msg = PullRequestModel().merge_status(pull_request)
 
         assert status is False
         assert msg == 'Source repository large files support is disabled.'

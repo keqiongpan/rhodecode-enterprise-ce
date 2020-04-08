@@ -216,6 +216,7 @@ class MergeResponse(object):
         Return a human friendly error message for the given merge status code.
         """
         msg = safe_unicode(self.MERGE_STATUS_MESSAGES[self.failure_reason])
+
         try:
             return msg.format(**self.metadata)
         except Exception:
@@ -437,7 +438,8 @@ class BaseRepository(object):
         self._invalidate_prop_cache('commit_ids')
         self._is_empty = False
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
+                   translate_tag=None, maybe_unreachable=False):
         """
         Returns instance of `BaseCommit` class. If `commit_id` and `commit_idx`
         are both None, most recent commit is returned.

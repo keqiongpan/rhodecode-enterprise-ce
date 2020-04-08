@@ -885,6 +885,7 @@ class PullRequestModel(BaseModel):
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
         version.last_merge_status = pull_request.last_merge_status
+        version.last_merge_metadata = pull_request.last_merge_metadata
         version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
         version.reviewer_data = pull_request.reviewer_data
@@ -1349,30 +1350,28 @@ class PullRequestModel(BaseModel):
 
         return comment, status
 
-    def merge_status(self, pull_request, translator=None,
-                     force_shadow_repo_refresh=False):
+    def merge_status(self, pull_request, translator=None, force_shadow_repo_refresh=False):
         _ = translator or get_current_request().translate
 
         if not self._is_merge_enabled(pull_request):
-            return False, _('Server-side pull request merging is disabled.')
+            return None, False, _('Server-side pull request merging is disabled.')
+
         if pull_request.is_closed():
-            return False, _('This pull request is closed.')
+            return None, False, _('This pull request is closed.')
+
         merge_possible, msg = self._check_repo_requirements(
             target=pull_request.target_repo, source=pull_request.source_repo,
             translator=_)
         if not merge_possible:
-            return merge_possible, msg
+            return None, merge_possible, msg
 
         try:
-            resp = self._try_merge(
-                pull_request,
-                force_shadow_repo_refresh=force_shadow_repo_refresh)
-            log.debug("Merge response: %s", resp)
-            status = resp.possible, resp.merge_status_message
+            merge_response = self._try_merge(
+                pull_request, force_shadow_repo_refresh=force_shadow_repo_refresh)
+            log.debug("Merge response: %s", merge_response)
+            return merge_response, merge_response.possible, merge_response.merge_status_message
         except NotImplementedError:
-            status = False, _('Pull request merging is not supported.')
-
-        return status
+            return None, False, _('Pull request merging is not supported.')
 
     def _check_repo_requirements(self, target, source, translator):
         """
@@ -1439,6 +1438,9 @@ class PullRequestModel(BaseModel):
                 'target_ref': pull_request.target_ref_parts,
                 'source_ref': pull_request.source_ref_parts,
             }
+            if pull_request.last_merge_metadata:
+                metadata.update(pull_request.last_merge_metadata)
+
             if not possible and target_ref.type == 'branch':
                 # NOTE(marcink): case for mercurial multiple heads on branch
                 heads = target_vcs._heads(target_ref.name)
@@ -1447,6 +1449,7 @@ class PullRequestModel(BaseModel):
                     metadata.update({
                         'heads': heads
                     })
+
             merge_state = MergeResponse(
                 possible, False, None, pull_request.last_merge_status, metadata=metadata)
 
@@ -1487,6 +1490,8 @@ class PullRequestModel(BaseModel):
                 pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
             pull_request.last_merge_status = merge_state.failure_reason
+            pull_request.last_merge_metadata = merge_state.metadata
+
             pull_request.shadow_merge_ref = merge_state.merge_ref
             Session().add(pull_request)
             Session().commit()
@@ -1627,7 +1632,7 @@ class PullRequestModel(BaseModel):
         target_commit = source_repo.get_commit(
             commit_id=safe_str(target_ref_id))
         source_commit = source_repo.get_commit(
-            commit_id=safe_str(source_ref_id))
+            commit_id=safe_str(source_ref_id), maybe_unreachable=True)
         if isinstance(source_repo, Repository):
             vcs_repo = source_repo.scm_instance()
         else:
@@ -1730,9 +1735,14 @@ class MergeCheck(object):
         self.review_status = None
         self.merge_possible = None
         self.merge_msg = ''
+        self.merge_response = None
         self.failed = None
         self.errors = []
         self.error_details = OrderedDict()
+
+    def __repr__(self):
+        return '<MergeCheck(possible:{}, failed:{}, errors:{})>'.format(
+            self.merge_possible, self.failed, self.errors)
 
     def push_error(self, error_type, message, error_key, details):
         self.failed = True
@@ -1822,11 +1832,14 @@ class MergeCheck(object):
                 return merge_check
 
         # merge possible, here is the filesystem simulation + shadow repo
-        merge_status, msg = PullRequestModel().merge_status(
+        merge_response, merge_status, msg = PullRequestModel().merge_status(
             pull_request, translator=translator,
             force_shadow_repo_refresh=force_shadow_repo_refresh)
+
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
+        merge_check.merge_response = merge_response
+
         if not merge_status:
             log.debug("MergeCheck: cannot merge, pull request merge not possible.")
             merge_check.push_error('warning', msg, cls.MERGE_CHECK, None)
