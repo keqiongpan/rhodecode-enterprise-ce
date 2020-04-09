@@ -26,7 +26,6 @@ def admin_routes(config):
     """
     Admin prefixed routes
     """
-
     config.add_route(
         name='admin_audit_logs',
         pattern='/audit_logs')
@@ -289,6 +288,12 @@ def admin_routes(config):
     config.add_route(
         name='user_create_personal_repo_group',
         pattern='/users/{user_id:\d+}/create_repo_group',
+        user_route=True)
+
+    # user notice
+    config.add_route(
+        name='user_notice_dismiss',
+        pattern='/users/{user_id:\d+}/notice_dismiss',
         user_route=True)
 
     # user auth tokens

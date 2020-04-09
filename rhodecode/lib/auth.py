@@ -23,6 +23,8 @@ authentication and permission libraries
 """
 
 import os
+
+import colander
 import time
 import collections
 import fnmatch
@@ -45,14 +47,13 @@ from rhodecode.model import meta
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
-    User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
-    UserIpMap, UserApiKeys, RepoGroup, UserGroup)
+    false, User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
+    UserIpMap, UserApiKeys, RepoGroup, UserGroup, UserNotice)
 from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int, sha1
 from rhodecode.lib.utils import (
     get_repo_slug, get_repo_group_slug, get_user_group_slug)
 from rhodecode.lib.caching_query import FromCache
-
 
 if rhodecode.is_unix:
     import bcrypt
@@ -1454,6 +1455,38 @@ class AuthUser(object):
                 return rule, branch_perm
 
         return rule, default_perm
+
+    def get_notice_messages(self):
+
+        notice_level = 'notice-error'
+        notice_messages = []
+        if self.is_default:
+            return [], notice_level
+
+        notices = UserNotice.query()\
+            .filter(UserNotice.user_id == self.user_id)\
+            .filter(UserNotice.notice_read == false())\
+            .all()
+
+        try:
+            for entry in notices:
+
+                msg = {
+                    'msg_id': entry.user_notice_id,
+                    'level': entry.notification_level,
+                    'subject': entry.notice_subject,
+                    'body': entry.notice_body,
+                }
+                notice_messages.append(msg)
+
+            log.debug('Got user %s %s messages', self, len(notice_messages))
+
+            levels = [x['level'] for x in notice_messages]
+            notice_level = 'notice-error' if 'error' in levels else 'notice-warning'
+        except Exception:
+            pass
+
+        return notice_messages, notice_level
 
     def __repr__(self):
         return "<AuthUser('id:%s[%s] ip:%s auth:%s')>"\

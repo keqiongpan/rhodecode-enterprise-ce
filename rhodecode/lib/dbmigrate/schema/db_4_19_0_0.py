@@ -4546,35 +4546,6 @@ class UserNotice(Base, BaseModel):
     user_id = Column('user_id', Integer(), ForeignKey('users.user_id'))
     user = relationship('User', lazy="joined", primaryjoin='User.user_id==UserNotice.user_id')
 
-    @classmethod
-    def create_for_user(cls, user, subject, body, notice_level=NOTIFICATION_LEVEL_INFO, allow_duplicate=False):
-
-        if notice_level not in [cls.NOTIFICATION_LEVEL_ERROR,
-                                cls.NOTIFICATION_LEVEL_WARNING,
-                                cls.NOTIFICATION_LEVEL_INFO]:
-            return
-
-        from rhodecode.model.user import UserModel
-        user = UserModel().get_user(user)
-
-        new_notice = UserNotice()
-        if not allow_duplicate:
-            existing_msg = UserNotice().query() \
-                .filter(UserNotice.user == user) \
-                .filter(UserNotice.notice_body == body) \
-                .filter(UserNotice.notice_read == false()) \
-                .scalar()
-            if existing_msg:
-                log.warning('Ignoring duplicate notice for user %s', user)
-                return
-
-        new_notice.user = user
-        new_notice.notice_subject = subject
-        new_notice.notice_body = body
-        new_notice.notification_level = notice_level
-        Session().add(new_notice)
-        Session().commit()
-
 
 class Gist(Base, BaseModel):
     __tablename__ = 'gists'

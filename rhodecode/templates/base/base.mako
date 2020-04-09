@@ -688,17 +688,50 @@
 </%def>
 
 <%def name="menu_items(active=None)">
+    <%
+        notice_messages, notice_level = c.rhodecode_user.get_notice_messages()
+        notice_display = 'none' if len(notice_messages) == 0 else ''
+    %>
+<style>
+
+</style>
 
     <ul id="quick" class="main_nav navigation horizontal-list">
        ## notice box for important system messages
-       <li style="display: none">
-          <a class="notice-box" href="#openNotice" onclick="return false">
-            <div class="menulabel-notice" >
-                0
+       <li style="display: ${notice_display}">
+          <a class="notice-box" href="#openNotice" onclick="$('.notice-messages-container').toggle(); return false">
+            <div class="menulabel-notice ${notice_level}" >
+                ${len(notice_messages)}
             </div>
           </a>
        </li>
+        <div class="notice-messages-container" style="display: none">
+        <div class="notice-messages">
+            <table class="rctable">
+            % for notice in notice_messages:
+                <tr id="notice-message-${notice['msg_id']}" class="notice-message-${notice['level']}">
+                    <td style="vertical-align: text-top; width: 20px">
+                        <i class="tooltip icon-info notice-color-${notice['level']}" title="${notice['level']}"></i>
+                    </td>
+                    <td>
+                        <span><i class="icon-plus-squared cursor-pointer" onclick="$('#notice-${notice['msg_id']}').toggle()"></i> </span>
+                        ${notice['subject']}
 
+                        <div id="notice-${notice['msg_id']}" style="display: none">
+                            ${h.render(notice['body'], renderer='markdown')}
+                        </div>
+                    </td>
+                    <td style="vertical-align: text-top; width: 35px;">
+                        <a class="tooltip" title="${_('dismiss')}" href="#dismiss" onclick="dismissNotice(${notice['msg_id']});return false">
+                            <i class="icon-remove icon-filled-red"></i>
+                        </a>
+                    </td>
+                </tr>
+
+            % endfor
+            </table>
+        </div>
+        </div>
         ## Main filter
        <li>
         <div class="menulabel main_filter_box">
@@ -1058,6 +1091,26 @@
             }
         });
 
+        var dismissNotice = function(noticeId) {
+
+            var url = pyroutes.url('user_notice_dismiss',
+                    {"user_id": templateContext.rhodecode_user.user_id});
+
+            var postData = {
+                'csrf_token': CSRF_TOKEN,
+                'notice_id': noticeId,
+            };
+
+            var success = function(response) {
+                $('#notice-message-' + noticeId).remove();
+                return false;
+            };
+            var failure = function(data, textStatus, xhr) {
+                alert("error processing request: " + textStatus);
+                return false;
+            };
+            ajaxPOST(url, postData, success, failure);
+        }
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>

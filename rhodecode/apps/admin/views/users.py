@@ -34,7 +34,7 @@ from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
 from rhodecode.authentication.base import get_authn_registry, RhodeCodeExternalAuthPlugin
 from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
-from rhodecode.model.db import true
+from rhodecode.model.db import true, UserNotice
 
 from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib.exceptions import (
@@ -700,6 +700,32 @@ class UsersView(UserAppView):
                     category='error')
 
         raise HTTPFound(h.route_path('user_edit_advanced', user_id=user_id))
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='user_notice_dismiss', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def user_notice_dismiss(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.db_user_id
+        c.user = self.db_user
+        user_notice_id = safe_int(self.request.POST.get('notice_id'))
+        notice = UserNotice().query()\
+            .filter(UserNotice.user_id == user_id)\
+            .filter(UserNotice.user_notice_id == user_notice_id)\
+            .scalar()
+        read = False
+        if notice:
+            notice.notice_read = True
+            Session().add(notice)
+            Session().commit()
+            read = True
+
+        return {'notice': user_notice_id, 'read': read}
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
