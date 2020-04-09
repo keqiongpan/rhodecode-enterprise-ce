@@ -6,7 +6,16 @@
     % if c.traceback:
 
     <h4>${_('Exception `{}` generated on UTC date: {}').format(c.traceback.get('exc_type', 'NO_TYPE'), c.traceback.get('exc_utc_date', 'NO_DATE'))}</h4>
+    % if c.traceback.get('url'):
+        Request:
+        <code>${c.traceback.get('method')} ${c.traceback.get('url')}</code><br/>
+        <code>${c.traceback.get('client_address')} ${c.traceback.get('user_agent')}</code>
+        <br/>
+        <br/>
+    % endif
+
     <pre>${c.traceback.get('exc_message', 'NO_MESSAGE')}</pre>
+
 
     % else:
         ${_('Unable to Read Exception. It might be removed or non-existing.')}

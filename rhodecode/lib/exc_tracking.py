@@ -34,7 +34,7 @@ global_prefix = 'rhodecode'
 exc_store_dir_name = 'rc_exception_store_v1'
 
 
-def exc_serialize(exc_id, tb, exc_type):
+def exc_serialize(exc_id, tb, exc_type, extra_data=None):
 
     data = {
         'version': 'v1',
@@ -44,6 +44,8 @@ def exc_serialize(exc_id, tb, exc_type):
         'exc_message': tb,
         'exc_type': exc_type,
     }
+    if extra_data:
+        data.update(extra_data)
     return msgpack.packb(data), data
 
 
@@ -80,10 +82,20 @@ def _store_exception(exc_id, exc_type_name, exc_traceback, prefix, send_email=No
     """
     Low level function to store exception in the exception tracker
     """
+    from pyramid.threadlocal import get_current_request
     import rhodecode as app
+    request = get_current_request()
+    extra_data = {}
+    # NOTE(marcink): store request information into exc_data
+    if request:
+        extra_data['client_address'] = getattr(request, 'client_addr', '')
+        extra_data['user_agent'] = getattr(request, 'user_agent', '')
+        extra_data['method'] = getattr(request, 'method', '')
+        extra_data['url'] = getattr(request, 'url', '')
 
     exc_store_path = get_exc_store()
-    exc_data, org_data = exc_serialize(exc_id, exc_traceback, exc_type_name)
+    exc_data, org_data = exc_serialize(exc_id, exc_traceback, exc_type_name, extra_data=extra_data)
+
     exc_pref_id = '{}_{}_{}'.format(exc_id, prefix, org_data['exc_timestamp'])
     if not os.path.isdir(exc_store_path):
         os.makedirs(exc_store_path)
@@ -100,22 +112,19 @@ def _store_exception(exc_id, exc_type_name, exc_traceback, prefix, send_email=No
     send_email = send_email and mail_server
     if send_email:
         try:
-            send_exc_email(exc_id, exc_type_name)
+            send_exc_email(request, exc_id, exc_type_name)
         except Exception:
             log.exception('Failed to send exception email')
             pass
 
 
-def send_exc_email(exc_id, exc_type_name):
+def send_exc_email(request, exc_id, exc_type_name):
     import rhodecode as app
-    from pyramid.threadlocal import get_current_request
     from rhodecode.apps._base import TemplateArgs
     from rhodecode.lib.utils2 import aslist
     from rhodecode.lib.celerylib import run_task, tasks
     from rhodecode.lib.base import attach_context_attributes
     from rhodecode.model.notification import EmailNotificationModel
-
-    request = get_current_request()
 
     recipients = aslist(app.CONFIG.get('exception_tracker.send_email_recipients', ''))
     log.debug('Sending Email exception to: `%s`', recipients or 'all super admins')
