@@ -117,6 +117,11 @@ $(document).ready(function() {
     // on entering the new filename set mode, from given extension
     setCodeMirrorModeFromInput(modes_select, filename_selector, fileEditor.cm, null);
 
+    var commit_id =  "${c.commit.raw_id}";
+    var f_path = "${c.f_path}";
+
+    checkFileHead($('#eform'), commit_id, f_path, 'edit')
+
 });
 
 

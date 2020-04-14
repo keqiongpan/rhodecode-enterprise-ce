@@ -156,6 +156,10 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/authors/{commit_id}/{f_path:.*}', repo_route=True)
 
     config.add_route(
+        name='repo_files_check_head',
+        pattern='/{repo_name:.*?[^/]}/check_head/{commit_id}/{f_path:.*}',
+        repo_route=True)
+    config.add_route(
         name='repo_files_remove_file',
         pattern='/{repo_name:.*?[^/]}/remove_file/{commit_id}/{f_path:.*}',
         repo_route=True)

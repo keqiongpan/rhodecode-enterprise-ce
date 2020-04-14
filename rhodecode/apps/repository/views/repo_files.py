@@ -1114,6 +1114,42 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @view_config(
+        route_name='repo_files_check_head', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def repo_files_check_head(self):
+        self.load_default_context()
+
+        commit_id, f_path = self._get_commit_and_path()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        new_path = self.request.POST.get('path')
+        operation = self.request.POST.get('operation')
+        path_exist = ''
+
+        if new_path and operation in ['create', 'upload']:
+            new_f_path = os.path.join(f_path.lstrip('/'), new_path)
+            try:
+                commit_obj = self.rhodecode_vcs_repo.get_commit(commit_id)
+                # NOTE(dan): construct whole path without leading /
+                file_node = commit_obj.get_node(new_f_path)
+                if file_node is not None:
+                    path_exist = new_f_path
+            except EmptyRepositoryError:
+                pass
+            except Exception:
+                pass
+
+        return {
+            'branch': _branch_name,
+            'sha': _sha_commit_id,
+            'is_head': is_head,
+            'path_exists': path_exist
+        }
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
+    @view_config(
         route_name='repo_files_remove_file', request_method='GET',
         renderer='rhodecode:templates/files/files_delete.mako')
     def repo_files_remove_file(self):

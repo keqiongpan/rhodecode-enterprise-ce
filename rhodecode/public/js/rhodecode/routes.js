@@ -204,6 +204,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_file_download:legacy', '/%(repo_name)s/rawfile/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_file_history', '/%(repo_name)s/history/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_file_authors', '/%(repo_name)s/authors/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
+    pyroutes.register('repo_files_check_head', '/%(repo_name)s/check_head/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_remove_file', '/%(repo_name)s/remove_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_delete_file', '/%(repo_name)s/delete_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_edit_file', '/%(repo_name)s/edit_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);

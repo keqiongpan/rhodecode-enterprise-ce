@@ -521,3 +521,80 @@ var showAuthors = function(elem, annotate) {
     return FileEditor;
 });
 
+
+var checkFileHead = function($editForm, commit_id, f_path, operation) {
+    function getFormData($form){
+        var unindexed_array = $form.serializeArray();
+        var indexed_array = {};
+
+        $.map(unindexed_array, function(n, i){
+            indexed_array[n['name']] = n['value'];
+        });
+
+        return indexed_array;
+    }
+
+    $editForm.on('submit', function (e) {
+
+        var validHead = $editForm.find('#commit_btn').data('validHead');
+        if (validHead === true){
+            return true
+        }
+
+        // no marker, we do "checks"
+        e.preventDefault();
+        var formData = getFormData($editForm);
+        var new_path = formData['filename'];
+
+        var success = function(data) {
+
+            if (data['is_head'] === true && data['path_exists'] === "") {
+
+                $editForm.find('#commit_btn').data('validHead', true);
+                $editForm.find('#commit_btn').val('Committing...');
+                $editForm.submit();
+
+            } else {
+                var message = '';
+                var urlTmpl = '<a target="_blank" href="{0}">here</a>';
+                $editForm.find('#commit_btn').val('Commit aborted');
+
+                if (operation === 'edit') {
+                    var new_url = urlTmpl.format(pyroutes.url('repo_files_edit_file', {"repo_name": templateContext.repo_name, "commit_id": data['branch'], "f_path": f_path}));
+                    message = _gettext('File `{0}` has a newer version available, or has been removed. Click {1} to see the latest version.'.format(f_path, new_url));
+                } else if (operation === 'delete') {
+                    var new_url = urlTmpl.format(pyroutes.url('repo_files_remove_file', {"repo_name": templateContext.repo_name, "commit_id": data['branch'], "f_path": f_path}));
+                    message = _gettext('File `{0}` has a newer version available, or has been removed. Click {1} to see the latest version.'.format(f_path, new_url));
+                } else if (operation === 'create') {
+                    if (data['path_exists'] !== "") {
+                        message = _gettext('There is an existing path `{0}` at this commit.'.format(data['path_exists']));
+                    } else {
+                        var new_url = urlTmpl.format(pyroutes.url('repo_files_add_file', {"repo_name": templateContext.repo_name, "commit_id": data['branch'], "f_path": f_path, "filename": new_path}));
+                        message = _gettext('There is a later version of file tree available. Click {0} to create a file at the latest tree.'.format(new_url));
+                    }
+                }
+
+                var payload = {
+                    message: {
+                        message: message,
+                        level: 'warning',
+                        force: true
+                    }
+                };
+                $.Topic('/notifications').publish(payload);
+            }
+        };
+
+        // lock button
+        $editForm.find('#commit_btn').attr('disabled', 'disabled');
+        $editForm.find('#commit_btn').val('Checking commit...');
+
+        var postData = {'csrf_token': CSRF_TOKEN, 'path': new_path, 'operation': operation};
+        ajaxPOST(pyroutes.url('repo_files_check_head',
+                {'repo_name': templateContext.repo_name, 'commit_id': commit_id, 'f_path': f_path}),
+                postData, success);
+
+        return false
+
+    });
+};

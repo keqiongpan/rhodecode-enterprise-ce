@@ -106,7 +106,7 @@
 
     <div class="file-upload-transaction-wrapper" style="display: none">
     <div class="file-upload-transaction">
-        <h3>${_('Commiting...')}</h3>
+        <h3>${_('Committing...')}</h3>
         <p>${_('Please wait while the files are being uploaded')}</p>
         <p class="error" style="display: none">
 
