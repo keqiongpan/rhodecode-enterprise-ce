@@ -1655,7 +1655,7 @@ def comment_commit(
             except StatusChangeOnClosedPullRequestError:
                 log.exception(
                     "Exception occurred while trying to change repo commit status")
-                msg = ('Changing status on a changeset associated with '
+                msg = ('Changing status on a commit associated with '
                        'a closed pull request is not allowed')
                 raise JSONRPCError(msg)
 

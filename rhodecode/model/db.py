@@ -3815,7 +3815,9 @@ class ChangesetComment(Base, BaseModel):
             'comment_lineno': comment.line_no,
             'comment_author': comment.author,
             'comment_created_on': comment.created_on,
-            'comment_resolved_by': self.resolved
+            'comment_resolved_by': self.resolved,
+            'comment_commit_id': comment.revision,
+            'comment_pull_request_id': comment.pull_request_id,
         }
         return data
 
