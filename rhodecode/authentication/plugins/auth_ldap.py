@@ -69,6 +69,12 @@ class LdapAuthnResource(AuthnPluginResourceBase):
 class AuthLdap(AuthLdapBase):
     default_tls_cert_dir = '/etc/openldap/cacerts'
 
+    scope_labels = {
+        ldap.SCOPE_BASE: 'SCOPE_BASE',
+        ldap.SCOPE_ONELEVEL: 'SCOPE_ONELEVEL',
+        ldap.SCOPE_SUBTREE: 'SCOPE_SUBTREE',
+    }
+
     def __init__(self, server, base_dn, port=389, bind_dn='', bind_pass='',
                  tls_kind='PLAIN', tls_reqcert='DEMAND', tls_cert_file=None,
                  tls_cert_dir=None, ldap_version=3,
@@ -148,19 +154,27 @@ class AuthLdap(AuthLdapBase):
         log.debug('simple_bind successful')
         return ldap_conn
 
-    def fetch_attrs_from_simple_bind(self, server, dn, username, password):
-        try:
-            log.debug('Trying simple bind with %r', dn)
-            server.simple_bind_s(dn, safe_str(password))
-            _dn, attrs = server.search_ext_s(
-                dn, ldap.SCOPE_BASE, '(objectClass=*)', )[0]
+    def fetch_attrs_from_simple_bind(self, ldap_conn, dn, username, password):
+        scope = ldap.SCOPE_BASE
+        scope_label = self.scope_labels.get(scope)
+        ldap_filter = '(objectClass=*)'
 
-            return attrs
+        try:
+            log.debug('Trying authenticated search bind with dn: %r SCOPE: %s (and filter: %s)',
+                      dn, scope_label, ldap_filter)
+            ldap_conn.simple_bind_s(dn, safe_str(password))
+            response = ldap_conn.search_ext_s(dn, scope, ldap_filter, attrlist=['*', '+'])
+
+            if not response:
+                log.error('search bind returned empty results: %r', response)
+                return {}
+            else:
+                _dn, attrs = response[0]
+                return attrs
 
         except ldap.INVALID_CREDENTIALS:
-            log.debug(
-                "LDAP rejected password for user '%s': %s, org_exc:",
-                username, dn, exc_info=True)
+            log.debug("LDAP rejected password for user '%s': %s, org_exc:",
+                      username, dn, exc_info=True)
 
     def authenticate_ldap(self, username, password):
         """
@@ -179,35 +193,38 @@ class AuthLdap(AuthLdapBase):
 
         self.validate_password(username, password)
         self.validate_username(username)
+        scope_label = self.scope_labels.get(self.SEARCH_SCOPE)
 
         ldap_conn = None
         try:
             ldap_conn = self._get_ldap_conn()
             filter_ = '(&%s(%s=%s))' % (
                 self.LDAP_FILTER, self.attr_login, username)
-            log.debug("Authenticating %r filter %s", self.BASE_DN, filter_)
+            log.debug("Authenticating %r filter %s and scope: %s",
+                      self.BASE_DN, filter_, scope_label)
 
-            lobjects = ldap_conn.search_ext_s(
-                self.BASE_DN, self.SEARCH_SCOPE, filter_)
+            ldap_objects = ldap_conn.search_ext_s(
+                self.BASE_DN, self.SEARCH_SCOPE, filter_, attrlist=['*', '+'])
 
-            if not lobjects:
+            if not ldap_objects:
                 log.debug("No matching LDAP objects for authentication "
                           "of UID:'%s' username:(%s)", uid, username)
                 raise ldap.NO_SUCH_OBJECT()
 
-            log.debug('Found matching ldap object, trying to authenticate')
-            for (dn, _attrs) in lobjects:
+            log.debug('Found %s matching ldap object[s], trying to authenticate on each one now...', len(ldap_objects))
+            for (dn, _attrs) in ldap_objects:
                 if dn is None:
                     continue
 
                 user_attrs = self.fetch_attrs_from_simple_bind(
                     ldap_conn, dn, username, password)
+
                 if user_attrs:
+                    log.debug('Got authenticated user attributes from DN:%s', dn)
                     break
             else:
                 raise LdapPasswordError(
-                    'Failed to authenticate user `{}` '
-                    'with given password'.format(username))
+                    'Failed to authenticate user `{}` with given password'.format(username))
 
         except ldap.NO_SUCH_OBJECT:
             log.debug("LDAP says no such user '%s' (%s), org_exc:",
@@ -216,8 +233,7 @@ class AuthLdap(AuthLdapBase):
         except ldap.SERVER_DOWN:
             org_exc = traceback.format_exc()
             raise LdapConnectionError(
-                "LDAP can't access authentication "
-                "server, org_exc:%s" % org_exc)
+                "LDAP can't access authentication server, org_exc:%s" % org_exc)
         finally:
             if ldap_conn:
                 log.debug('ldap: connection release')
