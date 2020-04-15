@@ -925,6 +925,9 @@ class BaseCommit(object):
         d.pop('repository', None)
         return d
 
+    def serialize(self):
+        return self.__json__()
+
     def _get_refs(self):
         return {
             'branches': [self.branch] if self.branch else [],

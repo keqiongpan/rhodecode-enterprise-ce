@@ -181,6 +181,20 @@ class RepoEvent(RhodeCodeIntegrationEvent):
         return data
 
 
+class RepoCommitCommentEvent(RepoEvent):
+    """
+    An instance of this class is emitted as an :term:`event` after a comment is made
+    on repository commit.
+    """
+    def __init__(self, repo, commit, comment):
+        super(RepoCommitCommentEvent, self).__init__(repo)
+        self.commit = commit
+        self.comment = comment
+
+    name = 'repo-commit-comment'
+    display_name = lazy_ugettext('repository commit comment')
+
+
 class RepoPreCreateEvent(RepoEvent):
     """
     An instance of this class is emitted as an :term:`event` before a repo is

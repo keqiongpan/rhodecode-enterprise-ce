@@ -1599,7 +1599,8 @@ def comment_commit(
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
-        commit_id = repo.scm_instance().get_commit(commit_id=commit_id).raw_id
+        commit = repo.scm_instance().get_commit(commit_id=commit_id)
+        commit_id = commit.raw_id
     except Exception as e:
         log.exception('Failed to fetch commit')
         raise JSONRPCError(safe_str(e))
@@ -1658,6 +1659,10 @@ def comment_commit(
                 msg = ('Changing status on a commit associated with '
                        'a closed pull request is not allowed')
                 raise JSONRPCError(msg)
+
+        CommentsModel().trigger_commit_comment_hook(
+            repo, apiuser, 'create',
+            data={'comment': comment, 'commit': commit})
 
         Session().commit()
         return {

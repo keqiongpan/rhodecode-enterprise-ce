@@ -26,144 +26,190 @@ from rhodecode.lib import hooks_base
 from rhodecode.lib import utils2
 
 
-def _get_rc_scm_extras(username, repo_name, repo_alias, action):
-    # TODO: johbo: Replace by vcs_operation_context and remove fully
+def _supports_repo_type(repo_type):
+    if repo_type in ('hg', 'git'):
+        return True
+    return False
+
+
+def _get_vcs_operation_context(username, repo_name, repo_type, action):
+    # NOTE(dan): import loop
     from rhodecode.lib.base import vcs_operation_context
+
     check_locking = action in ('pull', 'push')
 
     request = get_current_request()
 
-    # default
-    dummy_environ = webob.Request.blank('').environ
     try:
-        environ = request.environ or dummy_environ
+        environ = request.environ
     except TypeError:
         # we might use this outside of request context
-        environ = dummy_environ
+        environ = {}
 
-    extras = vcs_operation_context(
-        environ, repo_name, username, action, repo_alias, check_locking)
+    if not environ:
+        environ = webob.Request.blank('').environ
+
+    extras = vcs_operation_context(environ, repo_name, username, action, repo_type, check_locking)
     return utils2.AttributeDict(extras)
 
 
-def trigger_post_push_hook(
-        username, action, hook_type, repo_name, repo_alias, commit_ids):
+def trigger_post_push_hook(username, action, hook_type, repo_name, repo_type, commit_ids):
     """
     Triggers push action hooks
 
     :param username: username who pushes
     :param action: push/push_local/push_remote
+    :param hook_type: type of hook executed
     :param repo_name: name of repo
-    :param repo_alias: the type of SCM repo
+    :param repo_type: the type of SCM repo
     :param commit_ids: list of commit ids that we pushed
     """
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias, action)
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, action)
     extras.commit_ids = commit_ids
     extras.hook_type = hook_type
     hooks_base.post_push(extras)
 
 
-def trigger_log_create_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request, data=None):
+def trigger_comment_commit_hooks(username, repo_name, repo_type, repo, data=None):
+    """
+    Triggers when a comment is made on a commit
+
+    :param username: username who creates the comment
+    :param repo_name: name of target repo
+    :param repo_type: the type of SCM target repo
+    :param repo: the repo object we trigger the event for
+    :param data: extra data for specific events e.g {'comment': comment_obj, 'commit': commit_obj}
+    """
+    if not _supports_repo_type(repo_type):
+        return
+
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'comment_commit')
+
+    comment = data['comment']
+    commit = data['commit']
+
+    events.trigger(events.RepoCommitCommentEvent(repo, commit, comment))
+    extras.update(repo.get_dict())
+
+    extras.commit = commit.serialize()
+    extras.comment = comment.get_api_data()
+    extras.created_by = username
+    hooks_base.log_comment_commit_repository(**extras)
+
+
+def trigger_create_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers create pull request action hooks
 
     :param username: username who creates the pull request
     :param repo_name: name of target repo
-    :param repo_alias: the type of SCM target repo
+    :param repo_type: the type of SCM target repo
     :param pull_request: the pull request that was created
     :param data: extra data for specific events e.g {'comment': comment_obj}
     """
-    if repo_alias not in ('hg', 'git'):
+    if not _supports_repo_type(repo_type):
         return
 
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias,
-                                'create_pull_request')
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'create_pull_request')
     events.trigger(events.PullRequestCreateEvent(pull_request))
     extras.update(pull_request.get_api_data(with_merge_state=False))
     hooks_base.log_create_pull_request(**extras)
 
 
-def trigger_log_merge_pull_request_hook(username, repo_name, repo_alias,
-                                        pull_request, data=None):
+def trigger_merge_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers merge pull request action hooks
 
     :param username: username who creates the pull request
     :param repo_name: name of target repo
-    :param repo_alias: the type of SCM target repo
+    :param repo_type: the type of SCM target repo
     :param pull_request: the pull request that was merged
     :param data: extra data for specific events e.g {'comment': comment_obj}
     """
-    if repo_alias not in ('hg', 'git'):
+    if not _supports_repo_type(repo_type):
         return
 
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias,
-                                'merge_pull_request')
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'merge_pull_request')
     events.trigger(events.PullRequestMergeEvent(pull_request))
     extras.update(pull_request.get_api_data())
     hooks_base.log_merge_pull_request(**extras)
 
 
-def trigger_log_close_pull_request_hook(username, repo_name, repo_alias,
-                                        pull_request, data=None):
+def trigger_close_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers close pull request action hooks
 
     :param username: username who creates the pull request
     :param repo_name: name of target repo
-    :param repo_alias: the type of SCM target repo
+    :param repo_type: the type of SCM target repo
     :param pull_request: the pull request that was closed
     :param data: extra data for specific events e.g {'comment': comment_obj}
     """
-    if repo_alias not in ('hg', 'git'):
+    if not _supports_repo_type(repo_type):
         return
 
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias,
-                                'close_pull_request')
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'close_pull_request')
     events.trigger(events.PullRequestCloseEvent(pull_request))
     extras.update(pull_request.get_api_data())
     hooks_base.log_close_pull_request(**extras)
 
 
-def trigger_log_review_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request, data=None):
+def trigger_review_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers review status change pull request action hooks
 
     :param username: username who creates the pull request
     :param repo_name: name of target repo
-    :param repo_alias: the type of SCM target repo
+    :param repo_type: the type of SCM target repo
     :param pull_request: the pull request that review status changed
     :param data: extra data for specific events e.g {'comment': comment_obj}
     """
-    if repo_alias not in ('hg', 'git'):
+    if not _supports_repo_type(repo_type):
         return
 
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias,
-                                'review_pull_request')
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'review_pull_request')
     status = data.get('status')
     events.trigger(events.PullRequestReviewEvent(pull_request, status))
     extras.update(pull_request.get_api_data())
     hooks_base.log_review_pull_request(**extras)
 
 
-def trigger_log_update_pull_request_hook(username, repo_name, repo_alias,
-                                         pull_request, data=None):
+def trigger_comment_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
+    """
+    Triggers when a comment is made on a pull request
+
+    :param username: username who creates the pull request
+    :param repo_name: name of target repo
+    :param repo_type: the type of SCM target repo
+    :param pull_request: the pull request that comment was made on
+    :param data: extra data for specific events e.g {'comment': comment_obj}
+    """
+    if not _supports_repo_type(repo_type):
+        return
+
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'comment_pull_request')
+
+    comment = data['comment']
+    events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+    extras.update(pull_request.get_api_data())
+    extras.comment = comment.get_api_data()
+    hooks_base.log_comment_pull_request(**extras)
+
+
+def trigger_update_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers update pull request action hooks
 
     :param username: username who creates the pull request
     :param repo_name: name of target repo
-    :param repo_alias: the type of SCM target repo
+    :param repo_type: the type of SCM target repo
     :param pull_request: the pull request that was updated
     :param data: extra data for specific events e.g {'comment': comment_obj}
     """
-    if repo_alias not in ('hg', 'git'):
+    if not _supports_repo_type(repo_type):
         return
 
-    extras = _get_rc_scm_extras(username, repo_name, repo_alias,
-                                'update_pull_request')
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'update_pull_request')
     events.trigger(events.PullRequestUpdateEvent(pull_request))
     extras.update(pull_request.get_api_data())
     hooks_base.log_update_pull_request(**extras)

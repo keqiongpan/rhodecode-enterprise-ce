@@ -24,7 +24,6 @@ Set of hooks run by RhodeCode Enterprise
 """
 
 import os
-import collections
 import logging
 
 import rhodecode
@@ -349,8 +348,8 @@ class ExtensionCallback(object):
             try:
                 kwargs_to_pass[key] = kwargs[key]
             except KeyError:
-                log.error('Failed to fetch %s key. Expected keys: %s',
-                          key, self._kwargs_keys)
+                log.error('Failed to fetch %s key from given kwargs. '
+                          'Expected keys: %s', key, self._kwargs_keys)
                 raise
 
         # backward compat for removed api_key for old hooks. This was it works
@@ -437,6 +436,15 @@ log_review_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
+log_comment_pull_request = ExtensionCallback(
+    hook_name='COMMENT_PULL_REQUEST',
+    kwargs_keys=(
+        'server_url', 'config', 'scm', 'username', 'ip', 'action',
+        'repository', 'pull_request_id', 'url', 'title', 'description',
+        'status', 'comment', 'created_on', 'updated_on', 'commit_ids', 'review_status',
+        'mergeable', 'source', 'target', 'author', 'reviewers'))
+
+
 log_update_pull_request = ExtensionCallback(
     hook_name='UPDATE_PULL_REQUEST',
     kwargs_keys=(
@@ -482,6 +490,15 @@ log_delete_repository = ExtensionCallback(
         'repo_name', 'repo_type', 'description', 'private', 'created_on',
         'enable_downloads', 'repo_id', 'user_id', 'enable_statistics',
         'clone_uri', 'fork_id', 'group_id', 'deleted_by', 'deleted_on'))
+
+
+log_comment_commit_repository = ExtensionCallback(
+    hook_name='COMMENT_COMMIT_REPO_HOOK',
+    kwargs_keys=(
+        'repo_name', 'repo_type', 'description', 'private', 'created_on',
+        'enable_downloads', 'repo_id', 'user_id', 'enable_statistics',
+        'clone_uri', 'fork_id', 'group_id',
+        'repository', 'created_by', 'comment', 'commit'))
 
 
 log_create_repository_group = ExtensionCallback(

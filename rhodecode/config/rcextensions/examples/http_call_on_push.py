@@ -24,14 +24,13 @@ def _push_hook(*args, **kwargs):
     # returns list of dicts with key-val fetched from extra fields
     repo_extra_fields = extra_fields.run(**kwargs)
 
-    if repo_extra_fields.get('endpoint_url'):
-        field_metadata = repo_extra_fields['endpoint_url']
-        endpoint = field_metadata['field_value']
-        if endpoint:
-            data = {
-                'project': kwargs['repository'],
-            }
-            response = http_call.run(url=endpoint, params=data)
-            return HookResponse(0, 'Called endpoint {}, with response {}\n'.format(endpoint, response))
+    endpoint_url = extra_fields.get_field(repo_extra_fields, key='endpoint_url', default='')
+
+    if endpoint_url:
+        data = {
+            'project': kwargs['repository'],
+        }
+        response = http_call.run(url=endpoint_url, params=data)
+        return HookResponse(0, 'Called endpoint {}, with response {}\n'.format(endpoint_url, response))
 
     return HookResponse(0, '')

@@ -380,6 +380,11 @@ class RepoCommitsView(RepoAppView):
                         'repo_commit', repo_name=self.db_repo_name,
                         commit_id=current_id))
 
+            commit = self.db_repo.get_commit(current_id)
+            CommentsModel().trigger_commit_comment_hook(
+                self.db_repo, self._rhodecode_user, 'create',
+                data={'comment': comment, 'commit': commit})
+
         # finalize, commit and redirect
         Session().commit()
 

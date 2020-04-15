@@ -18,8 +18,10 @@
 
 import logging
 import os
+import string
 import functools
 import collections
+import urllib
 
 log = logging.getLogger('rhodecode.' + __name__)
 
@@ -187,3 +189,11 @@ def aslist(obj, sep=None, strip=True):
         return []
     else:
         return [obj]
+
+
+class UrlTemplate(string.Template):
+
+    def safe_substitute(self, **kws):
+        # url encode the kw for usage in url
+        kws = {k: urllib.quote(str(v)) for k, v in kws.items()}
+        return super(UrlTemplate, self).safe_substitute(**kws)

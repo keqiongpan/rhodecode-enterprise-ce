@@ -542,8 +542,7 @@ class PullRequestModel(BaseModel):
                 pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
-        self.trigger_pull_request_hook(
-            pull_request, created_by_user, 'create')
+        self.trigger_pull_request_hook(pull_request, created_by_user, 'create')
 
         creation_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
@@ -556,28 +555,26 @@ class PullRequestModel(BaseModel):
         pull_request = self.__get_pull_request(pull_request)
         target_scm = pull_request.target_repo.scm_instance()
         if action == 'create':
-            trigger_hook = hooks_utils.trigger_log_create_pull_request_hook
+            trigger_hook = hooks_utils.trigger_create_pull_request_hook
         elif action == 'merge':
-            trigger_hook = hooks_utils.trigger_log_merge_pull_request_hook
+            trigger_hook = hooks_utils.trigger_merge_pull_request_hook
         elif action == 'close':
-            trigger_hook = hooks_utils.trigger_log_close_pull_request_hook
+            trigger_hook = hooks_utils.trigger_close_pull_request_hook
         elif action == 'review_status_change':
-            trigger_hook = hooks_utils.trigger_log_review_pull_request_hook
+            trigger_hook = hooks_utils.trigger_review_pull_request_hook
         elif action == 'update':
-            trigger_hook = hooks_utils.trigger_log_update_pull_request_hook
+            trigger_hook = hooks_utils.trigger_update_pull_request_hook
         elif action == 'comment':
-            # dummy hook ! for comment. We want this function to handle all cases
-            def trigger_hook(*args, **kwargs):
-                pass
-            comment = data['comment']
-            events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+            trigger_hook = hooks_utils.trigger_comment_pull_request_hook
         else:
             return
 
+        log.debug('Handling pull_request %s trigger_pull_request_hook with action %s and hook: %s',
+                  pull_request, action, trigger_hook)
         trigger_hook(
             username=user.username,
             repo_name=pull_request.target_repo.repo_name,
-            repo_alias=target_scm.alias,
+            repo_type=target_scm.alias,
             pull_request=pull_request,
             data=data)
 
@@ -1286,8 +1283,7 @@ class PullRequestModel(BaseModel):
         pull_request.status = PullRequest.STATUS_CLOSED
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
-        self.trigger_pull_request_hook(
-            pull_request, pull_request.author, 'close')
+        self.trigger_pull_request_hook(pull_request, pull_request.author, 'close')
 
         pr_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
@@ -1333,20 +1329,21 @@ class PullRequestModel(BaseModel):
         )
 
         Session().flush()
-        events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+
+        self.trigger_pull_request_hook(pull_request, user, 'comment',
+                                       data={'comment': comment})
+
         # we now calculate the status of pull request again, and based on that
         # calculation trigger status change. This might happen in cases
         # that non-reviewer admin closes a pr, which means his vote doesn't
         # change the status, while if he's a reviewer this might change it.
         calculated_status = pull_request.calculated_review_status()
         if old_calculated_status != calculated_status:
-            self.trigger_pull_request_hook(
-                pull_request, user, 'review_status_change',
-                data={'status': calculated_status})
+            self.trigger_pull_request_hook(pull_request, user, 'review_status_change',
+                                           data={'status': calculated_status})
 
         # finally close the PR
-        PullRequestModel().close_pull_request(
-            pull_request.pull_request_id, user)
+        PullRequestModel().close_pull_request(pull_request.pull_request_id, user)
 
         return comment, status
 

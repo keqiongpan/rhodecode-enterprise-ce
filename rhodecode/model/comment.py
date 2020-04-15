@@ -30,7 +30,7 @@ from pyramid.threadlocal import get_current_registry, get_current_request
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.functions import coalesce
 
-from rhodecode.lib import helpers as h, diffs, channelstream
+from rhodecode.lib import helpers as h, diffs, channelstream, hooks_utils
 from rhodecode.lib import audit_logger
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
@@ -719,6 +719,26 @@ class CommentsModel(BaseModel):
         settings_model = VcsSettingsModel(repo=pull_request.target_repo)
         settings = settings_model.get_general_settings()
         return settings.get('rhodecode_use_outdated_comments', False)
+
+    def trigger_commit_comment_hook(self, repo, user, action, data=None):
+        repo = self._get_repo(repo)
+        target_scm = repo.scm_instance()
+        if action == 'create':
+            trigger_hook = hooks_utils.trigger_comment_commit_hooks
+        elif action == 'edit':
+            # TODO(dan): when this is supported we trigger edit hook too
+            return
+        else:
+            return
+
+        log.debug('Handling repo %s trigger_commit_comment_hook with action %s: %s',
+                  repo, action, trigger_hook)
+        trigger_hook(
+            username=user.username,
+            repo_name=repo.repo_name,
+            repo_type=target_scm.alias,
+            repo=repo,
+            data=data)
 
 
 def _parse_comment_line_number(line_no):
