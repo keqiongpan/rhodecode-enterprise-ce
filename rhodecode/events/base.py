@@ -44,6 +44,9 @@ class RhodecodeEvent(object):
         self._request = request
         self.utc_timestamp = datetime.datetime.utcnow()
 
+    def __repr__(self):
+        return '<%s:(%s)>' % (self.__class__.__name__, self.name)
+
     def get_request(self):
         if self._request:
             return self._request
@@ -116,3 +119,4 @@ class RhodeCodeIntegrationEvent(RhodecodeEvent):
     """
     Special subclass for Integration events
     """
+    description = ''

@@ -49,6 +49,7 @@ class TestDeleteScopesDeletesIntegrations(object):
 
 count = 1
 
+
 def counter():
     global count
     val = count

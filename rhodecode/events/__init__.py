@@ -75,4 +75,5 @@ from rhodecode.events.pullrequest import (  # pragma: no cover
     PullRequestReviewEvent,
     PullRequestMergeEvent,
     PullRequestCloseEvent,
+    PullRequestCommentEvent,
 )

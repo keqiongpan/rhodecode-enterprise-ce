@@ -20,6 +20,7 @@
 
 import pytest
 
+from rhodecode.lib.utils2 import StrictAttributeDict
 from rhodecode.tests.events.conftest import EventCatcher
 
 from rhodecode.lib import hooks_base, utils2
@@ -28,7 +29,7 @@ from rhodecode.events.repo import (
     RepoPrePullEvent, RepoPullEvent,
     RepoPrePushEvent, RepoPushEvent,
     RepoPreCreateEvent, RepoCreateEvent,
-    RepoPreDeleteEvent, RepoDeleteEvent,
+    RepoPreDeleteEvent, RepoDeleteEvent, RepoCommitCommentEvent,
 )
 
 
@@ -121,3 +122,24 @@ def test_push_fires_events(scm_extras):
         hooks_base.post_pull(scm_extras)
     assert event_catcher.events_types == [RepoPullEvent]
 
+
+@pytest.mark.parametrize('EventClass', [RepoCommitCommentEvent])
+def test_repo_commit_event(config_stub, repo_stub, EventClass):
+
+    commit = StrictAttributeDict({
+        'raw_id': 'raw_id',
+        'message': 'message',
+        'branch': 'branch',
+    })
+
+    comment = StrictAttributeDict({
+        'comment_id': 'comment_id',
+        'text': 'text',
+        'comment_type': 'comment_type',
+        'f_path': 'f_path',
+        'line_no': 'line_no',
+    })
+    event = EventClass(repo=repo_stub, commit=commit, comment=comment)
+    data = event.as_dict()
+    assert data['commit']['commit_id']
+    assert data['comment']['comment_id']

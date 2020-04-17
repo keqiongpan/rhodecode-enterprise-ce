@@ -20,13 +20,14 @@
 
 from __future__ import unicode_literals
 
-import deform
 import deform.widget
 import logging
 import colander
 
 import rhodecode
 from rhodecode import events
+from rhodecode.lib.colander_utils import strip_whitespace
+from rhodecode.model.validation_schema.widgets import CheckboxChoiceWidgetDesc
 from rhodecode.translation import _
 from rhodecode.integrations.types.base import (
     IntegrationTypeBase, get_auth, get_web_token, get_url_vars,
@@ -53,11 +54,12 @@ class WebhookSettingsSchema(colander.Schema):
               'objects in data in such cases.'),
         missing=colander.required,
         required=True,
+        preparer=strip_whitespace,
         validator=colander.url,
         widget=widgets.CodeMirrorWidget(
             help_block_collapsable_name='Show url variables',
             help_block_collapsable=(
-                'E.g http://my-serv/trigger_job/${{event_name}}'
+                'E.g http://my-serv.com/trigger_job/${{event_name}}'
                 '?PR_ID=${{pull_request_id}}'
                 '\nFull list of vars:\n{}'.format(URL_VARS)),
             codemirror_mode='text',
@@ -146,34 +148,31 @@ class WebhookIntegrationType(IntegrationTypeBase):
         events.PullRequestCreateEvent,
         events.RepoPushEvent,
         events.RepoCreateEvent,
+        events.RepoCommitCommentEvent,
     ]
 
     def settings_schema(self):
         schema = WebhookSettingsSchema()
         schema.add(colander.SchemaNode(
             colander.Set(),
-            widget=deform.widget.CheckboxChoiceWidget(
+            widget=CheckboxChoiceWidgetDesc(
                 values=sorted(
-                    [(e.name, e.display_name) for e in self.valid_events]
-                )
+                    [(e.name, e.display_name, e.description) for e in self.valid_events]
+                ),
             ),
-            description="Events activated for this integration",
+            description="List of events activated for this integration",
             name='events'
         ))
         return schema
 
     def send_event(self, event):
-        log.debug(
-            'handling event %s with Webhook integration %s', event.name, self)
+        log.debug('handling event %s with integration %s', event.name, self)
 
         if event.__class__ not in self.valid_events:
-            log.debug('event not valid: %r', event)
+            log.debug('event %r not present in valid event list (%s)', event, self.valid_events)
             return
 
-        allowed_events = self.settings['events']
-        if event.name not in allowed_events:
-            log.debug('event ignored: %r event %s not in allowed events %s',
-                      event, event.name, allowed_events)
+        if not self.event_enabled(event):
             return
 
         data = event.as_dict()

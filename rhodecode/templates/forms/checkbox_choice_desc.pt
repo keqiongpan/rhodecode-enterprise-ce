@@ -7,7 +7,7 @@
   <div tal:repeat="choice values | field.widget.values"
        tal:omit-tag="inline"
        class="checkbox">
-    <div tal:define="(value, title) choice">
+    <div tal:define="(value, title, help_block) choice">
       <input tal:attributes="checked value in cstruct;
                              class css_class;
                              style style"
@@ -19,6 +19,7 @@
              tal:attributes="class inline and 'checkbox-inline'">
         ${title}
       </label>
+      <p tal:condition="help_block" class="help-block">${help_block}</p>
     </div>
   </div>
   ${field.end_sequence()}

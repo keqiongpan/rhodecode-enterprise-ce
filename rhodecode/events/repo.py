@@ -186,13 +186,33 @@ class RepoCommitCommentEvent(RepoEvent):
     An instance of this class is emitted as an :term:`event` after a comment is made
     on repository commit.
     """
+
+    name = 'repo-commit-comment'
+    display_name = lazy_ugettext('repository commit comment')
+    description = lazy_ugettext('Event triggered after a comment was made '
+                                'on commit inside a repository')
+
     def __init__(self, repo, commit, comment):
         super(RepoCommitCommentEvent, self).__init__(repo)
         self.commit = commit
         self.comment = comment
 
-    name = 'repo-commit-comment'
-    display_name = lazy_ugettext('repository commit comment')
+    def as_dict(self):
+        data = super(RepoCommitCommentEvent, self).as_dict()
+        data['commit'] = {
+            'commit_id': self.commit.raw_id,
+            'commit_message': self.commit.message,
+            'commit_branch': self.commit.branch,
+        }
+
+        data['comment'] = {
+            'comment_id': self.comment.comment_id,
+            'comment_text': self.comment.text,
+            'comment_type': self.comment.comment_type,
+            'comment_f_path': self.comment.f_path,
+            'comment_line_no': self.comment.line_no,
+        }
+        return data
 
 
 class RepoPreCreateEvent(RepoEvent):
@@ -202,6 +222,7 @@ class RepoPreCreateEvent(RepoEvent):
     """
     name = 'repo-pre-create'
     display_name = lazy_ugettext('repository pre create')
+    description = lazy_ugettext('Event triggered before repository is created')
 
 
 class RepoCreateEvent(RepoEvent):
@@ -211,6 +232,7 @@ class RepoCreateEvent(RepoEvent):
     """
     name = 'repo-create'
     display_name = lazy_ugettext('repository created')
+    description = lazy_ugettext('Event triggered after repository was created')
 
 
 class RepoPreDeleteEvent(RepoEvent):
@@ -220,6 +242,7 @@ class RepoPreDeleteEvent(RepoEvent):
     """
     name = 'repo-pre-delete'
     display_name = lazy_ugettext('repository pre delete')
+    description = lazy_ugettext('Event triggered before a repository is deleted')
 
 
 class RepoDeleteEvent(RepoEvent):
@@ -229,6 +252,7 @@ class RepoDeleteEvent(RepoEvent):
     """
     name = 'repo-delete'
     display_name = lazy_ugettext('repository deleted')
+    description = lazy_ugettext('Event triggered after repository was deleted')
 
 
 class RepoVCSEvent(RepoEvent):
@@ -269,6 +293,7 @@ class RepoPrePullEvent(RepoVCSEvent):
     """
     name = 'repo-pre-pull'
     display_name = lazy_ugettext('repository pre pull')
+    description = lazy_ugettext('Event triggered before repository code is pulled')
 
 
 class RepoPullEvent(RepoVCSEvent):
@@ -278,6 +303,7 @@ class RepoPullEvent(RepoVCSEvent):
     """
     name = 'repo-pull'
     display_name = lazy_ugettext('repository pull')
+    description = lazy_ugettext('Event triggered after repository code was pulled')
 
 
 class RepoPrePushEvent(RepoVCSEvent):
@@ -287,6 +313,8 @@ class RepoPrePushEvent(RepoVCSEvent):
     """
     name = 'repo-pre-push'
     display_name = lazy_ugettext('repository pre push')
+    description = lazy_ugettext('Event triggered before the code is '
+                                'pushed to a repository')
 
 
 class RepoPushEvent(RepoVCSEvent):
@@ -298,6 +326,8 @@ class RepoPushEvent(RepoVCSEvent):
     """
     name = 'repo-push'
     display_name = lazy_ugettext('repository push')
+    description = lazy_ugettext('Event triggered after the code was '
+                                'pushed to a repository')
 
     def __init__(self, repo_name, pushed_commit_ids, extras):
         super(RepoPushEvent, self).__init__(repo_name, extras)

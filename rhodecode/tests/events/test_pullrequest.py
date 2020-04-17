@@ -40,7 +40,7 @@ from rhodecode.events import (
     PullRequestUpdateEvent,
     PullRequestReviewEvent,
     PullRequestMergeEvent,
-    PullRequestCloseEvent,
+    PullRequestCloseEvent
 ])
 def test_pullrequest_events_serialized(EventClass, pr_util, config_stub):
     pr = pr_util.create_pull_request()

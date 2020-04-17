@@ -77,6 +77,7 @@ class PullRequestCreateEvent(PullRequestEvent):
     """
     name = 'pullrequest-create'
     display_name = lazy_ugettext('pullrequest created')
+    description = lazy_ugettext('Event triggered after pull request was created')
 
 
 class PullRequestCloseEvent(PullRequestEvent):
@@ -86,6 +87,7 @@ class PullRequestCloseEvent(PullRequestEvent):
     """
     name = 'pullrequest-close'
     display_name = lazy_ugettext('pullrequest closed')
+    description = lazy_ugettext('Event triggered after pull request was closed')
 
 
 class PullRequestUpdateEvent(PullRequestEvent):
@@ -95,6 +97,7 @@ class PullRequestUpdateEvent(PullRequestEvent):
     """
     name = 'pullrequest-update'
     display_name = lazy_ugettext('pullrequest commits updated')
+    description = lazy_ugettext('Event triggered after pull requests was updated')
 
 
 class PullRequestReviewEvent(PullRequestEvent):
@@ -104,6 +107,8 @@ class PullRequestReviewEvent(PullRequestEvent):
     """
     name = 'pullrequest-review'
     display_name = lazy_ugettext('pullrequest review changed')
+    description = lazy_ugettext('Event triggered after a review status of a '
+                                'pull requests has changed to other.')
 
     def __init__(self, pullrequest, status):
         super(PullRequestReviewEvent, self).__init__(pullrequest)
@@ -117,6 +122,8 @@ class PullRequestMergeEvent(PullRequestEvent):
     """
     name = 'pullrequest-merge'
     display_name = lazy_ugettext('pullrequest merged')
+    description = lazy_ugettext('Event triggered after a successful merge operation '
+                                'was executed on a pull request')
 
 
 class PullRequestCommentEvent(PullRequestEvent):
@@ -126,6 +133,8 @@ class PullRequestCommentEvent(PullRequestEvent):
     """
     name = 'pullrequest-comment'
     display_name = lazy_ugettext('pullrequest commented')
+    description = lazy_ugettext('Event triggered after a comment was made on a code '
+                                'in the pull request')
 
     def __init__(self, pullrequest, comment):
         super(PullRequestCommentEvent, self).__init__(pullrequest)

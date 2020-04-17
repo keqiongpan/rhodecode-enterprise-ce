@@ -60,6 +60,7 @@ class RepoGroupCreateEvent(RepoGroupEvent):
     """
     name = 'repo-group-create'
     display_name = lazy_ugettext('repository group created')
+    description = lazy_ugettext('Event triggered after a repository group was created')
 
 
 class RepoGroupDeleteEvent(RepoGroupEvent):
@@ -69,6 +70,7 @@ class RepoGroupDeleteEvent(RepoGroupEvent):
     """
     name = 'repo-group-delete'
     display_name = lazy_ugettext('repository group deleted')
+    description = lazy_ugettext('Event triggered after a repository group was deleted')
 
 
 class RepoGroupUpdateEvent(RepoGroupEvent):
@@ -78,3 +80,4 @@ class RepoGroupUpdateEvent(RepoGroupEvent):
     """
     name = 'repo-group-update'
     display_name = lazy_ugettext('repository group update')
+    description = lazy_ugettext('Event triggered after a repository group was updated')

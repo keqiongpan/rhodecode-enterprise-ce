@@ -52,8 +52,7 @@ def test_webhook_parse_url_invalid_event():
         handler(event, {})
 
     err = str(err.value)
-    assert err.startswith(
-        'event type `%s` not in supported list' % event.__class__)
+    assert err == "event type `<class 'rhodecode.events.repo.RepoDeleteEvent'>` has no handler defined"
 
 
 @pytest.mark.parametrize('template,expected_urls', [
