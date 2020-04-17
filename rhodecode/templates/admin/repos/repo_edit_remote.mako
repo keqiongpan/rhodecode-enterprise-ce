@@ -37,7 +37,12 @@
                         ${h.secure_form(h.route_path('edit_repo_remote_pull', repo_name=c.repo_name), request=request)}
                         <div class="form">
                            <div class="fields">
-                               ${h.submit('remote_pull_%s' % c.rhodecode_db_repo.repo_name,_('Pull changes from remote location'),class_="btn btn-small",onclick="return confirm('"+_('Confirm to pull changes from remote side')+"');")}
+                               <input class="btn btn-small"
+                                      id="remote_pull_${c.rhodecode_db_repo.repo_id}"
+                                      name="remote_pull_${c.rhodecode_db_repo.repo_id}"
+                                      onclick="submitConfirm(event, this, _gettext('Confirm pull changes from remote side'), _gettext('Pull changes'), '${c.rhodecode_db_repo.clone_uri_hidden}')"
+                                      type="submit" value="${_('Pull changes from remote location')}"
+                               >
                            </div>
                         </div>
                         ${h.end_form()}

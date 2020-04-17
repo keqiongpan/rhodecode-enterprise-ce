@@ -121,3 +121,39 @@ function ajaxErrorSwal(message) {
         }
     })
 }
+
+/*
+* use in onclick attributes e.g
+* onclick="submitConfirm(event, this, _gettext('Confirm to delete '), _gettext('Confirm Delete'), 'what we delete')">
+* */
+function submitConfirm(event, self, question, confirmText, htmlText) {
+    if (htmlText === "undefined") {
+        htmlText = null;
+    }
+    if (confirmText === "undefined") {
+        confirmText = _gettext('Delete')
+    }
+    event.preventDefault();
+
+    Swal.fire({
+      title: question,
+      icon: 'warning',
+      html: htmlText,
+      showClass: {
+        popup: 'swal2-noanimation',
+        backdrop: 'swal2-noanimation'
+      },
+      hideClass: {
+        popup: '',
+        backdrop: ''
+      },
+      showCancelButton: true,
+      confirmButtonColor: '#84a5d2',
+      cancelButtonColor: '#e85e4d',
+      confirmButtonText: confirmText
+    }).then(function(result) {
+      if (result.value) {
+          $(self).closest("form").submit();
+      }
+    })
+}

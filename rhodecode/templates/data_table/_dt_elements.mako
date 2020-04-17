@@ -176,8 +176,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     </div>
     <div class="grid_delete">
       ${h.secure_form(h.route_path('edit_repo_advanced_delete', repo_name=repo_name), request=request)}
-        ${h.submit('remove_%s' % repo_name,_('Delete'),class_="btn btn-link btn-danger",
-        onclick="return confirm('"+_('Confirm to delete this repository: %s') % repo_name+"');")}
+        <input class="btn btn-link btn-danger" id="remove_${repo_name}" name="remove_${repo_name}"
+               onclick="submitConfirm(event, this, _gettext('Confirm to delete this repository'), _gettext('Delete'), '${repo_name}')"
+               type="submit" value="Delete"
+        >
       ${h.end_form()}
     </div>
   </div>
@@ -250,8 +252,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
  </div>
  <div class="grid_delete">
     ${h.secure_form(h.route_path('edit_repo_group_advanced_delete', repo_group_name=repo_group_name), request=request)}
-        ${h.submit('remove_%s' % repo_group_name,_('Delete'),class_="btn btn-link btn-danger",
-        onclick="return confirm('"+_ungettext('Confirm to delete this group: %s with %s repository','Confirm to delete this group: %s with %s repositories',gr_count) % (repo_group_name, gr_count)+"');")}
+        <input class="btn btn-link btn-danger" id="remove_${repo_group_name}" name="remove_${repo_group_name}"
+               onclick="submitConfirm(event, this, _gettext('Confirm to delete this repository group'), _gettext('Delete'), '${_ungettext('`{}` with {} repository','`{}` with {} repositories',gr_count).format(repo_group_name, gr_count)}')"
+               type="submit" value="Delete"
+        >
     ${h.end_form()}
  </div>
 </%def>
@@ -265,8 +269,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
  </div>
  <div class="grid_delete">
   ${h.secure_form(h.route_path('user_delete', user_id=user_id), request=request)}
-    ${h.submit('remove_',_('Delete'),id="remove_user_%s" % user_id, class_="btn btn-link btn-danger",
-    onclick="return confirm('"+_('Confirm to delete this user: %s') % username+"');")}
+    <input class="btn btn-link btn-danger" id="remove_user_${user_id}" name="remove_user_${user_id}"
+           onclick="submitConfirm(event, this, _gettext('Confirm to delete this user'), _gettext('Delete'), '${username}')"
+           type="submit" value="Delete"
+    >
   ${h.end_form()}
  </div>
 </%def>
@@ -277,8 +283,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
  </div>
  <div class="grid_delete">
     ${h.secure_form(h.route_path('user_groups_delete', user_group_id=user_group_id), request=request)}
-      ${h.submit('remove_',_('Delete'),id="remove_group_%s" % user_group_id, class_="btn btn-link btn-danger",
-      onclick="return confirm('"+_('Confirm to delete this user group: %s') % user_group_name+"');")}
+        <input class="btn btn-link btn-danger" id="remove_group_${user_group_id}" name="remove_group_${user_group_id}"
+               onclick="submitConfirm(event, this, _gettext('Confirm to delete this user group'), _gettext('Delete'), '${user_group_name}')"
+               type="submit" value="Delete"
+        >
     ${h.end_form()}
  </div>
 </%def>
@@ -423,8 +431,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     % if h.HasRepoPermissionAny('repository.admin')(c.repo_name):
     <div class="grid_delete">
     ${h.secure_form(h.route_path('repo_artifacts_delete', repo_name=repo_name, uid=file_store_id), request=request)}
-      ${h.submit('remove_',_('Delete'),id="remove_artifact_%s" % file_store_id, class_="btn btn-link btn-danger",
-      onclick="return confirm('"+_('Confirm to delete this artifact: %s') % file_uid+"');")}
+      <input class="btn btn-link btn-danger" id="remove_artifact_${file_store_id}" name="remove_artifact_${file_store_id}"
+             onclick="submitConfirm(event, this, _gettext('Confirm to delete this artifact'), _gettext('Delete'), '${file_uid}')"
+             type="submit" value="${_('Delete')}"
+      >
     ${h.end_form()}
  </div>
 % endif

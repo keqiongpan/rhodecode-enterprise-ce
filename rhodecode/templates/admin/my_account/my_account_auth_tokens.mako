@@ -46,7 +46,8 @@
                     ${h.secure_form(h.route_path('my_account_auth_tokens_delete'), request=request)}
                         ${h.hidden('del_auth_token', auth_token.user_api_key_id)}
                         <button class="btn btn-link btn-danger" type="submit"
-                                onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.token_obfuscated}');">
+                                onclick="submitConfirm(event, this, _gettext('Confirm to delete this auth token'), _gettext('Delete'), '${auth_token.token_obfuscated}')"
+                        >
                             ${_('Delete')}
                         </button>
                     ${h.end_form()}

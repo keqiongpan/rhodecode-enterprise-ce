@@ -28,7 +28,8 @@
                         ${h.secure_form(h.route_path('my_account_emails_delete'), request=request)}
                             ${h.hidden('del_email_id',em.email_id)}
                             <button class="btn btn-link btn-danger" type="submit" id="${'remove_email_%s'.format(em.email_id)}"
-                                    onclick="return confirm('${_('Confirm to delete this email: {}').format(em.email)}');">
+                                    onclick="submitConfirm(event, this, _gettext('Confirm to delete this email'), _gettext('Delete'), '${em.email}')"
+                            >
                                 ${_('Delete')}
                             </button>
                         ${h.end_form()}

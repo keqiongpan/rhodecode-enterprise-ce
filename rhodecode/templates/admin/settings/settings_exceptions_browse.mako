@@ -16,7 +16,8 @@
         <input type="hidden" name="type_filter", value="${c.type_filter}">
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
-                    onclick="return confirm('${_('Confirm to delete all exceptions')}');">
+                    onclick="submitConfirm(event, this, _gettext('Confirm to delete all exceptions'), _gettext('Delete'), '${'total:{}'.format(c.exception_list_count)}')"
+            >
                 <i class="icon-remove"></i>
                 % if c.type_filter:
                     ${_('Delete All `{}`').format(c.type_filter)}

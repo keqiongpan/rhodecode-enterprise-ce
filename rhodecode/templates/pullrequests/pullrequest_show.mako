@@ -63,8 +63,9 @@
               <div id="delete_pullrequest" class="action_button pr-save ${('' if c.allowed_to_delete else 'disabled' )}" style="display: none;">
                   % if c.allowed_to_delete:
                       ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), request=request)}
-                          ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete pull request'),
-                        class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
+                          <input class="btn btn-link btn-danger no-margin" id="remove_${c.pull_request.pull_request_id}" name="remove_${c.pull_request.pull_request_id}"
+                                 onclick="submitConfirm(event, this, _gettext('Confirm to delete this pull request'), _gettext('Delete'), '${'!{}'.format(c.pull_request.pull_request_id)}')"
+                                 type="submit" value="${_('Delete pull request')}">
                       ${h.end_form()}
                   % else:
                     <span class="tooltip" title="${_('Not allowed to delete this pull request')}">${_('Delete pull request')}</span>
