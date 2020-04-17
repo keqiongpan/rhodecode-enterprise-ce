@@ -36,37 +36,88 @@ var toQueryString = function(o) {
 /**
 * ajax call wrappers
 */
-var ajaxGET = function(url, success, failure) {
-  var sUrl = url;
-  var request = $.ajax({url: sUrl, headers: {'X-PARTIAL-XHR': true}})
-  .done(function(data){
-    success(data);
-  })
-  .fail(function(data, textStatus, xhr) {
-    if (failure) {
-      failure(data, textStatus, xhr);
-    } else {
-      alert("Error processing request. \n" +
-            "Error code {0} ({1}).".format(data.status, data.statusText));
-    }
-  });
-  return request;
+
+var ajaxGET = function (url, success, failure) {
+    var sUrl = url;
+    var request = $.ajax({
+        url: sUrl,
+        headers: {'X-PARTIAL-XHR': true}
+        })
+        .done(function (data) {
+            success(data);
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+            if (failure) {
+                failure(jqXHR, textStatus, errorThrown);
+            } else {
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown);
+                ajaxErrorSwal(message);
+            }
+        });
+    return request;
 };
-var ajaxPOST = function(url, postData, success, failure) {
-  var sUrl = url;
-  var postData = toQueryString(postData);
-  var request = $.ajax({type: 'POST', data: postData, url: sUrl,
-    headers: {'X-PARTIAL-XHR': true}})
-  .done(function(data){
-    success(data);
-  })
-  .fail(function(data, textStatus, xhr){
-    if (failure) {
-      failure(data, textStatus, xhr);
-    } else {
-      alert("Error processing request. \n" +
-            "Error code {0} ({1}).".format(data.status, data.statusText));
-    }
-  });
-  return request;
+
+var ajaxPOST = function (url, postData, success, failure) {
+    var sUrl = url;
+    var postData = toQueryString(postData);
+    var request = $.ajax({
+        type: 'POST',
+        url: sUrl,
+        data: postData,
+        headers: {'X-PARTIAL-XHR': true}
+        })
+        .done(function (data) {
+            success(data);
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {
+            if (failure) {
+                failure(jqXHR, textStatus, errorThrown);
+            } else {
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown);
+                ajaxErrorSwal(message);
+            }
+        });
+    return request;
 };
+
+function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
+    if(typeof prefix === "undefined") {
+        prefix = ''
+    }
+
+    if (jqXHR.status === 0) {
+        return (prefix + 'Not connected.\nPlease verify your network connection.');
+    } else if (jqXHR.status == 401) {
+        return (prefix + 'Unauthorized access. [401]');
+    } else if (jqXHR.status == 404) {
+        return (prefix + 'The requested page not found. [404]');
+    } else if (jqXHR.status == 500) {
+        return (prefix + 'Internal Server Error [500].');
+    } else if (jqXHR.status == 503) {
+        return (prefix + 'Service unavailable [503].');
+    } else if (errorThrown === 'parsererror') {
+        return (prefix + 'Requested JSON parse failed.');
+    } else if (errorThrown === 'timeout') {
+        return (prefix + 'Time out error.');
+    } else if (errorThrown === 'abort') {
+        return (prefix + 'Ajax request aborted.');
+    } else {
+        return (prefix + 'Uncaught Error.\n' + jqXHR.responseText);
+    }
+}
+
+function ajaxErrorSwal(message) {
+    Swal.fire({
+        icon: 'error',
+        title: _gettext('Ajax Error'),
+        html: '<span style="white-space: pre-line">{0}</span>'.format(message),
+        showClass: {
+            popup: 'swal2-noanimation',
+            backdrop: 'swal2-noanimation'
+        },
+        hideClass: {
+            popup: '',
+            backdrop: ''
+        }
+    })
+}
