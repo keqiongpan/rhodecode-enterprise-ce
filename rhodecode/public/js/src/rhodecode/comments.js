@@ -555,10 +555,7 @@ var CommentsController = function() {
     return self.scrollToComment(node, -1, true);
   };
 
-  this.deleteComment = function(node) {
-      if (!confirm(_gettext('Delete this comment?'))) {
-        return false;
-      }
+  this._deleteComment = function(node) {
       var $node = $(node);
       var $td = $node.closest('td');
       var $comment = $node.closest('.comment');
@@ -585,6 +582,24 @@ var CommentsController = function() {
         return false;
       };
       ajaxPOST(url, postData, success, failure);
+  }
+
+  this.deleteComment = function(node) {
+    var $comment = $(node).closest('.comment');
+    var comment_id = $comment.attr('data-comment-id');
+
+    Swal.fire({
+      title: 'Delete this comment?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#84a5d2',
+      cancelButtonColor: '#e85e4d',
+      confirmButtonText: _gettext('Yes, delete comment #{0}!').format(comment_id)
+    }).then(function(result) {
+      if (result.value) {
+        self._deleteComment(node);
+      }
+    })
   };
 
   this.toggleWideMode = function (node) {
