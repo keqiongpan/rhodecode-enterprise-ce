@@ -200,11 +200,11 @@ self: super: {
     };
   };
   "certifi" = super.buildPythonPackage {
-    name = "certifi-2019.11.28";
+    name = "certifi-2020.4.5.1";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/41/bf/9d214a5af07debc6acf7f3f257265618f1db242a3f8e49a9b516f24523a6/certifi-2019.11.28.tar.gz";
-      sha256 = "07qg6864bk4qxa8akr967amlmsq9v310hp039mcpjx6dliylrdi5";
+      url = "https://files.pythonhosted.org/packages/b8/e2/a3a86a67c3fc8249ed305fc7b7d290ebe5e4d46ad45573884761ef4dea7b/certifi-2020.4.5.1.tar.gz";
+      sha256 = "06b5gfs7wmmipln8f3z928d2mmx2j4b3x7pnqmj6cvmyfh8v7z2i";
     };
     meta = {
       license = [ pkgs.lib.licenses.mpl20 { fullName = "Mozilla Public License 2.0 (MPL 2.0)"; } ];
