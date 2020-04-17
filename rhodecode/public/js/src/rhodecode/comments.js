@@ -347,11 +347,10 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                 self.globalSubmitSuccessCallback();
 
             };
-            var submitFailCallback = function(data) {
-                alert(
-                "Error while submitting comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while submitting comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
                 self.resetCommentFormState(text);
             };
             self.submitAjaxPOST(
@@ -447,11 +446,11 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             $(self.previewContainer).show();
 
             // by default we reset state of comment preserving the text
-            var previewFailCallback = function(data){
-                alert(
-                "Error while preview of comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var previewFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while preview of comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
+
                 self.resetCommentFormState(text)
             };
             self.submitAjaxPOST(
@@ -576,8 +575,11 @@ var CommentsController = function() {
         $comment.remove();
         return false;
       };
-      var failure = function(data, textStatus, xhr) {
-        alert("error processing request: " + textStatus);
+      var failure = function(jqXHR, textStatus, errorThrown) {
+        var prefix = "Error while deleting this comment.\n"
+        var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+        ajaxErrorSwal(message);
+
         $comment.show('fast');
         $comment.removeClass('comment-deleting');
         return false;
@@ -879,11 +881,10 @@ var CommentsController = function() {
               commentForm.setActionButtonsDisabled(false);
 
             };
-            var submitFailCallback = function(data){
-                alert(
-                "Error while submitting comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while submitting comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
                 commentForm.resetCommentFormState(text)
             };
             commentForm.submitAjaxPOST(
