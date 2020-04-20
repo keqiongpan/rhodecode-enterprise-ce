@@ -1,6 +1,12 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <div class="panel panel-default">
+    <script>
+    var showAuthToken = function(authTokenId) {
+        return _showAuthToken(authTokenId, pyroutes.url('edit_user_auth_tokens_view', {'user_id': '${c.user.user_id}'}))
+    }
+    </script>
+
     <div class="panel-heading">
       <h3 class="panel-title">
           ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')}
@@ -26,9 +32,11 @@
             %if c.user_auth_tokens:
                 %for auth_token in c.user_auth_tokens:
                   <tr class="${('expired' if auth_token.expired else '')}">
-                    <td class="truncate-wrap td-authtoken">
-                        <div class="user_auth_tokens truncate autoexpand">
-                            <code>${auth_token.api_key}</code>
+                    <td class="td-authtoken">
+                        <div class="user_auth_tokens">
+                            <code class="cursor-pointer" onclick="showAuthToken(${auth_token.user_api_key_id})">
+                                ${auth_token.token_obfuscated}
+                            </code>
                         </div>
                     </td>
                     <td class="td-wrap">${auth_token.description}</td>
@@ -49,7 +57,7 @@
                     </td>
                     <td class="td-action">
                         ${h.secure_form(h.route_path('edit_user_auth_tokens_delete', user_id=c.user.user_id), request=request)}
-                            ${h.hidden('del_auth_token', auth_token.user_api_key_id)}
+                            <input name="del_auth_token" type="hidden" value="${auth_token.user_api_key_id}">
                             <button class="btn btn-link btn-danger" type="submit"
                                     onclick="return confirm('${_('Confirm to remove this auth token: %s') % auth_token.token_obfuscated}');">
                                 ${_('Delete')}

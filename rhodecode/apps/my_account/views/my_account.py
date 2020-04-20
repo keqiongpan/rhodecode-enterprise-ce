@@ -25,7 +25,7 @@ import string
 import formencode
 import formencode.htmlfill
 import peppercorn
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
@@ -163,6 +163,27 @@ class MyAccountView(BaseAppView, DataGridAppView):
             c.user.user_id, show_expired=True)
         c.role_vcs = AuthTokenModel.cls.ROLE_VCS
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    @view_config(
+        route_name='my_account_auth_tokens_view', request_method='POST', xhr=True,
+        renderer='json_ext')
+    def my_account_auth_tokens_view(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        auth_token_id = self.request.POST.get('auth_token_id')
+
+        if auth_token_id:
+            token = UserApiKeys.get_or_404(auth_token_id)
+            if token.user.user_id != c.user.user_id:
+                raise HTTPNotFound()
+
+            return {
+                'auth_token': token.api_key
+            }
 
     def maybe_attach_token_scope(self, token):
         # implemented in EE edition

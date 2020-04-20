@@ -804,6 +804,25 @@ class UsersView(UserAppView):
         c.role_vcs = AuthTokenModel.cls.ROLE_VCS
         return self._get_template_context(c)
 
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_auth_tokens_view', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def auth_tokens_view(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        auth_token_id = self.request.POST.get('auth_token_id')
+
+        if auth_token_id:
+            token = UserApiKeys.get_or_404(auth_token_id)
+
+            return {
+                'auth_token': token.api_key
+            }
+
     def maybe_attach_token_scope(self, token):
         # implemented in EE edition
         pass

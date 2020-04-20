@@ -49,7 +49,7 @@ class TestMyAccountAuthTokens(TestController):
         user = User.get(usr['user_id'])
         response = self.app.get(route_path('my_account_auth_tokens'))
         for token in user.auth_tokens:
-            response.mustcontain(token)
+            response.mustcontain(token[:4])
             response.mustcontain('never')
 
     def test_my_account_add_auth_tokens_wrong_csrf(self, user_util):
@@ -79,7 +79,7 @@ class TestMyAccountAuthTokens(TestController):
         response = response.follow()
         user = User.get(user_id)
         for auth_token in user.auth_tokens:
-            response.mustcontain(auth_token)
+            response.mustcontain(auth_token[:4])
 
     def test_my_account_delete_auth_token(self, user_util):
         user = user_util.create_user(password='qweqwe')

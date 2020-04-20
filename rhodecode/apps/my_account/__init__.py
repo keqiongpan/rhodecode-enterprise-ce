@@ -50,6 +50,9 @@ def includeme(config):
         name='my_account_auth_tokens',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
     config.add_route(
+        name='my_account_auth_tokens_view',
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/view')
+    config.add_route(
         name='my_account_auth_tokens_add',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new')
     config.add_route(

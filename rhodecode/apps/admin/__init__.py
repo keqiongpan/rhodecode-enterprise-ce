@@ -302,6 +302,10 @@ def admin_routes(config):
         pattern='/users/{user_id:\d+}/edit/auth_tokens',
         user_route=True)
     config.add_route(
+        name='edit_user_auth_tokens_view',
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/view',
+        user_route=True)
+    config.add_route(
         name='edit_user_auth_tokens_add',
         pattern='/users/{user_id:\d+}/edit/auth_tokens/new',
         user_route=True)
