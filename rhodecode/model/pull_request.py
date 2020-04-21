@@ -35,7 +35,6 @@ import collections
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
-from rhodecode import events
 from rhodecode.translation import lazy_ugettext
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib import audit_logger
@@ -43,9 +42,10 @@ from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
-from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
+from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe, AttributeDict, safe_int
 from rhodecode.lib.vcs.backends.base import (
-    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
+    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason,
+    TargetRefMissing, SourceRefMissing)
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
@@ -681,6 +681,38 @@ class PullRequestModel(BaseModel):
         source_ref_type = pull_request.source_ref_parts.type
         return source_ref_type in self.REF_TYPES
 
+    def get_flow_commits(self, pull_request):
+
+        # source repo
+        source_ref_name = pull_request.source_ref_parts.name
+        source_ref_type = pull_request.source_ref_parts.type
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        source_repo = pull_request.source_repo.scm_instance()
+
+        try:
+            if source_ref_type in self.REF_TYPES:
+                source_commit = source_repo.get_commit(source_ref_name)
+            else:
+                source_commit = source_repo.get_commit(source_ref_id)
+        except CommitDoesNotExistError:
+            raise SourceRefMissing()
+
+        # target repo
+        target_ref_name = pull_request.target_ref_parts.name
+        target_ref_type = pull_request.target_ref_parts.type
+        target_ref_id = pull_request.target_ref_parts.commit_id
+        target_repo = pull_request.target_repo.scm_instance()
+
+        try:
+            if target_ref_type in self.REF_TYPES:
+                target_commit = target_repo.get_commit(target_ref_name)
+            else:
+                target_commit = target_repo.get_commit(target_ref_id)
+        except CommitDoesNotExistError:
+            raise TargetRefMissing()
+
+        return source_commit, target_commit
+
     def update_commits(self, pull_request, updating_user):
         """
         Get the updated list of commits for the pull request
@@ -707,31 +739,22 @@ class PullRequestModel(BaseModel):
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
 
-        # source repo
-        source_repo = pull_request.source_repo.scm_instance()
-
         try:
-            source_commit = source_repo.get_commit(commit_id=source_ref_name)
-        except CommitDoesNotExistError:
+            source_commit, target_commit = self.get_flow_commits(pull_request)
+        except SourceRefMissing:
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
-
-        source_changed = source_ref_id != source_commit.raw_id
-
-        # target repo
-        target_repo = pull_request.target_repo.scm_instance()
-
-        try:
-            target_commit = target_repo.get_commit(commit_id=target_ref_name)
-        except CommitDoesNotExistError:
+        except TargetRefMissing:
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
+
+        source_changed = source_ref_id != source_commit.raw_id
         target_changed = target_ref_id != target_commit.raw_id
 
         if not (source_changed or target_changed):
@@ -761,17 +784,8 @@ class PullRequestModel(BaseModel):
                 ver.pull_request_version_id if ver else None
             pull_request_version = pull_request
 
-        try:
-            if target_ref_type in self.REF_TYPES:
-                target_commit = target_repo.get_commit(target_ref_name)
-            else:
-                target_commit = target_repo.get_commit(target_ref_id)
-        except CommitDoesNotExistError:
-            return UpdateResponse(
-                executed=False,
-                reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
-                source_changed=source_changed, target_changed=target_changed)
+        source_repo = pull_request.source_repo.scm_instance()
+        target_repo = pull_request.target_repo.scm_instance()
 
         # re-compute commit ids
         old_commit_ids = pull_request.revisions
@@ -1736,6 +1750,8 @@ class MergeCheck(object):
         self.failed = None
         self.errors = []
         self.error_details = OrderedDict()
+        self.source_commit = AttributeDict()
+        self.target_commit = AttributeDict()
 
     def __repr__(self):
         return '<MergeCheck(possible:{}, failed:{}, errors:{})>'.format(
@@ -1766,8 +1782,7 @@ class MergeCheck(object):
                 return merge_check
 
         # permissions to merge
-        user_allowed_to_merge = PullRequestModel().check_user_merge(
-            pull_request, auth_user)
+        user_allowed_to_merge = PullRequestModel().check_user_merge(pull_request, auth_user)
         if not user_allowed_to_merge:
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
@@ -1836,6 +1851,23 @@ class MergeCheck(object):
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
         merge_check.merge_response = merge_response
+
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
+
+        try:
+            source_commit, target_commit = PullRequestModel().get_flow_commits(pull_request)
+            merge_check.source_commit.changed = source_ref_id != source_commit.raw_id
+            merge_check.source_commit.ref_spec = pull_request.source_ref_parts
+            merge_check.source_commit.current_raw_id = source_commit.raw_id
+            merge_check.source_commit.previous_raw_id = source_ref_id
+
+            merge_check.target_commit.changed = target_ref_id != target_commit.raw_id
+            merge_check.target_commit.ref_spec = pull_request.target_ref_parts
+            merge_check.target_commit.current_raw_id = target_commit.raw_id
+            merge_check.target_commit.previous_raw_id = target_ref_id
+        except (SourceRefMissing, TargetRefMissing):
+            pass
 
         if not merge_status:
             log.debug("MergeCheck: cannot merge, pull request merge not possible.")

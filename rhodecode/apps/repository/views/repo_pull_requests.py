@@ -400,6 +400,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
+        c.pr_merge_source_commit = _merge_check.source_commit
+        c.pr_merge_target_commit = _merge_check.target_commit
 
         c.pr_merge_info = MergeCheck.get_merge_conditions(
             pull_request_latest, translator=self.request.translate)

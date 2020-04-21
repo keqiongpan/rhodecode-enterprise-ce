@@ -231,6 +231,14 @@ class MergeResponse(object):
         return data
 
 
+class TargetRefMissing(ValueError):
+    pass
+
+
+class SourceRefMissing(ValueError):
+    pass
+
+
 class BaseRepository(object):
     """
     Base Repository for final backends
