@@ -355,7 +355,7 @@ class PullRequestModel(BaseModel):
                 PullRequestReviewers.user_id == user_id).all()
         ]
 
-    def _prepare_participating_query(self, user_id=None, statuses=None,
+    def _prepare_participating_query(self, user_id=None, statuses=None, query='',
                                      order_by=None, order_dir='desc'):
         q = PullRequest.query()
         if user_id:
@@ -372,6 +372,13 @@ class PullRequestModel(BaseModel):
         if statuses:
             q = q.filter(PullRequest.status.in_(statuses))
 
+        if query:
+            like_expression = u'%{}%'.format(safe_unicode(query))
+            q = q.filter(or_(
+                cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                PullRequest.title.ilike(like_expression),
+                PullRequest.description.ilike(like_expression),
+            ))
         if order_by:
             order_map = {
                 'name_raw': PullRequest.pull_request_id,
@@ -386,19 +393,19 @@ class PullRequestModel(BaseModel):
 
         return q
 
-    def count_im_participating_in(self, user_id=None, statuses=None):
-        q = self._prepare_participating_query(user_id, statuses=statuses)
+    def count_im_participating_in(self, user_id=None, statuses=None, query=''):
+        q = self._prepare_participating_query(user_id, statuses=statuses, query=query)
         return q.count()
 
     def get_im_participating_in(
-            self, user_id=None, statuses=None, offset=0,
+            self, user_id=None, statuses=None, query='', offset=0,
             length=None, order_by=None, order_dir='desc'):
         """
         Get all Pull requests that i'm participating in, or i have opened
         """
 
         q = self._prepare_participating_query(
-            user_id, statuses=statuses, order_by=order_by,
+            user_id, statuses=statuses, query=query, order_by=order_by,
             order_dir=order_dir)
 
         if length:

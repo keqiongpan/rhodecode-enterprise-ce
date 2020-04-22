@@ -723,12 +723,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
         pull_requests = PullRequestModel().get_im_participating_in(
             user_id=self._rhodecode_user.user_id,
-            statuses=statuses,
+            statuses=statuses, query=search_q,
             offset=start, length=limit, order_by=order_by,
             order_dir=order_dir)
 
         pull_requests_total_count = PullRequestModel().count_im_participating_in(
-            user_id=self._rhodecode_user.user_id, statuses=statuses)
+            user_id=self._rhodecode_user.user_id, statuses=statuses, query=search_q)
 
         data = []
         comments_model = CommentsModel()
