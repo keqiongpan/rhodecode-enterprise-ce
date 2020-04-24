@@ -54,7 +54,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     or_, String, cast, PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule)
+    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule, User)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -160,8 +160,10 @@ class PullRequestModel(BaseModel):
 
         if search_q:
             like_expression = u'%{}%'.format(safe_unicode(search_q))
+            q = q.join(User)
             q = q.filter(or_(
                 cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
                 PullRequest.title.ilike(like_expression),
                 PullRequest.description.ilike(like_expression),
             ))
@@ -374,8 +376,10 @@ class PullRequestModel(BaseModel):
 
         if query:
             like_expression = u'%{}%'.format(safe_unicode(query))
+            q = q.join(User)
             q = q.filter(or_(
                 cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
                 PullRequest.title.ilike(like_expression),
                 PullRequest.description.ilike(like_expression),
             ))
