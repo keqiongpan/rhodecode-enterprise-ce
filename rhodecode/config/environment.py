@@ -60,10 +60,15 @@ def load_pyramid_environment(global_config, settings):
 
     load_rcextensions(root_path=settings_merged['here'])
 
-    # Limit backends to `vcs.backends` from configuration
+    # Limit backends to `vcs.backends` from configuration, and preserve the order
     for alias in rhodecode.BACKENDS.keys():
         if alias not in settings['vcs.backends']:
             del rhodecode.BACKENDS[alias]
+
+    def sorter(item):
+        return settings['vcs.backends'].index(item[0])
+    rhodecode.BACKENDS = rhodecode.OrderedDict(sorted(rhodecode.BACKENDS.items(), key=sorter))
+
     log.info('Enabled VCS backends: %s', rhodecode.BACKENDS.keys())
 
     # initialize vcs client and optionally run the server if enabled

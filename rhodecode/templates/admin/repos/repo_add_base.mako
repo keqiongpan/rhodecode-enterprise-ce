@@ -52,12 +52,29 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
                  <span class="help-block">${_('Optionally select a group to put this repository into.')}</span>
              </div>
         </div>
+
         <div class="field">
             <div class="label">
                 <label for="repo_type">${_('Type')}:</label>
             </div>
-            <div class="select">
-                ${h.select('repo_type','hg',c.backends)}
+            <div class="fields repo-type-radio">
+
+
+                   % for backend in c.backends:
+                       % if loop.index == 0:
+                       <input id="repo_type_${backend}" name="repo_type" type="radio" value="${backend}" checked="checked"/>
+                       % else:
+                       <input id="repo_type_${backend}" name="repo_type" type="radio" value="${backend}" />
+                       % endif
+
+                       <label for="repo_type_${backend}">
+                           <i class="icon-${backend}" style="font-size: 16px"></i>
+                           ${backend.upper()}
+                       </label>
+
+                   % endfor
+
+
                 <span class="help-block">${_('Set the type of repository to create.')}</span>
             </div>
         </div>

@@ -19,17 +19,20 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
+from collections import OrderedDict
+
 import sys
 import platform
 
 VERSION = tuple(open(os.path.join(
     os.path.dirname(__file__), 'VERSION')).read().split('.'))
 
-BACKENDS = {
-    'hg': 'Mercurial repository',
-    'git': 'Git repository',
-    'svn': 'Subversion repository',
-}
+BACKENDS = OrderedDict()
+
+BACKENDS['hg'] = 'Mercurial repository'
+BACKENDS['git'] = 'Git repository'
+BACKENDS['svn'] = 'Subversion repository'
+
 
 CELERY_ENABLED = False
 CELERY_EAGER = False

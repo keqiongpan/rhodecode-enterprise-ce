@@ -437,7 +437,7 @@ def attach_context_attributes(context, request, user_id=None, is_api=None):
 
     context.csrf_token = csrf_token
     context.backends = rhodecode.BACKENDS.keys()
-    context.backends.sort()
+
     unread_count = 0
     user_bookmark_list = []
     if user_id:
