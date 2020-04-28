@@ -260,9 +260,10 @@
                    self.cachedDataSource[cacheKey] = data;
                    query.callback({results: data.results});
                },
-               error: function(data, textStatus, errorThrown) {
-                   alert(
-                     "Error while fetching entries.\nError code {0} ({1}).".format(data.status, data.statusText));
+               error: function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while fetching entries.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
                }
            });
        }
@@ -312,11 +313,11 @@
        }
 
        loadRepoRefDiffPreview._currentRequest = $.get(url)
-           .error(function(data, textStatus, errorThrown) {
+           .error(function(jqXHR, textStatus, errorThrown) {
                  if (textStatus !== 'abort') {
-                     alert(
-                         "Error while processing request.\nError code {0} ({1}).".format(
-                                 data.status, data.statusText));
+                    var prefix = "Error while processing request.\n"
+                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                    ajaxErrorSwal(message);
                  }
 
            })
@@ -503,8 +504,10 @@
                targetRepoChanged(data);
                loadRepoRefDiffPreview();
            },
-           error: function(data, textStatus, errorThrown) {
-               alert("Error while fetching entries.\nError code {0} ({1}).".format(data.status, data.statusText));
+           error: function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while fetching entries.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
            }
        })
 
