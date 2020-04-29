@@ -444,7 +444,8 @@ class DiffProcessor(object):
         return diff_container(sorted(_files, key=sorter))
 
     def _check_large_diff(self):
-        log.debug('Diff exceeds current diff_limit of %s', self.diff_limit)
+        if self.diff_limit:
+            log.debug('Checking if diff exceeds current diff_limit of %s', self.diff_limit)
         if not self.show_full_diff and (self.cur_diff_size > self.diff_limit):
             raise DiffLimitExceeded('Diff Limit `%s` Exceeded', self.diff_limit)
 
