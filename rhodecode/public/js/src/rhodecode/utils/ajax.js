@@ -109,7 +109,7 @@ function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
 function ajaxErrorSwal(message) {
     Swal.fire({
         icon: 'error',
-        title: _gettext('Ajax Error'),
+        title: _gettext('Ajax Request Error'),
         html: '<span style="white-space: pre-line">{0}</span>'.format(message),
         showClass: {
             popup: 'swal2-noanimation',

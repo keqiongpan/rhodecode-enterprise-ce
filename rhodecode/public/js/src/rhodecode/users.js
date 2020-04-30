@@ -86,9 +86,8 @@ var _showAuthToken = function (authTokenId, showUrl) {
                 })
                 .fail(function (jqXHR, textStatus, errorThrown) {
                     //reject("Failed to fetch Authentication Token")
-                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown)
-                    Swal.showValidationMessage('Request failed: {0}'.format(message)
-                    )
+                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown);
+                    ajaxErrorSwal(message);
                 });
             })
         }
