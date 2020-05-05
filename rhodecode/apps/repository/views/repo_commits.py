@@ -22,7 +22,7 @@
 import logging
 import collections
 
-from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound, HTTPForbidden
 from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -537,6 +537,10 @@ class RepoCommitsView(RepoAppView):
             log.debug('Comment with id:%s not found, skipping', comment_id)
             # comment already deleted in another call probably
             return True
+
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
 
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
         super_admin = h.HasPermissionAny('hg.admin')()

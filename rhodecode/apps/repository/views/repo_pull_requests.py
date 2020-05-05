@@ -1473,6 +1473,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['comment_id'])
         comment_id = comment.comment_id
 
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
+
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')
             raise HTTPForbidden()

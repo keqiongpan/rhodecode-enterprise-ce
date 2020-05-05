@@ -3711,6 +3711,9 @@ class ChangesetComment(Base, BaseModel):
     COMMENT_TYPE_TODO = u'todo'
     COMMENT_TYPES = [COMMENT_TYPE_NOTE, COMMENT_TYPE_TODO]
 
+    OP_IMMUTABLE = u'immutable'
+    OP_CHANGEABLE = u'changeable'
+
     comment_id = Column('comment_id', Integer(), nullable=False, primary_key=True)
     repo_id = Column('repo_id', Integer(), ForeignKey('repositories.repo_id'), nullable=False)
     revision = Column('revision', String(40), nullable=True)
@@ -3725,6 +3728,7 @@ class ChangesetComment(Base, BaseModel):
     modified_at = Column('modified_at', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
+    immutable_state = Column('immutable_state', Unicode(128), nullable=True, default=OP_CHANGEABLE)
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
@@ -3766,6 +3770,10 @@ class ChangesetComment(Base, BaseModel):
     @property
     def outdated(self):
         return self.display_state == self.COMMENT_OUTDATED
+
+    @property
+    def immutable(self):
+        return self.immutable_state == self.OP_IMMUTABLE
 
     def outdated_at_version(self, version):
         """

@@ -220,7 +220,7 @@ def db():
                 'pr_comment_url': 'http://comment-url',
                 'pr_comment_reply_url': 'http://comment-url#reply',
 
-                'comment_file': 'rhodecode/model/db.py',
+                'comment_file': 'rhodecode/model/get_flow_commits',
                 'comment_line': 'o1210',
                 'comment_type': 'todo',
                 'comment_body': '''

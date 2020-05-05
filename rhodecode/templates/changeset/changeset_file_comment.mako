@@ -135,7 +135,7 @@
             ## only super-admin, repo admin OR comment owner can delete, also hide delete if currently viewed comment is outdated
             %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):
                ## permissions to delete
-               %if c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id:
+               %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
                   ## TODO: dan: add edit comment here
                   <a onclick="return Rhodecode.comments.deleteComment(this);" class="delete-comment"> ${_('Delete')}</a>
                %else:

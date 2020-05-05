@@ -22,8 +22,7 @@ import pytest
 
 from rhodecode.tests import TestController
 
-from rhodecode.model.db import (
-    ChangesetComment, Notification, UserNotification)
+from rhodecode.model.db import ChangesetComment, Notification
 from rhodecode.model.meta import Session
 from rhodecode.lib import helpers as h
 
@@ -269,7 +268,36 @@ class TestRepoCommitCommentsView(TestController):
                        repo_name=backend.repo_name, commit_id=commit_id))
         assert_comment_links(response, 0, 0)
 
-    @pytest.mark.parametrize('renderer, input, output', [
+    def test_delete_forbidden_for_immutable_comments(self, backend):
+        self.log_user()
+        commit_id = backend.repo.get_commit('300').raw_id
+        text = u'CommentOnCommit'
+
+        params = {'text': text, 'csrf_token': self.csrf_token}
+        self.app.post(
+            route_path(
+                'repo_commit_comment_create',
+                repo_name=backend.repo_name, commit_id=commit_id),
+            params=params)
+
+        comments = ChangesetComment.query().all()
+        assert len(comments) == 1
+        comment_id = comments[0].comment_id
+
+        comment = ChangesetComment.get(comment_id)
+        comment.immutable_state = ChangesetComment.OP_IMMUTABLE
+        Session().add(comment)
+        Session().commit()
+
+        self.app.post(
+            route_path('repo_commit_comment_delete',
+                       repo_name=backend.repo_name,
+                       commit_id=commit_id,
+                       comment_id=comment_id),
+            params={'csrf_token': self.csrf_token},
+            status=403)
+
+    @pytest.mark.parametrize('renderer, text_input, output', [
         ('rst', 'plain text', '<p>plain text</p>'),
         ('rst', 'header\n======', '<h1 class="title">header</h1>'),
         ('rst', '*italics*', '<em>italics</em>'),
@@ -280,11 +308,11 @@ class TestRepoCommitCommentsView(TestController):
         ('markdown', '**bold**', '<strong>bold</strong>'),
     ], ids=['rst-plain', 'rst-header', 'rst-italics', 'rst-bold', 'md-plain',
             'md-header', 'md-italics', 'md-bold', ])
-    def test_preview(self, renderer, input, output, backend, xhr_header):
+    def test_preview(self, renderer, text_input, output, backend, xhr_header):
         self.log_user()
         params = {
             'renderer': renderer,
-            'text': input,
+            'text': text_input,
             'csrf_token': self.csrf_token
         }
         commit_id = '0' * 16  # fake this for tests
