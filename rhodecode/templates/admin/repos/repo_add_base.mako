@@ -157,12 +157,6 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
             setCopyPermsOption(e.val)
         });
 
-        $("#repo_type").select2({
-            'containerCssClass': "drop-menu",
-            'dropdownCssClass': "drop-menu-dropdown",
-            'minimumResultsForSearch': -1,
-        });
-
         $('#repo_name').focus();
 
         $('#select_my_group').on('click', function(e){

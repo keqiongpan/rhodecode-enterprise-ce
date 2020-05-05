@@ -84,15 +84,13 @@ class TestAdminRepos(object):
         with mock.patch('rhodecode.BACKENDS', {'git': 'git'}):
             response = self.app.get(route_path('repo_new'), status=200)
         assert_response = response.assert_response()
-        element = assert_response.get_element('#repo_type')
-        assert element.text_content() == '\ngit\n'
+        element = assert_response.get_element('[name=repo_type]')
+        assert element.get('value') == 'git'
 
     def test_create_page_non_restricted_backends(self, autologin_user, backend):
         response = self.app.get(route_path('repo_new'), status=200)
         assert_response = response.assert_response()
-        assert_response.element_contains('#repo_type', 'git')
-        assert_response.element_contains('#repo_type', 'svn')
-        assert_response.element_contains('#repo_type', 'hg')
+        assert ['hg', 'git', 'svn'] == [x.get('value') for x in assert_response.get_elements('[name=repo_type]')]
 
     @pytest.mark.parametrize(
         "suffix", [u'', u'xxa'], ids=['', 'non-ascii'])
