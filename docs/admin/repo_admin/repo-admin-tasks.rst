@@ -59,3 +59,46 @@ exit the ishell after the execution::
 
     echo "%run repo_delete_task.py" | rccontrol ishell enterprise-1
 
+
+
+
+Bulk edit permissions for all repositories or groups
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In case when a permissions should be applied in bulk here are two ways to apply
+the permissions onto *all* repositories and/or repository groups.
+
+1) Start by running the interactive ishell interface
+
+.. code-block:: bash
+   :dedent: 1
+
+    # starts the ishell interactive prompt
+    $ rccontrol ishell enterprise-1
+
+
+2a) Add user called 'admin' into all repositories with write permission.
+    Permissions can be also `repository.read`, `repository.admin`, `repository.none`
+
+.. code-block:: python
+   :dedent: 1
+
+   In [1]: from rhodecode.model.repo import RepoModel
+   In [2]: user = User.get_by_username('admin')
+   In [3]: permission_name = 'repository.write'
+   In [4]: for repo in Repository.get_all():
+      ...:     RepoModel().grant_user_permission(repo, user, permission_name)
+      ...:     Session().commit()
+
+2b) Add user called 'admin' into all repository groups with write permission.
+    Permissions can be also can be `group.read`, `group.admin`, `group.none`
+
+.. code-block:: python
+   :dedent: 1
+
+   In [1]: from rhodecode.model.repo import RepoModel
+   In [2]: user = User.get_by_username('admin')
+   In [3]: permission_name = 'group.write'
+   In [4]: for repo_group in RepoGroup.get_all():
+       ...:     RepoGroupModel().grant_user_permission(repo_group, user, permission_name)
+       ...:     Session().commit()
