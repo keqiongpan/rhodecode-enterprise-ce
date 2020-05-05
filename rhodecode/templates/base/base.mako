@@ -783,6 +783,8 @@
 
    user_group:devops, to search for user groups, always global
 
+   pr:303, to search for pull request number, title, or description, always global
+
    commit:efced4, to search for commits, scoped to repositories or groups
 
    file:models.py, to search for file paths, scoped to repositories or groups
@@ -974,6 +976,10 @@
             // user
             else if (searchType === 'user') {
                 icon += '<img class="gravatar" src="{0}"/>'.format(data['icon_link']);
+            }
+            // pull request
+            else if (searchType === 'pull_request') {
+                icon += '<i class="icon-merge"></i> ';
             }
             // commit
             else if (searchType === 'commit') {
