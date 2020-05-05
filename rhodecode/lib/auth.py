@@ -1313,7 +1313,10 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.repo_read_perms
 
-        def _cached_repo_acl(user_id, perm_def, _name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_repo_acl(perm_def, _name_filter):
             qry = Repository.query()
             if _name_filter:
                 ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
@@ -1323,7 +1326,21 @@ class AuthUser(object):
             return [x.repo_id for x in
                     RepoList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_repo_acl(self.user_id, perms, name_filter)
+        log.debug('Computing REPO ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_repo_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_repo_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_repo_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_repo_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('REPO ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     def repo_group_acl_ids_from_stack(self, perms=None, prefix_filter=None, cache=False):
         if not perms:
@@ -1347,7 +1364,10 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.repo_group_read_perms
 
-        def _cached_repo_group_acl(user_id, perm_def, _name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_repo_group_acl(perm_def, _name_filter):
             qry = RepoGroup.query()
             if _name_filter:
                 ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
@@ -1357,7 +1377,21 @@ class AuthUser(object):
             return [x.group_id for x in
                     RepoGroupList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_repo_group_acl(self.user_id, perms, name_filter)
+        log.debug('Computing REPO GROUP ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_repo_group_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_repo_group_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_repo_group_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_repo_group_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('REPO GROUP ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     def user_group_acl_ids_from_stack(self, perms=None, cache=False):
         if not perms:
@@ -1379,17 +1413,34 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.user_group_read_perms
 
-        def _cached_user_group_acl(user_id, perm_def, name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_user_group_acl(perm_def, _name_filter):
             qry = UserGroup.query()
-            if name_filter:
-                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+            if _name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
                 qry = qry.filter(
                     UserGroup.users_group_name.ilike(ilike_expression))
 
             return [x.users_group_id for x in
                     UserGroupList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_user_group_acl(self.user_id, perms, name_filter)
+        log.debug('Computing USER GROUP ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_user_group_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_user_group_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_user_group_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_user_group_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('USER GROUP ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     @property
     def ip_allowed(self):
@@ -1403,6 +1454,7 @@ class AuthUser(object):
         inherit = self.inherit_default_permissions
         return AuthUser.check_ip_allowed(self.user_id, self.ip_addr,
                                          inherit_from_default=inherit)
+
     @property
     def personal_repo_group(self):
         return RepoGroup.get_user_personal_repo_group(self.user_id)
