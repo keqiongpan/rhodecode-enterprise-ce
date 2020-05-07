@@ -1048,6 +1048,11 @@ class User(Base, BaseModel):
             Session().refresh(user)
         return user
 
+    @classmethod
+    def get_default_user_id(cls):
+        import rhodecode
+        return rhodecode.CONFIG['default_user_id']
+
     def _get_default_perms(self, user, suffix=''):
         from rhodecode.model.permission import PermissionModel
         return PermissionModel().get_default_perms(user.user_perms, suffix)

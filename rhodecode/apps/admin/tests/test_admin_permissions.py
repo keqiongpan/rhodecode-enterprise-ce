@@ -228,7 +228,7 @@ class TestAdminPermissionsController(TestController):
         self.log_user()
 
         # ADD
-        default_user_id = User.get_default_user().user_id
+        default_user_id = User.get_default_user_id()
         self.app.post(
             route_path('edit_user_ips_add', user_id=default_user_id),
             params={'new_ip': '0.0.0.0/24', 'csrf_token': self.csrf_token})
@@ -238,7 +238,7 @@ class TestAdminPermissionsController(TestController):
         response.mustcontain('0.0.0.0 - 0.0.0.255')
 
         # DELETE
-        default_user_id = User.get_default_user().user_id
+        default_user_id = User.get_default_user_id()
         del_ip_id = UserIpMap.query().filter(UserIpMap.user_id ==
                                              default_user_id).first().ip_id
 

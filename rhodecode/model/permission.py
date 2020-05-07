@@ -558,7 +558,7 @@ class PermissionModel(BaseModel):
 
     def get_users_with_repo_write(self, db_repo):
         write_plus = ['repository.write', 'repository.admin']
-        default_user_id = User.get_default_user().user_id
+        default_user_id = User.get_default_user_id()
         user_write_permissions = collections.OrderedDict()
 
         # write+ and DEFAULT user for inheritance

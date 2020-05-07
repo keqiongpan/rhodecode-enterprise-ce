@@ -65,9 +65,9 @@ def load_pyramid_environment(global_config, settings):
         if alias not in settings['vcs.backends']:
             del rhodecode.BACKENDS[alias]
 
-    def sorter(item):
-        return settings['vcs.backends'].index(item[0])
-    rhodecode.BACKENDS = rhodecode.OrderedDict(sorted(rhodecode.BACKENDS.items(), key=sorter))
+    _sorted_backend = sorted(rhodecode.BACKENDS.items(),
+                             key=lambda item: settings['vcs.backends'].index(item[0]))
+    rhodecode.BACKENDS = rhodecode.OrderedDict(_sorted_backend)
 
     log.info('Enabled VCS backends: %s', rhodecode.BACKENDS.keys())
 
@@ -81,6 +81,7 @@ def load_pyramid_environment(global_config, settings):
 
     rhodecode.PYRAMID_SETTINGS = settings_merged
     rhodecode.CONFIG = settings_merged
+    rhodecode.CONFIG['default_user_id'] = utils.get_default_user_id()
 
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

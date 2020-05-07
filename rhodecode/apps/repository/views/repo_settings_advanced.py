@@ -65,7 +65,7 @@ class RepoSettingsView(RepoAppView):
         c = self.load_default_context()
         c.active = 'advanced'
 
-        c.default_user_id = User.get_default_user().user_id
+        c.default_user_id = User.get_default_user_id()
         c.in_public_journal = UserFollowing.query() \
             .filter(UserFollowing.user_id == c.default_user_id) \
             .filter(UserFollowing.follows_repository == self.db_repo).scalar()
@@ -220,7 +220,7 @@ class RepoSettingsView(RepoAppView):
         _ = self.request.translate
 
         try:
-            user_id = User.get_default_user().user_id
+            user_id = User.get_default_user_id()
             ScmModel().toggle_following_repo(self.db_repo.repo_id, user_id)
             h.flash(_('Updated repository visibility in public journal'),
                     category='success')

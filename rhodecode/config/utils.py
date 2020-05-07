@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
-import shlex
 import platform
 
 from rhodecode.model import init_model
@@ -91,3 +90,12 @@ def set_instance_id(config):
         prefix = instance_id.lstrip('*')
         _platform_id = platform.uname()[1] or 'instance'
         config['instance_id'] = '%s%s-%s' % (prefix, _platform_id, os.getpid())
+
+
+def get_default_user_id():
+    from rhodecode.model.db import User, Session
+    user_id = Session()\
+        .query(User.user_id)\
+        .filter(User.username == User.DEFAULT_USER)\
+        .scalar()
+    return user_id

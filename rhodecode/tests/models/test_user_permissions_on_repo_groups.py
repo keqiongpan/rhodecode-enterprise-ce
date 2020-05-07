@@ -49,7 +49,7 @@ def permissions_setup_func(group_name='g0', perm='group.read', recursive='all',
         user_id = test_u1_id
         # called by the @with_setup decorator also reset the default user stuff
         permissions_setup_func(group_name, perm, recursive,
-                               user_id=User.get_default_user().user_id)
+                               user_id=User.get_default_user_id())
 
     # TODO: DRY, compare test_user_group:permissions_setup_func
     repo_group = RepoGroup.get_by_group_name(group_name=group_name)
@@ -142,7 +142,7 @@ def test_user_permissions_on_group_with_recursive_mode_for_default_user():
     # other repos and groups should have this permission now set !
     recursive = 'all'
     group = 'g0'
-    default_user_id = User.get_default_user().user_id
+    default_user_id = User.get_default_user_id()
     permissions_setup_func(group, 'group.write', recursive=recursive,
                            user_id=default_user_id)
 
@@ -221,7 +221,7 @@ def test_user_permissions_on_group_with_recursive_repo_mode_for_default_user():
     recursive = 'repos'
     group = 'g0/g0_1'
     perm = 'group.none'
-    default_user_id = User.get_default_user().user_id
+    default_user_id = User.get_default_user_id()
 
     # TODO: workaround due to different setup calls, adept to py.test style
     permissions_setup_func()
@@ -281,7 +281,7 @@ def test_user_permissions_on_group_with_rec_group_mode_for_default_user():
     # should remain intact as we use groups only mode !
     recursive = 'groups'
     group = 'g0/g0_1'
-    default_user_id = User.get_default_user().user_id
+    default_user_id = User.get_default_user_id()
 
     # TODO: workaround due to different setup calls, adept to py.test style
     permissions_setup_func()

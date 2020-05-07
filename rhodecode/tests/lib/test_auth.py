@@ -147,7 +147,7 @@ def test_cached_perms_data_repository_permissions_for_owner(
     assert permissions['repositories'][repo.repo_name] == 'repository.admin'
 
     # TODO: johbo: Make cleanup in UserUtility smarter, then remove this hack
-    repo.user_id = User.get_default_user().user_id
+    repo.user_id = User.get_default_user_id()
 
 
 def test_cached_perms_data_repository_permissions_not_inheriting_defaults(

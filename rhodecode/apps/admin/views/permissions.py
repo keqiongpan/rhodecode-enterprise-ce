@@ -142,7 +142,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        affected_user_ids = [User.get_default_user().user_id]
+        affected_user_ids = [User.get_default_user_id()]
         PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(h.route_path('admin_permissions_application'))
@@ -218,7 +218,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        affected_user_ids = [User.get_default_user().user_id]
+        affected_user_ids = [User.get_default_user_id()]
         PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(h.route_path('admin_permissions_object'))
@@ -320,7 +320,7 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
             h.flash(_('Error occurred during update of permissions'),
                     category='error')
 
-        affected_user_ids = [User.get_default_user().user_id]
+        affected_user_ids = [User.get_default_user_id()]
         PermissionModel().trigger_permission_flush(affected_user_ids)
 
         raise HTTPFound(h.route_path('admin_permissions_global'))
