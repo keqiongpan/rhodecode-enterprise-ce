@@ -113,6 +113,10 @@
 			this.invoke(Logger.WARN, arguments);
 		},
 
+		warning: function () {
+			this.invoke(Logger.WARN, arguments);
+		},
+
 		error: function () {
 			this.invoke(Logger.ERROR, arguments);
 		},
@@ -151,6 +155,7 @@
 		L.timeEnd = bind(globalLogger, globalLogger.timeEnd);
 		L.info = bind(globalLogger, globalLogger.info);
 		L.warn = bind(globalLogger, globalLogger.warn);
+		L.warning = bind(globalLogger, globalLogger.warning);
 		L.error = bind(globalLogger, globalLogger.error);
 
 		// Don't forget the convenience alias!
