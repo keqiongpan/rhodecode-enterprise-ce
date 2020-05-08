@@ -35,6 +35,7 @@ import collections
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
+from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.translation import lazy_ugettext
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib import audit_logger
@@ -80,6 +81,126 @@ class UpdateResponse(object):
         self.changes = commit_changes
         self.source_changed = source_changed
         self.target_changed = target_changed
+
+
+def get_diff_info(
+        source_repo, source_ref, target_repo, target_ref, get_authors=False,
+        get_commit_authors=True):
+    """
+    Calculates detailed diff information for usage in preview of creation of a pull-request.
+    This is also used for default reviewers logic
+    """
+
+    source_scm = source_repo.scm_instance()
+    target_scm = target_repo.scm_instance()
+
+    ancestor_id = target_scm.get_common_ancestor(target_ref, source_ref, source_scm)
+    if not ancestor_id:
+        raise ValueError(
+            'cannot calculate diff info without a common ancestor. '
+            'Make sure both repositories are related, and have a common forking commit.')
+
+    # case here is that want a simple diff without incoming commits,
+    # previewing what will be merged based only on commits in the source.
+    log.debug('Using ancestor %s as source_ref instead of %s',
+              ancestor_id, source_ref)
+
+    # source of changes now is the common ancestor
+    source_commit = source_scm.get_commit(commit_id=ancestor_id)
+    # target commit becomes the source ref as it is the last commit
+    # for diff generation this logic gives proper diff
+    target_commit = source_scm.get_commit(commit_id=source_ref)
+
+    vcs_diff = \
+        source_scm.get_diff(commit1=source_commit, commit2=target_commit,
+                            ignore_whitespace=False, context=3)
+
+    diff_processor = diffs.DiffProcessor(
+        vcs_diff, format='newdiff', diff_limit=None,
+        file_limit=None, show_full_diff=True)
+
+    _parsed = diff_processor.prepare()
+
+    all_files = []
+    all_files_changes = []
+    changed_lines = {}
+    stats = [0, 0]
+    for f in _parsed:
+        all_files.append(f['filename'])
+        all_files_changes.append({
+            'filename': f['filename'],
+            'stats': f['stats']
+        })
+        stats[0] += f['stats']['added']
+        stats[1] += f['stats']['deleted']
+
+        changed_lines[f['filename']] = []
+        if len(f['chunks']) < 2:
+            continue
+        # first line is "context" information
+        for chunks in f['chunks'][1:]:
+            for chunk in chunks['lines']:
+                if chunk['action'] not in ('del', 'mod'):
+                    continue
+                changed_lines[f['filename']].append(chunk['old_lineno'])
+
+    commit_authors = []
+    user_counts = {}
+    email_counts = {}
+    author_counts = {}
+    _commit_cache = {}
+
+    commits = []
+    if get_commit_authors:
+        commits = target_scm.compare(
+            target_ref, source_ref, source_scm, merge=True,
+            pre_load=["author"])
+
+        for commit in commits:
+            user = User.get_from_cs_author(commit.author)
+            if user and user not in commit_authors:
+                commit_authors.append(user)
+
+    # lines
+    if get_authors:
+        target_commit = source_repo.get_commit(ancestor_id)
+
+        for fname, lines in changed_lines.items():
+            try:
+                node = target_commit.get_node(fname)
+            except Exception:
+                continue
+
+            if not isinstance(node, FileNode):
+                continue
+
+            for annotation in node.annotate:
+                line_no, commit_id, get_commit_func, line_text = annotation
+                if line_no in lines:
+                    if commit_id not in _commit_cache:
+                        _commit_cache[commit_id] = get_commit_func()
+                    commit = _commit_cache[commit_id]
+                    author = commit.author
+                    email = commit.author_email
+                    user = User.get_from_cs_author(author)
+                    if user:
+                        user_counts[user] = user_counts.get(user, 0) + 1
+                    author_counts[author] = author_counts.get(author, 0) + 1
+                    email_counts[email] = email_counts.get(email, 0) + 1
+
+    return {
+        'commits': commits,
+        'files': all_files_changes,
+        'stats': stats,
+        'ancestor': ancestor_id,
+        # original authors of modified files
+        'original_authors': {
+            'users': user_counts,
+            'authors': author_counts,
+            'emails': email_counts,
+        },
+        'commit_authors': commit_authors
+    }
 
 
 class PullRequestModel(BaseModel):
@@ -453,6 +574,7 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
+               common_ancestor_id=None,
                description_renderer=None,
                reviewer_data=None, translator=None, auth_user=None):
         translator = translator or get_current_request().translate
@@ -474,6 +596,8 @@ class PullRequestModel(BaseModel):
         pull_request.author = created_by_user
         pull_request.reviewer_data = reviewer_data
         pull_request.pull_request_state = pull_request.STATE_CREATING
+        pull_request.common_ancestor_id = common_ancestor_id
+
         Session().add(pull_request)
         Session().flush()
 
@@ -805,8 +929,17 @@ class PullRequestModel(BaseModel):
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)
 
-        ancestor_commit_id = source_repo.get_common_ancestor(
-            source_commit.raw_id, target_commit.raw_id, target_repo)
+        target_ref = target_commit.raw_id
+        source_ref = source_commit.raw_id
+        ancestor_commit_id = target_repo.get_common_ancestor(
+            target_ref, source_ref, source_repo)
+
+        if not ancestor_commit_id:
+            raise ValueError(
+                'cannot calculate diff info without a common ancestor. '
+                'Make sure both repositories are related, and have a common forking commit.')
+
+        pull_request.common_ancestor_id = ancestor_commit_id
 
         pull_request.source_ref = '%s:%s:%s' % (
             source_ref_type, source_ref_name, source_commit.raw_id)
@@ -913,6 +1046,7 @@ class PullRequestModel(BaseModel):
         version.reviewer_data = pull_request.reviewer_data
 
         version.revisions = pull_request.revisions
+        version.common_ancestor_id = pull_request.common_ancestor_id
         version.pull_request = pull_request
         Session().add(version)
         Session().flush()

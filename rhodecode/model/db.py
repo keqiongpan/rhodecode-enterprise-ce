@@ -3989,6 +3989,8 @@ class _PullRequestBase(BaseModel):
     _revisions = Column(
         'revisions', UnicodeText().with_variant(UnicodeText(20500), 'mysql'))
 
+    common_ancestor_id = Column('common_ancestor_id', Unicode(255), nullable=True)
+
     @declared_attr
     def source_repo_id(cls):
         # TODO: dan: rename column to source_repo_id
@@ -4302,7 +4304,7 @@ class PullRequest(Base, _PullRequestBase):
         attrs.source_ref_parts = pull_request_obj.source_ref_parts
         attrs.target_ref_parts = pull_request_obj.target_ref_parts
         attrs.revisions = pull_request_obj.revisions
-
+        attrs.common_ancestor_id = pull_request_obj.common_ancestor_id
         attrs.shadow_merge_ref = org_pull_request_obj.shadow_merge_ref
         attrs.reviewer_data = org_pull_request_obj.reviewer_data
         attrs.reviewer_data_json = org_pull_request_obj.reviewer_data_json

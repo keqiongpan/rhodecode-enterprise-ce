@@ -393,6 +393,7 @@ html[dir="rtl"] .select2-results {
          -moz-user-select: none;
           -ms-user-select: none;
               user-select: none;
+    white-space: nowrap;
 }
 
 .select2-results-dept-1 .select2-result-label { padding-left: 20px }

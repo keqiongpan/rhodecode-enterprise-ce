@@ -580,6 +580,9 @@ class GitRepository(BaseRepository):
         return len(self.commit_ids)
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
+        log.debug('Calculating common ancestor between %sc1:%s and %sc2:%s',
+                  self, commit_id1, repo2, commit_id2)
+
         if commit_id1 == commit_id2:
             return commit_id1
 
@@ -599,6 +602,8 @@ class GitRepository(BaseRepository):
             output, __ = self.run_git_command(
                 ['merge-base', commit_id1, commit_id2])
             ancestor_id = re.findall(r'[0-9a-fA-F]{40}', output)[0]
+
+        log.debug('Found common ancestor with sha: %s', ancestor_id)
 
         return ancestor_id
 

@@ -54,8 +54,20 @@ class RepoReviewRulesView(RepoAppView):
         renderer='json_ext')
     def repo_default_reviewers_data(self):
         self.load_default_context()
-        target_repo_name = self.request.GET.get('target_repo', self.db_repo.repo_name)
+
+        request = self.request
+        source_repo = self.db_repo
+        source_repo_name = source_repo.repo_name
+        target_repo_name = request.GET.get('target_repo', source_repo_name)
         target_repo = Repository.get_by_repo_name(target_repo_name)
+
+        source_ref = request.GET['source_ref']
+        target_ref = request.GET['target_ref']
+        source_commit = source_repo.get_commit(source_ref)
+        target_commit = target_repo.get_commit(target_ref)
+
+        current_user = request.user.get_instance()
         review_data = get_default_reviewers_data(
-            self.db_repo.user, None, None, target_repo, None)
+            current_user, source_repo, source_commit, target_repo, target_commit)
+
         return review_data

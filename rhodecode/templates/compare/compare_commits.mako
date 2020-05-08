@@ -2,10 +2,8 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 %if c.ancestor:
-<div class="ancestor">${_('Common Ancestor Commit')}:
-    <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=c.ancestor)}">
-        ${h.short_id(c.ancestor)}
-    </a>. ${_('Compare was calculated based on this shared commit.')}
+<div class="ancestor">${_('Compare was calculated based on this common ancestor commit')}:
+    <a href="${h.route_path('repo_commit', repo_name=c.repo_name, commit_id=c.ancestor)}">${h.short_id(c.ancestor)}</a>
     <input id="common_ancestor" type="hidden" name="common_ancestor" value="${c.ancestor}">
 </div>
 %endif

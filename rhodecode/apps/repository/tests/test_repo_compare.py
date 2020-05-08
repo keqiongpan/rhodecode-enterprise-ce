@@ -484,7 +484,7 @@ class TestCompareView(object):
 
         # outgoing commits between those commits
         compare_page = ComparePage(response)
-        compare_page.contains_commits(commits=[commit1], ancestors=[commit0])
+        compare_page.contains_commits(commits=[commit1])
 
     def test_errors_when_comparing_unknown_source_repo(self, backend):
         repo = backend.repo
@@ -641,6 +641,7 @@ class ComparePage(AssertResponse):
             self.contains_one_link(
                 'r%s:%s' % (commit.idx, commit.short_id),
                 self._commit_url(commit))
+
         if ancestors:
             response.mustcontain('Ancestor')
             for ancestor in ancestors:

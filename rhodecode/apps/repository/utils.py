@@ -20,6 +20,9 @@
 
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int
+from rhodecode.model.pull_request import get_diff_info
+
+REVIEWER_API_VERSION = 'V3'
 
 
 def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group=None):
@@ -47,15 +50,20 @@ def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group
 
 def get_default_reviewers_data(
         current_user, source_repo, source_commit, target_repo, target_commit):
+    """
+    Return json for default reviewers of a repository
+    """
 
-    """ Return json for default reviewers of a repository """
+    diff_info = get_diff_info(
+        source_repo, source_commit.raw_id, target_repo, target_commit.raw_id)
 
     reasons = ['Default reviewer', 'Repository owner']
     json_reviewers = [reviewer_as_json(
         user=target_repo.user, reasons=reasons, mandatory=False, rules=None)]
 
     return {
-        'api_ver': 'v1',  # define version for later possible schema upgrade
+        'api_ver': REVIEWER_API_VERSION,  # define version for later possible schema upgrade
+        'diff_info': diff_info,
         'reviewers': json_reviewers,
         'rules': {},
         'rules_data': {},

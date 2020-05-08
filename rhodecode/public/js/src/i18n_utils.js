@@ -22,7 +22,7 @@ var _gettext = function (s) {
     if (_TM.hasOwnProperty(s)) {
         return _TM[s];
     }
-    i18nLog.error(
+    i18nLog.warning(
         'String `' + s + '` was requested but cannot be ' +
         'found in translation table');
     return s
@@ -34,3 +34,5 @@ var _ngettext = function (singular, plural, n) {
     }
     return _gettext(plural)
 };
+
+
