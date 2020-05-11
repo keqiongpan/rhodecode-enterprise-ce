@@ -114,20 +114,25 @@ class RepoSettingsPermissionsView(RepoAppView):
         private_flag = str2bool(self.request.POST.get('private'))
 
         try:
-            RepoModel().update(
-                self.db_repo, **{'repo_private': private_flag, 'repo_name': self.db_repo_name})
+            repo = RepoModel().get(self.db_repo.repo_id)
+            repo.private = private_flag
+            Session().add(repo)
+            RepoModel().grant_user_permission(
+                repo=self.db_repo, user=User.DEFAULT_USER, perm='repository.none'
+            )
+
             Session().commit()
 
             h.flash(_('Repository `{}` private mode set successfully').format(self.db_repo_name),
                     category='success')
+            # NOTE(dan): we change repo private mode we need to notify all USERS
+            affected_user_ids = User.get_all_user_ids()
+            PermissionModel().trigger_permission_flush(affected_user_ids)
+
         except Exception:
             log.exception("Exception during update of repository")
             h.flash(_('Error occurred during update of repository {}').format(
                 self.db_repo_name), category='error')
-
-        # NOTE(dan): we change repo private mode we need to notify all USERS
-        affected_user_ids = User.get_all_user_ids()
-        PermissionModel().trigger_permission_flush(affected_user_ids)
 
         return {
             'redirect_url': h.route_path('edit_repo_perms', repo_name=self.db_repo_name),
