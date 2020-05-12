@@ -41,9 +41,9 @@ class SvnConfigAdminSettingsView(BaseAppView):
     def vcs_svn_generate_config(self):
         _ = self.request.translate
         try:
-            generate_mod_dav_svn_config(self.request.registry)
+            file_path = generate_mod_dav_svn_config(self.request.registry)
             msg = {
-                'message': _('Apache configuration for Subversion generated.'),
+                'message': _('Apache configuration for Subversion generated at `{}`.').format(file_path),
                 'level': 'success',
             }
         except Exception:
