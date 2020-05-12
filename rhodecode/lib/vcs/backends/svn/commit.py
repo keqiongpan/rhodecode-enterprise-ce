@@ -173,11 +173,10 @@ class SubversionCommit(base.BaseCommit):
             raise CommitError(
                 "Directory does not exist for commit %s at "
                 " '%s'" % (self.raw_id, path))
-        path = self._fix_path(path)
+        path = safe_str(self._fix_path(path))
 
         path_nodes = []
-        for name, kind in self._remote.get_nodes(
-                safe_str(path), revision=self._svn_rev):
+        for name, kind in self._remote.get_nodes(path, revision=self._svn_rev):
             node_path = vcspath.join(path, name)
             if kind == 'dir':
                 node = nodes.DirNode(node_path, commit=self)
