@@ -111,7 +111,7 @@ class ForeignKeyConstraint(ConstraintChangeset, schema.ForeignKeyConstraint):
         refcolnames, reftable = self._normalize_columns(refcolumns,
                                                         table_name=True)
         super(ForeignKeyConstraint, self).__init__(
-            colnames, refcolnames, *args,**kwargs
+            colnames, refcolnames, *args, **kwargs
         )
         if table is not None:
             self._set_parent(table)

@@ -3,11 +3,15 @@
 
    .. _`SQLite`: http://www.sqlite.org/
 """
-from UserDict import DictMixin
+try:  # Python 3
+    from collections.abc import MutableMapping as DictMixin
+except ImportError:  # Python 2
+    from UserDict import DictMixin
 from copy import copy
 import re
 
 from sqlalchemy.databases import sqlite as sa_base
+from sqlalchemy.schema import ForeignKeyConstraint
 from sqlalchemy.schema import UniqueConstraint
 
 from rhodecode.lib.dbmigrate.migrate import exceptions
