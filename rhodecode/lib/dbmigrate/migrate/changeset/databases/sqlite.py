@@ -12,7 +12,7 @@ from sqlalchemy.schema import UniqueConstraint
 
 from rhodecode.lib.dbmigrate.migrate import exceptions
 from rhodecode.lib.dbmigrate.migrate.changeset import ansisql
-
+import sqlite3
 
 SQLiteSchemaGenerator = sa_base.SQLiteDDLCompiler
 
@@ -73,10 +73,16 @@ class SQLiteHelper(SQLiteCommon):
             cons for cons in table.constraints
             if omit_uniques is None or cons.name not in omit_uniques
         ])
+        tup = sqlite3.sqlite_version_info
+        if tup[0] > 3 or (tup[0] == 3 and tup[1] >= 26):
+            self.append('PRAGMA legacy_alter_table = ON')
+            self.execute()
 
         self.append('ALTER TABLE %s RENAME TO migration_tmp' % table_name)
         self.execute()
-
+        if tup[0] > 3 or (tup[0] == 3 and tup[1] >= 26):
+            self.append('PRAGMA legacy_alter_table = OFF')
+            self.execute()
         insertion_string = self._modify_table(table, column, delta)
 
         table.create(bind=self.connection)
