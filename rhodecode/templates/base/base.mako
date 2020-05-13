@@ -1069,8 +1069,14 @@
             },
             onSearchError: function (element, query, jqXHR, textStatus, errorThrown) {
                 if (jqXHR !== 'abort') {
-                    alert("Error during search.\nError code: {0}".format(textStatus));
-                    window.location = '';
+                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown);
+                    SwalNoAnimation.fire({
+                        icon: 'error',
+                        title: _gettext('Error during search operation'),
+                        html: '<span style="white-space: pre-line">{0}</span>'.format(message),
+                    }).then(function(result) {
+                        window.location.reload();
+                    })
                 }
             },
             onSearchStart: function (params) {

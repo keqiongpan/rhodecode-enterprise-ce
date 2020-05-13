@@ -80,6 +80,30 @@ var ajaxPOST = function (url, postData, success, failure) {
     return request;
 };
 
+
+SwalNoAnimation = Swal.mixin({
+    confirmButtonColor: '#84a5d2',
+    cancelButtonColor: '#e85e4d',
+    showClass: {
+        popup: 'swal2-noanimation',
+        backdrop: 'swal2-noanimation'
+    },
+    hideClass: {
+        popup: '',
+        backdrop: ''
+    },
+})
+
+
+/* Example usage:
+*
+  error: function(jqXHR, textStatus, errorThrown) {
+    var prefix = "Error while fetching entries.\n"
+    var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+    ajaxErrorSwal(message);
+   }
+*
+* */
 function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
     if(typeof prefix === "undefined") {
         prefix = ''
@@ -107,7 +131,7 @@ function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
 }
 
 function ajaxErrorSwal(message) {
-    Swal.fire({
+    SwalNoAnimation.fire({
         icon: 'error',
         title: _gettext('Ajax Request Error'),
         html: '<span style="white-space: pre-line">{0}</span>'.format(message),
@@ -135,21 +159,13 @@ function submitConfirm(event, self, question, confirmText, htmlText) {
     }
     event.preventDefault();
 
-    Swal.fire({
+    SwalNoAnimation.fire({
       title: question,
       icon: 'warning',
       html: htmlText,
-      showClass: {
-        popup: 'swal2-noanimation',
-        backdrop: 'swal2-noanimation'
-      },
-      hideClass: {
-        popup: '',
-        backdrop: ''
-      },
+
       showCancelButton: true,
-      confirmButtonColor: '#84a5d2',
-      cancelButtonColor: '#e85e4d',
+
       confirmButtonText: confirmText
     }).then(function(result) {
       if (result.value) {

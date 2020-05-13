@@ -588,21 +588,12 @@ var CommentsController = function() {
     var $comment = $(node).closest('.comment');
     var comment_id = $comment.attr('data-comment-id');
 
-    Swal.fire({
+    SwalNoAnimation.fire({
       title: 'Delete this comment?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#84a5d2',
-      cancelButtonColor: '#e85e4d',
       confirmButtonText: _gettext('Yes, delete comment #{0}!').format(comment_id),
-      showClass: {
-        popup: 'swal2-noanimation',
-        backdrop: 'swal2-noanimation'
-      },
-      hideClass: {
-        popup: '',
-        backdrop: ''
-      }
+
     }).then(function(result) {
       if (result.value) {
         self._deleteComment(node);

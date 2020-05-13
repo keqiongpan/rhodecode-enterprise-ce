@@ -50,19 +50,9 @@ var UsersAutoComplete = function(input_id, user_id) {
 
 var _showAuthToken = function (authTokenId, showUrl) {
 
-    Swal.fire({
+    SwalNoAnimation.fire({
         title: _gettext('Show this authentication token?'),
         showCancelButton: true,
-        confirmButtonColor: '#84a5d2',
-        cancelButtonColor: '#e85e4d',
-        showClass: {
-            popup: 'swal2-noanimation',
-            backdrop: 'swal2-noanimation'
-        },
-        hideClass: {
-            popup: '',
-            backdrop: ''
-        },
         confirmButtonText: _gettext('Show'),
         showLoaderOnConfirm: true,
         allowOutsideClick: function () {
@@ -98,19 +88,9 @@ var _showAuthToken = function (authTokenId, showUrl) {
             var tmpl = ('<code>{0}</code>' +
                        '<i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="{1}" title="Copy Token"></i>');
 
-            Swal.fire({
+            SwalNoAnimation.fire({
                 title: _gettext('Authentication Token'),
                 html: tmpl.format(result.value.auth_token, result.value.auth_token),
-                confirmButtonColor: '#84a5d2',
-                cancelButtonColor: '#e85e4d',
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                hideClass: {
-                    popup: '',
-                    backdrop: ''
-                },
             })
         }
     })

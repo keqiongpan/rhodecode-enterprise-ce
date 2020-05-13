@@ -564,13 +564,15 @@
 
                 $.extend(ajaxSettings, options.ajaxSettings);
 
-                that.currentRequest = $.ajax(ajaxSettings).done(function (data) {
+                that.currentRequest = $.ajax(ajaxSettings)
+                .done(function (data) {
                     var result;
                     that.currentRequest = null;
                     result = options.transformResult(data);
                     that.processResponse(result, query, cacheKey);
                     options.onSearchComplete.call(that.element, query, result.suggestions);
-                }).fail(function (jqXHR, textStatus, errorThrown) {
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
                     options.onSearchError.call(that.element, query, jqXHR, textStatus, errorThrown);
                 });
             }
