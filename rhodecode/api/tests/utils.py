@@ -49,7 +49,8 @@ def assert_call_ok(id_, given):
 def assert_ok(id_, expected, given):
     given = json.loads(given)
     if given.get('error'):
-        pytest.fail("Unexpected ERROR in success response: {}".format(given['error']))
+        err = given['error']
+        pytest.fail(u"Unexpected ERROR in success response: {}".format(err))
 
     expected = jsonify({
         'id': id_,
