@@ -115,7 +115,9 @@
         %if c.file.is_binary:
              <% rendered_binary = h.render_binary(c.repo_name, c.file)%>
              % if rendered_binary:
+                 <div class="text-center">
                  ${rendered_binary}
+                 </div>
              % else:
                  <div>
                   ${_('Binary file ({})').format(c.file.mimetype)}
