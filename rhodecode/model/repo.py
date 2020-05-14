@@ -1098,7 +1098,7 @@ class ReadmeFinder:
         self._renderer_extensions = self.RENDERER_TO_EXTENSION.get(
             default_renderer, [])
 
-    def search(self, commit, path='/'):
+    def search(self, commit, path=u'/'):
         """
         Find a readme in the given `commit`.
         """

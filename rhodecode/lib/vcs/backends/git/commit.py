@@ -307,15 +307,16 @@ class GitCommit(base.BaseCommit):
         filenodes = []
 
         # extracted tree ID gives us our files...
+        bytes_path = safe_str(path)  # libgit operates on bytes
         for name, stat_, id_, type_ in self._remote.tree_items(tree_id):
             if type_ == 'link':
-                url = self._get_submodule_url('/'.join((path, name)))
+                url = self._get_submodule_url('/'.join((bytes_path, name)))
                 dirnodes.append(SubModuleNode(
                     name, url=url, commit=id_, alias=self.repository.alias))
                 continue
 
-            if path != '':
-                obj_path = '/'.join((path, name))
+            if bytes_path != '':
+                obj_path = '/'.join((bytes_path, name))
             else:
                 obj_path = name
             if obj_path not in self._stat_modes:
