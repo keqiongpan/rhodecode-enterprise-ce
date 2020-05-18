@@ -22,8 +22,9 @@ import time
 import logging
 
 import rhodecode
+from rhodecode.lib.auth import AuthUser
 from rhodecode.lib.base import get_ip_addr, get_access_path, get_user_agent
-from rhodecode.lib.utils2 import safe_str
+from rhodecode.lib.utils2 import safe_str, get_current_rhodecode_user
 
 
 log = logging.getLogger(__name__)
@@ -46,9 +47,11 @@ class RequestWrapperTween(object):
             total = end - start
             count = request.request_count()
             _ver_ = rhodecode.__version__
+            default_user_info = AuthUser.repr_user(ip=get_ip_addr(request.environ))
+            user_info = get_current_rhodecode_user(request) or default_user_info
             log.info(
-                'Req[%4s] IP: %s %s Request to %s time: %.4fs [%s], RhodeCode %s',
-                count, get_ip_addr(request.environ), request.environ.get('REQUEST_METHOD'),
+                'Req[%4s] %s %s Request to %s time: %.4fs [%s], RhodeCode %s',
+                count, user_info, request.environ.get('REQUEST_METHOD'),
                 safe_str(get_access_path(request.environ)), total,
                 get_user_agent(request. environ), _ver_
             )

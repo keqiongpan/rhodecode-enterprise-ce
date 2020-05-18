@@ -1541,8 +1541,7 @@ class AuthUser(object):
         return notice_messages, notice_level
 
     def __repr__(self):
-        return "<AuthUser('id:%s[%s] ip:%s auth:%s')>"\
-            % (self.user_id, self.username, self.ip_addr, self.is_authenticated)
+        return self.repr_user(self.user_id, self.username, self.ip_addr, self.is_authenticated)
 
     def set_authenticated(self, authenticated=True):
         if self.user_id != self.anonymous_user.user_id:
@@ -1555,6 +1554,11 @@ class AuthUser(object):
             'user_id': self.user_id,
             'is_authenticated': self.is_authenticated
         }
+
+    @classmethod
+    def repr_user(cls, user_id=0, username='ANONYMOUS', ip='0.0.0.0', is_authenticated=False):
+        tmpl = "<AuthUser('id:{}[{}] ip:{} auth:{}')>"
+        return tmpl.format(user_id, username, ip, is_authenticated)
 
     @classmethod
     def from_cookie_store(cls, cookie_store):
