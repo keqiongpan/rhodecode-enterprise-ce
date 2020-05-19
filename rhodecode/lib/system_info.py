@@ -143,8 +143,9 @@ def python_info():
 
 
 def py_modules():
-    mods = dict([(p.project_name, p.version)
+    mods = dict([(p.project_name, {'version': p.version, 'location': p.location})
                  for p in pkg_resources.working_set])
+
     value = sorted(mods.items(), key=lambda k: k[0].lower())
     return SysInfoRes(value=value)
 
