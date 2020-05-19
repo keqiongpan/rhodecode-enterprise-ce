@@ -261,20 +261,19 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                               condition=cache_on)
-        def compute_file_tree(ver, repo_id, commit_id, f_path, full_load, at_rev):
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache_on)
+        def compute_file_tree(ver, _name_hash, _repo_id, _commit_id, _f_path, _full_load, _at_rev):
             log.debug('Generating cached file tree at ver:%s for repo_id: %s, %s, %s',
-                      ver, repo_id, commit_id, f_path)
+                      ver, _repo_id, _commit_id, _f_path)
 
-            c.full_load = full_load
+            c.full_load = _full_load
             return render(
                 'rhodecode:templates/files/files_browser_tree.mako',
-                self._get_template_context(c), self.request, at_rev)
+                self._get_template_context(c), self.request, _at_rev)
 
         return compute_file_tree(
-            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_id, commit_id,
-            f_path, full_load, at_rev)
+            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_name_hash,
+            self.db_repo.repo_id, commit_id, f_path, full_load, at_rev)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)
@@ -914,13 +913,12 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                               condition=cache_on)
-        def compute_file_search(repo_id, commit_id, f_path):
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache_on)
+        def compute_file_search(_name_hash, _repo_id, _commit_id, _f_path):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
-                      repo_id, commit_id, f_path)
+                      _repo_id, commit_id, f_path)
             try:
-                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, commit_id, f_path)
+                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, _commit_id, _f_path)
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
                 h.flash(safe_str(h.escape(e)), category='error')
@@ -930,7 +928,8 @@ class RepoFilesView(RepoAppView):
 
             return _d + _f
 
-        result = compute_file_search(self.db_repo.repo_id, commit_id, f_path)
+        result = compute_file_search(self.db_repo.repo_name_hash, self.db_repo.repo_id,
+                                     commit_id, f_path)
         return filter(lambda n: self.path_filter.path_access_allowed(n['name']), result)
 
     @LoginRequired()
