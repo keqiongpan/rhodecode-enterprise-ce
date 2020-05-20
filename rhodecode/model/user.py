@@ -37,16 +37,16 @@ from rhodecode.lib.utils2 import (
     AttributeDict, str2bool)
 from rhodecode.lib.exceptions import (
     DefaultUserException, UserOwnsReposException, UserOwnsRepoGroupsException,
-    UserOwnsUserGroupsException, NotAllowedToCreateUserError, UserOwnsArtifactsException)
+    UserOwnsUserGroupsException, NotAllowedToCreateUserError,
+    UserOwnsPullRequestsException, UserOwnsArtifactsException)
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
-from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.db import (
     _hash_key, true, false, or_, joinedload, User, UserToPerm,
     UserEmailMap, UserIpMap, UserLog)
 from rhodecode.model.meta import Session
+from rhodecode.model.auth_token import AuthTokenModel
 from rhodecode.model.repo_group import RepoGroupModel
-
 
 log = logging.getLogger(__name__)
 
@@ -261,7 +261,7 @@ class UserModel(BaseModel):
             cur_user = getattr(get_current_rhodecode_user(), 'username', None)
 
         from rhodecode.lib.auth import (
-            get_crypt_password, check_password, generate_auth_token)
+            get_crypt_password, check_password)
         from rhodecode.lib.hooks_base import (
             log_create_user, check_allowed_create_user)
 
@@ -443,15 +443,16 @@ class UserModel(BaseModel):
             log.error(traceback.format_exc())
             raise
 
-    def _handle_user_repos(self, username, repositories, handle_mode=None):
-        _superadmin = self.cls.get_first_super_admin()
+    def _handle_user_repos(self, username, repositories, handle_user,
+                           handle_mode=None):
+
         left_overs = True
 
         from rhodecode.model.repo import RepoModel
 
         if handle_mode == 'detach':
             for obj in repositories:
-                obj.user = _superadmin
+                obj.user = handle_user
                 # set description we know why we super admin now owns
                 # additional repositories that were orphaned !
                 obj.description += '  \n::detached repository from deleted user: %s' % (username,)
@@ -465,16 +466,16 @@ class UserModel(BaseModel):
         # if nothing is done we have left overs left
         return left_overs
 
-    def _handle_user_repo_groups(self, username, repository_groups,
+    def _handle_user_repo_groups(self, username, repository_groups, handle_user,
                                  handle_mode=None):
-        _superadmin = self.cls.get_first_super_admin()
+
         left_overs = True
 
         from rhodecode.model.repo_group import RepoGroupModel
 
         if handle_mode == 'detach':
             for r in repository_groups:
-                r.user = _superadmin
+                r.user = handle_user
                 # set description we know why we super admin now owns
                 # additional repositories that were orphaned !
                 r.group_description += '  \n::detached repository group from deleted user: %s' % (username,)
@@ -489,8 +490,9 @@ class UserModel(BaseModel):
         # if nothing is done we have left overs left
         return left_overs
 
-    def _handle_user_user_groups(self, username, user_groups, handle_mode=None):
-        _superadmin = self.cls.get_first_super_admin()
+    def _handle_user_user_groups(self, username, user_groups, handle_user,
+                                 handle_mode=None):
+
         left_overs = True
 
         from rhodecode.model.user_group import UserGroupModel
@@ -499,8 +501,8 @@ class UserModel(BaseModel):
             for r in user_groups:
                 for user_user_group_to_perm in r.user_user_group_to_perm:
                     if user_user_group_to_perm.user.username == username:
-                        user_user_group_to_perm.user = _superadmin
-                r.user = _superadmin
+                        user_user_group_to_perm.user = handle_user
+                r.user = handle_user
                 # set description we know why we super admin now owns
                 # additional repositories that were orphaned !
                 r.user_group_description += '  \n::detached user group from deleted user: %s' % (username,)
@@ -514,13 +516,37 @@ class UserModel(BaseModel):
         # if nothing is done we have left overs left
         return left_overs
 
-    def _handle_user_artifacts(self, username, artifacts, handle_mode=None):
-        _superadmin = self.cls.get_first_super_admin()
+    def _handle_user_pull_requests(self, username, pull_requests, handle_user,
+                                   handle_mode=None):
+        left_overs = True
+
+        from rhodecode.model.pull_request import PullRequestModel
+
+        if handle_mode == 'detach':
+            for pr in pull_requests:
+                pr.user_id = handle_user.user_id
+                # set description we know why we super admin now owns
+                # additional repositories that were orphaned !
+                pr.description += '  \n::detached pull requests from deleted user: %s' % (username,)
+                self.sa.add(pr)
+            left_overs = False
+        elif handle_mode == 'delete':
+            for pr in pull_requests:
+                PullRequestModel().delete(pr)
+
+            left_overs = False
+
+        # if nothing is done we have left overs left
+        return left_overs
+
+    def _handle_user_artifacts(self, username, artifacts, handle_user,
+                               handle_mode=None):
+
         left_overs = True
 
         if handle_mode == 'detach':
             for a in artifacts:
-                a.upload_user = _superadmin
+                a.upload_user = handle_user
                 # set description we know why we super admin now owns
                 # additional artifacts that were orphaned !
                 a.file_description += '  \n::detached artifact from deleted user: %s' % (username,)
@@ -528,7 +554,8 @@ class UserModel(BaseModel):
             left_overs = False
         elif handle_mode == 'delete':
             from rhodecode.apps.file_store import utils as store_utils
-            storage = store_utils.get_file_storage(self.request.registry.settings)
+            request = get_current_request()
+            storage = store_utils.get_file_storage(request.registry.settings)
             for a in artifacts:
                 file_uid = a.file_uid
                 storage.delete(file_uid)
@@ -540,11 +567,13 @@ class UserModel(BaseModel):
         return left_overs
 
     def delete(self, user, cur_user=None, handle_repos=None,
-               handle_repo_groups=None, handle_user_groups=None, handle_artifacts=None):
+               handle_repo_groups=None, handle_user_groups=None,
+               handle_pull_requests=None, handle_artifacts=None, handle_new_owner=None):
         from rhodecode.lib.hooks_base import log_delete_user
 
         if not cur_user:
             cur_user = getattr(get_current_rhodecode_user(), 'username', None)
+
         user = self._get_user(user)
 
         try:
@@ -552,9 +581,11 @@ class UserModel(BaseModel):
                 raise DefaultUserException(
                     u"You can't remove this user since it's"
                     u" crucial for entire application")
+            handle_user = handle_new_owner or self.cls.get_first_super_admin()
+            log.debug('New detached objects owner %s', handle_user)
 
             left_overs = self._handle_user_repos(
-                user.username, user.repositories, handle_repos)
+                user.username, user.repositories, handle_user, handle_repos)
             if left_overs and user.repositories:
                 repos = [x.repo_name for x in user.repositories]
                 raise UserOwnsReposException(
@@ -564,7 +595,7 @@ class UserModel(BaseModel):
                        'list_repos': ', '.join(repos)})
 
             left_overs = self._handle_user_repo_groups(
-                user.username, user.repository_groups, handle_repo_groups)
+                user.username, user.repository_groups, handle_user, handle_repo_groups)
             if left_overs and user.repository_groups:
                 repo_groups = [x.group_name for x in user.repository_groups]
                 raise UserOwnsRepoGroupsException(
@@ -574,7 +605,7 @@ class UserModel(BaseModel):
                        'list_repo_groups': ', '.join(repo_groups)})
 
             left_overs = self._handle_user_user_groups(
-                user.username, user.user_groups, handle_user_groups)
+                user.username, user.user_groups, handle_user, handle_user_groups)
             if left_overs and user.user_groups:
                 user_groups = [x.users_group_name for x in user.user_groups]
                 raise UserOwnsUserGroupsException(
@@ -582,8 +613,17 @@ class UserModel(BaseModel):
                     u'removed. Switch owners or remove those user groups:%s'
                     % (user.username, len(user_groups), ', '.join(user_groups)))
 
+            left_overs = self._handle_user_pull_requests(
+                user.username, user.user_pull_requests, handle_user, handle_pull_requests)
+            if left_overs and user.user_pull_requests:
+                pull_requests = ['!{}'.format(x.pull_request_id) for x in user.user_pull_requests]
+                raise UserOwnsPullRequestsException(
+                    u'user "%s" still owns %s pull requests and cannot be '
+                    u'removed. Switch owners or remove those pull requests:%s'
+                    % (user.username, len(pull_requests), ', '.join(pull_requests)))
+
             left_overs = self._handle_user_artifacts(
-                user.username, user.artifacts, handle_artifacts)
+                user.username, user.artifacts, handle_user, handle_artifacts)
             if left_overs and user.artifacts:
                 artifacts = [x.file_uid for x in user.artifacts]
                 raise UserOwnsArtifactsException(
@@ -878,7 +918,7 @@ class UserModel(BaseModel):
                 end_ip = ipaddress.ip_address(safe_unicode(end_ip.strip()))
                 parsed_ip_range = []
 
-                for index in xrange(int(start_ip), int(end_ip) + 1):
+                for index in range(int(start_ip), int(end_ip) + 1):
                     new_ip = ipaddress.ip_address(index)
                     parsed_ip_range.append(str(new_ip))
                 ip_list.extend(parsed_ip_range)

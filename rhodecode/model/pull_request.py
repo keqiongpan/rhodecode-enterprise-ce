@@ -43,7 +43,9 @@ from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
-from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe, AttributeDict, safe_int
+from rhodecode.lib.utils2 import (
+    safe_unicode, safe_str, md5_safe, AttributeDict, safe_int,
+    get_current_rhodecode_user)
 from rhodecode.lib.vcs.backends.base import (
     Reference, MergeResponse, MergeFailureReason, UpdateFailureReason,
     TargetRefMissing, SourceRefMissing)
@@ -1427,7 +1429,10 @@ class PullRequestModel(BaseModel):
             email_kwargs=email_kwargs,
         )
 
-    def delete(self, pull_request, user):
+    def delete(self, pull_request, user=None):
+        if not user:
+            user = getattr(get_current_rhodecode_user(), 'username', None)
+
         pull_request = self.__get_pull_request(pull_request)
         old_data = pull_request.get_api_data(with_merge_state=False)
         self._cleanup_merge_workspace(pull_request)

@@ -617,6 +617,7 @@ class User(Base, BaseModel):
     user_gists = relationship('Gist', cascade='all')
     # user pull requests
     user_pull_requests = relationship('PullRequest', cascade='all')
+
     # external identities
     external_identities = relationship(
         'ExternalIdentity',
