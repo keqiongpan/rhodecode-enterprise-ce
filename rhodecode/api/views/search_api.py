@@ -22,10 +22,12 @@
 import logging
 
 from rhodecode.api import jsonrpc_method
-from rhodecode.api.exc import JSONRPCValidationError
-from rhodecode.api.utils import Optional
+from rhodecode.api.exc import JSONRPCValidationError, JSONRPCForbidden
+from rhodecode.api.utils import Optional, has_superadmin_permission
 from rhodecode.lib.index import searcher_from_config
+from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.model import validation_schema
+from rhodecode.model.db import joinedload, UserLog
 from rhodecode.model.validation_schema.schemas import search_schema
 
 log = logging.getLogger(__name__)
@@ -116,3 +118,35 @@ def search(request, apiuser, search_query, search_type, page_limit=Optional(10),
                 colander_exc=validation_schema.Invalid(node, search_result['error']))
 
     return data
+
+
+@jsonrpc_method()
+def get_audit_logs(request, apiuser, query):
+    """
+    return full audit logs based on the query.
+
+    Please see `example query in admin > settings > audit logs` for examples
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param query: filter query, example: action:repo.artifact.add date:[20200401 TO 20200601]"
+    :type query: str
+    """
+
+    if not has_superadmin_permission(apiuser):
+        raise JSONRPCForbidden()
+
+    filter_term = query
+    ret = []
+
+    # show all user actions
+    user_log = UserLog.query() \
+        .options(joinedload(UserLog.user)) \
+        .options(joinedload(UserLog.repository)) \
+        .order_by(UserLog.action_date.desc())
+
+    audit_log = user_log_filter(user_log, filter_term)
+
+    for entry in audit_log:
+        ret.append(entry)
+    return ret
