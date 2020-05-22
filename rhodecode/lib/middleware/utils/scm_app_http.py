@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2019 RhodeCode GmbH
+# Copyright (C) 2014-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -79,6 +79,7 @@ class VcsHttpProxy(object):
         self._repo_name = repo_name
         self._repo_path = repo_path
         self._config = config
+        self.rc_extras = {}
         log.debug(
             "Creating VcsHttpProxy for repo %s, url %s",
             repo_name, url)
@@ -87,14 +88,23 @@ class VcsHttpProxy(object):
         config = msgpack.packb(self._config)
         request = webob.request.Request(environ)
         request_headers = request.headers
+
         request_headers.update({
             # TODO: johbo: Remove this, rely on URL path only
             'X-RC-Repo-Name': self._repo_name,
             'X-RC-Repo-Path': self._repo_path,
             'X-RC-Path-Info': environ['PATH_INFO'],
+
+            'X-RC-Repo-Store': self.rc_extras.get('repo_store'),
+            'X-RC-Server-Config-File': self.rc_extras.get('config'),
+
+            'X-RC-Auth-User': self.rc_extras.get('username'),
+            'X-RC-Auth-User-Id': self.rc_extras.get('user_id'),
+            'X-RC-Auth-User-Ip': self.rc_extras.get('ip'),
+
             # TODO: johbo: Avoid encoding and put this into payload?
             'X-RC-Repo-Config': base64.b64encode(config),
-            'X-RC-Locked-Status-Code': rhodecode.CONFIG.get('lock_ret_code')
+            'X-RC-Locked-Status-Code': rhodecode.CONFIG.get('lock_ret_code'),
         })
 
         method = environ['REQUEST_METHOD']

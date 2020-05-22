@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,6 +25,15 @@ from rhodecode.lib import rc_cache
 
 log = logging.getLogger(__name__)
 
+# names of namespaces used for different permission related cached
+# during flush operation we need to take care of all those
+cache_namespaces = [
+    'cache_user_auth.{}',
+    'cache_user_repo_acl_ids.{}',
+    'cache_user_user_group_acl_ids.{}',
+    'cache_user_repo_group_acl_ids.{}'
+]
+
 
 def trigger_user_permission_flush(event):
     """
@@ -35,9 +44,11 @@ def trigger_user_permission_flush(event):
 
     affected_user_ids = set(event.user_ids)
     for user_id in affected_user_ids:
-        cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)
-        del_keys = rc_cache.clear_cache_namespace('cache_perms', cache_namespace_uid)
-        log.debug('Deleted %s cache keys for user_id: %s', del_keys, user_id)
+        for cache_namespace_uid_tmpl in cache_namespaces:
+            cache_namespace_uid = cache_namespace_uid_tmpl.format(user_id)
+            del_keys = rc_cache.clear_cache_namespace('cache_perms', cache_namespace_uid)
+            log.debug('Deleted %s cache keys for user_id: %s and namespace %s',
+                      del_keys, user_id, cache_namespace_uid)
 
 
 def includeme(config):

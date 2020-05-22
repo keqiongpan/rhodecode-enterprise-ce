@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,13 +19,14 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 from __future__ import unicode_literals
-import deform
 import logging
-import colander
 
+import colander
+import deform.widget
 from mako.template import Template
 
 from rhodecode import events
+from rhodecode.model.validation_schema.widgets import CheckboxChoiceWidgetDesc
 from rhodecode.translation import _
 from rhodecode.lib.celerylib import run_task
 from rhodecode.lib.celerylib import tasks
@@ -174,6 +175,10 @@ class EmailIntegrationType(IntegrationTypeBase):
     display_name = _('Email')
     description = _('Send repo push summaries to a list of recipients via email')
 
+    valid_events = [
+        events.RepoPushEvent
+    ]
+
     @classmethod
     def icon(cls):
         return '''
@@ -240,59 +245,86 @@ class EmailIntegrationType(IntegrationTypeBase):
 
     def settings_schema(self):
         schema = EmailSettingsSchema()
+        schema.add(colander.SchemaNode(
+            colander.Set(),
+            widget=CheckboxChoiceWidgetDesc(
+                values=sorted(
+                    [(e.name, e.display_name, e.description) for e in self.valid_events]
+                ),
+            ),
+            description="List of events activated for this integration",
+            name='events'
+        ))
         return schema
 
     def send_event(self, event):
-        data = event.as_dict()
-        log.debug('got event: %r', event)
+        log.debug('handling event %s with integration %s', event.name, self)
 
+        if event.__class__ not in self.valid_events:
+            log.debug('event %r not present in valid event list (%s)', event, self.valid_events)
+            return
+
+        if not self.event_enabled(event):
+            # NOTE(marcink): for legacy reasons we're skipping this check...
+            # since the email event haven't had any settings...
+            pass
+
+        handler = EmailEventHandler(self.settings)
+        handler(event, event_data=event.as_dict())
+
+
+class EmailEventHandler(object):
+    def __init__(self, integration_settings):
+        self.integration_settings = integration_settings
+
+    def __call__(self, event, event_data):
         if isinstance(event, events.RepoPushEvent):
-            repo_push_handler(data, self.settings)
+            self.repo_push_handler(event, event_data)
         else:
             log.debug('ignoring event: %r', event)
 
+    def repo_push_handler(self, event, data):
+        commit_num = len(data['push']['commits'])
+        server_url = data['server_url']
 
-def repo_push_handler(data, settings):
-    commit_num = len(data['push']['commits'])
-    server_url = data['server_url']
-
-    if commit_num == 1:
-        if data['push']['branches']:
-            _subject = '[{repo_name}] {author} pushed {commit_num} commit on branches: {branches}'
+        if commit_num == 1:
+            if data['push']['branches']:
+                _subject = '[{repo_name}] {author} pushed {commit_num} commit on branches: {branches}'
+            else:
+                _subject = '[{repo_name}] {author} pushed {commit_num} commit'
+            subject = _subject.format(
+                author=data['actor']['username'],
+                repo_name=data['repo']['repo_name'],
+                commit_num=commit_num,
+                branches=', '.join(
+                    branch['name'] for branch in data['push']['branches'])
+            )
         else:
-            _subject = '[{repo_name}] {author} pushed {commit_num} commit'
-        subject = _subject.format(
-            author=data['actor']['username'],
-            repo_name=data['repo']['repo_name'],
-            commit_num=commit_num,
-            branches=', '.join(
-                branch['name'] for branch in data['push']['branches'])
-        )
-    else:
-        if data['push']['branches']:
-            _subject = '[{repo_name}] {author} pushed {commit_num} commits on branches: {branches}'
-        else:
-            _subject = '[{repo_name}] {author} pushed {commit_num} commits'
-        subject = _subject.format(
-            author=data['actor']['username'],
-            repo_name=data['repo']['repo_name'],
-            commit_num=commit_num,
-            branches=', '.join(
-                branch['name'] for branch in data['push']['branches']))
+            if data['push']['branches']:
+                _subject = '[{repo_name}] {author} pushed {commit_num} commits on branches: {branches}'
+            else:
+                _subject = '[{repo_name}] {author} pushed {commit_num} commits'
+            subject = _subject.format(
+                author=data['actor']['username'],
+                repo_name=data['repo']['repo_name'],
+                commit_num=commit_num,
+                branches=', '.join(
+                    branch['name'] for branch in data['push']['branches']))
 
-    email_body_plaintext = render_with_traceback(
-        REPO_PUSH_TEMPLATE_PLAINTEXT,
-        data=data,
-        subject=subject,
-        instance_url=server_url)
+        email_body_plaintext = render_with_traceback(
+            REPO_PUSH_TEMPLATE_PLAINTEXT,
+            data=data,
+            subject=subject,
+            instance_url=server_url)
 
-    email_body_html = render_with_traceback(
-        REPO_PUSH_TEMPLATE_HTML,
-        data=data,
-        subject=subject,
-        instance_url=server_url)
+        email_body_html = render_with_traceback(
+            REPO_PUSH_TEMPLATE_HTML,
+            data=data,
+            subject=subject,
+            instance_url=server_url)
 
-    for email_address in settings['recipients']:
-        run_task(
-            tasks.send_email, email_address, subject,
-            email_body_plaintext, email_body_html)
+        recipients = self.integration_settings['recipients']
+        for email_address in recipients:
+            run_task(
+                tasks.send_email, email_address, subject,
+                email_body_plaintext, email_body_html)

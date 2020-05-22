@@ -1,4 +1,4 @@
-// # Copyright (C) 2016-2019 RhodeCode GmbH
+// # Copyright (C) 2016-2020 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -22,7 +22,7 @@ var _gettext = function (s) {
     if (_TM.hasOwnProperty(s)) {
         return _TM[s];
     }
-    i18nLog.error(
+    i18nLog.warning(
         'String `' + s + '` was requested but cannot be ' +
         'found in translation table');
     return s
@@ -34,3 +34,5 @@ var _ngettext = function (singular, plural, n) {
     }
     return _gettext(plural)
 };
+
+

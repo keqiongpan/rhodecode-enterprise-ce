@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -688,14 +688,17 @@ def get_clone_url(request, uri_tmpl, repo_name, repo_id, repo_type, **override):
     return safe_unicode(url)
 
 
-def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None):
+def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None,
+                    maybe_unreachable=False):
     """
     Safe version of get_commit if this commit doesn't exists for a
     repository it returns a Dummy one instead
 
     :param repo: repository instance
     :param commit_id: commit id as str
+    :param commit_idx: numeric commit index
     :param pre_load: optional list of commit attributes to load
+    :param maybe_unreachable: translate unreachable commits on git repos
     """
     # TODO(skreft): remove these circular imports
     from rhodecode.lib.vcs.backends.base import BaseRepository, EmptyCommit
@@ -706,7 +709,8 @@ def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None):
 
     try:
         commit = repo.get_commit(
-            commit_id=commit_id, commit_idx=commit_idx, pre_load=pre_load)
+            commit_id=commit_id, commit_idx=commit_idx, pre_load=pre_load,
+            maybe_unreachable=maybe_unreachable)
     except (RepositoryError, LookupError):
         commit = EmptyCommit()
     return commit

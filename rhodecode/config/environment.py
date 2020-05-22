@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -60,10 +60,15 @@ def load_pyramid_environment(global_config, settings):
 
     load_rcextensions(root_path=settings_merged['here'])
 
-    # Limit backends to `vcs.backends` from configuration
+    # Limit backends to `vcs.backends` from configuration, and preserve the order
     for alias in rhodecode.BACKENDS.keys():
         if alias not in settings['vcs.backends']:
             del rhodecode.BACKENDS[alias]
+
+    _sorted_backend = sorted(rhodecode.BACKENDS.items(),
+                             key=lambda item: settings['vcs.backends'].index(item[0]))
+    rhodecode.BACKENDS = rhodecode.OrderedDict(_sorted_backend)
+
     log.info('Enabled VCS backends: %s', rhodecode.BACKENDS.keys())
 
     # initialize vcs client and optionally run the server if enabled
@@ -76,6 +81,7 @@ def load_pyramid_environment(global_config, settings):
 
     rhodecode.PYRAMID_SETTINGS = settings_merged
     rhodecode.CONFIG = settings_merged
+    rhodecode.CONFIG['default_user_id'] = utils.get_default_user_id()
 
     if vcs_server_enabled:
         connect_vcs(vcs_server_uri, utils.get_vcs_server_protocol(settings))

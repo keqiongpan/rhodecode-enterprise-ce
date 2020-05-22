@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -629,7 +629,7 @@ class TestPullrequestsView(object):
         model_patcher = mock.patch.multiple(
             PullRequestModel,
             merge_repo=mock.Mock(return_value=merge_resp),
-            merge_status=mock.Mock(return_value=(True, 'WRONG_MESSAGE')))
+            merge_status=mock.Mock(return_value=(None, True, 'WRONG_MESSAGE')))
 
         with model_patcher:
             response = self.app.post(
@@ -891,6 +891,8 @@ class TestPullrequestsView(object):
 
         vcs = repo.scm_instance()
         vcs.remove_ref('refs/heads/{}'.format(branch_name))
+        # NOTE(marcink): run GC to ensure the commits are gone
+        vcs.run_gc()
 
         response = self.app.get(route_path(
             'pullrequest_show',

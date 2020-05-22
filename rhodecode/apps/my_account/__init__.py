@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,6 +49,9 @@ def includeme(config):
     config.add_route(
         name='my_account_auth_tokens',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens')
+    config.add_route(
+        name='my_account_auth_tokens_view',
+        pattern=ADMIN_PREFIX + '/my_account/auth_tokens/view')
     config.add_route(
         name='my_account_auth_tokens_add',
         pattern=ADMIN_PREFIX + '/my_account/auth_tokens/new')

@@ -69,7 +69,7 @@
             </div>
         </div>
         <div class="pull-left">
-            ${h.submit('commit',_('Commit changes'),class_="btn btn-small btn-danger-action")}
+            ${h.submit('commit_btn',_('Commit changes'),class_="btn btn-small btn-danger-action")}
         </div>
     </div>
     ${h.end_form()}
@@ -82,6 +82,10 @@
 
         fileEditor = new FileEditor('#editor');
 
+        var commit_id =  "${c.commit.raw_id}";
+        var f_path = "${c.f_path}";
+
+        checkFileHead($('#eform'), commit_id, f_path, 'delete');
     });
 
 </script>

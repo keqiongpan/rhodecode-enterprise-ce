@@ -44,13 +44,16 @@ def _pre_push_hook(*args, **kwargs):
 
     # optionally use 'extra fields' to control the logic per repo
     # e.g store a list of patterns to be forbidden e.g `*.exe, *.dump`
-    forbid_files = repo_extra_fields.get('forbid_files_glob', {}).get('field_value')
+    forbid_files = extra_fields.get_field(repo_extra_fields, key='forbid_files_glob',
+                                          convert_type=False, default=[])
     forbid_files = aslist(forbid_files)
 
     # forbid_files = ['*']  # example pattern
 
     # optionally get bytes limit for a single file, e.g 1024 for 1KB
-    forbid_size_over = repo_extra_fields.get('forbid_size_over', {}).get('field_value')
+    forbid_size_over = extra_fields.get_field(repo_extra_fields, key='forbid_size_over',
+                                              convert_type=False, default=0)
+
     forbid_size_over = int(forbid_size_over or 0)
 
     # forbid_size_over = 1024  # example 1024

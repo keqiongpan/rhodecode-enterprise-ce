@@ -110,6 +110,8 @@ function registerRCRoutes() {
     pyroutes.register('user_enable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_enable', ['user_id']);
     pyroutes.register('user_disable_force_password_reset', '/_admin/users/%(user_id)s/password_reset_disable', ['user_id']);
     pyroutes.register('user_create_personal_repo_group', '/_admin/users/%(user_id)s/create_repo_group', ['user_id']);
+    pyroutes.register('user_notice_dismiss', '/_admin/users/%(user_id)s/notice_dismiss', ['user_id']);
+    pyroutes.register('edit_user_auth_tokens_view', '/_admin/users/%(user_id)s/edit/auth_tokens/view', ['user_id']);
     pyroutes.register('edit_user_auth_tokens_delete', '/_admin/users/%(user_id)s/edit/auth_tokens/delete', ['user_id']);
     pyroutes.register('edit_user_ssh_keys', '/_admin/users/%(user_id)s/edit/ssh_keys', ['user_id']);
     pyroutes.register('edit_user_ssh_keys_generate_keypair', '/_admin/users/%(user_id)s/edit/ssh_keys/generate', ['user_id']);
@@ -203,6 +205,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_file_download:legacy', '/%(repo_name)s/rawfile/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_file_history', '/%(repo_name)s/history/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_file_authors', '/%(repo_name)s/authors/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
+    pyroutes.register('repo_files_check_head', '/%(repo_name)s/check_head/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_remove_file', '/%(repo_name)s/remove_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_delete_file', '/%(repo_name)s/delete_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
     pyroutes.register('repo_files_edit_file', '/%(repo_name)s/edit_file/%(commit_id)s/%(f_path)s', ['repo_name', 'commit_id', 'f_path']);
@@ -310,6 +313,7 @@ function registerRCRoutes() {
     pyroutes.register('my_account_update', '/_admin/my_account/update', []);
     pyroutes.register('my_account_password', '/_admin/my_account/password', []);
     pyroutes.register('my_account_password_update', '/_admin/my_account/password/update', []);
+    pyroutes.register('my_account_auth_tokens_view', '/_admin/my_account/auth_tokens/view', []);
     pyroutes.register('my_account_auth_tokens_delete', '/_admin/my_account/auth_tokens/delete', []);
     pyroutes.register('my_account_ssh_keys', '/_admin/my_account/ssh_keys', []);
     pyroutes.register('my_account_ssh_keys_generate', '/_admin/my_account/ssh_keys/generate', []);

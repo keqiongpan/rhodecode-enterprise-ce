@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -41,9 +41,9 @@ class SvnConfigAdminSettingsView(BaseAppView):
     def vcs_svn_generate_config(self):
         _ = self.request.translate
         try:
-            generate_mod_dav_svn_config(self.request.registry)
+            file_path = generate_mod_dav_svn_config(self.request.registry)
             msg = {
-                'message': _('Apache configuration for Subversion generated.'),
+                'message': _('Apache configuration for Subversion generated at `{}`.').format(file_path),
                 'level': 'success',
             }
         except Exception:

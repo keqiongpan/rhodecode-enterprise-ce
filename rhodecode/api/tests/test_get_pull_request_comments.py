@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -60,7 +60,10 @@ class TestGetPullRequestComments(object):
              'comment_text': 'Auto status change to |new_status|\n\n.. |new_status| replace:: *"Under Review"*',
              'comment_type': 'note',
              'comment_resolved_by': None,
-             'pull_request_version': None}
+             'pull_request_version': None,
+             'comment_commit_id': None,
+             'comment_pull_request_id': pull_request.pull_request_id
+             }
         ]
         assert_ok(id_, expected, response.body)
 

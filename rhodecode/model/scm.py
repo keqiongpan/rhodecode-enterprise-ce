@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -473,7 +473,7 @@ class ScmModel(BaseModel):
         # We trigger the post-push action
         hooks_utils.trigger_post_push_hook(
             username=user.username, action='push_local', hook_type='post_push',
-            repo_name=repo_name, repo_alias=repo.alias, commit_ids=[tip.raw_id])
+            repo_name=repo_name, repo_type=repo.alias, commit_ids=[tip.raw_id])
         return tip
 
     def _sanitize_path(self, f_path):
@@ -799,7 +799,7 @@ class ScmModel(BaseModel):
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
                 username=user.username, action='push_local',
-                repo_name=repo.repo_name, repo_alias=scm_instance.alias,
+                repo_name=repo.repo_name, repo_type=scm_instance.alias,
                 hook_type='post_push',
                 commit_ids=[tip.raw_id])
         return tip
@@ -864,7 +864,7 @@ class ScmModel(BaseModel):
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
                 username=user.username, action='push_local', hook_type='post_push',
-                repo_name=repo.repo_name, repo_alias=scm_instance.alias,
+                repo_name=repo.repo_name, repo_type=scm_instance.alias,
                 commit_ids=[tip.raw_id])
 
         return tip
@@ -926,7 +926,7 @@ class ScmModel(BaseModel):
         if trigger_push_hook:
             hooks_utils.trigger_post_push_hook(
                 username=user.username, action='push_local', hook_type='post_push',
-                repo_name=repo.repo_name, repo_alias=scm_instance.alias,
+                repo_name=repo.repo_name, repo_type=scm_instance.alias,
                 commit_ids=[tip.raw_id])
         return tip
 

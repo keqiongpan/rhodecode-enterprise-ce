@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2019 RhodeCode GmbH
+# Copyright (C) 2014-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -216,6 +216,7 @@ class MergeResponse(object):
         Return a human friendly error message for the given merge status code.
         """
         msg = safe_unicode(self.MERGE_STATUS_MESSAGES[self.failure_reason])
+
         try:
             return msg.format(**self.metadata)
         except Exception:
@@ -228,6 +229,14 @@ class MergeResponse(object):
                   'merge_status_message']:
             data[k] = getattr(self, k)
         return data
+
+
+class TargetRefMissing(ValueError):
+    pass
+
+
+class SourceRefMissing(ValueError):
+    pass
 
 
 class BaseRepository(object):
@@ -437,7 +446,8 @@ class BaseRepository(object):
         self._invalidate_prop_cache('commit_ids')
         self._is_empty = False
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
+                   translate_tag=None, maybe_unreachable=False):
         """
         Returns instance of `BaseCommit` class. If `commit_id` and `commit_idx`
         are both None, most recent commit is returned.
@@ -922,6 +932,9 @@ class BaseCommit(object):
         d.pop('_remote', None)
         d.pop('repository', None)
         return d
+
+    def serialize(self):
+        return self.__json__()
 
     def _get_refs(self):
         return {

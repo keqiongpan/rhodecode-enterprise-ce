@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -143,7 +143,7 @@ class TestAdminUsersView(TestController):
         response = self.app.get(
             route_path('edit_user_auth_tokens', user_id=user_id))
         for token in auth_tokens:
-            response.mustcontain(token)
+            response.mustcontain(token[:4])
             response.mustcontain('never')
 
     @pytest.mark.parametrize("desc, lifetime", [
@@ -165,7 +165,7 @@ class TestAdminUsersView(TestController):
         response = response.follow()
         user = User.get(user_id)
         for auth_token in user.auth_tokens:
-            response.mustcontain(auth_token)
+            response.mustcontain(auth_token[:4])
 
     def test_delete_auth_token(self, user_util):
         self.log_user()

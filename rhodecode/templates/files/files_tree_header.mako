@@ -33,7 +33,8 @@
         </code>
 
         <i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${c.commit.raw_id}" title="${_('Copy the full commit id')}"></i>
-        ${file_base.refs(c.commit)}
+        ${file_base.refs(c.commit, request.GET.get('at'))}
+
       </div>
     </div>
 

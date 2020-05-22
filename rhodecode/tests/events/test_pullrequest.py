@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -40,7 +40,7 @@ from rhodecode.events import (
     PullRequestUpdateEvent,
     PullRequestReviewEvent,
     PullRequestMergeEvent,
-    PullRequestCloseEvent,
+    PullRequestCloseEvent
 ])
 def test_pullrequest_events_serialized(EventClass, pr_util, config_stub):
     pr = pr_util.create_pull_request()

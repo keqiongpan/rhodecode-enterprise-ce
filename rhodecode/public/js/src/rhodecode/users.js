@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2019 RhodeCode GmbH
+// # Copyright (C) 2010-2020 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -47,3 +47,51 @@ var UsersAutoComplete = function(input_id, user_id) {
     lookupFilter: autocompleteFilterResult
   });
 };
+
+var _showAuthToken = function (authTokenId, showUrl) {
+
+    SwalNoAnimation.fire({
+        title: _gettext('Show this authentication token?'),
+        showCancelButton: true,
+        confirmButtonText: _gettext('Show'),
+        showLoaderOnConfirm: true,
+        allowOutsideClick: function () {
+            !Swal.isLoading()
+        },
+        preConfirm: function () {
+
+            var postData = {
+                'auth_token_id': authTokenId,
+                'csrf_token': CSRF_TOKEN
+            };
+            return new Promise(function (resolve, reject) {
+                $.ajax({
+                    type: 'POST',
+                    data: postData,
+                    url: showUrl,
+                    headers: {'X-PARTIAL-XHR': true}
+                })
+                .done(function (data) {
+                    resolve(data);
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    //reject("Failed to fetch Authentication Token")
+                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown);
+                    ajaxErrorSwal(message);
+                });
+            })
+        }
+
+    })
+    .then(function (result) {
+        if (result.value) {
+            var tmpl = ('<code>{0}</code>' +
+                       '<i class="tooltip icon-clipboard clipboard-action" data-clipboard-text="{1}" title="Copy Token"></i>');
+
+            SwalNoAnimation.fire({
+                title: _gettext('Authentication Token'),
+                html: tmpl.format(result.value.auth_token, result.value.auth_token),
+            })
+        }
+    })
+}

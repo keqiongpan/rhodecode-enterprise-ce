@@ -29,7 +29,8 @@
                             ${h.secure_form(h.route_path('my_account_ssh_keys_delete'), request=request)}
                                 ${h.hidden('del_ssh_key', ssh_key.ssh_key_id)}
                                 <button class="btn btn-link btn-danger" type="submit"
-                                        onclick="return confirm('${_('Confirm to remove ssh key %s') % ssh_key.ssh_key_fingerprint}');">
+                                        onclick="submitConfirm(event, this, _gettext('Confirm to delete this ssh key'), _gettext('Delete'), '${ssh_key.ssh_key_fingerprint}')"
+                                >
                                     ${_('Delete')}
                                 </button>
                             ${h.end_form()}

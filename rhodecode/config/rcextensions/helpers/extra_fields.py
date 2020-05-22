@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -53,3 +53,36 @@ def run(*args, **kwargs):
         fields[field.field_key] = field.get_dict()
 
     return fields
+
+
+class _Undefined(object):
+    pass
+
+
+def get_field(extra_fields_data, key, default=_Undefined(), convert_type=True):
+    """
+    field_value = get_field(extra_fields, key='ci_endpoint_url', default='')
+    """
+    from ..utils import str2bool, aslist
+
+    if key not in extra_fields_data:
+        if isinstance(default, _Undefined):
+            raise ValueError('key {} not present in extra_fields'.format(key))
+        return default
+
+    # NOTE(dan): from metadata we get field_label, field_value, field_desc, field_type
+    field_metadata = extra_fields_data[key]
+
+    field_value = field_metadata['field_value']
+
+    # NOTE(dan): empty value, use default
+    if not field_value and not isinstance(default, _Undefined):
+        return default
+
+    if convert_type:
+        # 'str', 'unicode', 'list', 'tuple'
+        _type = field_metadata['field_type']
+        if _type in ['list', 'tuple']:
+            field_value = aslist(field_value)
+
+    return field_value

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -60,18 +60,16 @@ def perform_search(request, tmpl_context, repo_name=None, repo_group_name=None):
         errors = e.children
 
     def url_generator(page_num):
-        q = urllib.quote(safe_str(search_query))
 
         query_params = {
             'page': page_num,
-            'q': q,
+            'q': safe_str(search_query),
             'type': safe_str(search_type),
             'max_lines': search_max_lines,
             'sort': search_sort
         }
 
         return '?' + urllib.urlencode(query_params)
-
 
     c = tmpl_context
     search_query = search_params.get('search_query')

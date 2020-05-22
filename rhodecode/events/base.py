@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -43,6 +43,9 @@ class RhodecodeEvent(object):
     def __init__(self, request=None):
         self._request = request
         self.utc_timestamp = datetime.datetime.utcnow()
+
+    def __repr__(self):
+        return '<%s:(%s)>' % (self.__class__.__name__, self.name)
 
     def get_request(self):
         if self._request:
@@ -116,3 +119,4 @@ class RhodeCodeIntegrationEvent(RhodecodeEvent):
     """
     Special subclass for Integration events
     """
+    description = ''

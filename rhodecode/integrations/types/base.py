@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -125,6 +125,19 @@ class IntegrationTypeBase(object):
         """
         return colander.Schema()
 
+    def event_enabled(self, event):
+        """
+        Checks if submitted event is enabled based on the plugin settings
+        :param event:
+        :return: bool
+        """
+        allowed_events = self.settings['events']
+        if event.name not in allowed_events:
+            log.debug('event ignored: %r event %s not in allowed set of events %s',
+                      event, event.name, allowed_events)
+            return False
+        return True
+
 
 class EEIntegration(IntegrationTypeBase):
     description = 'Integration available in RhodeCode EE edition.'
@@ -139,30 +152,57 @@ class EEIntegration(IntegrationTypeBase):
 # Helpers #
 # updating this required to update the `common_vars` as well.
 WEBHOOK_URL_VARS = [
-    ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
-    ('repo_name', 'Full name of the repository'),
-    ('repo_type', 'VCS type of repository'),
-    ('repo_id', 'Unique id of repository'),
-    ('repo_url', 'Repository url'),
+    # GENERAL
+    ('General', [
+        ('event_name', 'Unique name of the event type, e.g pullrequest-update'),
+        ('repo_name', 'Full name of the repository'),
+        ('repo_type', 'VCS type of repository'),
+        ('repo_id', 'Unique id of repository'),
+        ('repo_url', 'Repository url'),
+        ]
+    ),
     # extra repo fields
-    ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
-
+    ('Repository', [
+        ('extra:<extra_key_name>', 'Extra repo variables, read from its settings.'),
+        ]
+    ),
     # special attrs below that we handle, using multi-call
-    ('branch', 'Name of each branch submitted, if any.'),
-    ('branch_head', 'Head ID of pushed branch (full sha of last commit), if any.'),
-    ('commit_id', 'ID (full sha) of each commit submitted, if any.'),
-
+    ('Commit push - Multicalls', [
+        ('branch', 'Name of each branch submitted, if any.'),
+        ('branch_head', 'Head ID of pushed branch (full sha of last commit), if any.'),
+        ('commit_id', 'ID (full sha) of each commit submitted, if any.'),
+        ]
+    ),
     # pr events vars
-    ('pull_request_id', 'Unique ID of the pull request.'),
-    ('pull_request_title', 'Title of the pull request.'),
-    ('pull_request_url', 'Pull request url.'),
-    ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
-    ('pull_request_commits_uid', 'Calculated UID of all commits inside the PR. '
-                                 'Changes after PR update'),
+    ('Pull request', [
+        ('pull_request_id', 'Unique ID of the pull request.'),
+        ('pull_request_title', 'Title of the pull request.'),
+        ('pull_request_url', 'Pull request url.'),
+        ('pull_request_shadow_url', 'Pull request shadow repo clone url.'),
+        ('pull_request_commits_uid', 'Calculated UID of all commits inside the PR. '
+                                     'Changes after PR update'),
+        ]
+    ),
+    # commit comment event vars
+    ('Commit comment', [
+        ('commit_comment_id', 'Unique ID of the comment made on a commit.'),
+        ('commit_comment_text', 'Text of commit comment.'),
+        ('commit_comment_type', 'Type of comment, e.g note/todo.'),
 
+        ('commit_comment_f_path', 'Optionally path of file for inline comments.'),
+        ('commit_comment_line_no', 'Line number of the file: eg o10, or n200'),
+
+        ('commit_comment_commit_id', 'Commit id that comment was left at.'),
+        ('commit_comment_commit_branch', 'Commit branch that comment was left at'),
+        ('commit_comment_commit_message', 'Commit message that comment was left at'),
+        ]
+    ),
     # user who triggers the call
-    ('username', 'User who triggered the call.'),
-    ('user_id', 'User id who triggered the call.'),
+    ('Caller', [
+        ('username', 'User who triggered the call.'),
+        ('user_id', 'User id who triggered the call.'),
+        ]
+    ),
 ]
 
 # common vars for url template used for CI plugins. Shared with webhook
@@ -271,6 +311,26 @@ class WebhookDataHandler(CommitParsingDataHandler):
 
         return url_calls
 
+    def repo_commit_comment_handler(self, event, data):
+        url = self.get_base_parsed_template(data)
+        log.debug('register %s call(%s) to url %s', self.name, event, url)
+        comment_vars = [
+            ('commit_comment_id', data['comment']['comment_id']),
+            ('commit_comment_text', data['comment']['comment_text']),
+            ('commit_comment_type', data['comment']['comment_type']),
+
+            ('commit_comment_f_path', data['comment']['comment_f_path']),
+            ('commit_comment_line_no', data['comment']['comment_line_no']),
+
+            ('commit_comment_commit_id', data['commit']['commit_id']),
+            ('commit_comment_commit_branch', data['commit']['commit_branch']),
+            ('commit_comment_commit_message', data['commit']['commit_message']),
+        ]
+        for k, v in comment_vars:
+            url = UrlTmpl(url).safe_substitute(**{k: v})
+
+        return [(url, self.headers, data)]
+
     def repo_create_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
         log.debug('register %s call(%s) to url %s', self.name, event, url)
@@ -298,12 +358,13 @@ class WebhookDataHandler(CommitParsingDataHandler):
             return self.repo_push_event_handler(event, data)
         elif isinstance(event, events.RepoCreateEvent):
             return self.repo_create_event_handler(event, data)
+        elif isinstance(event, events.RepoCommitCommentEvent):
+            return self.repo_commit_comment_handler(event, data)
         elif isinstance(event, events.PullRequestEvent):
             return self.pull_request_event_handler(event, data)
         else:
             raise ValueError(
-                'event type `%s` not in supported list: %s' % (
-                    event.__class__, events))
+                'event type `{}` has no handler defined'.format(event.__class__))
 
 
 def get_auth(settings):
@@ -320,9 +381,13 @@ def get_web_token(settings):
 
 
 def get_url_vars(url_vars):
-    return '\n'.join(
-        '{} - {}'.format('${' + key + '}', explanation)
-        for key, explanation in url_vars)
+    items = []
+
+    for section, section_items in url_vars:
+        items.append('\n*{}*'.format(section))
+        for key, explanation in section_items:
+            items.append('  {} - {}'.format('${' + key + '}', explanation))
+    return '\n'.join(items)
 
 
 def render_with_traceback(template, *args, **kwargs):

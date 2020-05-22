@@ -394,11 +394,17 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     </span>
                     <span class="pill-group pull-left" >
                         ## file op, doesn't need translation
-                        <span class="pill" op="removed">removed in this version</span>
+                        <span class="pill" op="removed">unresolved comments</span>
                     </span>
                     <a class="pill filediff-anchor" href="#a_${h.FID(fid, filename)}">¶</a>
                     <span class="pill-group pull-right">
-                        <span class="pill" op="deleted">-${comments_dict['stats']}</span>
+                        <span class="pill" op="deleted">
+                            % if comments_dict['stats'] >0:
+                                -${comments_dict['stats']}
+                            % else:
+                                 ${comments_dict['stats']}
+                            % endif
+                        </span>
                     </span>
                 </label>
 
@@ -410,7 +416,8 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 
                         <td></td>
                         <td class="cb-text cb-${op_class(BIN_FILENODE)}" ${(c.user_session_attrs["diffmode"] == 'unified' and 'colspan=4' or 'colspan=5')}>
-                        ${_('File was deleted in this version. There are still outdated/unresolved comments attached to it.')}
+                        <strong>${_('This file was removed from diff during updates to this pull-request.')}</strong><br/>
+                        ${_('There are still outdated/unresolved comments attached to it.')}
                         </td>
                     </tr>
                     %if c.user_session_attrs["diffmode"] == 'unified':
@@ -477,7 +484,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                 <% final_path = filediff.target_file_path %>
             %endif
         %endif
-        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy the full path')}" onclick="return false;"></i>
+        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy file path')}" onclick="return false;"></i>
     </span>
     ## anchor link
     <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>

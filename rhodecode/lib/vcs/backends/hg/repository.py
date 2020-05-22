@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2019 RhodeCode GmbH
+# Copyright (C) 2014-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -297,13 +297,20 @@ class MercurialRepository(BaseRepository):
         return update_cache
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
+        log.debug('Calculating common ancestor between %sc1:%s and %sc2:%s',
+                  self, commit_id1, repo2, commit_id2)
+
         if commit_id1 == commit_id2:
             return commit_id1
 
         ancestors = self._remote.revs_from_revspec(
             "ancestor(id(%s), id(%s))", commit_id1, commit_id2,
             other_path=repo2.path)
-        return repo2[ancestors[0]].raw_id if ancestors else None
+
+        ancestor_id = repo2[ancestors[0]].raw_id if ancestors else None
+
+        log.debug('Found common ancestor with sha: %s', ancestor_id)
+        return ancestor_id
 
     def compare(self, commit_id1, commit_id2, repo2, merge, pre_load=None):
         if commit_id1 == commit_id2:
@@ -429,7 +436,8 @@ class MercurialRepository(BaseRepository):
         """
         return os.path.join(self.path, '.hg', '.hgrc')
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
+                   translate_tag=None, maybe_unreachable=False):
         """
         Returns ``MercurialCommit`` object representing repository's
         commit at the given `commit_id` or `commit_idx`.

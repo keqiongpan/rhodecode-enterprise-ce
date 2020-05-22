@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -40,12 +40,12 @@ from rhodecode.lib.auth import (
     NotAnonymous, CSRFRequired)
 from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
-from rhodecode.lib.vcs.exceptions import (CommitDoesNotExistError,
-    RepositoryRequirementError, EmptyRepositoryError)
+from rhodecode.lib.vcs.exceptions import (
+    CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import (func, or_, PullRequest, PullRequestVersion,
-    ChangesetComment, ChangesetStatus, Repository)
+from rhodecode.model.db import (
+    func, or_, PullRequest, ChangesetComment, ChangesetStatus, Repository)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
@@ -210,10 +210,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         return caching_enabled
 
     def _get_diffset(self, source_repo_name, source_repo,
+                     ancestor_commit,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, file_limit,
                      fulldiff, hide_whitespace_changes, diff_context):
 
+        target_ref_id = ancestor_commit.raw_id
         vcs_diff = PullRequestModel().get_diff(
             source_repo, source_ref_id, target_ref_id,
             hide_whitespace_changes, diff_context)
@@ -278,6 +280,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _new_state = {
             'created': PullRequest.STATE_CREATED,
         }.get(self.request.GET.get('force_state'))
+
         if c.is_super_admin and _new_state:
             with pull_request.set_state(PullRequest.STATE_UPDATING, final_state=_new_state):
                 h.flash(
@@ -396,9 +399,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             pull_request_latest, auth_user=self._rhodecode_user,
             translator=self.request.translate,
             force_shadow_repo_refresh=force_refresh)
+
         c.pr_merge_errors = _merge_check.error_details
         c.pr_merge_possible = not _merge_check.failed
         c.pr_merge_message = _merge_check.merge_msg
+        c.pr_merge_source_commit = _merge_check.source_commit
+        c.pr_merge_target_commit = _merge_check.target_commit
 
         c.pr_merge_info = MergeCheck.get_merge_conditions(
             pull_request_latest, translator=self.request.translate)
@@ -537,6 +543,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 (ancestor_commit, commit_cache, missing_requirements,
                  source_commit, target_commit) = cached_diff['commits']
         else:
+            # NOTE(marcink): we reach potentially unreachable errors when a PR has
+            # merge errors resulting in potentially hidden commits in the shadow repo.
+            maybe_unreachable = _merge_check.MERGE_CHECK in _merge_check.error_details \
+                                and _merge_check.merge_response
+            maybe_unreachable = maybe_unreachable \
+                                and _merge_check.merge_response.metadata.get('unresolved_files')
+            log.debug("Using unreachable commits due to MERGE_CHECK in merge simulation")
             diff_commit_cache = \
                 (ancestor_commit, commit_cache, missing_requirements,
                  source_commit, target_commit) = self.get_commits(
@@ -547,7 +560,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     source_scm,
                     target_commit,
                     target_ref_id,
-                    target_scm)
+                    target_scm,
+                maybe_unreachable=maybe_unreachable)
 
         # register our commit range
         for comm in commit_cache.values():
@@ -581,11 +595,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             has_proper_diff_cache = cached_diff and cached_diff.get('commits')
             if not force_recache and has_proper_diff_cache:
                 c.diffset = cached_diff['diff']
-                (ancestor_commit, commit_cache, missing_requirements,
-                 source_commit, target_commit) = cached_diff['commits']
             else:
                 c.diffset = self._get_diffset(
                     c.source_repo.repo_name, commits_source_repo,
+                    c.ancestor_commit,
                     source_ref_id, target_ref_id,
                     target_commit, source_commit,
                     diff_limit, file_limit, c.fulldiff,
@@ -665,8 +678,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             # calculate the diff for commits between versions
             c.commit_changes = []
-            mark = lambda cs, fw: list(
-                h.itertools.izip_longest([], cs, fillvalue=fw))
+
+            def mark(cs, fw):
+                return list(h.itertools.izip_longest([], cs, fillvalue=fw))
+
             for c_type, raw_id in mark(commit_changes.added, 'a') \
                                 + mark(commit_changes.removed, 'r') \
                                 + mark(commit_changes.common, 'c'):
@@ -698,15 +713,22 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def get_commits(
             self, commits_source_repo, pull_request_at_ver, source_commit,
-            source_ref_id, source_scm, target_commit, target_ref_id, target_scm):
+            source_ref_id, source_scm, target_commit, target_ref_id, target_scm,
+            maybe_unreachable=False):
+
         commit_cache = collections.OrderedDict()
         missing_requirements = False
+
         try:
             pre_load = ["author", "date", "message", "branch", "parents"]
-            show_revs = pull_request_at_ver.revisions
-            for rev in show_revs:
-                comm = commits_source_repo.get_commit(
-                    commit_id=rev, pre_load=pre_load)
+
+            pull_request_commits = pull_request_at_ver.revisions
+            log.debug('Loading %s commits from %s',
+                      len(pull_request_commits), commits_source_repo)
+
+            for rev in pull_request_commits:
+                comm = commits_source_repo.get_commit(commit_id=rev, pre_load=pre_load,
+                                                      maybe_unreachable=maybe_unreachable)
                 commit_cache[comm.raw_id] = comm
 
             # Order here matters, we first need to get target, and then
@@ -715,22 +737,21 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 commit_id=safe_str(target_ref_id))
 
             source_commit = commits_source_repo.get_commit(
-                commit_id=safe_str(source_ref_id))
+                commit_id=safe_str(source_ref_id), maybe_unreachable=True)
         except CommitDoesNotExistError:
-            log.warning(
-                'Failed to get commit from `{}` repo'.format(
-                    commits_source_repo), exc_info=True)
+            log.warning('Failed to get commit from `{}` repo'.format(
+                commits_source_repo), exc_info=True)
         except RepositoryRequirementError:
-            log.warning(
-                'Failed to get all required data from repo', exc_info=True)
+            log.warning('Failed to get all required data from repo', exc_info=True)
             missing_requirements = True
-        ancestor_commit = None
+
+        pr_ancestor_id = pull_request_at_ver.common_ancestor_id
+
         try:
-            ancestor_id = source_scm.get_common_ancestor(
-                source_commit.raw_id, target_commit.raw_id, target_scm)
-            ancestor_commit = source_scm.get_commit(ancestor_id)
+            ancestor_commit = source_scm.get_commit(pr_ancestor_id)
         except Exception:
             ancestor_commit = None
+
         return ancestor_commit, commit_cache, missing_requirements, source_commit, target_commit
 
     def assure_not_empty_repo(self):
@@ -934,6 +955,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         target_repo = _form['target_repo']
         target_ref = _form['target_ref']
         commit_ids = _form['revisions'][::-1]
+        common_ancestor_id = _form['common_ancestor']
 
         # find the ancestor for this pr
         source_db_repo = Repository.get_by_repo_name(_form['source_repo'])
@@ -1020,6 +1042,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 target_repo=target_repo,
                 target_ref=target_ref,
                 revisions=commit_ids,
+                common_ancestor_id=common_ancestor_id,
                 reviewers=reviewers,
                 title=pullrequest_title,
                 description=description,
@@ -1457,6 +1480,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         comment = ChangesetComment.get_or_404(
             self.request.matchdict['comment_id'])
         comment_id = comment.comment_id
+
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
 
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')

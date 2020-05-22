@@ -1,10 +1,25 @@
-<%def name="refs(commit)">
-    ## Build a cache of refs for selector
-    <script>
-        fileTreeRefs = {
+<%def name="refs(commit, at_rev=None)">
 
-        }
+    ## Build a cache of refs for selector, based on this the files ref selector gets pre-selected values
+    <script>
+        fileTreeRefs = {}
     </script>
+
+    % if h.is_svn(c.rhodecode_repo):
+        ## since SVN doesn't have an commit<->refs association, we simply inject it
+        ## based on our at_rev marker
+        % if at_rev and at_rev.startswith('branches/'):
+            <%
+                commit.branch = at_rev
+            %>
+        % endif
+        % if at_rev and at_rev.startswith('tags/'):
+            <%
+                commit.tags.append(at_rev)
+            %>
+        % endif
+
+    % endif
 
     %if commit.merge:
         <span class="mergetag tag">

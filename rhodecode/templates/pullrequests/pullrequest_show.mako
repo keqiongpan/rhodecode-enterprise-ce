@@ -11,15 +11,6 @@
 
 <%def name="breadcrumbs_links()">
 
-    <div id="pr-title">
-        % if c.pull_request.is_closed():
-            <span class="pr-title-closed-tag tag">${_('Closed')}</span>
-        % endif
-        <input class="pr-title-input large disabled" disabled="disabled" name="pullrequest_title" type="text" value="${c.pull_request.title}">
-    </div>
-    <div id="pr-title-edit" class="input" style="display: none;">
-        <input class="pr-title-input large" id="pr-title-input" name="pullrequest_title" type="text" value="${c.pull_request.title}">
-    </div>
 </%def>
 
 <%def name="menu_bar_nav()">
@@ -40,11 +31,19 @@
 
 <div class="box">
 
-  ${self.breadcrumbs()}
-
   <div class="box pr-summary">
 
     <div class="summary-details block-left">
+        <div id="pr-title">
+            % if c.pull_request.is_closed():
+                <span class="pr-title-closed-tag tag">${_('Closed')}</span>
+            % endif
+            <input class="pr-title-input large disabled" disabled="disabled" name="pullrequest_title" type="text" value="${c.pull_request.title}">
+        </div>
+        <div id="pr-title-edit" class="input" style="display: none;">
+            <input class="pr-title-input large" id="pr-title-input" name="pullrequest_title" type="text" value="${c.pull_request.title}">
+        </div>
+
     <% summary = lambda n:{False:'summary-short'}.get(n) %>
     <div class="pr-details-title">
         <div class="pull-left">
@@ -64,8 +63,9 @@
               <div id="delete_pullrequest" class="action_button pr-save ${('' if c.allowed_to_delete else 'disabled' )}" style="display: none;">
                   % if c.allowed_to_delete:
                       ${h.secure_form(h.route_path('pullrequest_delete', repo_name=c.pull_request.target_repo.repo_name, pull_request_id=c.pull_request.pull_request_id), request=request)}
-                          ${h.submit('remove_%s' % c.pull_request.pull_request_id, _('Delete pull request'),
-                        class_="btn btn-link btn-danger no-margin",onclick="return confirm('"+_('Confirm to delete this pull request')+"');")}
+                          <input class="btn btn-link btn-danger no-margin" id="remove_${c.pull_request.pull_request_id}" name="remove_${c.pull_request.pull_request_id}"
+                                 onclick="submitConfirm(event, this, _gettext('Confirm to delete this pull request'), _gettext('Delete'), '${'!{}'.format(c.pull_request.pull_request_id)}')"
+                                 type="submit" value="${_('Delete pull request')}">
                       ${h.end_form()}
                   % else:
                     <span class="tooltip" title="${_('Not allowed to delete this pull request')}">${_('Delete pull request')}</span>
@@ -295,7 +295,7 @@
     </div>
 
     ## REVIEWERS
-    <div class="reviewers-title block-right">
+    <div class="reviewers-title first-panel block-right">
       <div class="pr-details-title">
           ${_('Pull request reviewers')}
           %if c.allowed_to_update:
@@ -468,6 +468,16 @@
                         ${_('This pull request cannot be displayed, because one or more commits no longer exist in the source repository.')}
                         ${_('Please update this pull request, push the commits back into the source repository, or consider closing this pull request.')}
                         ${_('Consider doing a {force_refresh_url} in case you think this is an error.').format(force_refresh_url=h.link_to('force refresh', h.current_route_path(request, force_refresh='1')))|n}
+                    </div>
+                  </div>
+                </div>
+              % elif c.pr_merge_source_commit.changed:
+                <div class="box">
+                  <div class="alert alert-info">
+                    <div>
+                       % if c.pr_merge_source_commit.changed:
+                        <strong>${_('There are new changes for {}:{} in source repository, please consider updating this pull request.').format(c.pr_merge_source_commit.ref_spec.type, c.pr_merge_source_commit.ref_spec.name)}</strong>
+                       % endif
                     </div>
                   </div>
                 </div>

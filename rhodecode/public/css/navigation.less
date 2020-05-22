@@ -820,7 +820,53 @@ input {
 }
 
 .menulabel-notice {
-    border: 1px solid @color5;
+
     padding:7px 10px;
+
+    &.notice-warning {
+        border: 1px solid @color3;
+        .notice-color-warning
+    }
+    &.notice-error {
+        border: 1px solid @color5;
+        .notice-color-error
+    }
+    &.notice-info {
+        border: 1px solid @color1;
+        .notice-color-info
+    }
+}
+
+.notice-messages-container {
+    position: absolute;
+    top: 45px;
+}
+
+.notice-messages {
+    display: block;
+    position: relative;
+    z-index: 300;
+    min-width: 500px;
+    max-width: 500px;
+    min-height: 100px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid @grey4;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.07);
+}
+
+.notice-color-warning {
+    color: @color3;
+}
+
+.notice-color-error {
     color: @color5;
+}
+
+.notice-color-info {
+    color: @color1;
 }

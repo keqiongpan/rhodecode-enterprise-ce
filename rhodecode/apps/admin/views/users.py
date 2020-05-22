@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -34,12 +34,13 @@ from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
 from rhodecode.authentication.base import get_authn_registry, RhodeCodeExternalAuthPlugin
 from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
-from rhodecode.model.db import true
+from rhodecode.model.db import true, UserNotice
 
 from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib.exceptions import (
     UserCreationError, UserOwnsReposException, UserOwnsRepoGroupsException,
-    UserOwnsUserGroupsException, DefaultUserException)
+    UserOwnsUserGroupsException, UserOwnsPullRequestsException,
+    UserOwnsArtifactsException, DefaultUserException)
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasPermissionAllDecorator, CSRFRequired)
@@ -377,11 +378,13 @@ class UsersView(UserAppView):
         _repos = c.user.repositories
         _repo_groups = c.user.repository_groups
         _user_groups = c.user.user_groups
+        _pull_requests = c.user.user_pull_requests
         _artifacts = c.user.artifacts
 
         handle_repos = None
         handle_repo_groups = None
         handle_user_groups = None
+        handle_pull_requests = None
         handle_artifacts = None
 
         # calls for flash of handle based on handle case detach or delete
@@ -412,6 +415,15 @@ class UsersView(UserAppView):
                 h.flash(_('Deleted %s user groups') % len(_user_groups),
                         category='success')
 
+        def set_handle_flash_pull_requests():
+            handle = handle_pull_requests
+            if handle == 'detach':
+                h.flash(_('Detached %s pull requests') % len(_pull_requests),
+                        category='success')
+            elif handle == 'delete':
+                h.flash(_('Deleted %s pull requests') % len(_pull_requests),
+                        category='success')
+
         def set_handle_flash_artifacts():
             handle = handle_artifacts
             if handle == 'detach':
@@ -420,6 +432,12 @@ class UsersView(UserAppView):
             elif handle == 'delete':
                 h.flash(_('Deleted %s artifacts') % len(_artifacts),
                         category='success')
+
+        handle_user = User.get_first_super_admin()
+        handle_user_id = safe_int(self.request.POST.get('detach_user_id'))
+        if handle_user_id:
+            # NOTE(marcink): we get new owner for objects...
+            handle_user = User.get_or_404(handle_user_id)
 
         if _repos and self.request.POST.get('user_repos'):
             handle_repos = self.request.POST['user_repos']
@@ -430,16 +448,25 @@ class UsersView(UserAppView):
         if _user_groups and self.request.POST.get('user_user_groups'):
             handle_user_groups = self.request.POST['user_user_groups']
 
+        if _pull_requests and self.request.POST.get('user_pull_requests'):
+            handle_pull_requests = self.request.POST['user_pull_requests']
+
         if _artifacts and self.request.POST.get('user_artifacts'):
             handle_artifacts = self.request.POST['user_artifacts']
 
         old_values = c.user.get_api_data()
 
         try:
-            UserModel().delete(c.user, handle_repos=handle_repos,
-                               handle_repo_groups=handle_repo_groups,
-                               handle_user_groups=handle_user_groups,
-                               handle_artifacts=handle_artifacts)
+
+            UserModel().delete(
+                c.user,
+                handle_repos=handle_repos,
+                handle_repo_groups=handle_repo_groups,
+                handle_user_groups=handle_user_groups,
+                handle_pull_requests=handle_pull_requests,
+                handle_artifacts=handle_artifacts,
+                handle_new_owner=handle_user
+            )
 
             audit_logger.store_web(
                 'user.delete', action_data={'old_data': old_values},
@@ -449,11 +476,13 @@ class UsersView(UserAppView):
             set_handle_flash_repos()
             set_handle_flash_repo_groups()
             set_handle_flash_user_groups()
+            set_handle_flash_pull_requests()
             set_handle_flash_artifacts()
             username = h.escape(old_values['username'])
             h.flash(_('Successfully deleted user `{}`').format(username), category='success')
         except (UserOwnsReposException, UserOwnsRepoGroupsException,
-                UserOwnsUserGroupsException, DefaultUserException) as e:
+                UserOwnsUserGroupsException, UserOwnsPullRequestsException,
+                UserOwnsArtifactsException, DefaultUserException) as e:
             h.flash(e, category='warning')
         except Exception:
             log.exception("Exception during deletion of user")
@@ -502,6 +531,11 @@ class UsersView(UserAppView):
         user_id = self.db_user_id
         c.user = self.db_user
 
+        c.detach_user = User.get_first_super_admin()
+        detach_user_id = safe_int(self.request.GET.get('detach_user_id'))
+        if detach_user_id:
+            c.detach_user = User.get_or_404(detach_user_id)
+
         c.active = 'advanced'
         c.personal_repo_group = RepoGroup.get_user_personal_repo_group(user_id)
         c.personal_repo_group_name = RepoGroupModel()\
@@ -511,7 +545,6 @@ class UsersView(UserAppView):
             (x.user for x in c.user.user_review_rules),
             key=lambda u: u.username.lower())
 
-        c.first_admin = User.get_first_super_admin()
         defaults = c.user.get_dict()
 
         # Interim workaround if the user participated on any pull requests as a
@@ -705,6 +738,32 @@ class UsersView(UserAppView):
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
     @view_config(
+        route_name='user_notice_dismiss', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def user_notice_dismiss(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+
+        user_id = self.db_user_id
+        c.user = self.db_user
+        user_notice_id = safe_int(self.request.POST.get('notice_id'))
+        notice = UserNotice().query()\
+            .filter(UserNotice.user_id == user_id)\
+            .filter(UserNotice.user_notice_id == user_notice_id)\
+            .scalar()
+        read = False
+        if notice:
+            notice.notice_read = True
+            Session().add(notice)
+            Session().commit()
+            read = True
+
+        return {'notice': user_notice_id, 'read': read}
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @CSRFRequired()
+    @view_config(
         route_name='user_create_personal_repo_group', request_method='POST',
         renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_create_personal_repo_group(self):
@@ -777,6 +836,25 @@ class UsersView(UserAppView):
             c.user.user_id, show_expired=True)
         c.role_vcs = AuthTokenModel.cls.ROLE_VCS
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasPermissionAllDecorator('hg.admin')
+    @view_config(
+        route_name='edit_user_auth_tokens_view', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def auth_tokens_view(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.user = self.db_user
+
+        auth_token_id = self.request.POST.get('auth_token_id')
+
+        if auth_token_id:
+            token = UserApiKeys.get_or_404(auth_token_id)
+
+            return {
+                'auth_token': token.api_key
+            }
 
     def maybe_attach_token_scope(self, token):
         # implemented in EE edition

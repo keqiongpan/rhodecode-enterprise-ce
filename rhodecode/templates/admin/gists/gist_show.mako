@@ -54,7 +54,10 @@
                           %if c.is_super_admin or c.gist.gist_owner == c.rhodecode_user.user_id:
                           <div class="pull-right remove_gist">
                             ${h.secure_form(h.route_path('gist_delete', gist_id=c.gist.gist_access_id), request=request)}
-                                ${h.submit('remove_gist', _('Delete'),class_="btn btn-mini btn-danger",onclick="return confirm('"+_('Confirm to delete this Gist')+"');")}
+                                <input class="btn btn-mini btn-danger" id="remove_gist" name="remove_gist"
+                                       onclick="submitConfirm(event, this, _gettext('Confirm to delete this gist'), _gettext('Delete'), '${c.gist.gist_access_id}')"
+                                       type="submit" value="${_('Delete')}"
+                                >
                             ${h.end_form()}
                           </div>
                           %endif

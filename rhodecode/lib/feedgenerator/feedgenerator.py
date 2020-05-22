@@ -34,6 +34,8 @@ from __future__ import unicode_literals
 
 import datetime
 from StringIO import StringIO
+
+import pytz
 from six.moves.urllib import parse as urlparse
 
 from rhodecode.lib.feedgenerator import datetime_safe
@@ -227,13 +229,13 @@ class SyndicationFeed(object):
                         latest_date = item_date
 
         # datetime.now(tz=utc) is slower, as documented in django.utils.timezone.now
-        return latest_date or datetime.datetime.utcnow().replace(tzinfo=utc)
+        return latest_date or datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
 
 
 class Enclosure(object):
-    "Represents an RSS enclosure"
+    """Represents an RSS enclosure"""
     def __init__(self, url, length, mime_type):
-        "All args are expected to be Python Unicode objects"
+        """All args are expected to be Python Unicode objects"""
         self.length, self.mime_type = length, mime_type
         self.url = iri_to_uri(url)
 

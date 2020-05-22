@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -22,6 +22,7 @@ import logging
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
+from packaging.version import Version
 
 from rhodecode import events
 from rhodecode.apps._base import RepoAppView
@@ -64,12 +65,19 @@ class RepoSettingsView(RepoAppView):
         c = self.load_default_context()
         c.active = 'advanced'
 
-        c.default_user_id = User.get_default_user().user_id
+        c.default_user_id = User.get_default_user_id()
         c.in_public_journal = UserFollowing.query() \
             .filter(UserFollowing.user_id == c.default_user_id) \
             .filter(UserFollowing.follows_repository == self.db_repo).scalar()
 
         c.ver_info_dict = self.rhodecode_vcs_repo.get_hooks_info()
+        c.hooks_outdated = False
+
+        try:
+            if Version(c.ver_info_dict['pre_version']) < Version(c.rhodecode_version):
+                c.hooks_outdated = True
+        except Exception:
+            pass
 
         # update commit cache if GET flag is present
         if self.request.GET.get('update_commit_cache'):
@@ -212,7 +220,7 @@ class RepoSettingsView(RepoAppView):
         _ = self.request.translate
 
         try:
-            user_id = User.get_default_user().user_id
+            user_id = User.get_default_user_id()
             ScmModel().toggle_following_repo(self.db_repo.repo_id, user_id)
             h.flash(_('Updated repository visibility in public journal'),
                     category='success')

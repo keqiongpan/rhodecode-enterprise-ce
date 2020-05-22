@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -153,25 +153,25 @@ class CrowdServer(object):
         global msg
         msg = ""
         try:
-            rdoc = self.opener.open(request)
-            msg = "".join(rdoc.readlines())
+            ret_doc = self.opener.open(request)
+            msg = ret_doc.read()
             if not msg and empty_response_ok:
-                rval = {}
-                rval["status"] = True
-                rval["error"] = "Response body was empty"
+                ret_val = {}
+                ret_val["status"] = True
+                ret_val["error"] = "Response body was empty"
             elif not noformat:
-                rval = json.loads(msg)
-                rval["status"] = True
+                ret_val = json.loads(msg)
+                ret_val["status"] = True
             else:
-                rval = "".join(rdoc.readlines())
+                ret_val = msg
         except Exception as e:
             if not noformat:
-                rval = {"status": False,
-                        "body": body,
-                        "error": str(e) + "\n" + msg}
+                ret_val = {"status": False,
+                           "body": body,
+                           "error": "{}\n{}".format(e, msg)}
             else:
-                rval = None
-        return rval
+                ret_val = None
+        return ret_val
 
     def user_auth(self, username, password):
         """Authenticate a user against crowd. Returns brief information about

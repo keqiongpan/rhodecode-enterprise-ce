@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2019 RhodeCode GmbH
+// # Copyright (C) 2010-2020 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -347,11 +347,10 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                 self.globalSubmitSuccessCallback();
 
             };
-            var submitFailCallback = function(data) {
-                alert(
-                "Error while submitting comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while submitting comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
                 self.resetCommentFormState(text);
             };
             self.submitAjaxPOST(
@@ -447,11 +446,11 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             $(self.previewContainer).show();
 
             // by default we reset state of comment preserving the text
-            var previewFailCallback = function(data){
-                alert(
-                "Error while preview of comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var previewFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while preview of comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
+
                 self.resetCommentFormState(text)
             };
             self.submitAjaxPOST(
@@ -556,10 +555,7 @@ var CommentsController = function() {
     return self.scrollToComment(node, -1, true);
   };
 
-  this.deleteComment = function(node) {
-      if (!confirm(_gettext('Delete this comment?'))) {
-        return false;
-      }
+  this._deleteComment = function(node) {
       var $node = $(node);
       var $td = $node.closest('td');
       var $comment = $node.closest('.comment');
@@ -576,13 +572,33 @@ var CommentsController = function() {
         $comment.remove();
         return false;
       };
-      var failure = function(data, textStatus, xhr) {
-        alert("error processing request: " + textStatus);
+      var failure = function(jqXHR, textStatus, errorThrown) {
+        var prefix = "Error while deleting this comment.\n"
+        var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+        ajaxErrorSwal(message);
+
         $comment.show('fast');
         $comment.removeClass('comment-deleting');
         return false;
       };
       ajaxPOST(url, postData, success, failure);
+  }
+
+  this.deleteComment = function(node) {
+    var $comment = $(node).closest('.comment');
+    var comment_id = $comment.attr('data-comment-id');
+
+    SwalNoAnimation.fire({
+      title: 'Delete this comment?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: _gettext('Yes, delete comment #{0}!').format(comment_id),
+
+    }).then(function(result) {
+      if (result.value) {
+        self._deleteComment(node);
+      }
+    })
   };
 
   this.toggleWideMode = function (node) {
@@ -879,11 +895,10 @@ var CommentsController = function() {
               commentForm.setActionButtonsDisabled(false);
 
             };
-            var submitFailCallback = function(data){
-                alert(
-                "Error while submitting comment.\n" +
-                "Error code {0} ({1}).".format(data.status, data.statusText)
-                );
+            var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
+                var prefix = "Error while submitting comment.\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
                 commentForm.resetCommentFormState(text)
             };
             commentForm.submitAjaxPOST(

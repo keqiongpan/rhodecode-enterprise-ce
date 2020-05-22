@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,8 +35,8 @@ from rhodecode.lib.index import searcher_from_config
 from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
-    func, true, or_, case, in_filter_generator, Session,
-    Repository, RepoGroup, User, UserGroup)
+    func, true, or_, case, cast, in_filter_generator, String, Session,
+    Repository, RepoGroup, User, UserGroup, PullRequest)
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.user import UserModel
@@ -111,7 +111,7 @@ class HomeView(BaseAppView, DataGridAppView):
         org_query = name_contains
         allowed_ids = self._rhodecode_user.repo_acl_ids(
             ['repository.read', 'repository.write', 'repository.admin'],
-            cache=False, name_filter=name_contains) or [-1]
+            cache=True, name_filter=name_contains) or [-1]
 
         query = Session().query(
                 Repository.repo_name,
@@ -162,7 +162,7 @@ class HomeView(BaseAppView, DataGridAppView):
         org_query = name_contains
         allowed_ids = self._rhodecode_user.repo_group_acl_ids(
             ['group.read', 'group.write', 'group.admin'],
-            cache=False, name_filter=name_contains) or [-1]
+            cache=True, name_filter=name_contains) or [-1]
 
         query = Session().query(
                 RepoGroup.group_id,
@@ -279,6 +279,61 @@ class HomeView(BaseAppView, DataGridAppView):
                 'type': 'user_group',
                 'url': h.route_path(
                     'user_group_profile', user_group_name=obj.users_group_name)
+            }
+            for obj in acl_iter], True
+
+    def _get_pull_request_list(self, name_contains=None, limit=20):
+        org_query = name_contains
+        if not name_contains:
+            return [], False
+
+        # TODO(marcink): should all logged in users be allowed to search others?
+        allowed_user_search = self._rhodecode_user.username != User.DEFAULT_USER
+        if not allowed_user_search:
+            return [], False
+
+        name_contains = re.compile('(?:pr:[ ]?)(.+)').findall(name_contains)
+        if len(name_contains) != 1:
+            return [], False
+
+        name_contains = name_contains[0]
+
+        allowed_ids = self._rhodecode_user.repo_acl_ids(
+            ['repository.read', 'repository.write', 'repository.admin'],
+            cache=True) or [-1]
+
+        query = Session().query(
+                PullRequest.pull_request_id,
+                PullRequest.title,
+            )
+        query = query.join(Repository, Repository.repo_id == PullRequest.target_repo_id)
+
+        query = query.filter(or_(
+            # generate multiple IN to fix limitation problems
+            *in_filter_generator(Repository.repo_id, allowed_ids)
+        ))
+
+        query = query.order_by(PullRequest.pull_request_id)
+
+        if name_contains:
+            ilike_expression = u'%{}%'.format(safe_unicode(name_contains))
+            query = query.filter(or_(
+                cast(PullRequest.pull_request_id, String).ilike(ilike_expression),
+                PullRequest.title.ilike(ilike_expression),
+                PullRequest.description.ilike(ilike_expression),
+            ))
+
+            query = query.limit(limit)
+
+        acl_iter = query
+
+        return [
+            {
+                'id': obj.pull_request_id,
+                'value': org_query,
+                'value_display': 'pull request: `!{} - {}`'.format(obj.pull_request_id, obj.title[:50]),
+                'type': 'pull_request',
+                'url': h.route_path('pull_requests_global', pull_request_id=obj.pull_request_id)
             }
             for obj in acl_iter], True
 
@@ -623,6 +678,17 @@ class HomeView(BaseAppView, DataGridAppView):
             elif prefix_match:
                 has_specialized_search = True
                 res.append(no_match('No matching user groups found'))
+
+        # pr: type search
+        if not prefix_match:
+            pull_requests, prefix_match = self._get_pull_request_list(query)
+            if pull_requests:
+                has_specialized_search = True
+                for serialized_pull_request in pull_requests:
+                    res.append(serialized_pull_request)
+            elif prefix_match:
+                has_specialized_search = True
+                res.append(no_match('No matching pull requests found'))
 
         # FTS commit: type search
         if not prefix_match:

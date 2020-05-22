@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,6 +26,7 @@ Model for notifications
 import logging
 import traceback
 
+import premailer
 from pyramid.threadlocal import get_current_request
 from sqlalchemy.sql.expression import false, true
 
@@ -303,6 +304,7 @@ class EmailNotificationModel(BaseModel):
     TYPE_PASSWORD_RESET = 'password_reset'
     TYPE_PASSWORD_RESET_CONFIRMATION = 'password_reset_confirmation'
     TYPE_EMAIL_TEST = 'email_test'
+    TYPE_EMAIL_EXCEPTION = 'exception'
     TYPE_TEST = 'test'
 
     email_types = {
@@ -310,6 +312,8 @@ class EmailNotificationModel(BaseModel):
             'rhodecode:templates/email_templates/main.mako',
         TYPE_TEST:
             'rhodecode:templates/email_templates/test.mako',
+        TYPE_EMAIL_EXCEPTION:
+            'rhodecode:templates/email_templates/exception_tracker.mako',
         TYPE_EMAIL_TEST:
             'rhodecode:templates/email_templates/email_test.mako',
         TYPE_REGISTRATION:
@@ -327,6 +331,12 @@ class EmailNotificationModel(BaseModel):
         TYPE_PULL_REQUEST_UPDATE:
             'rhodecode:templates/email_templates/pull_request_update.mako',
     }
+
+    premailer_instance = premailer.Premailer(
+        cssutils_logging_level=logging.WARNING,
+        cssutils_logging_handler=logging.getLogger().handlers[0]
+        if logging.getLogger().handlers else None,
+    )
 
     def __init__(self):
         """
@@ -390,5 +400,12 @@ class EmailNotificationModel(BaseModel):
 
         # render WHOLE template
         body = email_template.render(None, **_kwargs)
+
+        try:
+            # Inline CSS styles and conversion
+            body = self.premailer_instance.transform(body)
+        except Exception:
+            log.exception('Failed to parse body with premailer')
+            pass
 
         return subject, headers, body, body_plaintext

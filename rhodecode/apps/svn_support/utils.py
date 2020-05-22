@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 def write_mod_dav_svn_config(settings):
     use_ssl = str2bool(settings['force_https'])
-
+    file_path = settings[config_keys.config_file_path]
     config = _render_mod_dav_svn_config(
         use_ssl=use_ssl,
         parent_path_root=get_rhodecode_base_path(),
@@ -45,7 +45,8 @@ def write_mod_dav_svn_config(settings):
         location_root=settings[config_keys.location_root],
         repo_groups=RepoGroup.get_all_repo_groups(),
         realm=get_rhodecode_realm(), template=settings[config_keys.template])
-    _write_mod_dav_svn_config(config, settings[config_keys.config_file_path])
+    _write_mod_dav_svn_config(config, file_path)
+    return file_path
 
 
 def generate_mod_dav_svn_config(registry):
@@ -56,11 +57,11 @@ def generate_mod_dav_svn_config(registry):
     repositories organized in sub folders.
     """
     settings = registry.settings
-    write_mod_dav_svn_config(settings)
+    file_path = write_mod_dav_svn_config(settings)
 
     # Trigger an event on mod dav svn configuration change.
     trigger(ModDavSvnConfigChange(), registry)
-
+    return file_path
 
 def _render_mod_dav_svn_config(
         parent_path_root, list_parent_path, location_root, repo_groups, realm,

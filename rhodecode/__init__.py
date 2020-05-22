@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -19,17 +19,20 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import os
+from collections import OrderedDict
+
 import sys
 import platform
 
 VERSION = tuple(open(os.path.join(
     os.path.dirname(__file__), 'VERSION')).read().split('.'))
 
-BACKENDS = {
-    'hg': 'Mercurial repository',
-    'git': 'Git repository',
-    'svn': 'Subversion repository',
-}
+BACKENDS = OrderedDict()
+
+BACKENDS['hg'] = 'Mercurial repository'
+BACKENDS['git'] = 'Git repository'
+BACKENDS['svn'] = 'Subversion repository'
+
 
 CELERY_ENABLED = False
 CELERY_EAGER = False
@@ -45,7 +48,7 @@ PYRAMID_SETTINGS = {}
 EXTENSIONS = {}
 
 __version__ = ('.'.join((str(each) for each in VERSION[:3])))
-__dbversion__ = 103  # defines current db version for migrations
+__dbversion__ = 107  # defines current db version for migrations
 __platform__ = platform.system()
 __license__ = 'AGPLv3, and Commercial License'
 __author__ = 'RhodeCode GmbH'

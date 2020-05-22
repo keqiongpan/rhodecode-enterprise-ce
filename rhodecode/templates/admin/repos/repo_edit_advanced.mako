@@ -93,14 +93,16 @@
             %if c.rhodecode_db_repo.locked[0]:
               ${h.hidden('set_unlock', '1')}
               <button class="btn btn-small" type="submit"
-                      onclick="return confirm('${_('Confirm to unlock repository.')}');">
+                      onclick="submitConfirm(event, this, _gettext('Confirm to unlock this repository'), _gettext('Unlock'), '${c.rhodecode_db_repo.repo_name}')"
+              >
                   <i class="icon-unlock"></i>
                   ${_('Unlock repository')}
               </button>
             %else:
               ${h.hidden('set_lock', '1')}
               <button class="btn btn-small" type="submit"
-                      onclick="return confirm('${_('Confirm to lock repository.')}');">
+                      onclick="submitConfirm(event, this, _gettext('Confirm to lock this repository'), _gettext('lock'), '${c.rhodecode_db_repo.repo_name}')"
+              >
                   <i class="icon-lock"></i>
                   ${_('Lock repository')}
               </button>
@@ -147,6 +149,11 @@
            onclick="return confirm('${_('Confirm to reinstall hooks for this repository.')}');">
             ${_('Update Hooks')}
         </a>
+        % if c.hooks_outdated:
+            <span class="alert-error" style="padding: 10px">
+                ${_('Outdated hooks detected, please update hooks using `Update Hooks` action.')}
+            </span>
+        % endif
     </div>
 </div>
 
@@ -161,7 +168,8 @@
 
         <div class="field">
             <button class="btn btn-small btn-warning" type="submit"
-                    onclick="return confirm('${_('Confirm to archive this repository: %s') % c.repo_name}');">
+                    onclick="submitConfirm(event, this, _gettext('Confirm to archive this repository'), _gettext('Archive'), '${c.rhodecode_db_repo.repo_name}')"
+            >
                 ${_('Archive this repository')}
             </button>
         </div>
@@ -216,7 +224,8 @@
 
         <div class="field">
             <button class="btn btn-small btn-danger" type="submit"
-                    onclick="return confirm('${_('Confirm to delete this repository: %s') % c.repo_name}');">
+                    onclick="submitConfirm(event, this, _gettext('Confirm to delete this repository'), _gettext('Delete'), '${c.rhodecode_db_repo.repo_name}')"
+            >
                 ${_('Delete this repository')}
             </button>
         </div>

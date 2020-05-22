@@ -19,7 +19,7 @@ Setup Nix Package Manager
 
 To install the Nix Package Manager, please run::
 
-   $ curl https://nixos.org/releases/nix/nix-2.0.4/install | sh
+   $ curl https://releases.nixos.org/nix/nix-2.3.4/install | sh
 
 or go to https://nixos.org/nix/ and follow the installation instructions.
 Once this is correctly set up on your system, you should be able to use the
@@ -47,12 +47,12 @@ Switch nix to the latest STABLE channel
 
 run::
 
-   nix-channel --add https://nixos.org/channels/nixos-18.03 nixpkgs
+   nix-channel --add https://nixos.org/channels/nixos-20.03 nixpkgs
 
 Followed by::
 
    nix-channel --update
-   nix-env -i nix-2.0.4
+   nix-env -i nix-2.3.4
 
 
 Install required binaries

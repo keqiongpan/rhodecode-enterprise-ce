@@ -22,8 +22,9 @@ Supported Operating Systems
 Linux
 ^^^^^
 
-* Ubuntu 14.04
-* CentOS 6.2 and 7
+* Ubuntu 14.04+
+* CentOS 6.2, 7 and 8
+* RHEL 6.2, 7 and 8
 * Debian 7.8
 * RedHat Fedora
 * Arch Linux

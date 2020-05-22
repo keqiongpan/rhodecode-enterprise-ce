@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -53,7 +53,7 @@ from rhodecode.events.user import (  # pragma: no cover
 )
 
 from rhodecode.events.repo import (  # pragma: no cover
-    RepoEvent,
+    RepoEvent, RepoCommitCommentEvent,
     RepoPreCreateEvent, RepoCreateEvent,
     RepoPreDeleteEvent, RepoDeleteEvent,
     RepoPrePushEvent,   RepoPushEvent,
@@ -75,4 +75,5 @@ from rhodecode.events.pullrequest import (  # pragma: no cover
     PullRequestReviewEvent,
     PullRequestMergeEvent,
     PullRequestCloseEvent,
+    PullRequestCommentEvent,
 )

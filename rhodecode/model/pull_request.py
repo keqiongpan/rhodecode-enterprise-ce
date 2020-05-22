@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -35,7 +35,7 @@ import collections
 from pyramid import compat
 from pyramid.threadlocal import get_current_request
 
-from rhodecode import events
+from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.translation import lazy_ugettext
 from rhodecode.lib import helpers as h, hooks_utils, diffs
 from rhodecode.lib import audit_logger
@@ -43,9 +43,12 @@ from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.hooks_daemon import prepare_callback_daemon
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
-from rhodecode.lib.utils2 import safe_unicode, safe_str, md5_safe
+from rhodecode.lib.utils2 import (
+    safe_unicode, safe_str, md5_safe, AttributeDict, safe_int,
+    get_current_rhodecode_user)
 from rhodecode.lib.vcs.backends.base import (
-    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason)
+    Reference, MergeResponse, MergeFailureReason, UpdateFailureReason,
+    TargetRefMissing, SourceRefMissing)
 from rhodecode.lib.vcs.conf import settings as vcs_settings
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, EmptyRepositoryError)
@@ -54,7 +57,7 @@ from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     or_, String, cast, PullRequest, PullRequestReviewers, ChangesetStatus,
-    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule)
+    PullRequestVersion, ChangesetComment, Repository, RepoReviewRule, User)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
     EmailNotificationModel
@@ -80,6 +83,126 @@ class UpdateResponse(object):
         self.changes = commit_changes
         self.source_changed = source_changed
         self.target_changed = target_changed
+
+
+def get_diff_info(
+        source_repo, source_ref, target_repo, target_ref, get_authors=False,
+        get_commit_authors=True):
+    """
+    Calculates detailed diff information for usage in preview of creation of a pull-request.
+    This is also used for default reviewers logic
+    """
+
+    source_scm = source_repo.scm_instance()
+    target_scm = target_repo.scm_instance()
+
+    ancestor_id = target_scm.get_common_ancestor(target_ref, source_ref, source_scm)
+    if not ancestor_id:
+        raise ValueError(
+            'cannot calculate diff info without a common ancestor. '
+            'Make sure both repositories are related, and have a common forking commit.')
+
+    # case here is that want a simple diff without incoming commits,
+    # previewing what will be merged based only on commits in the source.
+    log.debug('Using ancestor %s as source_ref instead of %s',
+              ancestor_id, source_ref)
+
+    # source of changes now is the common ancestor
+    source_commit = source_scm.get_commit(commit_id=ancestor_id)
+    # target commit becomes the source ref as it is the last commit
+    # for diff generation this logic gives proper diff
+    target_commit = source_scm.get_commit(commit_id=source_ref)
+
+    vcs_diff = \
+        source_scm.get_diff(commit1=source_commit, commit2=target_commit,
+                            ignore_whitespace=False, context=3)
+
+    diff_processor = diffs.DiffProcessor(
+        vcs_diff, format='newdiff', diff_limit=None,
+        file_limit=None, show_full_diff=True)
+
+    _parsed = diff_processor.prepare()
+
+    all_files = []
+    all_files_changes = []
+    changed_lines = {}
+    stats = [0, 0]
+    for f in _parsed:
+        all_files.append(f['filename'])
+        all_files_changes.append({
+            'filename': f['filename'],
+            'stats': f['stats']
+        })
+        stats[0] += f['stats']['added']
+        stats[1] += f['stats']['deleted']
+
+        changed_lines[f['filename']] = []
+        if len(f['chunks']) < 2:
+            continue
+        # first line is "context" information
+        for chunks in f['chunks'][1:]:
+            for chunk in chunks['lines']:
+                if chunk['action'] not in ('del', 'mod'):
+                    continue
+                changed_lines[f['filename']].append(chunk['old_lineno'])
+
+    commit_authors = []
+    user_counts = {}
+    email_counts = {}
+    author_counts = {}
+    _commit_cache = {}
+
+    commits = []
+    if get_commit_authors:
+        commits = target_scm.compare(
+            target_ref, source_ref, source_scm, merge=True,
+            pre_load=["author"])
+
+        for commit in commits:
+            user = User.get_from_cs_author(commit.author)
+            if user and user not in commit_authors:
+                commit_authors.append(user)
+
+    # lines
+    if get_authors:
+        target_commit = source_repo.get_commit(ancestor_id)
+
+        for fname, lines in changed_lines.items():
+            try:
+                node = target_commit.get_node(fname)
+            except Exception:
+                continue
+
+            if not isinstance(node, FileNode):
+                continue
+
+            for annotation in node.annotate:
+                line_no, commit_id, get_commit_func, line_text = annotation
+                if line_no in lines:
+                    if commit_id not in _commit_cache:
+                        _commit_cache[commit_id] = get_commit_func()
+                    commit = _commit_cache[commit_id]
+                    author = commit.author
+                    email = commit.author_email
+                    user = User.get_from_cs_author(author)
+                    if user:
+                        user_counts[user] = user_counts.get(user, 0) + 1
+                    author_counts[author] = author_counts.get(author, 0) + 1
+                    email_counts[email] = email_counts.get(email, 0) + 1
+
+    return {
+        'commits': commits,
+        'files': all_files_changes,
+        'stats': stats,
+        'ancestor': ancestor_id,
+        # original authors of modified files
+        'original_authors': {
+            'users': user_counts,
+            'authors': author_counts,
+            'emails': email_counts,
+        },
+        'commit_authors': commit_authors
+    }
 
 
 class PullRequestModel(BaseModel):
@@ -160,8 +283,10 @@ class PullRequestModel(BaseModel):
 
         if search_q:
             like_expression = u'%{}%'.format(safe_unicode(search_q))
+            q = q.join(User)
             q = q.filter(or_(
                 cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
                 PullRequest.title.ilike(like_expression),
                 PullRequest.description.ilike(like_expression),
             ))
@@ -355,7 +480,7 @@ class PullRequestModel(BaseModel):
                 PullRequestReviewers.user_id == user_id).all()
         ]
 
-    def _prepare_participating_query(self, user_id=None, statuses=None,
+    def _prepare_participating_query(self, user_id=None, statuses=None, query='',
                                      order_by=None, order_dir='desc'):
         q = PullRequest.query()
         if user_id:
@@ -372,6 +497,15 @@ class PullRequestModel(BaseModel):
         if statuses:
             q = q.filter(PullRequest.status.in_(statuses))
 
+        if query:
+            like_expression = u'%{}%'.format(safe_unicode(query))
+            q = q.join(User)
+            q = q.filter(or_(
+                cast(PullRequest.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
+                PullRequest.title.ilike(like_expression),
+                PullRequest.description.ilike(like_expression),
+            ))
         if order_by:
             order_map = {
                 'name_raw': PullRequest.pull_request_id,
@@ -386,19 +520,19 @@ class PullRequestModel(BaseModel):
 
         return q
 
-    def count_im_participating_in(self, user_id=None, statuses=None):
-        q = self._prepare_participating_query(user_id, statuses=statuses)
+    def count_im_participating_in(self, user_id=None, statuses=None, query=''):
+        q = self._prepare_participating_query(user_id, statuses=statuses, query=query)
         return q.count()
 
     def get_im_participating_in(
-            self, user_id=None, statuses=None, offset=0,
+            self, user_id=None, statuses=None, query='', offset=0,
             length=None, order_by=None, order_dir='desc'):
         """
         Get all Pull requests that i'm participating in, or i have opened
         """
 
         q = self._prepare_participating_query(
-            user_id, statuses=statuses, order_by=order_by,
+            user_id, statuses=statuses, query=query, order_by=order_by,
             order_dir=order_dir)
 
         if length:
@@ -442,6 +576,7 @@ class PullRequestModel(BaseModel):
 
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, title, description=None,
+               common_ancestor_id=None,
                description_renderer=None,
                reviewer_data=None, translator=None, auth_user=None):
         translator = translator or get_current_request().translate
@@ -463,6 +598,8 @@ class PullRequestModel(BaseModel):
         pull_request.author = created_by_user
         pull_request.reviewer_data = reviewer_data
         pull_request.pull_request_state = pull_request.STATE_CREATING
+        pull_request.common_ancestor_id = common_ancestor_id
+
         Session().add(pull_request)
         Session().flush()
 
@@ -542,8 +679,7 @@ class PullRequestModel(BaseModel):
                 pull_request, auth_user=auth_user, translator=translator)
 
         self.notify_reviewers(pull_request, reviewer_ids)
-        self.trigger_pull_request_hook(
-            pull_request, created_by_user, 'create')
+        self.trigger_pull_request_hook(pull_request, created_by_user, 'create')
 
         creation_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
@@ -556,28 +692,26 @@ class PullRequestModel(BaseModel):
         pull_request = self.__get_pull_request(pull_request)
         target_scm = pull_request.target_repo.scm_instance()
         if action == 'create':
-            trigger_hook = hooks_utils.trigger_log_create_pull_request_hook
+            trigger_hook = hooks_utils.trigger_create_pull_request_hook
         elif action == 'merge':
-            trigger_hook = hooks_utils.trigger_log_merge_pull_request_hook
+            trigger_hook = hooks_utils.trigger_merge_pull_request_hook
         elif action == 'close':
-            trigger_hook = hooks_utils.trigger_log_close_pull_request_hook
+            trigger_hook = hooks_utils.trigger_close_pull_request_hook
         elif action == 'review_status_change':
-            trigger_hook = hooks_utils.trigger_log_review_pull_request_hook
+            trigger_hook = hooks_utils.trigger_review_pull_request_hook
         elif action == 'update':
-            trigger_hook = hooks_utils.trigger_log_update_pull_request_hook
+            trigger_hook = hooks_utils.trigger_update_pull_request_hook
         elif action == 'comment':
-            # dummy hook ! for comment. We want this function to handle all cases
-            def trigger_hook(*args, **kwargs):
-                pass
-            comment = data['comment']
-            events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+            trigger_hook = hooks_utils.trigger_comment_pull_request_hook
         else:
             return
 
+        log.debug('Handling pull_request %s trigger_pull_request_hook with action %s and hook: %s',
+                  pull_request, action, trigger_hook)
         trigger_hook(
             username=user.username,
             repo_name=pull_request.target_repo.repo_name,
-            repo_alias=target_scm.alias,
+            repo_type=target_scm.alias,
             pull_request=pull_request,
             data=data)
 
@@ -684,6 +818,38 @@ class PullRequestModel(BaseModel):
         source_ref_type = pull_request.source_ref_parts.type
         return source_ref_type in self.REF_TYPES
 
+    def get_flow_commits(self, pull_request):
+
+        # source repo
+        source_ref_name = pull_request.source_ref_parts.name
+        source_ref_type = pull_request.source_ref_parts.type
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        source_repo = pull_request.source_repo.scm_instance()
+
+        try:
+            if source_ref_type in self.REF_TYPES:
+                source_commit = source_repo.get_commit(source_ref_name)
+            else:
+                source_commit = source_repo.get_commit(source_ref_id)
+        except CommitDoesNotExistError:
+            raise SourceRefMissing()
+
+        # target repo
+        target_ref_name = pull_request.target_ref_parts.name
+        target_ref_type = pull_request.target_ref_parts.type
+        target_ref_id = pull_request.target_ref_parts.commit_id
+        target_repo = pull_request.target_repo.scm_instance()
+
+        try:
+            if target_ref_type in self.REF_TYPES:
+                target_commit = target_repo.get_commit(target_ref_name)
+            else:
+                target_commit = target_repo.get_commit(target_ref_id)
+        except CommitDoesNotExistError:
+            raise TargetRefMissing()
+
+        return source_commit, target_commit
+
     def update_commits(self, pull_request, updating_user):
         """
         Get the updated list of commits for the pull request
@@ -710,31 +876,22 @@ class PullRequestModel(BaseModel):
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
 
-        # source repo
-        source_repo = pull_request.source_repo.scm_instance()
-
         try:
-            source_commit = source_repo.get_commit(commit_id=source_ref_name)
-        except CommitDoesNotExistError:
+            source_commit, target_commit = self.get_flow_commits(pull_request)
+        except SourceRefMissing:
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_SOURCE_REF,
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
-
-        source_changed = source_ref_id != source_commit.raw_id
-
-        # target repo
-        target_repo = pull_request.target_repo.scm_instance()
-
-        try:
-            target_commit = target_repo.get_commit(commit_id=target_ref_name)
-        except CommitDoesNotExistError:
+        except TargetRefMissing:
             return UpdateResponse(
                 executed=False,
                 reason=UpdateFailureReason.MISSING_TARGET_REF,
                 old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
                 source_changed=False, target_changed=False)
+
+        source_changed = source_ref_id != source_commit.raw_id
         target_changed = target_ref_id != target_commit.raw_id
 
         if not (source_changed or target_changed):
@@ -764,17 +921,8 @@ class PullRequestModel(BaseModel):
                 ver.pull_request_version_id if ver else None
             pull_request_version = pull_request
 
-        try:
-            if target_ref_type in self.REF_TYPES:
-                target_commit = target_repo.get_commit(target_ref_name)
-            else:
-                target_commit = target_repo.get_commit(target_ref_id)
-        except CommitDoesNotExistError:
-            return UpdateResponse(
-                executed=False,
-                reason=UpdateFailureReason.MISSING_TARGET_REF,
-                old=pull_request, new=None, common_ancestor_id=None, commit_changes=None,
-                source_changed=source_changed, target_changed=target_changed)
+        source_repo = pull_request.source_repo.scm_instance()
+        target_repo = pull_request.target_repo.scm_instance()
 
         # re-compute commit ids
         old_commit_ids = pull_request.revisions
@@ -783,8 +931,17 @@ class PullRequestModel(BaseModel):
             target_commit.raw_id, source_commit.raw_id, source_repo, merge=True,
             pre_load=pre_load)
 
-        ancestor_commit_id = source_repo.get_common_ancestor(
-            source_commit.raw_id, target_commit.raw_id, target_repo)
+        target_ref = target_commit.raw_id
+        source_ref = source_commit.raw_id
+        ancestor_commit_id = target_repo.get_common_ancestor(
+            target_ref, source_ref, source_repo)
+
+        if not ancestor_commit_id:
+            raise ValueError(
+                'cannot calculate diff info without a common ancestor. '
+                'Make sure both repositories are related, and have a common forking commit.')
+
+        pull_request.common_ancestor_id = ancestor_commit_id
 
         pull_request.source_ref = '%s:%s:%s' % (
             source_ref_type, source_ref_name, source_commit.raw_id)
@@ -885,11 +1042,13 @@ class PullRequestModel(BaseModel):
         version._last_merge_source_rev = pull_request._last_merge_source_rev
         version._last_merge_target_rev = pull_request._last_merge_target_rev
         version.last_merge_status = pull_request.last_merge_status
+        version.last_merge_metadata = pull_request.last_merge_metadata
         version.shadow_merge_ref = pull_request.shadow_merge_ref
         version.merge_rev = pull_request.merge_rev
         version.reviewer_data = pull_request.reviewer_data
 
         version.revisions = pull_request.revisions
+        version.common_ancestor_id = pull_request.common_ancestor_id
         version.pull_request = pull_request
         Session().add(version)
         Session().flush()
@@ -1270,7 +1429,10 @@ class PullRequestModel(BaseModel):
             email_kwargs=email_kwargs,
         )
 
-    def delete(self, pull_request, user):
+    def delete(self, pull_request, user=None):
+        if not user:
+            user = getattr(get_current_rhodecode_user(), 'username', None)
+
         pull_request = self.__get_pull_request(pull_request)
         old_data = pull_request.get_api_data(with_merge_state=False)
         self._cleanup_merge_workspace(pull_request)
@@ -1285,8 +1447,7 @@ class PullRequestModel(BaseModel):
         pull_request.status = PullRequest.STATUS_CLOSED
         pull_request.updated_on = datetime.datetime.now()
         Session().add(pull_request)
-        self.trigger_pull_request_hook(
-            pull_request, pull_request.author, 'close')
+        self.trigger_pull_request_hook(pull_request, pull_request.author, 'close')
 
         pr_data = pull_request.get_api_data(with_merge_state=False)
         self._log_audit_action(
@@ -1332,47 +1493,46 @@ class PullRequestModel(BaseModel):
         )
 
         Session().flush()
-        events.trigger(events.PullRequestCommentEvent(pull_request, comment))
+
+        self.trigger_pull_request_hook(pull_request, user, 'comment',
+                                       data={'comment': comment})
+
         # we now calculate the status of pull request again, and based on that
         # calculation trigger status change. This might happen in cases
         # that non-reviewer admin closes a pr, which means his vote doesn't
         # change the status, while if he's a reviewer this might change it.
         calculated_status = pull_request.calculated_review_status()
         if old_calculated_status != calculated_status:
-            self.trigger_pull_request_hook(
-                pull_request, user, 'review_status_change',
-                data={'status': calculated_status})
+            self.trigger_pull_request_hook(pull_request, user, 'review_status_change',
+                                           data={'status': calculated_status})
 
         # finally close the PR
-        PullRequestModel().close_pull_request(
-            pull_request.pull_request_id, user)
+        PullRequestModel().close_pull_request(pull_request.pull_request_id, user)
 
         return comment, status
 
-    def merge_status(self, pull_request, translator=None,
-                     force_shadow_repo_refresh=False):
+    def merge_status(self, pull_request, translator=None, force_shadow_repo_refresh=False):
         _ = translator or get_current_request().translate
 
         if not self._is_merge_enabled(pull_request):
-            return False, _('Server-side pull request merging is disabled.')
+            return None, False, _('Server-side pull request merging is disabled.')
+
         if pull_request.is_closed():
-            return False, _('This pull request is closed.')
+            return None, False, _('This pull request is closed.')
+
         merge_possible, msg = self._check_repo_requirements(
             target=pull_request.target_repo, source=pull_request.source_repo,
             translator=_)
         if not merge_possible:
-            return merge_possible, msg
+            return None, merge_possible, msg
 
         try:
-            resp = self._try_merge(
-                pull_request,
-                force_shadow_repo_refresh=force_shadow_repo_refresh)
-            log.debug("Merge response: %s", resp)
-            status = resp.possible, resp.merge_status_message
+            merge_response = self._try_merge(
+                pull_request, force_shadow_repo_refresh=force_shadow_repo_refresh)
+            log.debug("Merge response: %s", merge_response)
+            return merge_response, merge_response.possible, merge_response.merge_status_message
         except NotImplementedError:
-            status = False, _('Pull request merging is not supported.')
-
-        return status
+            return None, False, _('Pull request merging is not supported.')
 
     def _check_repo_requirements(self, target, source, translator):
         """
@@ -1439,6 +1599,9 @@ class PullRequestModel(BaseModel):
                 'target_ref': pull_request.target_ref_parts,
                 'source_ref': pull_request.source_ref_parts,
             }
+            if pull_request.last_merge_metadata:
+                metadata.update(pull_request.last_merge_metadata)
+
             if not possible and target_ref.type == 'branch':
                 # NOTE(marcink): case for mercurial multiple heads on branch
                 heads = target_vcs._heads(target_ref.name)
@@ -1447,6 +1610,7 @@ class PullRequestModel(BaseModel):
                     metadata.update({
                         'heads': heads
                     })
+
             merge_state = MergeResponse(
                 possible, False, None, pull_request.last_merge_status, metadata=metadata)
 
@@ -1487,6 +1651,8 @@ class PullRequestModel(BaseModel):
                 pull_request.source_ref_parts.commit_id
             pull_request._last_merge_target_rev = target_reference.commit_id
             pull_request.last_merge_status = merge_state.failure_reason
+            pull_request.last_merge_metadata = merge_state.metadata
+
             pull_request.shadow_merge_ref = merge_state.merge_ref
             Session().add(pull_request)
             Session().commit()
@@ -1627,7 +1793,7 @@ class PullRequestModel(BaseModel):
         target_commit = source_repo.get_commit(
             commit_id=safe_str(target_ref_id))
         source_commit = source_repo.get_commit(
-            commit_id=safe_str(source_ref_id))
+            commit_id=safe_str(source_ref_id), maybe_unreachable=True)
         if isinstance(source_repo, Repository):
             vcs_repo = source_repo.scm_instance()
         else:
@@ -1730,9 +1896,16 @@ class MergeCheck(object):
         self.review_status = None
         self.merge_possible = None
         self.merge_msg = ''
+        self.merge_response = None
         self.failed = None
         self.errors = []
         self.error_details = OrderedDict()
+        self.source_commit = AttributeDict()
+        self.target_commit = AttributeDict()
+
+    def __repr__(self):
+        return '<MergeCheck(possible:{}, failed:{}, errors:{})>'.format(
+            self.merge_possible, self.failed, self.errors)
 
     def push_error(self, error_type, message, error_key, details):
         self.failed = True
@@ -1759,8 +1932,7 @@ class MergeCheck(object):
                 return merge_check
 
         # permissions to merge
-        user_allowed_to_merge = PullRequestModel().check_user_merge(
-            pull_request, auth_user)
+        user_allowed_to_merge = PullRequestModel().check_user_merge(pull_request, auth_user)
         if not user_allowed_to_merge:
             log.debug("MergeCheck: cannot merge, approval is pending.")
 
@@ -1822,11 +1994,31 @@ class MergeCheck(object):
                 return merge_check
 
         # merge possible, here is the filesystem simulation + shadow repo
-        merge_status, msg = PullRequestModel().merge_status(
+        merge_response, merge_status, msg = PullRequestModel().merge_status(
             pull_request, translator=translator,
             force_shadow_repo_refresh=force_shadow_repo_refresh)
+
         merge_check.merge_possible = merge_status
         merge_check.merge_msg = msg
+        merge_check.merge_response = merge_response
+
+        source_ref_id = pull_request.source_ref_parts.commit_id
+        target_ref_id = pull_request.target_ref_parts.commit_id
+
+        try:
+            source_commit, target_commit = PullRequestModel().get_flow_commits(pull_request)
+            merge_check.source_commit.changed = source_ref_id != source_commit.raw_id
+            merge_check.source_commit.ref_spec = pull_request.source_ref_parts
+            merge_check.source_commit.current_raw_id = source_commit.raw_id
+            merge_check.source_commit.previous_raw_id = source_ref_id
+
+            merge_check.target_commit.changed = target_ref_id != target_commit.raw_id
+            merge_check.target_commit.ref_spec = pull_request.target_ref_parts
+            merge_check.target_commit.current_raw_id = target_commit.raw_id
+            merge_check.target_commit.previous_raw_id = target_ref_id
+        except (SourceRefMissing, TargetRefMissing):
+            pass
+
         if not merge_status:
             log.debug("MergeCheck: cannot merge, pull request merge not possible.")
             merge_check.push_error('warning', msg, cls.MERGE_CHECK, None)

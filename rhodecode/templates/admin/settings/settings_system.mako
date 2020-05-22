@@ -46,12 +46,19 @@
         <h3 class="panel-title">${_('Python Packages')}</h3>
     </div>
     <div class="panel-body">
-        <dl class="dl-horizontal settings dt-400">
-        % for dt, dd in c.py_modules['human_value']:
-          <dt>${dt}${':' if dt else '---'}</dt>
-          <dd>${dd}${'' if dt else '---'}</dd>
-        % endfor
-        </dl>
+        <table>
+            <th></th>
+            <th></th>
+            <th></th>
+            % for name, package_data in c.py_modules['human_value']:
+                <tr>
+                    <td>${name.lower()}</td>
+                    <td>${package_data['version']}</td>
+                    <td>(${package_data['location']})</td>
+                </tr>
+            % endfor
+        </table>
+
     </div>
 </div>
 

@@ -41,7 +41,7 @@
                 </div>
             </li>
             <li class="location-path">
-                <input  class="file-name-input input-small" type="text" value="" name="filename" id="filename" placeholder="${_('Filename e.g example.py, or docs/readme.md')}">
+                <input  class="file-name-input input-small" type="text" value="${request.GET.get('filename')}" name="filename" id="filename" placeholder="${_('Filename e.g example.py, or docs/readme.md')}">
             </li>
             </ul>
         </div>
@@ -50,7 +50,6 @@
 
     <div class="table">
         <div>
-
             <div id="codeblock" class="codeblock">
                 <div class="editor-items">
                     <div class="editor-action active show-editor pull-left" onclick="fileEditor.showEditor(); return false">
@@ -108,6 +107,10 @@
 
         $('#filename').focus();
 
+        var commit_id =  "${c.commit.raw_id}";
+        var f_path = "${c.f_path}";
+
+        checkFileHead($('#eform'), commit_id, f_path, 'create')
     });
 
 </script>

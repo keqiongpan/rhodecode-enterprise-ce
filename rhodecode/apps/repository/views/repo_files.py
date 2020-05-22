@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -245,7 +245,7 @@ class RepoFilesView(RepoAppView):
 
         return branch_name, sha_commit_id, is_head
 
-    def _get_tree_at_commit(self, c, commit_id, f_path, full_load=False):
+    def _get_tree_at_commit(self, c, commit_id, f_path, full_load=False, at_rev=None):
 
         repo_id = self.db_repo.repo_id
         force_recache = self.get_recache_flag()
@@ -261,19 +261,19 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                               condition=cache_on)
-        def compute_file_tree(ver, repo_id, commit_id, f_path, full_load):
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache_on)
+        def compute_file_tree(ver, _name_hash, _repo_id, _commit_id, _f_path, _full_load, _at_rev):
             log.debug('Generating cached file tree at ver:%s for repo_id: %s, %s, %s',
-                      ver, repo_id, commit_id, f_path)
+                      ver, _repo_id, _commit_id, _f_path)
 
-            c.full_load = full_load
+            c.full_load = _full_load
             return render(
                 'rhodecode:templates/files/files_browser_tree.mako',
-                self._get_template_context(c), self.request)
+                self._get_template_context(c), self.request, _at_rev)
 
         return compute_file_tree(
-            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_id, commit_id, f_path, full_load)
+            rc_cache.FILE_TREE_CACHE_VER, self.db_repo.repo_name_hash,
+            self.db_repo.repo_id, commit_id, f_path, full_load, at_rev)
 
     def _get_archive_spec(self, fname):
         log.debug('Detecting archive spec for: `%s`', fname)
@@ -617,15 +617,12 @@ class RepoFilesView(RepoAppView):
         c.renderer = view_name == 'repo_files:rendered' or \
                         not self.request.GET.get('no-render', False)
 
-        # redirect to given commit_id from form if given
-        get_commit_id = self.request.GET.get('at_rev', None)
-        if get_commit_id:
-            self._get_commit_or_redirect(get_commit_id)
-
         commit_id, f_path = self._get_commit_and_path()
+
         c.commit = self._get_commit_or_redirect(commit_id)
         c.branch = self.request.GET.get('branch', None)
         c.f_path = f_path
+        at_rev = self.request.GET.get('at')
 
         # prev link
         try:
@@ -705,7 +702,7 @@ class RepoFilesView(RepoAppView):
                 c.authors = []
                 # this loads a simple tree without metadata to speed things up
                 # later via ajax we call repo_nodetree_full and fetch whole
-                c.file_tree = self._get_tree_at_commit(c, c.commit.raw_id, f_path)
+                c.file_tree = self._get_tree_at_commit(c, c.commit.raw_id, f_path, at_rev=at_rev)
 
                 c.readme_data, c.readme_file = \
                     self._get_readme_data(self.db_repo, c.visual.default_renderer,
@@ -782,9 +779,10 @@ class RepoFilesView(RepoAppView):
 
         c.file = dir_node
         c.commit = commit
+        at_rev = self.request.GET.get('at')
 
         html = self._get_tree_at_commit(
-            c, commit.raw_id, dir_node.path, full_load=True)
+            c, commit.raw_id, dir_node.path, full_load=True, at_rev=at_rev)
 
         return Response(html)
 
@@ -915,13 +913,12 @@ class RepoFilesView(RepoAppView):
         cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
         region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
 
-        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid,
-                                               condition=cache_on)
-        def compute_file_search(repo_id, commit_id, f_path):
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache_on)
+        def compute_file_search(_name_hash, _repo_id, _commit_id, _f_path):
             log.debug('Generating cached nodelist for repo_id:%s, %s, %s',
-                      repo_id, commit_id, f_path)
+                      _repo_id, commit_id, f_path)
             try:
-                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, commit_id, f_path)
+                _d, _f = ScmModel().get_quick_filter_nodes(repo_name, _commit_id, _f_path)
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
                 h.flash(safe_str(h.escape(e)), category='error')
@@ -931,7 +928,8 @@ class RepoFilesView(RepoAppView):
 
             return _d + _f
 
-        result = compute_file_search(self.db_repo.repo_id, commit_id, f_path)
+        result = compute_file_search(self.db_repo.repo_name_hash, self.db_repo.repo_id,
+                                     commit_id, f_path)
         return filter(lambda n: self.path_filter.path_access_allowed(n['name']), result)
 
     @LoginRequired()
@@ -961,6 +959,9 @@ class RepoFilesView(RepoAppView):
         return commit_id
 
     def _symbolic_reference_svn(self, commit_id, name, f_path, ref_type):
+        return commit_id
+
+        # NOTE(dan): old code we used in "diff" mode compare
         new_f_path = vcspath.join(name, f_path)
         return u'%s@%s' % (new_f_path, commit_id)
 
@@ -1035,10 +1036,24 @@ class RepoFilesView(RepoAppView):
             file_history, _hist = self._get_node_history(commit, f_path)
 
             res = []
-            for obj in file_history:
+            for section_items, section in file_history:
+                items = []
+                for obj_id, obj_text, obj_type in section_items:
+                    at_rev = ''
+                    if obj_type in ['branch', 'bookmark', 'tag']:
+                        at_rev = obj_text
+                    entry = {
+                        'id': obj_id,
+                        'text': obj_text,
+                        'type': obj_type,
+                        'at_rev': at_rev
+                    }
+
+                    items.append(entry)
+
                 res.append({
-                    'text': obj[1],
-                    'children': [{'id': o[0], 'text': o[1], 'type': o[2]} for o in obj[0]]
+                    'text': section,
+                    'children': items
                 })
 
             data = {
@@ -1094,6 +1109,42 @@ class RepoFilesView(RepoAppView):
         c.authors = [val for val in unique.values()]
 
         return self._get_template_context(c)
+
+    @LoginRequired()
+    @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
+    @view_config(
+        route_name='repo_files_check_head', request_method='POST',
+        renderer='json_ext', xhr=True)
+    def repo_files_check_head(self):
+        self.load_default_context()
+
+        commit_id, f_path = self._get_commit_and_path()
+        _branch_name, _sha_commit_id, is_head = \
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+
+        new_path = self.request.POST.get('path')
+        operation = self.request.POST.get('operation')
+        path_exist = ''
+
+        if new_path and operation in ['create', 'upload']:
+            new_f_path = os.path.join(f_path.lstrip('/'), new_path)
+            try:
+                commit_obj = self.rhodecode_vcs_repo.get_commit(commit_id)
+                # NOTE(dan): construct whole path without leading /
+                file_node = commit_obj.get_node(new_f_path)
+                if file_node is not None:
+                    path_exist = new_f_path
+            except EmptyRepositoryError:
+                pass
+            except Exception:
+                pass
+
+        return {
+            'branch': _branch_name,
+            'sha': _sha_commit_id,
+            'is_head': is_head,
+            'path_exists': path_exist
+        }
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')

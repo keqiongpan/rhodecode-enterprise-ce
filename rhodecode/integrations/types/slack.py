@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -30,6 +30,7 @@ import colander
 from mako.template import Template
 
 from rhodecode import events
+from rhodecode.model.validation_schema.widgets import CheckboxChoiceWidgetDesc
 from rhodecode.translation import _
 from rhodecode.lib import helpers as h
 from rhodecode.lib.celerylib import run_task, async_task, RequestContextTask
@@ -134,14 +135,13 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
     ]
 
     def send_event(self, event):
+        log.debug('handling event %s with integration %s', event.name, self)
+
         if event.__class__ not in self.valid_events:
-            log.debug('event not valid: %r', event)
+            log.debug('event %r not present in valid event list (%s)', event, self.valid_events)
             return
 
-        allowed_events = self.settings['events']
-        if event.name not in allowed_events:
-            log.debug('event ignored: %r event %s not in allowed events %s',
-                      event, event.name, allowed_events)
+        if not self.event_enabled(event):
             return
 
         data = event.as_dict()
@@ -153,8 +153,6 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
             data['actor']['username'], event.name)
         fields = None
         overrides = None
-
-        log.debug('handling slack event for %s', event.name)
 
         if isinstance(event, events.PullRequestCommentEvent):
             (title, text, fields, overrides) \
@@ -176,12 +174,12 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         schema = SlackSettingsSchema()
         schema.add(colander.SchemaNode(
             colander.Set(),
-            widget=deform.widget.CheckboxChoiceWidget(
+            widget=CheckboxChoiceWidgetDesc(
                 values=sorted(
-                    [(e.name, e.display_name) for e in self.valid_events]
-                )
+                    [(e.name, e.display_name, e.description) for e in self.valid_events]
+                ),
             ),
-            description="Events activated for this integration",
+            description="List of events activated for this integration",
             name='events'
         ))
 

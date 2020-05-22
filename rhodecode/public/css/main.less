@@ -27,6 +27,8 @@
 @import 'panels';
 @import 'deform';
 @import 'tooltips';
+@import 'sweetalert2';
+
 
 //--- BASE ------------------//
 .noscript-error {
@@ -419,8 +421,8 @@ ul.auth_plugins {
 }
 
 .pr-title-input {
-  width: 80%;
-  font-size: 1em;
+  width: 100%;
+  font-size: 18px;
   margin:  0 0 4px 0;
   padding: 0;
   line-height: 1.7em;
@@ -440,6 +442,7 @@ ul.auth_plugins {
     color: black;
     opacity: 1;
     background: #fff;
+    font-size: 18px;
   }
 }
 
@@ -464,9 +467,9 @@ ul.auth_plugins {
 #pr_open_message {
     border: @border-thickness solid #fff;
     border-radius: @border-radius;
-    padding: @padding-large-vertical @padding-large-vertical @padding-large-vertical 0;
     text-align: left;
     overflow: hidden;
+    white-space: pre-line;
 }
 
 .pr-details-title {
@@ -1483,10 +1486,16 @@ table.integrations {
     border-bottom: @border-thickness solid @grey5;
     margin-bottom: @space;
 }
+
 .reviewers-title {
-    width: 25%;
-    min-width: 200px;
+  width: 25%;
+  min-width: 200px;
+
+  &.first-panel {
+    margin-top: 34px;
+  }
 }
+
 .reviewers {
     width: 25%;
     min-width: 200px;
@@ -1787,7 +1796,7 @@ table.integrations {
 }
 
 div.ancestor {
-    line-height: 33px;
+
 }
 
 .cs_icon_td input[type="checkbox"] {
@@ -2094,6 +2103,12 @@ BIN_FILENODE = 7
 	}
 }
 
+.notice-messages {
+    .markdown-block,
+	.rst-block {
+		padding: 0;
+	}
+}
 
 .notifications_buttons{
 	float: right;
@@ -2517,6 +2532,10 @@ h3.files_location{
     line-height: 30px;
     padding: 0 4px;
     white-space: nowrap;
+  }
+
+  .upload-form {
+    margin-top: 46px;
   }
 
   .location-path {

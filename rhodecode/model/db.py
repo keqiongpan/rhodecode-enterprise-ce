@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -617,6 +617,7 @@ class User(Base, BaseModel):
     user_gists = relationship('Gist', cascade='all')
     # user pull requests
     user_pull_requests = relationship('PullRequest', cascade='all')
+
     # external identities
     external_identities = relationship(
         'ExternalIdentity',
@@ -1047,6 +1048,11 @@ class User(Base, BaseModel):
             # latest state from the database is used.
             Session().refresh(user)
         return user
+
+    @classmethod
+    def get_default_user_id(cls):
+        import rhodecode
+        return rhodecode.CONFIG['default_user_id']
 
     def _get_default_perms(self, user, suffix=''):
         from rhodecode.model.permission import PermissionModel
@@ -2339,9 +2345,10 @@ class Repository(Base, BaseModel):
     # SCM PROPERTIES
     #==========================================================================
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, maybe_unreachable=False):
         return get_commit_safe(
-            self.scm_instance(), commit_id, commit_idx, pre_load=pre_load)
+            self.scm_instance(), commit_id, commit_idx, pre_load=pre_load,
+            maybe_unreachable=maybe_unreachable)
 
     def get_changeset(self, rev=None, pre_load=None):
         warnings.warn("Use get_commit", DeprecationWarning)
@@ -3710,6 +3717,9 @@ class ChangesetComment(Base, BaseModel):
     COMMENT_TYPE_TODO = u'todo'
     COMMENT_TYPES = [COMMENT_TYPE_NOTE, COMMENT_TYPE_TODO]
 
+    OP_IMMUTABLE = u'immutable'
+    OP_CHANGEABLE = u'changeable'
+
     comment_id = Column('comment_id', Integer(), nullable=False, primary_key=True)
     repo_id = Column('repo_id', Integer(), ForeignKey('repositories.repo_id'), nullable=False)
     revision = Column('revision', String(40), nullable=True)
@@ -3724,6 +3734,7 @@ class ChangesetComment(Base, BaseModel):
     modified_at = Column('modified_at', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
+    immutable_state = Column('immutable_state', Unicode(128), nullable=True, default=OP_CHANGEABLE)
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
@@ -3765,6 +3776,10 @@ class ChangesetComment(Base, BaseModel):
     @property
     def outdated(self):
         return self.display_state == self.COMMENT_OUTDATED
+
+    @property
+    def immutable(self):
+        return self.immutable_state == self.OP_IMMUTABLE
 
     def outdated_at_version(self, version):
         """
@@ -3814,7 +3829,9 @@ class ChangesetComment(Base, BaseModel):
             'comment_lineno': comment.line_no,
             'comment_author': comment.author,
             'comment_created_on': comment.created_on,
-            'comment_resolved_by': self.resolved
+            'comment_resolved_by': self.resolved,
+            'comment_commit_id': comment.revision,
+            'comment_pull_request_id': comment.pull_request_id,
         }
         return data
 
@@ -3973,6 +3990,8 @@ class _PullRequestBase(BaseModel):
     _revisions = Column(
         'revisions', UnicodeText().with_variant(UnicodeText(20500), 'mysql'))
 
+    common_ancestor_id = Column('common_ancestor_id', Unicode(255), nullable=True)
+
     @declared_attr
     def source_repo_id(cls):
         # TODO: dan: rename column to source_repo_id
@@ -4024,6 +4043,10 @@ class _PullRequestBase(BaseModel):
     _last_merge_target_rev = Column(
         'last_merge_other_rev', String(40), nullable=True)
     _last_merge_status = Column('merge_status', Integer(), nullable=True)
+    last_merge_metadata = Column(
+        'last_merge_metadata', MutationObj.as_mutable(
+            JsonType(dialect_map=dict(mysql=UnicodeText(16384)))))
+
     merge_rev = Column('merge_rev', String(40), nullable=True)
 
     reviewer_data = Column(
@@ -4123,10 +4146,11 @@ class _PullRequestBase(BaseModel):
 
         pull_request = self
         if with_merge_state:
-            merge_status = PullRequestModel().merge_status(pull_request)
+            merge_response, merge_status, msg = \
+                PullRequestModel().merge_status(pull_request)
             merge_state = {
-                'status': merge_status[0],
-                'message': safe_unicode(merge_status[1]),
+                'status': merge_status,
+                'message': safe_unicode(msg),
             }
         else:
             merge_state = {'status': 'not_available',
@@ -4281,7 +4305,7 @@ class PullRequest(Base, _PullRequestBase):
         attrs.source_ref_parts = pull_request_obj.source_ref_parts
         attrs.target_ref_parts = pull_request_obj.target_ref_parts
         attrs.revisions = pull_request_obj.revisions
-
+        attrs.common_ancestor_id = pull_request_obj.common_ancestor_id
         attrs.shadow_merge_ref = org_pull_request_obj.shadow_merge_ref
         attrs.reviewer_data = org_pull_request_obj.reviewer_data
         attrs.reviewer_data_json = org_pull_request_obj.reviewer_data_json
@@ -4509,6 +4533,65 @@ class UserNotification(Base, BaseModel):
     def mark_as_read(self):
         self.read = True
         Session().add(self)
+
+
+class UserNotice(Base, BaseModel):
+    __tablename__ = 'user_notices'
+    __table_args__ = (
+        base_table_args
+    )
+
+    NOTIFICATION_TYPE_MESSAGE = 'message'
+    NOTIFICATION_TYPE_NOTICE = 'notice'
+
+    NOTIFICATION_LEVEL_INFO = 'info'
+    NOTIFICATION_LEVEL_WARNING = 'warning'
+    NOTIFICATION_LEVEL_ERROR = 'error'
+
+    user_notice_id = Column('gist_id', Integer(), primary_key=True)
+
+    notice_subject = Column('notice_subject', Unicode(512), nullable=True)
+    notice_body = Column('notice_body', UnicodeText().with_variant(UnicodeText(50000), 'mysql'), nullable=True)
+
+    notice_read = Column('notice_read', Boolean, default=False)
+
+    notification_level = Column('notification_level', String(1024), default=NOTIFICATION_LEVEL_INFO)
+    notification_type = Column('notification_type', String(1024), default=NOTIFICATION_TYPE_NOTICE)
+
+    notice_created_by = Column('notice_created_by', Integer(), ForeignKey('users.user_id'), nullable=True)
+    notice_created_on = Column('notice_created_on', DateTime(timezone=False), nullable=False, default=datetime.datetime.now)
+
+    user_id = Column('user_id', Integer(), ForeignKey('users.user_id'))
+    user = relationship('User', lazy="joined", primaryjoin='User.user_id==UserNotice.user_id')
+
+    @classmethod
+    def create_for_user(cls, user, subject, body, notice_level=NOTIFICATION_LEVEL_INFO, allow_duplicate=False):
+
+        if notice_level not in [cls.NOTIFICATION_LEVEL_ERROR,
+                                cls.NOTIFICATION_LEVEL_WARNING,
+                                cls.NOTIFICATION_LEVEL_INFO]:
+            return
+
+        from rhodecode.model.user import UserModel
+        user = UserModel().get_user(user)
+
+        new_notice = UserNotice()
+        if not allow_duplicate:
+            existing_msg = UserNotice().query() \
+                .filter(UserNotice.user == user) \
+                .filter(UserNotice.notice_body == body) \
+                .filter(UserNotice.notice_read == false()) \
+                .scalar()
+            if existing_msg:
+                log.warning('Ignoring duplicate notice for user %s', user)
+                return
+
+        new_notice.user = user
+        new_notice.notice_subject = subject
+        new_notice.notice_body = body
+        new_notice.notification_level = notice_level
+        Session().add(new_notice)
+        Session().commit()
 
 
 class Gist(Base, BaseModel):

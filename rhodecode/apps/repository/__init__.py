@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -155,6 +155,10 @@ def includeme(config):
         name='repo_file_authors',
         pattern='/{repo_name:.*?[^/]}/authors/{commit_id}/{f_path:.*}', repo_route=True)
 
+    config.add_route(
+        name='repo_files_check_head',
+        pattern='/{repo_name:.*?[^/]}/check_head/{commit_id}/{f_path:.*}',
+        repo_route=True)
     config.add_route(
         name='repo_files_remove_file',
         pattern='/{repo_name:.*?[^/]}/remove_file/{commit_id}/{f_path:.*}',

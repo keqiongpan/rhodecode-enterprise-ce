@@ -59,7 +59,7 @@
                             ${base.gravatar(h.DEFAULT_USER_EMAIL, 16)}
                             ${h.DEFAULT_USER} - ${_('only users/user groups explicitly added here will have access')}</td>
                         <td class="td-action">
-                            <span class="tooltip btn btn-link btn-default" onclick="setPrivateRepo(false); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
+                            <span class="noselect tooltip btn btn-link btn-default" onclick="setPrivateRepo(this, false); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
                             ${_('un-set private mode')}
                             </span>
                         </td>
@@ -115,7 +115,7 @@
                             ${_('Remove')}
                             </span>
                           %elif _user.username == h.DEFAULT_USER:
-                            <span class="tooltip btn btn-link btn-default" onclick="setPrivateRepo(true); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
+                            <span class="noselect tooltip btn btn-link btn-default" onclick="setPrivateRepo(this, true); return false" title="${_('Private repositories are only visible to people explicitly added as collaborators. Default permissions wont apply')}">
                             ${_('set private mode')}
                             </span>
                           %endif
@@ -213,7 +213,14 @@
     });
     quick_repo_menu();
 
-    var setPrivateRepo = function (private) {
+    var setPrivateRepo = function (elem, private) {
+        var $elem = $(elem)
+        if ($elem.hasClass('disabled')) {
+            return
+        }
+        $elem.addClass('disabled');
+        $elem.css({"opacity": 0.3})
+
         var postData = {
             'csrf_token': CSRF_TOKEN,
             'private': private

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -66,9 +66,8 @@ class VcsServer(object):
 
     def _check_permissions(self, action):
         permission = self.user_permissions.get(self.repo_name)
-        log.debug(
-            'permission for %s on %s are: %s',
-            self.user, self.repo_name, permission)
+        log.debug('permission for %s on %s are: %s',
+                  self.user, self.repo_name, permission)
 
         if not permission:
             log.error('user `%s` permissions to repo:%s are empty. Forbidding access.',

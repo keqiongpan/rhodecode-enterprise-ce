@@ -40,8 +40,8 @@ ${value}
 PYTHON PACKAGES
 ---------------
 
-% for key, value in c.py_modules['human_value']:
-${'{:<60}'.format(key)}: ${value}
+% for name, package_data in c.py_modules['human_value']:
+${'{:<60}'.format(name)}: ${'{:<20}'.format(package_data['version'])} (${package_data['location']})
 % endfor
 
 </pre>

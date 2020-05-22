@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -283,7 +283,7 @@ def get_current_lang(request):
     return getattr(request, '_LOCALE_', request.locale_name)
 
 
-def attach_context_attributes(context, request, user_id=None):
+def attach_context_attributes(context, request, user_id=None, is_api=None):
     """
     Attach variables into template context called `c`.
     """
@@ -379,7 +379,8 @@ def attach_context_attributes(context, request, user_id=None):
         "sideside": "sideside"
     }.get(request.GET.get('diffmode'))
 
-    is_api = hasattr(request, 'rpc_user')
+    if is_api is not None:
+        is_api = hasattr(request, 'rpc_user')
     session_attrs = {
         # defaults
         "clone_url_format": "http",
@@ -436,7 +437,7 @@ def attach_context_attributes(context, request, user_id=None):
 
     context.csrf_token = csrf_token
     context.backends = rhodecode.BACKENDS.keys()
-    context.backends.sort()
+
     unread_count = 0
     user_bookmark_list = []
     if user_id:

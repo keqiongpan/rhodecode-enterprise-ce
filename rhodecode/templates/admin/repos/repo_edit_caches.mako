@@ -17,7 +17,11 @@
         ${h.secure_form(h.route_path('edit_repo_caches', repo_name=c.repo_name), request=request)}
         <div class="form">
            <div class="fields">
-               ${h.submit('reset_cache_%s' % c.rhodecode_db_repo.repo_name,_('Invalidate repository cache'),class_="btn btn-small",onclick="return confirm('"+_('Confirm to invalidate repository cache')+"');")}
+               <input class="btn btn-small" id="reset_cache_${c.rhodecode_db_repo.repo_id}"
+                      name="reset_cache_${c.rhodecode_db_repo.repo_id}"
+                      onclick="submitConfirm(event, this, _gettext('Confirm to invalidate repository cache'), _gettext('Invalidate Cache'), '${c.rhodecode_db_repo.repo_name}')"
+                      type="submit" value="${_('Invalidate repository cache')}"
+               >
            </div>
         </div>
         ${h.end_form()}

@@ -149,6 +149,18 @@
 
                 <tr>
                     <td>
+                        ${_ungettext('This user owns %s pull request.', 'This user owns %s pull requests.', len(c.user.user_pull_requests)) % len(c.user.user_pull_requests)}
+                    </td>
+                    <td>
+                        <input type="radio" id="user_pull_requests_1" name="user_pull_requests" value="detach" checked="checked" ${'disabled=1' if len(c.user.user_pull_requests) == 0 else ''}/> <label for="user_pull_requests_1">${_('Detach pull requests')}</label>
+                    </td>
+                    <td>
+                        <input type="radio" id="user_pull_requests_2" name="user_pull_requests" value="delete" ${'disabled=1' if len(c.user.user_pull_requests) == 0 else ''}/> <label for="user_pull_requests_2">${_('Delete pull requests')}</label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
                         ${_ungettext('This user owns %s artifact.', 'This user owns %s artifacts.', len(c.user.artifacts)) % len(c.user.artifacts)}
                     </td>
                     <td>
@@ -166,7 +178,8 @@
                 % endif
 
                 <span style="padding: 0 5px 0 0">${_('New owner for detached objects')}:</span>
-                <div class="pull-right">${base.gravatar_with_user(c.first_admin.email, 16)}</div>
+                <div class="pull-right">${base.gravatar_with_user(c.detach_user.email, 16, tooltip=True)}</div>
+                <input type="hidden" name="detach_user_id" value="${c.detach_user.user_id}">
             </div>
             <div style="clear: both">
 
@@ -186,11 +199,11 @@
             <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
             <div class="field">
-                <button class="btn btn-small btn-danger" type="submit"
-                        onclick="return confirm('${_('Confirm to delete this user: %s') % c.user.username}');"
-                        ${"disabled" if not c.can_delete_user else ""}>
-                    ${_('Delete this user')}
-                </button>
+                <input class="btn btn-small btn-danger" id="remove_user" name="remove_user"
+                       onclick="submitConfirm(event, this, _gettext('Confirm to delete this user'), _gettext('Confirm Delete'), '${c.user.username}')"
+                       ${("disabled=1" if not c.can_delete_user else "")}
+                       type="submit" value="${_('Delete this user')}"
+                >
             </div>
 
         ${h.end_form()}

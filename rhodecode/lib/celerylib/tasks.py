@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2019 RhodeCode GmbH
+# Copyright (C) 2012-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,6 +49,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     :param subject: subject of the mail
     :param body: body of the mail
     :param html_body: html version of body
+    :param email_config: specify custom configuration for mailer
     """
     log = get_logger(send_email)
 

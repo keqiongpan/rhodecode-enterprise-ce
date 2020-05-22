@@ -21,6 +21,7 @@
             // register templateContext to pass template variables to JS
             var templateContext = {timeago: {}};
         </script>
+        <%include file="/base/plugins_base.mako"/>
         <script type="text/javascript" src="${h.asset('js/scripts.min.js', ver=c.rhodecode_version_hash)}"></script>
     </head>
     <body>

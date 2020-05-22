@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2011-2019 RhodeCode GmbH
+# Copyright (C) 2011-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -379,7 +379,9 @@ def get_pull_request_comments(
               },
               "comment_text": "Example text",
               "comment_type": null,
-              "pull_request_version": null
+              "pull_request_version": null,
+              "comment_commit_id": None,
+              "comment_pull_request_id": <pull_request_id>
             }
         ],
         error :  null
@@ -684,27 +686,8 @@ def create_pull_request(
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
 
-    source_scm = source_db_repo.scm_instance()
-    target_scm = target_db_repo.scm_instance()
-
     source_commit = get_commit_or_error(full_source_ref, source_db_repo)
     target_commit = get_commit_or_error(full_target_ref, target_db_repo)
-
-    ancestor = source_scm.get_common_ancestor(
-        source_commit.raw_id, target_commit.raw_id, target_scm)
-    if not ancestor:
-        raise JSONRPCError('no common ancestor found')
-
-    # recalculate target ref based on ancestor
-    target_ref_type, target_ref_name, __ = full_target_ref.split(':')
-    full_target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
-
-    commit_ranges = target_scm.compare(
-        target_commit.raw_id, source_commit.raw_id, source_scm,
-        merge=True, pre_load=[])
-
-    if not commit_ranges:
-        raise JSONRPCError('no commits found')
 
     reviewer_objects = Optional.extract(reviewers) or []
 
@@ -725,16 +708,16 @@ def create_pull_request(
         PullRequestModel().get_reviewer_functions()
 
     # recalculate reviewers logic, to make sure we can validate this
-    reviewer_rules = get_default_reviewers_data(
+    default_reviewers_data = get_default_reviewers_data(
         owner, source_db_repo,
         source_commit, target_db_repo, target_commit)
 
     # now MERGE our given with the calculated
-    reviewer_objects = reviewer_rules['reviewers'] + reviewer_objects
+    reviewer_objects = default_reviewers_data['reviewers'] + reviewer_objects
 
     try:
         reviewers = validate_default_reviewers(
-            reviewer_objects, reviewer_rules)
+            reviewer_objects, default_reviewers_data)
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
@@ -746,6 +729,24 @@ def create_pull_request(
             source_ref=title_source_ref,
             target=target_repo
         )
+
+    diff_info = default_reviewers_data['diff_info']
+    common_ancestor_id = diff_info['ancestor']
+    commits = diff_info['commits']
+
+    if not common_ancestor_id:
+        raise JSONRPCError('no common ancestor found')
+
+    if not commits:
+        raise JSONRPCError('no commits found')
+
+    # NOTE(marcink): reversed is consistent with how we open it in the WEB interface
+    revisions = [commit.raw_id for commit in reversed(commits)]
+
+    # recalculate target ref based on ancestor
+    target_ref_type, target_ref_name, __ = full_target_ref.split(':')
+    full_target_ref = ':'.join((target_ref_type, target_ref_name, common_ancestor_id))
+
     # fetch renderer, if set fallback to plain in case of PR
     rc_config = SettingsModel().get_all_settings()
     default_system_renderer = rc_config.get('rhodecode_markup_renderer', 'plain')
@@ -758,12 +759,13 @@ def create_pull_request(
         source_ref=full_source_ref,
         target_repo=target_repo,
         target_ref=full_target_ref,
-        revisions=[commit.raw_id for commit in reversed(commit_ranges)],
+        common_ancestor_id=common_ancestor_id,
+        revisions=revisions,
         reviewers=reviewers,
         title=title,
         description=description,
         description_renderer=description_renderer,
-        reviewer_data=reviewer_rules,
+        reviewer_data=default_reviewers_data,
         auth_user=apiuser
     )
 

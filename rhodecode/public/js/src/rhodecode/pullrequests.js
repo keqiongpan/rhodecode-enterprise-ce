@@ -1,4 +1,4 @@
-// # Copyright (C) 2010-2019 RhodeCode GmbH
+// # Copyright (C) 2010-2020 RhodeCode GmbH
 // #
 // # This program is free software: you can redistribute it and/or modify
 // # it under the terms of the GNU Affero General Public License, version 3
@@ -75,12 +75,12 @@ var getTitleAndDescription = function(sourceRef, elements, limit) {
   var desc = '';
 
   $.each($(elements).get().reverse().slice(0, limit), function(idx, value) {
-      var rawMessage = $(value).find('td.td-description .message').data('messageRaw').toString();
+      var rawMessage = value['message'];
       desc += '- ' + rawMessage.split('\n')[0].replace(/\n+$/, "") + '\n';
   });
   // only 1 commit, use commit message as title
   if (elements.length === 1) {
-      var rawMessage = $(elements[0]).find('td.td-description .message').data('messageRaw').toString();
+      var rawMessage = elements[0]['message'];
       title = rawMessage.split('\n')[0];
   }
   else {
@@ -92,7 +92,6 @@ var getTitleAndDescription = function(sourceRef, elements, limit) {
 };
 
 
-
 ReviewersController = function () {
     var self = this;
     this.$reviewRulesContainer = $('#review_rules');
@@ -100,28 +99,35 @@ ReviewersController = function () {
     this.forbidReviewUsers = undefined;
     this.$reviewMembers = $('#review_members');
     this.currentRequest = null;
+    this.diffData = null;
+    //dummy handler, we might register our own later
+    this.diffDataHandler = function(data){};
 
-    this.defaultForbidReviewUsers = function() {
+    this.defaultForbidReviewUsers = function () {
         return [
-            {'username': 'default',
-             'user_id': templateContext.default_user.user_id}
+            {
+                'username': 'default',
+                'user_id': templateContext.default_user.user_id
+            }
         ];
     };
 
-    this.hideReviewRules = function() {
+    this.hideReviewRules = function () {
         self.$reviewRulesContainer.hide();
     };
 
-    this.showReviewRules = function() {
+    this.showReviewRules = function () {
         self.$reviewRulesContainer.show();
     };
 
-    this.addRule = function(ruleText) {
+    this.addRule = function (ruleText) {
         self.showReviewRules();
         return '<div>- {0}</div>'.format(ruleText)
     };
 
-    this.loadReviewRules = function(data) {
+    this.loadReviewRules = function (data) {
+        self.diffData = data;
+
         // reset forbidden Users
         this.forbidReviewUsers = self.defaultForbidReviewUsers();
 
@@ -141,7 +147,7 @@ ReviewersController = function () {
             if (data.rules.voting < 0) {
                 self.$rulesList.append(
                     self.addRule(
-                         _gettext('All individual reviewers must vote.'))
+                        _gettext('All individual reviewers must vote.'))
                 )
             } else if (data.rules.voting === 1) {
                 self.$rulesList.append(
@@ -158,7 +164,7 @@ ReviewersController = function () {
         }
 
         if (data.rules.voting_groups !== undefined) {
-            $.each(data.rules.voting_groups, function(index, rule_data) {
+            $.each(data.rules.voting_groups, function (index, rule_data) {
                 self.$rulesList.append(
                     self.addRule(rule_data.text)
                 )
@@ -188,7 +194,7 @@ ReviewersController = function () {
         if (data.rules.forbid_commit_author_to_review) {
 
             if (data.rules_data.forbidden_users) {
-                $.each(data.rules_data.forbidden_users, function(index, member_data) {
+                $.each(data.rules_data.forbidden_users, function (index, member_data) {
                     self.forbidReviewUsers.push(member_data)
                 });
 
@@ -203,11 +209,10 @@ ReviewersController = function () {
         return self.forbidReviewUsers
     };
 
-    this.loadDefaultReviewers = function(sourceRepo, sourceRef, targetRepo, targetRef) {
+    this.loadDefaultReviewers = function (sourceRepo, sourceRef, targetRepo, targetRef) {
 
         if (self.currentRequest) {
-            // make sure we cleanup old running requests before triggering this
-            // again
+            // make sure we cleanup old running requests before triggering this again
             self.currentRequest.abort();
         }
 
@@ -218,6 +223,9 @@ ReviewersController = function () {
         prButtonLock(true, null, 'reviewers');
         $('#user').hide(); // hide user autocomplete before load
 
+        // lock PR button, so we cannot send PR before it's calculated
+        prButtonLock(true, _gettext('Loading diff ...'), 'compare');
+
         if (sourceRef.length !== 3 || targetRef.length !== 3) {
             // don't load defaults in case we're missing some refs...
             $('.calculate-reviewers').hide();
@@ -225,58 +233,80 @@ ReviewersController = function () {
         }
 
         var url = pyroutes.url('repo_default_reviewers_data',
-                {
-                    'repo_name': templateContext.repo_name,
-                    'source_repo': sourceRepo,
-                    'source_ref': sourceRef[2],
-                    'target_repo': targetRepo,
-                    'target_ref': targetRef[2]
-                });
+            {
+                'repo_name': templateContext.repo_name,
+                'source_repo': sourceRepo,
+                'source_ref': sourceRef[2],
+                'target_repo': targetRepo,
+                'target_ref': targetRef[2]
+            });
 
-        self.currentRequest = $.get(url)
-            .done(function(data) {
+        self.currentRequest = $.ajax({
+            url: url,
+            headers: {'X-PARTIAL-XHR': true},
+            type: 'GET',
+            success: function (data) {
+
                 self.currentRequest = null;
 
                 // review rules
                 self.loadReviewRules(data);
+                self.handleDiffData(data["diff_info"]);
 
                 for (var i = 0; i < data.reviewers.length; i++) {
-                  var reviewer = data.reviewers[i];
-                  self.addReviewMember(
-                      reviewer, reviewer.reasons, reviewer.mandatory);
+                    var reviewer = data.reviewers[i];
+                    self.addReviewMember(reviewer, reviewer.reasons, reviewer.mandatory);
                 }
                 $('.calculate-reviewers').hide();
                 prButtonLock(false, null, 'reviewers');
                 $('#user').show(); // show user autocomplete after load
-            });
+
+                var commitElements = data["diff_info"]['commits'];
+                if (commitElements.length === 0) {
+                    prButtonLock(true, _gettext('no commits'), 'all');
+
+                } else {
+                    // un-lock PR button, so we cannot send PR before it's calculated
+                    prButtonLock(false, null, 'compare');
+                }
+
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                var prefix = "Loading diff and reviewers failed\n"
+                var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                ajaxErrorSwal(message);
+            }
+        });
+
     };
 
     // check those, refactor
-    this.removeReviewMember = function(reviewer_id, mark_delete) {
+    this.removeReviewMember = function (reviewer_id, mark_delete) {
         var reviewer = $('#reviewer_{0}'.format(reviewer_id));
 
-        if(typeof(mark_delete) === undefined){
+        if (typeof (mark_delete) === undefined) {
             mark_delete = false;
         }
 
-        if(mark_delete === true){
-            if (reviewer){
+        if (mark_delete === true) {
+            if (reviewer) {
                 // now delete the input
                 $('#reviewer_{0} input'.format(reviewer_id)).remove();
                 // mark as to-delete
                 var obj = $('#reviewer_{0}_name'.format(reviewer_id));
                 obj.addClass('to-delete');
-                obj.css({"text-decoration":"line-through", "opacity": 0.5});
+                obj.css({"text-decoration": "line-through", "opacity": 0.5});
             }
-        }
-        else{
+        } else {
             $('#reviewer_{0}'.format(reviewer_id)).remove();
         }
     };
-    this.reviewMemberEntry = function() {
+
+    this.reviewMemberEntry = function () {
 
     };
-    this.addReviewMember = function(reviewer_obj, reasons, mandatory) {
+
+    this.addReviewMember = function (reviewer_obj, reasons, mandatory) {
         var members = self.$reviewMembers.get(0);
         var id = reviewer_obj.user_id;
         var username = reviewer_obj.username;
@@ -287,13 +317,13 @@ ReviewersController = function () {
         // register IDS to check if we don't have this ID already in
         var currentIds = [];
         var _els = self.$reviewMembers.find('li').toArray();
-        for (el in _els){
+        for (el in _els) {
             currentIds.push(_els[el].id)
         }
 
-        var userAllowedReview = function(userId) {
+        var userAllowedReview = function (userId) {
             var allowed = true;
-            $.each(self.forbidReviewUsers, function(index, member_data) {
+            $.each(self.forbidReviewUsers, function (index, member_data) {
                 if (parseInt(userId) === member_data['user_id']) {
                     allowed = false;
                     return false // breaks the loop
@@ -303,35 +333,38 @@ ReviewersController = function () {
         };
 
         var userAllowed = userAllowedReview(id);
-        if (!userAllowed){
-           alert(_gettext('User `{0}` not allowed to be a reviewer').format(username));
+        if (!userAllowed) {
+            alert(_gettext('User `{0}` not allowed to be a reviewer').format(username));
         } else {
             // only add if it's not there
-            var alreadyReviewer = currentIds.indexOf('reviewer_'+id) != -1;
+            var alreadyReviewer = currentIds.indexOf('reviewer_' + id) != -1;
 
             if (alreadyReviewer) {
                 alert(_gettext('User `{0}` already in reviewers').format(username));
             } else {
                 members.innerHTML += renderTemplate('reviewMemberEntry', {
-                        'member': reviewer_obj,
-                        'mandatory': mandatory,
-                        'allowed_to_update': true,
-                        'review_status': 'not_reviewed',
-                        'review_status_label': _gettext('Not Reviewed'),
-                        'reasons': reasons,
-                        'create': true
-                        });
+                    'member': reviewer_obj,
+                    'mandatory': mandatory,
+                    'allowed_to_update': true,
+                    'review_status': 'not_reviewed',
+                    'review_status_label': _gettext('Not Reviewed'),
+                    'reasons': reasons,
+                    'create': true
+                });
                 tooltipActivate();
             }
         }
 
     };
 
-    this.updateReviewers = function(repo_name, pull_request_id){
+    this.updateReviewers = function (repo_name, pull_request_id) {
         var postData = $('#reviewers input').serialize();
         _updatePullRequest(repo_name, pull_request_id, postData);
     };
 
+    this.handleDiffData = function (data) {
+        self.diffDataHandler(data)
+    }
 };
 
 

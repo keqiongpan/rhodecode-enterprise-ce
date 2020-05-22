@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -23,6 +23,8 @@ authentication and permission libraries
 """
 
 import os
+
+import colander
 import time
 import collections
 import fnmatch
@@ -45,14 +47,13 @@ from rhodecode.model import meta
 from rhodecode.model.meta import Session
 from rhodecode.model.user import UserModel
 from rhodecode.model.db import (
-    User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
-    UserIpMap, UserApiKeys, RepoGroup, UserGroup)
+    false, User, Repository, Permission, UserToPerm, UserGroupToPerm, UserGroupMember,
+    UserIpMap, UserApiKeys, RepoGroup, UserGroup, UserNotice)
 from rhodecode.lib import rc_cache
 from rhodecode.lib.utils2 import safe_unicode, aslist, safe_str, md5, safe_int, sha1
 from rhodecode.lib.utils import (
     get_repo_slug, get_repo_group_slug, get_user_group_slug)
 from rhodecode.lib.caching_query import FromCache
-
 
 if rhodecode.is_unix:
     import bcrypt
@@ -1312,7 +1313,10 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.repo_read_perms
 
-        def _cached_repo_acl(user_id, perm_def, _name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_repo_acl(perm_def, _name_filter):
             qry = Repository.query()
             if _name_filter:
                 ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
@@ -1322,7 +1326,21 @@ class AuthUser(object):
             return [x.repo_id for x in
                     RepoList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_repo_acl(self.user_id, perms, name_filter)
+        log.debug('Computing REPO ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_repo_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_repo_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_repo_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_repo_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('REPO ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     def repo_group_acl_ids_from_stack(self, perms=None, prefix_filter=None, cache=False):
         if not perms:
@@ -1346,7 +1364,10 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.repo_group_read_perms
 
-        def _cached_repo_group_acl(user_id, perm_def, _name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_repo_group_acl(perm_def, _name_filter):
             qry = RepoGroup.query()
             if _name_filter:
                 ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
@@ -1356,7 +1377,21 @@ class AuthUser(object):
             return [x.group_id for x in
                     RepoGroupList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_repo_group_acl(self.user_id, perms, name_filter)
+        log.debug('Computing REPO GROUP ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_repo_group_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_repo_group_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_repo_group_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_repo_group_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('REPO GROUP ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     def user_group_acl_ids_from_stack(self, perms=None, cache=False):
         if not perms:
@@ -1378,17 +1413,34 @@ class AuthUser(object):
         if not perms:
             perms = AuthUser.user_group_read_perms
 
-        def _cached_user_group_acl(user_id, perm_def, name_filter):
+        if not isinstance(perms, list):
+            raise ValueError('perms parameter must be a list got {} instead'.format(perms))
+
+        def _cached_user_group_acl(perm_def, _name_filter):
             qry = UserGroup.query()
-            if name_filter:
-                ilike_expression = u'%{}%'.format(safe_unicode(name_filter))
+            if _name_filter:
+                ilike_expression = u'%{}%'.format(safe_unicode(_name_filter))
                 qry = qry.filter(
                     UserGroup.users_group_name.ilike(ilike_expression))
 
             return [x.users_group_id for x in
                     UserGroupList(qry, perm_set=perm_def, extra_kwargs={'user': self})]
 
-        return _cached_user_group_acl(self.user_id, perms, name_filter)
+        log.debug('Computing USER GROUP ACL IDS user %s', self)
+
+        cache_namespace_uid = 'cache_user_user_group_acl_ids.{}'.format(self.user_id)
+        region = rc_cache.get_or_create_region('cache_perms', cache_namespace_uid)
+
+        @region.conditional_cache_on_arguments(namespace=cache_namespace_uid, condition=cache)
+        def compute_user_group_acl_ids(cache_ver, user_id, perm_def, _name_filter):
+            return _cached_user_group_acl(perm_def, _name_filter)
+
+        start = time.time()
+        result = compute_user_group_acl_ids('v1', self.user_id, perms, name_filter)
+        total = time.time() - start
+        log.debug('USER GROUP ACL IDS for user %s computed in %.4fs', self, total)
+
+        return result
 
     @property
     def ip_allowed(self):
@@ -1402,6 +1454,7 @@ class AuthUser(object):
         inherit = self.inherit_default_permissions
         return AuthUser.check_ip_allowed(self.user_id, self.ip_addr,
                                          inherit_from_default=inherit)
+
     @property
     def personal_repo_group(self):
         return RepoGroup.get_user_personal_repo_group(self.user_id)
@@ -1455,9 +1508,40 @@ class AuthUser(object):
 
         return rule, default_perm
 
+    def get_notice_messages(self):
+
+        notice_level = 'notice-error'
+        notice_messages = []
+        if self.is_default:
+            return [], notice_level
+
+        notices = UserNotice.query()\
+            .filter(UserNotice.user_id == self.user_id)\
+            .filter(UserNotice.notice_read == false())\
+            .all()
+
+        try:
+            for entry in notices:
+
+                msg = {
+                    'msg_id': entry.user_notice_id,
+                    'level': entry.notification_level,
+                    'subject': entry.notice_subject,
+                    'body': entry.notice_body,
+                }
+                notice_messages.append(msg)
+
+            log.debug('Got user %s %s messages', self, len(notice_messages))
+
+            levels = [x['level'] for x in notice_messages]
+            notice_level = 'notice-error' if 'error' in levels else 'notice-warning'
+        except Exception:
+            pass
+
+        return notice_messages, notice_level
+
     def __repr__(self):
-        return "<AuthUser('id:%s[%s] ip:%s auth:%s')>"\
-            % (self.user_id, self.username, self.ip_addr, self.is_authenticated)
+        return self.repr_user(self.user_id, self.username, self.ip_addr, self.is_authenticated)
 
     def set_authenticated(self, authenticated=True):
         if self.user_id != self.anonymous_user.user_id:
@@ -1470,6 +1554,11 @@ class AuthUser(object):
             'user_id': self.user_id,
             'is_authenticated': self.is_authenticated
         }
+
+    @classmethod
+    def repr_user(cls, user_id=0, username='ANONYMOUS', ip='0.0.0.0', is_authenticated=False):
+        tmpl = "<AuthUser('id:{}[{}] ip:{} auth:{}')>"
+        return tmpl.format(user_id, username, ip, is_authenticated)
 
     @classmethod
     def from_cookie_store(cls, cookie_store):

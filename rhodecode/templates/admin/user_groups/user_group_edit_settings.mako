@@ -181,6 +181,7 @@
                 } else if (suggestion.value_type == 'user') {
                     addMember(suggestion, null);
                 }
+                $('#user_group_add_members').val('')
             }
         });
 

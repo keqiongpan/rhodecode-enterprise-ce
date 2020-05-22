@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -26,7 +26,6 @@ def admin_routes(config):
     """
     Admin prefixed routes
     """
-
     config.add_route(
         name='admin_audit_logs',
         pattern='/audit_logs')
@@ -291,10 +290,20 @@ def admin_routes(config):
         pattern='/users/{user_id:\d+}/create_repo_group',
         user_route=True)
 
+    # user notice
+    config.add_route(
+        name='user_notice_dismiss',
+        pattern='/users/{user_id:\d+}/notice_dismiss',
+        user_route=True)
+
     # user auth tokens
     config.add_route(
         name='edit_user_auth_tokens',
         pattern='/users/{user_id:\d+}/edit/auth_tokens',
+        user_route=True)
+    config.add_route(
+        name='edit_user_auth_tokens_view',
+        pattern='/users/{user_id:\d+}/edit/auth_tokens/view',
         user_route=True)
     config.add_route(
         name='edit_user_auth_tokens_add',

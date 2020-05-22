@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2017-2019 RhodeCode GmbH
+# Copyright (C) 2017-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -143,8 +143,9 @@ def python_info():
 
 
 def py_modules():
-    mods = dict([(p.project_name, p.version)
+    mods = dict([(p.project_name, {'version': p.version, 'location': p.location})
                  for p in pkg_resources.working_set])
+
     value = sorted(mods.items(), key=lambda k: k[0].lower())
     return SysInfoRes(value=value)
 

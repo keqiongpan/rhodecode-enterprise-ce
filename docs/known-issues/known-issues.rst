@@ -3,20 +3,6 @@
 Known Issues
 ============
 
-Subversion Issues
------------------
-
-Limited |svn| support has been achieved for this release,
-|release|. The following known issues are in development for improvement.
-
-* |svn| |repo| creation:
-  Terminating the VCS Server during remote importation of |svn| |repos| leaves
-  the the process still running in the background.
-
-* |svn| |repo| checkin/checkout:
-  |svn| cloning support is not enabled by default. Please contact support if
-  you want it enabled.
-
 Windows Upload
 --------------
 
@@ -49,12 +35,16 @@ shipped with the optimal configuration as default. See the
 To fix this issue, upgrade to |RCE| 3.3.2 or greater, and if you discover
 memory consumption issues check the VCS Server settings.
 
-Fedora 23 / Ubuntu 18.04
-------------------------
+Newer Operating system locales
+------------------------------
 
 |RCC| has a know problem with locales, due to changes in glibc 2.27+ which affects
 the local-archive format, which is now incompatible with our used glibc 2.26.
 
+Mostly affected are:
+- Fedora 23+
+- Ubuntu 18.04
+- CentOS / RHEL 8
 
 To work around this problem, you need set path to ``$LOCAL_ARCHIVE`` to the
 locale package in older pre glibc 2.27 format, or set `LC_ALL=C` in your enviroment.
@@ -74,8 +64,15 @@ To use the pre 2.27 locale-archive fix follow these steps:
 
     $ export LOCALE_ARCHIVE=/home/USER/locale-archive  # change to your path
 
-This can either added in `~/.rccontrol/supervisor/supervisord.ini`
-or in user .bashrc/.zshrc etc, or via a startup script that
+This should be added *both* in `enviroment` variable of `~/.rccontrol/supervisor/supervisord.ini`
+e.g
+
+```
+[supervisord]
+environment = HOME=/home/user/rhodecode,LOCALE_ARCHIVE=/YOUR-PATH/locale-archive`
+```
+
+and in user .bashrc/.zshrc etc, or via a startup script that
 runs `rccontrol self-init`
 
 If you happen to be running |RCC| from systemd, use the following

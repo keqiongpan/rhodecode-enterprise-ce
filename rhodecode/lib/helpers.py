@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -253,7 +253,7 @@ class _ToolTip(object):
 
 tooltip = _ToolTip()
 
-files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy the full path"></i>'
+files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy file path"></i>'
 
 
 def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):
@@ -1617,18 +1617,19 @@ def render_binary(repo_name, file_obj):
     Choose how to render a binary file
     """
 
+    # unicode
     filename = file_obj.name
 
     # images
-    for ext in ['*.png', '*.jpg', '*.ico', '*.gif']:
+    for ext in ['*.png', '*.jpeg', '*.jpg', '*.ico', '*.gif']:
         if fnmatch.fnmatch(filename, pat=ext):
-            alt = escape(filename)
             src = route_path(
                 'repo_file_raw', repo_name=repo_name,
                 commit_id=file_obj.commit.raw_id,
                 f_path=file_obj.path)
+
             return literal(
-                '<img class="rendered-binary" alt="{}" src="{}">'.format(alt, src))
+                '<img class="rendered-binary" alt="rendered-image" src="{}">'.format(src))
 
 
 def renderer_from_filename(filename, exclude=None):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -49,7 +49,8 @@ def assert_call_ok(id_, given):
 def assert_ok(id_, expected, given):
     given = json.loads(given)
     if given.get('error'):
-        pytest.fail("Unexpected ERROR in success response: {}".format(given['error']))
+        err = given['error']
+        pytest.fail(u"Unexpected ERROR in success response: {}".format(err))
 
     expected = jsonify({
         'id': id_,

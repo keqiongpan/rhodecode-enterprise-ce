@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 RhodeCode GmbH
+# Copyright (C) 2016-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -25,6 +25,7 @@ from .hooks import (
     _create_repo_group_hook,
     _pre_create_user_hook,
     _create_user_hook,
+    _comment_commit_repo_hook,
     _delete_repo_hook,
     _delete_user_hook,
     _pre_push_hook,
@@ -33,6 +34,7 @@ from .hooks import (
     _pull_hook,
     _create_pull_request_hook,
     _review_pull_request_hook,
+    _comment_pull_request_hook,
     _update_pull_request_hook,
     _merge_pull_request_hook,
     _close_pull_request_hook,
@@ -40,6 +42,7 @@ from .hooks import (
 
 # set as module attributes, we use those to call hooks. *do not change this*
 CREATE_REPO_HOOK = _create_repo_hook
+COMMENT_COMMIT_REPO_HOOK = _comment_commit_repo_hook
 CREATE_REPO_GROUP_HOOK = _create_repo_group_hook
 PRE_CREATE_USER_HOOK = _pre_create_user_hook
 CREATE_USER_HOOK = _create_user_hook
@@ -51,6 +54,7 @@ PRE_PULL_HOOK = _pre_pull_hook
 PULL_HOOK = _pull_hook
 CREATE_PULL_REQUEST = _create_pull_request_hook
 REVIEW_PULL_REQUEST = _review_pull_request_hook
+COMMENT_PULL_REQUEST = _comment_pull_request_hook
 UPDATE_PULL_REQUEST = _update_pull_request_hook
 MERGE_PULL_REQUEST = _merge_pull_request_hook
 CLOSE_PULL_REQUEST = _close_pull_request_hook

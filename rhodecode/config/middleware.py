@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2010-2019 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -611,6 +611,14 @@ def _sanitize_cache_settings(settings):
         settings,
         'exception_tracker.store_path',
         temp_store, lower=False, default_when_empty=True)
+    _bool_setting(
+        settings,
+        'exception_tracker.send_email',
+        'false')
+    _string_setting(
+        settings,
+        'exception_tracker.email_prefix',
+        '[RHODECODE ERROR]', lower=False, default_when_empty=True)
 
     # cache_perms
     _string_setting(

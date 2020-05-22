@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014-2019 RhodeCode GmbH
+# Copyright (C) 2014-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -228,12 +228,13 @@ class GitRepository(BaseRepository):
             return []
         return output.splitlines()
 
-    def _lookup_commit(self, commit_id_or_idx, translate_tag=True):
+    def _lookup_commit(self, commit_id_or_idx, translate_tag=True, maybe_unreachable=False):
         def is_null(value):
             return len(value) == commit_id_or_idx.count('0')
 
         if commit_id_or_idx in (None, '', 'tip', 'HEAD', 'head', -1):
             return self.commit_ids[-1]
+
         commit_missing_err = "Commit {} does not exist for `{}`".format(
             *map(safe_str, [commit_id_or_idx, self.name]))
 
@@ -248,7 +249,8 @@ class GitRepository(BaseRepository):
         elif is_bstr:
             # Need to call remote to translate id for tagging scenario
             try:
-                remote_data = self._remote.get_object(commit_id_or_idx)
+                remote_data = self._remote.get_object(commit_id_or_idx,
+                                                      maybe_unreachable=maybe_unreachable)
                 commit_id_or_idx = remote_data["commit_id"]
             except (CommitDoesNotExistError,):
                 raise CommitDoesNotExistError(commit_missing_err)
@@ -410,7 +412,8 @@ class GitRepository(BaseRepository):
         except Exception:
             return
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, translate_tag=True):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
+                   translate_tag=True, maybe_unreachable=False):
         """
         Returns `GitCommit` object representing commit from git repository
         at the given `commit_id` or head (most recent commit) if None given.
@@ -440,7 +443,7 @@ class GitRepository(BaseRepository):
             commit_id = "tip"
 
         if translate_tag:
-            commit_id = self._lookup_commit(commit_id)
+            commit_id = self._lookup_commit(commit_id, maybe_unreachable=maybe_unreachable)
 
         try:
             idx = self._commit_ids[commit_id]
@@ -577,6 +580,9 @@ class GitRepository(BaseRepository):
         return len(self.commit_ids)
 
     def get_common_ancestor(self, commit_id1, commit_id2, repo2):
+        log.debug('Calculating common ancestor between %sc1:%s and %sc2:%s',
+                  self, commit_id1, repo2, commit_id2)
+
         if commit_id1 == commit_id2:
             return commit_id1
 
@@ -596,6 +602,8 @@ class GitRepository(BaseRepository):
             output, __ = self.run_git_command(
                 ['merge-base', commit_id1, commit_id2])
             ancestor_id = re.findall(r'[0-9a-fA-F]{40}', output)[0]
+
+        log.debug('Found common ancestor with sha: %s', ancestor_id)
 
         return ancestor_id
 
@@ -661,6 +669,13 @@ class GitRepository(BaseRepository):
     def remove_ref(self, ref_name):
         self._remote.remove_ref(ref_name)
         self._invalidate_prop_cache('_refs')
+
+    def run_gc(self, prune=True):
+        cmd = ['gc', '--aggressive']
+        if prune:
+            cmd += ['--prune=now']
+        _stdout, stderr = self.run_git_command(cmd, fail_on_stderr=False)
+        return stderr
 
     def _update_server_info(self):
         """
@@ -827,8 +842,7 @@ class GitRepository(BaseRepository):
 
         if self.is_empty():
             # TODO(skreft): do something more robust in this case.
-            raise RepositoryError(
-                'Do not know how to merge into empty repositories yet')
+            raise RepositoryError('Do not know how to merge into empty repositories yet')
         unresolved = None
 
         # N.B.(skreft): the --no-ff option is used to enforce the creation of a
@@ -836,9 +850,11 @@ class GitRepository(BaseRepository):
         cmd = ['-c', 'user.name="%s"' % safe_str(user_name),
                '-c', 'user.email=%s' % safe_str(user_email),
                'merge', '--no-ff', '-m', safe_str(merge_message)]
-        cmd.extend(heads)
+
+        merge_cmd = cmd + heads
+
         try:
-            output = self.run_git_command(cmd, fail_on_stderr=False)
+            self.run_git_command(merge_cmd, fail_on_stderr=False)
         except RepositoryError:
             files = self.run_git_command(['diff', '--name-only', '--diff-filter', 'U'],
                                          fail_on_stderr=False)[0].splitlines()
@@ -846,6 +862,7 @@ class GitRepository(BaseRepository):
             unresolved = ['U {}'.format(f) for f in files]
 
             # Cleanup any merge leftovers
+            self._remote.invalidate_vcs_cache()
             self.run_git_command(['merge', '--abort'], fail_on_stderr=False)
 
             if unresolved:

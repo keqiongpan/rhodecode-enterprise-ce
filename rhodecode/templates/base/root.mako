@@ -15,6 +15,7 @@ if getattr(c, 'repo_group', None):
     c.template_context['repo_group_name'] = c.repo_group.group_name
 
 if getattr(c, 'rhodecode_user', None) and c.rhodecode_user.user_id:
+    c.template_context['rhodecode_user']['user_id'] = c.rhodecode_user.user_id
     c.template_context['rhodecode_user']['username'] = c.rhodecode_user.username
     c.template_context['rhodecode_user']['email'] = c.rhodecode_user.email
     c.template_context['rhodecode_user']['notification_status'] = c.rhodecode_user.get_instance().user_data.get('notification_status', True)

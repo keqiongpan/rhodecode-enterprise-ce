@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2015-2019 RhodeCode GmbH
+# Copyright (C) 2015-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -47,7 +47,7 @@ from .utils import (
     FreshRegionCache, ActiveRegionCache)
 
 
-FILE_TREE_CACHE_VER = 'v2'
+FILE_TREE_CACHE_VER = 'v3'
 
 
 def configure_dogpile_cache(settings):
