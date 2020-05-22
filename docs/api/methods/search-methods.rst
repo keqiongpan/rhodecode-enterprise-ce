@@ -3,6 +3,21 @@
 search methods
 ==============
 
+get_audit_logs 
+--------------
+
+.. py:function:: get_audit_logs(apiuser, query)
+
+   return full audit logs based on the query.
+
+   Please see `example query in admin > settings > audit logs` for examples
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param query: filter query, example: action:repo.artifact.add date:[20200401 TO 20200601]"
+   :type query: str
+
+
 search 
 ------
 

@@ -28,7 +28,7 @@ add_field_to_repo
 comment_commit 
 --------------
 
-.. py:function:: comment_commit(apiuser, repoid, commit_id, message, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_commit(apiuser, repoid, commit_id, message, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>, send_email=<Optional:True>)
 
    Set a commit comment, and optionally change the status of the commit.
 
@@ -52,6 +52,8 @@ comment_commit
    :type extra_recipients: Optional(list)
    :param userid: Set the user name of the comment creator.
    :type userid: Optional(str or int)
+   :param send_email: Define if this comment should also send email notification
+   :type send_email: Optional(bool)
 
    Example error output:
 

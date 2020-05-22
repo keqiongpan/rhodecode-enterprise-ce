@@ -39,7 +39,7 @@ close_pull_request
 comment_pull_request 
 --------------------
 
-.. py:function:: comment_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>)
+.. py:function:: comment_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, message=<Optional:None>, commit_id=<Optional:None>, status=<Optional:None>, comment_type=<Optional:u'note'>, resolves_comment_id=<Optional:None>, extra_recipients=<Optional:[]>, userid=<Optional:<OptionalAttr:apiuser>>, send_email=<Optional:True>)
 
    Comment on the pull request specified with the `pullrequestid`,
    in the |repo| specified by the `repoid`, and optionally change the
@@ -70,6 +70,8 @@ comment_pull_request
    :type extra_recipients: Optional(list)
    :param userid: Comment on the pull request as this user
    :type userid: Optional(str or int)
+   :param send_email: Define if this comment should also send email notification
+   :type send_email: Optional(bool)
 
    Example output:
 
@@ -160,6 +162,7 @@ get_pull_request
            "status" :           "<status>",
            "created_on":        "<date_time_created>",
            "updated_on":        "<date_time_updated>",
+           "versions":          "<number_or_versions_of_pr>",
            "commit_ids":        [
                                     ...
                                     "<commit_id>",
@@ -249,7 +252,9 @@ get_pull_request_comments
              },
              "comment_text": "Example text",
              "comment_type": null,
-             "pull_request_version": null
+             "pull_request_version": null,
+             "comment_commit_id": None,
+             "comment_pull_request_id": <pull_request_id>
            }
        ],
        error :  null
