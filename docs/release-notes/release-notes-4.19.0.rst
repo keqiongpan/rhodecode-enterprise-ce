@@ -42,6 +42,7 @@ General
 
 - Pull requests: fixed small UI glitches in pull request view.
 - System Info: Python packages now expose the package location info.
+- API: added new flag to comment api to disable email sending when creating a comment.
 - Exceptions: don't report lookup errors as exceptions stored in the exception store.
   Those are regular not found problems that don't indicate any exceptional case
   also make the errors report nicer, not as KeyError, or generic Exception
