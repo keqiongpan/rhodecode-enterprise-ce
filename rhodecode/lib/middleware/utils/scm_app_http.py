@@ -99,7 +99,7 @@ class VcsHttpProxy(object):
             'X-RC-Server-Config-File': self.rc_extras.get('config'),
 
             'X-RC-Auth-User': self.rc_extras.get('username'),
-            'X-RC-Auth-User-Id': self.rc_extras.get('user_id'),
+            'X-RC-Auth-User-Id': str(self.rc_extras.get('user_id')),
             'X-RC-Auth-User-Ip': self.rc_extras.get('ip'),
 
             # TODO: johbo: Avoid encoding and put this into payload?
