@@ -1492,7 +1492,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
-        'title': desc,
+        'title': bleach.clean(desc, strip=True),
         'hovercard_url': hovercard_url
     }
 
