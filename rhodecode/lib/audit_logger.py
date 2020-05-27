@@ -82,6 +82,7 @@ ACTIONS_V1 = {
     'repo.pull_request.merge': '',
     'repo.pull_request.vote': '',
     'repo.pull_request.comment.create': '',
+    'repo.pull_request.comment.edit': '',
     'repo.pull_request.comment.delete': '',
 
     'repo.pull_request.reviewer.add': '',
@@ -90,6 +91,7 @@ ACTIONS_V1 = {
     'repo.commit.strip': {'commit_id': ''},
     'repo.commit.comment.create': {'data': {}},
     'repo.commit.comment.delete': {'data': {}},
+    'repo.commit.comment.edit': {'data': {}},
     'repo.commit.vote': '',
 
     'repo.artifact.add': '',

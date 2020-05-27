@@ -30,6 +30,7 @@ from rhodecode.model.db import (
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.tests import (
     assert_session_flash, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 
@@ -54,6 +55,7 @@ def route_path(name, params=None, **kwargs):
         'pullrequest_delete': '/{repo_name}/pull-request/{pull_request_id}/delete',
         'pullrequest_comment_create': '/{repo_name}/pull-request/{pull_request_id}/comment',
         'pullrequest_comment_delete': '/{repo_name}/pull-request/{pull_request_id}/comment/{comment_id}/delete',
+        'pullrequest_comment_edit': '/{repo_name}/pull-request/{pull_request_id}/comment/{comment_id}/edit',
     }[name].format(**kwargs)
 
     if params:
@@ -338,8 +340,8 @@ class TestPullrequestsView(object):
 
         response = self.app.post(
             route_path('pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=pull_request.pull_request_id),
+                       repo_name=pull_request.target_repo.scm_instance().name,
+                       pull_request_id=pull_request.pull_request_id),
             params={
                 'close_pull_request': 'true',
                 'csrf_token': csrf_token},
@@ -354,6 +356,214 @@ class TestPullrequestsView(object):
         status = ChangesetStatusModel().get_status(
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_REJECTED
+
+    def test_comment_and_close_pull_request_try_edit_comment(
+            self, pr_util, csrf_token, xhr_header
+    ):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+            ),
+            params={
+                'close_pull_request': 'true',
+                'csrf_token': csrf_token,
+            },
+            extra_environ=xhr_header)
+
+        assert response.json
+
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.is_closed()
+
+        # check only the latest status, not the review status
+        status = ChangesetStatusModel().get_status(
+            pull_request.source_repo, pull_request=pull_request)
+        assert status == ChangesetStatus.STATUS_REJECTED
+
+        comment_id = response.json.get('comment_id', None)
+        test_text = 'test'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+            },
+            status=403,
+        )
+        assert response.status_int == 403
+
+    def test_comment_and_comment_edit(
+            self, pr_util, csrf_token, xhr_header
+    ):
+        pull_request = pr_util.create_pull_request()
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+        test_text = 'test'
+        self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+
+        )
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+        assert test_text == text_form_db
+
+    def test_comment_and_comment_edit(
+            self, pr_util, csrf_token, xhr_header
+    ):
+        pull_request = pr_util.create_pull_request()
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+        test_text = 'init'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+            status=404,
+
+        )
+        assert response.status_int == 404
+
+    def test_comment_and_try_edit_already_edited(
+            self, pr_util, csrf_token, xhr_header
+    ):
+        pull_request = pr_util.create_pull_request()
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+        test_text = 'test'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+
+        )
+        test_text_v2 = 'test_v2'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text_v2,
+                'version': '0',
+            },
+            status=404,
+        )
+        assert response.status_int == 404
+
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+
+        assert test_text == text_form_db
+        assert test_text_v2 != text_form_db
+
+    def test_comment_and_comment_edit_permissions_forbidden(
+            self, autologin_regular_user, user_regular, user_admin, pr_util,
+            csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+        comment = CommentsModel().create(
+            text='test',
+            repo=pull_request.target_repo.scm_instance().name,
+            user=user_admin,
+            pull_request=pull_request,
+        )
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment.comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': 'test_text',
+            },
+            status=403,
+        )
+        assert response.status_int == 403
 
     def test_create_pull_request(self, backend, csrf_token):
         commits = [

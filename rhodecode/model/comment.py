@@ -35,7 +35,13 @@ from rhodecode.lib import audit_logger
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    ChangesetComment, User, Notification, PullRequest, AttributeDict)
+    ChangesetComment,
+    User,
+    Notification,
+    PullRequest,
+    AttributeDict,
+    ChangesetCommentHistory,
+)
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import VcsSettingsModel
@@ -479,6 +485,54 @@ class CommentsModel(BaseModel):
 
         return comment
 
+    def edit(self, comment_id, text, auth_user, version):
+        """
+        Change existing comment for commit or pull request.
+
+        :param comment_id:
+        :param text:
+        :param auth_user: current authenticated user calling this method
+        :param version: last comment version
+        """
+        if not text:
+            log.warning('Missing text for comment, skipping...')
+            return
+
+        comment = ChangesetComment.get(comment_id)
+        old_comment_text = comment.text
+        comment.text = text
+        comment_version = ChangesetCommentHistory.get_version(comment_id)
+        if (comment_version - version) != 1:
+            log.warning(
+                'Version mismatch, skipping... '
+                'version {} but should be {}'.format(
+                    (version - 1),
+                    comment_version,
+                )
+            )
+            return
+        comment_history = ChangesetCommentHistory()
+        comment_history.comment_id = comment_id
+        comment_history.version = comment_version
+        comment_history.created_by_user_id = auth_user.user_id
+        comment_history.text = old_comment_text
+        # TODO add email notification
+        Session().add(comment_history)
+        Session().add(comment)
+        Session().flush()
+
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.edit'
+        else:
+            action = 'repo.commit.comment.edit'
+
+        comment_data = comment.get_api_data()
+        comment_data['old_comment_text'] = old_comment_text
+        self._log_audit_action(
+            action, {'data': comment_data}, auth_user, comment)
+
+        return comment_history
+
     def delete(self, comment, auth_user):
         """
         Deletes given comment
@@ -712,6 +766,7 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.line_no == None)\
             .filter(ChangesetComment.f_path == None)\
             .filter(ChangesetComment.pull_request == pull_request)
+
         return comments
 
     @staticmethod

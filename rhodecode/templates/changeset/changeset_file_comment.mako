@@ -3,8 +3,12 @@
 ## <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 ## ${comment.comment_block(comment)}
 ##
-<%namespace name="base" file="/base/base.mako"/>
 
+<%!
+    from rhodecode.lib import html_filters
+%>
+
+<%namespace name="base" file="/base/base.mako"/>
 <%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
   <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
   <% latest_ver = len(getattr(c, 'versions', [])) %>
@@ -21,6 +25,8 @@
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
        data-comment-type="${comment.comment_type}"
+       data-comment-renderer="${comment.renderer}"
+       data-comment-text="${comment.text | html_filters.base64,n}"
        data-comment-line-no="${comment.line_no}"
        data-comment-inline=${h.json.dumps(inline)}
        style="${'display: none;' if outdated_at_ver else ''}">
@@ -60,6 +66,31 @@
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
           </div>
+          % if comment.history:
+              <div class="date">
+                  <span class="comment-area-text">${_('Comment version')}:</span>
+                  <select class="comment-type" id="comment_history_for_comment_${comment.comment_id}"
+                          onchange="return Rhodecode.comments.showVersion(this)"
+                          name="comment_type">
+                      <option style="display: none" value="0">---</option>
+                      %for comment_history in comment.history:
+                          <option
+                                  data-comment-history-id="${comment_history.comment_history_id}",
+                                  data-comment-id="${comment.comment_id}",
+                                  value="${comment_history.version}">${comment_history.version}</option>
+                      %endfor
+                  </select>
+              </div>
+          % else:
+              <div class="date" style="display: none">
+                  <span class="comment-area-text">${_('Comment version')}</span>
+                  <select class="comment-type" id="comment_history_for_comment_${comment.comment_id}"
+                          onchange="return Rhodecode.comments.showVersion(this)"
+                          name="comment_type">
+                      <option style="display: none" value="0">---</option>
+                  </select>
+              </div>
+          %endif
           % if inline:
               <span></span>
           % else:
@@ -136,21 +167,29 @@
             %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):
                ## permissions to delete
                %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
-                  ## TODO: dan: add edit comment here
-                  <a onclick="return Rhodecode.comments.deleteComment(this);" class="delete-comment"> ${_('Delete')}</a>
+                    %if comment.comment_type == 'note':
+                       <a onclick="return Rhodecode.comments.editComment(this);"
+                          class="edit-comment"> ${_('Edit')}</a>
+                    %else:
+                        <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
+                    %endif
+                       | <a onclick="return Rhodecode.comments.deleteComment(this);"
+                          class="delete-comment"> ${_('Delete')}</a>
                %else:
-                  <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+                  <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
+                  | <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
                %endif
             %else:
-               <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+               <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
+               | <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
             %endif
 
             % if outdated_at_ver:
-               | <a onclick="return Rhodecode.comments.prevOutdatedComment(this);" class="prev-comment"> ${_('Prev')}</a>
-               | <a onclick="return Rhodecode.comments.nextOutdatedComment(this);" class="next-comment"> ${_('Next')}</a>
+                | <a onclick="return Rhodecode.comments.prevOutdatedComment(this);" class="tooltip prev-comment" title="${_('Jump to the previous outdated comment')}"> <i class="icon-angle-left"></i> </a>
+                | <a onclick="return Rhodecode.comments.nextOutdatedComment(this);" class="tooltip next-comment" title="${_('Jump to the next outdated comment')}"> <i class="icon-angle-right"></i></a>
             % else:
-               | <a onclick="return Rhodecode.comments.prevComment(this);" class="prev-comment"> ${_('Prev')}</a>
-               | <a onclick="return Rhodecode.comments.nextComment(this);" class="next-comment"> ${_('Next')}</a>
+                | <a onclick="return Rhodecode.comments.prevComment(this);" class="tooltip prev-comment" title="${_('Jump to the previous comment')}"> <i class="icon-angle-left"></i></a>
+                | <a onclick="return Rhodecode.comments.nextComment(this);" class="tooltip next-comment" title="${_('Jump to the next comment')}"> <i class="icon-angle-right"></i></a>
             % endif
 
           </div>

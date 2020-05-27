@@ -1518,3 +1518,90 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             log.warning('No permissions for user %s to delete comment_id: %s',
                         self._rhodecode_db_user, comment_id)
             raise HTTPNotFound()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_comment_edit', request_method='POST',
+        renderer='json_ext')
+    def pull_request_comment_edit(self):
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id']
+        )
+        comment = ChangesetComment.get_or_404(
+            self.request.matchdict['comment_id']
+        )
+        comment_id = comment.comment_id
+
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
+
+        if pull_request.is_closed():
+            log.debug('comment: forbidden because pull request is closed')
+            raise HTTPForbidden()
+
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
+
+        if comment.pull_request.is_closed():
+            # don't allow deleting comments on closed pull request
+            raise HTTPForbidden()
+
+        is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = comment.author.user_id == self._rhodecode_user.user_id
+        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
+            text = self.request.POST.get('text')
+            version = self.request.POST.get('version')
+            if text == comment.text:
+                log.warning(
+                    'Comment(PR): '
+                    'Trying to create new version '
+                    'of existing comment {}'.format(
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+            if version.isdigit():
+                version = int(version)
+            else:
+                log.warning(
+                    'Comment(PR): Wrong version type {} {} '
+                    'for comment {}'.format(
+                        version,
+                        type(version),
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+
+            comment_history = CommentsModel().edit(
+                comment_id=comment_id,
+                text=text,
+                auth_user=self._rhodecode_user,
+                version=version,
+            )
+            if not comment_history:
+                raise HTTPNotFound()
+            Session().commit()
+            return {
+                'comment_history_id': comment_history.comment_history_id,
+                'comment_id': comment.comment_id,
+                'comment_version': comment_history.version,
+            }
+        else:
+            log.warning(
+                'No permissions for user {} to edit comment_id: {}'.format(
+                    self._rhodecode_db_user, comment_id
+                )
+            )
+            raise HTTPNotFound()
