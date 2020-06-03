@@ -181,8 +181,8 @@ class RepoFilesView(RepoAppView):
             raise HTTPFound(
                 h.route_path('repo_summary', repo_name=self.db_repo_name))
 
-        except (CommitDoesNotExistError, LookupError):
-            msg = _('No such commit exists for this repository')
+        except (CommitDoesNotExistError, LookupError) as e:
+            msg = _('No such commit exists for this repository. Commit: {}').format(commit_id)
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
