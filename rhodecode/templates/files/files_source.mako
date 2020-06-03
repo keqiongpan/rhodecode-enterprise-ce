@@ -1,5 +1,15 @@
 <%namespace name="sourceblock" file="/codeblocks/source.mako"/>
 
+<%
+    at_ref = request.GET.get('at')
+    if at_ref:
+        query={'at': at_ref}
+        default_commit_id = at_ref or c.rhodecode_db_repo.landing_ref_name
+    else:
+        query=None
+        default_commit_id = c.commit.raw_id
+%>
+
 <div id="codeblock" class="browserblock">
     <div class="browser-header">
         <div class="browser-nav">
@@ -27,13 +37,13 @@
                   ## binary files are delete only
                   % if c.file.is_binary:
                     ${h.link_to(_('Edit'), '#Edit', class_="btn btn-default disabled tooltip", title=_('Editing binary files not allowed'))}
-                    ${h.link_to(_('Delete'), h.route_path('repo_files_remove_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path),class_="btn btn-danger")}
+                    ${h.link_to(_('Delete'), h.route_path('repo_files_remove_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path, _query=query),class_="btn btn-danger")}
                   % else:
-                    <a  class="btn btn-default" href="${h.route_path('repo_files_edit_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path)}">
+                    <a  class="btn btn-default" href="${h.route_path('repo_files_edit_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path, _query=query)}">
                         ${_('Edit on branch: ')}<code>${c.branch_name}</code>
                     </a>
 
-                    <a class="btn btn-danger" href="${h.route_path('repo_files_remove_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path)}">
+                    <a class="btn btn-danger" href="${h.route_path('repo_files_remove_file',repo_name=c.repo_name,commit_id=c.branch_or_raw_id,f_path=c.f_path, _query=query)}">
                         ${_('Delete')}
                     </a>
                   % endif
@@ -88,7 +98,7 @@
 
       <div class="path clear-fix">
           <div class="pull-left">
-            ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'))}
+            ${h.files_breadcrumbs(c.repo_name, c.commit.raw_id, c.file.path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'))}
           </div>
 
           <div class="pull-right stats">

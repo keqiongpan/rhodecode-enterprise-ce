@@ -93,7 +93,7 @@
 
         <div class="path clear-fix">
             <div class="pull-left">
-                ${h.files_breadcrumbs(entry['repository'],entry.get('commit_id', 'tip'),entry['f_path'], linkify_last_item=True)}
+                ${h.files_breadcrumbs(entry['repository'], entry.get('commit_id', 'tip'), entry['f_path'], linkify_last_item=True)}
             </div>
 
             <div class="pull-right stats">

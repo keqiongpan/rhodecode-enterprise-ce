@@ -589,6 +589,20 @@ class RepoFilesView(RepoAppView):
         raise HTTPFound(compare_url)
 
     @LoginRequired()
+    @view_config(
+        route_name='repo_files:default_commit', request_method='GET',
+        renderer=None)
+    def repo_files_default(self):
+        c = self.load_default_context()
+
+        landing_url = h.route_path(
+            'repo_files', repo_name=c.repo_name,
+            commit_id=c.rhodecode_db_repo.landing_ref_name, f_path='',
+            _query={'at': c.rhodecode_db_repo.landing_ref_name})
+
+        raise HTTPFound(landing_url)
+
+    @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
@@ -596,9 +610,6 @@ class RepoFilesView(RepoAppView):
         renderer=None)
     @view_config(
         route_name='repo_files:default_path', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_files:default_commit', request_method='GET',
         renderer=None)
     @view_config(
         route_name='repo_files:rendered', request_method='GET',

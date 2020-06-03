@@ -82,9 +82,8 @@ def test_urlify_text(url, expected_url):
      'bX&#34;X'),
 
 ], ids=['simple1', 'simple2', 'one_segment', 'empty_path', 'simple_quote'])
-def test_files_breadcrumbs_xss(
-        repo_name, commit_id, path, app, expected_result):
-    result = helpers.files_breadcrumbs(repo_name, commit_id, path)
+def test_files_breadcrumbs_xss(repo_name, commit_id, path, app, expected_result):
+    result = helpers.files_breadcrumbs(repo_name, 'hg', commit_id, path)
     # Expect it to encode all path fragments properly. This is important
     # because it returns an instance of `literal`.
     if path != '':

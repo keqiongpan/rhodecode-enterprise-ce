@@ -256,11 +256,17 @@ tooltip = _ToolTip()
 files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy file path"></i>'
 
 
-def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):
+def files_breadcrumbs(repo_name, commit_id, file_path, landing_ref_name=None, at_ref=None,
+                      limit_items=False, linkify_last_item=False, hide_last_item=False, copy_path_icon=True):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
 
-    route_qry = {'at': at_ref} if at_ref else None
+    if at_ref:
+        route_qry = {'at': at_ref}
+        default_commit_id = at_ref or landing_ref_name or commit_id
+    else:
+        route_qry = None
+        default_commit_id = commit_id
 
     # first segment is a `..` link to repo files
     root_name = literal(u'<i class="icon-home"></i>')
@@ -270,7 +276,7 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
             route_path(
                 'repo_files',
                 repo_name=repo_name,
-                commit_id=commit_id,
+                commit_id=default_commit_id,
                 f_path='',
                 _query=route_qry),
         )]
@@ -284,6 +290,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
 
         last_item = cnt == last_cnt
 
+        if last_item and hide_last_item:
+            # iterate over and hide last element
+            continue
+
         if last_item and linkify_last_item is False:
             # plain version
             url_segments.append(segment_html)
@@ -294,7 +304,7 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
                     route_path(
                         'repo_files',
                         repo_name=repo_name,
-                        commit_id=commit_id,
+                        commit_id=default_commit_id,
                         f_path='/'.join(path_segments[:cnt + 1]),
                         _query=route_qry),
                 ))
@@ -304,7 +314,11 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
         url_segments = limited_url_segments
 
     full_path = file_path
-    icon = files_icon.format(escape(full_path))
+    if copy_path_icon:
+        icon = files_icon.format(escape(full_path))
+    else:
+        icon = ''
+
     if file_path == '':
         return root_name
     else:
