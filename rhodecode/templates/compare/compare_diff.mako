@@ -93,10 +93,10 @@
                                        <a class="btn btn-default" title="${h.tooltip(_('Compare fork with %s' % c.rhodecode_db_repo.fork.repo_name))}"
                                           href="${h.route_path('repo_compare',
                                                 repo_name=c.rhodecode_db_repo.fork.repo_name,
-                                                source_ref_type=c.rhodecode_db_repo.landing_rev[0],
-                                                source_ref=c.rhodecode_db_repo.landing_rev[1],
-                                                target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_rev[0],
-                                                target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_rev[1],
+                                                source_ref_type=c.rhodecode_db_repo.landing_ref_type,
+                                                source_ref=c.rhodecode_db_repo.landing_ref_name,
+                                                target_repo=c.repo_name,target_ref_type='branch' if request.GET.get('branch') else c.rhodecode_db_repo.landing_ref_type,
+                                                target_ref=request.GET.get('branch') or c.rhodecode_db_repo.landing_ref_name,
                                                 _query=dict(merge=1))}"
                                         >
                                        ${_('Compare with origin')}

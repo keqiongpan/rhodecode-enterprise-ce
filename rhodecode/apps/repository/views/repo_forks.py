@@ -138,10 +138,10 @@ class RepoForksView(RepoAppView, DataGridAppView):
             url_link = h.route_path(
                 'repo_compare',
                 repo_name=fork.repo_name,
-                source_ref_type=self.db_repo.landing_rev[0],
-                source_ref=self.db_repo.landing_rev[1],
-                target_ref_type=self.db_repo.landing_rev[0],
-                target_ref=self.db_repo.landing_rev[1],
+                source_ref_type=self.db_repo.landing_ref_type,
+                source_ref=self.db_repo.landing_ref_name,
+                target_ref_type=self.db_repo.landing_ref_type,
+                target_ref=self.db_repo.landing_ref_name,
                 _query=dict(merge=1, target_repo=f.repo_name))
             return h.link_to(_('Compare fork'), url_link, class_='btn-link')
 

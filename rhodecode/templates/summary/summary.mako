@@ -34,10 +34,10 @@
 <div id="readme" class="anchor">
 <div class="box">
 
-    <div class="readme-title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_rev[0], c.rhodecode_db_repo.landing_rev[1]))}">
+    <div class="readme-title" title="${h.tooltip(_('Readme file from commit %s:%s') % (c.rhodecode_db_repo.landing_ref_type, c.rhodecode_db_repo.landing_ref_name))}">
         <div>
             <i class="icon-file-text"></i>
-            <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_rev[1],f_path=c.readme_file)}">
+            <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.rhodecode_db_repo.landing_ref_name,f_path=c.readme_file)}">
                 ${c.readme_file}
             </a>
         </div>

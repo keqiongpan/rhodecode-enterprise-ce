@@ -137,7 +137,7 @@ class RepoFilesView(RepoAppView):
             raise HTTPFound(files_url)
 
     def _get_commit_and_path(self):
-        default_commit_id = self.db_repo.landing_rev[1]
+        default_commit_id = self.db_repo.landing_ref_name
         default_f_path = '/'
 
         commit_id = self.request.matchdict.get(
