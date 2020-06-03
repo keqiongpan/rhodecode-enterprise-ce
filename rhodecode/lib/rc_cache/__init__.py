@@ -47,7 +47,7 @@ from .utils import (
     FreshRegionCache, ActiveRegionCache)
 
 
-FILE_TREE_CACHE_VER = 'v3'
+FILE_TREE_CACHE_VER = 'v4'
 
 
 def configure_dogpile_cache(settings):

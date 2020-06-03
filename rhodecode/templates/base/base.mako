@@ -365,7 +365,7 @@
       <ul id="context-pages" class="navigation horizontal-list">
         <li class="${h.is_active('summary', active)}"><a class="menulink" href="${h.route_path('repo_summary', repo_name=c.repo_name)}"><div class="menulabel">${_('Summary')}</div></a></li>
         <li class="${h.is_active('commits', active)}"><a class="menulink" href="${h.route_path('repo_commits', repo_name=c.repo_name)}"><div class="menulabel">${_('Commits')}</div></a></li>
-        <li class="${h.is_active('files', active)}"><a class="menulink" href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.rhodecode_db_repo.landing_ref_name, f_path='', _query={'at':c.rhodecode_db_repo.landing_ref_name})}"><div class="menulabel">${_('Files')}</div></a></li>
+        <li class="${h.is_active('files', active)}"><a class="menulink" href="${h.repo_files_by_ref_url(c.repo_name, c.rhodecode_db_repo.repo_type, f_path='', ref_name=c.rhodecode_db_repo.landing_ref_name, commit_id='tip', query={'at':c.rhodecode_db_repo.landing_ref_name})}"><div class="menulabel">${_('Files')}</div></a></li>
         <li class="${h.is_active('compare', active)}"><a class="menulink" href="${h.route_path('repo_compare_select',repo_name=c.repo_name)}"><div class="menulabel">${_('Compare')}</div></a></li>
 
         ## TODO: anderson: ideally it would have a function on the scm_instance "enable_pullrequest() and enable_fork()"

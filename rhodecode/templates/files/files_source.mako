@@ -98,7 +98,7 @@
 
       <div class="path clear-fix">
           <div class="pull-left">
-            ${h.files_breadcrumbs(c.repo_name, c.commit.raw_id, c.file.path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'))}
+            ${h.files_breadcrumbs(c.repo_name, c.rhodecode_db_repo.repo_type, c.commit.raw_id, c.file.path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'))}
           </div>
 
           <div class="pull-right stats">

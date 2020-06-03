@@ -36,7 +36,7 @@
             <ul>
             <li class="breadcrumb-path">
                 <div>
-                    ${h.files_breadcrumbs(c.repo_name, c.commit.raw_id, c.f_path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'), limit_items=True, hide_last_item=False, linkify_last_item=True, copy_path_icon=False)} /
+                    ${h.files_breadcrumbs(c.repo_name, c.rhodecode_db_repo.repo_type, c.commit.raw_id, c.f_path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'), limit_items=True, hide_last_item=False, linkify_last_item=True, copy_path_icon=False)} /
                 </div>
             </li>
             <li class="location-path">

@@ -594,11 +594,15 @@ class RepoFilesView(RepoAppView):
         renderer=None)
     def repo_files_default(self):
         c = self.load_default_context()
-
-        landing_url = h.route_path(
-            'repo_files', repo_name=c.repo_name,
-            commit_id=c.rhodecode_db_repo.landing_ref_name, f_path='',
-            _query={'at': c.rhodecode_db_repo.landing_ref_name})
+        ref_name = c.rhodecode_db_repo.landing_ref_name
+        landing_url = h.repo_files_by_ref_url(
+            c.rhodecode_db_repo.repo_name,
+            c.rhodecode_db_repo.repo_type,
+            f_path='',
+            ref_name=ref_name,
+            commit_id='tip',
+            query=dict(at=ref_name)
+        )
 
         raise HTTPFound(landing_url)
 
