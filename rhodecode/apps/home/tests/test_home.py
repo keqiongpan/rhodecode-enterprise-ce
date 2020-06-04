@@ -158,7 +158,7 @@ class TestHomeController(TestController):
         ('Enabled', True),
     ])
     def test_index_show_version(self, autologin_user, name, state):
-        version_string = 'RhodeCode Enterprise %s' % rhodecode.__version__
+        version_string = 'RhodeCode %s' % rhodecode.__version__
 
         sett = SettingsModel().create_or_update_setting(
             'show_version', state, 'bool')

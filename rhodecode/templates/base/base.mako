@@ -50,18 +50,27 @@
 <div id="footer">
    <div id="footer-inner" class="title wrapper">
        <div>
-           <p class="footer-link-right">
-               % if c.visual.show_version:
-                   RhodeCode Enterprise ${c.rhodecode_version} ${c.rhodecode_edition}
-               % endif
-               &copy; 2010-${h.datetime.today().year}, <a href="${h.route_url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
-               % if c.visual.rhodecode_support_url:
-                  <a href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a>
-               % endif
-           </p>
            <% sid = 'block' if request.GET.get('showrcid') else 'none' %>
+
+           <p class="footer-link-right">
+               <a class="grey-link-action" href="${h.route_path('home', _query={'showrcid': 1})}">
+               RhodeCode
+               % if c.visual.show_version:
+                   ${c.rhodecode_version}
+               % endif
+               ${c.rhodecode_edition}
+               </a> |
+
+               % if c.visual.rhodecode_support_url:
+                  <a class="grey-link-action" href="${c.visual.rhodecode_support_url}" target="_blank">${_('Support')}</a> |
+                  <a class="grey-link-action" href="https://docs.rhodecode.com" target="_blank">${_('Documentation')}</a>
+               % endif
+
+           </p>
+
            <p class="server-instance" style="display:${sid}">
                ## display hidden instance ID if specially defined
+               &copy; 2010-${h.datetime.today().year}, <a href="${h.route_url('rhodecode_official')}" target="_blank">RhodeCode GmbH</a>. All rights reserved.
                % if c.rhodecode_instanceid:
                    ${_('RhodeCode instance id: {}').format(c.rhodecode_instanceid)}
                % endif
