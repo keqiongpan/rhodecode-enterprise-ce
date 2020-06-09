@@ -253,8 +253,16 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
             data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}"
         >
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
+            <%
+                file_comments = (get_inline_comments(inline_comments, filediff.patch['filename']) or {}).values()
+                total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not _c.outdated]
+            %>
             <div class="filediff-collapse-indicator icon-"></div>
+            <span class="pill-group pull-right" >
+                <span class="pill"><i class="icon-comment"></i> ${len(total_file_comments)}</span>
+            </span>
             ${diff_ops(filediff)}
+
         </label>
 
         ${diff_menu(filediff, use_comments=use_comments)}
@@ -484,7 +492,7 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
                 <% final_path = filediff.target_file_path %>
             %endif
         %endif
-        <i style="color: #aaa" class="tooltip icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy file path')}" onclick="return false;"></i>
+        <i style="color: #aaa" class="on-hover-icon icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy file path')}" onclick="return false;"></i>
     </span>
     ## anchor link
     <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
@@ -615,6 +623,19 @@ from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
 </%def>
 
 <%!
+
+def get_inline_comments(comments, filename):
+    if hasattr(filename, 'unicode_path'):
+        filename = filename.unicode_path
+
+    if not isinstance(filename, (unicode, str)):
+        return None
+
+    if comments and filename in comments:
+        return comments[filename]
+
+    return None
+
 def get_comments_for(diff_type, comments, filename, line_version, line_number):
     if hasattr(filename, 'unicode_path'):
         filename = filename.unicode_path
@@ -622,13 +643,14 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
     if not isinstance(filename, (unicode, str)):
         return None
 
-    line_key = '{}{}'.format(line_version, line_number) ## e.g o37, n12
+    file_comments = get_inline_comments(comments, filename)
+    if file_comments is None:
+        return None
 
-    if comments and filename in comments:
-        file_comments = comments[filename]
-        if line_key in file_comments:
-            data = file_comments.pop(line_key)
-            return data
+    line_key = '{}{}'.format(line_version, line_number) ## e.g o37, n12
+    if line_key in file_comments:
+        data = file_comments.pop(line_key)
+        return data
 %>
 
 <%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None, active_pattern_entries=None)">
