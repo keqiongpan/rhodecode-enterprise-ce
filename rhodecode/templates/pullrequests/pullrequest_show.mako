@@ -476,7 +476,7 @@
                   <div class="alert alert-info">
                     <div>
                        % if c.pr_merge_source_commit.changed:
-                        <strong>${_('There are new changes for {}:{} in source repository, please consider updating this pull request.').format(c.pr_merge_source_commit.ref_spec.type, c.pr_merge_source_commit.ref_spec.name)}</strong>
+                        <strong>${_('There are new changes for `{}:{}` in source repository, please consider updating this pull request.').format(c.pr_merge_source_commit.ref_spec.type, c.pr_merge_source_commit.ref_spec.name)}</strong>
                        % endif
                     </div>
                   </div>
