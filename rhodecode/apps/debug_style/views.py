@@ -187,6 +187,7 @@ Check if we should use full-topic or mini-topic.
 I think something like this would be better
 
 ```py
+// markdown renderer
 
 def db():
    global connection
@@ -226,10 +227,26 @@ def db():
                 'comment_body': '''
 I like this !
 
-But please check this code::
-    
-    def main():
-        print 'ok'
+But please check this code
+
+.. code-block:: javascript
+
+  // THIS IS RST CODE
+
+  this.createResolutionComment = function(commentId) {
+    // hide the trigger text
+    $('#resolve-comment-{0}'.format(commentId)).hide();
+
+    var comment = $('#comment-'+commentId);
+    var commentData = comment.data();
+    if (commentData.commentInline) {
+        this.createComment(comment, commentId)
+    } else {
+        Rhodecode.comments.createGeneralComment('general', "$placeholder", commentId)
+    }
+
+    return false;
+  };
 
 This should work better !
                 ''',

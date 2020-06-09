@@ -101,6 +101,7 @@ ${self.plaintext_footer()}
             margin: 0;
             padding: 0;
             font-family: ${text_regular|n};
+            color: #000000;
         }
 
         /* Prevent Webkit and Windows Mobile platforms from changing default font sizes.*/
@@ -211,6 +212,20 @@ ${self.plaintext_footer()}
 
         code {
             font-family: ${text_monospace|n};
+            white-space: pre-line !important;
+            color: #000000;
+        }
+
+        ul.changes-ul {
+            list-style: none;
+            list-style-type: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        ul.changes-ul li {
+            list-style: none;
+            list-style-type: none;
+            margin: 2px 0;
         }
 
         @media only screen and (-webkit-min-device-pixel-ratio: 2) {
@@ -237,13 +252,19 @@ ${self.plaintext_footer()}
             padding: 3px 5px 3px
         }
 
-        div.markdown-block h1, div.markdown-block h2, div.markdown-block h3, div.markdown-block h4, div.markdown-block h5, div.markdown-block h6 {
+        div.markdown-block h1,
+        div.markdown-block h2,
+        div.markdown-block h3,
+        div.markdown-block h4,
+        div.markdown-block h5,
+        div.markdown-block h6 {
             border-bottom: none !important;
             padding: 0 !important;
             overflow: visible !important
         }
 
-        div.markdown-block h1, div.markdown-block h2 {
+        div.markdown-block h1,
+        div.markdown-block h2 {
             border-bottom: 1px #e6e5e5 solid !important
         }
 
@@ -290,7 +311,13 @@ ${self.plaintext_footer()}
             margin-bottom: 13px
         }
 
-        div.markdown-block ol, div.markdown-block ul, div.markdown-block p, div.markdown-block blockquote, div.markdown-block dl, div.markdown-block li, div.markdown-block table {
+        div.markdown-block ol,
+        div.markdown-block ul,
+        div.markdown-block p,
+        div.markdown-block blockquote,
+        div.markdown-block dl,
+        div.markdown-block li,
+        div.markdown-block table {
             margin: 3px 0 13px 0 !important;
             color: #424242 !important;
             font-size: 13px !important;
@@ -371,27 +398,30 @@ ${self.plaintext_footer()}
             background-color: #eeeeee
         }
 
-        div.markdown-block code, div.markdown-block pre, div.markdown-block #ws, div.markdown-block #message {
+        div.markdown-block code,
+        div.markdown-block pre,
+        div.markdown-block #ws,
+        div.markdown-block #message {
             font-family: ${text_monospace|n};
             font-size: 11px;
             -webkit-border-radius: 2px;
             -moz-border-radius: 2px;
             border-radius: 2px;
-            background-color: white;
+            background-color: #FFFFFF;
             color: #7E7F7F
         }
 
         div.markdown-block code {
-            border: 1px solid #eeeeee;
+            border: 1px solid #7E7F7F;
             margin: 0 2px;
             padding: 0 5px
         }
 
         div.markdown-block pre {
-            border: 1px solid #dbd9da;
+            border: 1px solid #7E7F7F;
             overflow: auto;
             padding: .5em;
-            background-color: #F5F5F5
+            background-color: #FFFFFF;
         }
 
         div.markdown-block pre > code {
@@ -411,7 +441,12 @@ ${self.plaintext_footer()}
             font-weight: normal
         }
 
-        div.rst-block h1, div.rst-block h2, div.rst-block h3, div.rst-block h4, div.rst-block h5, div.rst-block h6 {
+        div.rst-block h1,
+        div.rst-block h2,
+        div.rst-block h3,
+        div.rst-block h4,
+        div.rst-block h5,
+        div.rst-block h6 {
             border-bottom: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -461,7 +496,7 @@ ${self.plaintext_footer()}
             background-color: ghostWhite !important;
             color: #444 !important;
             padding: 0 .2em !important;
-            border: 1px solid #dedede !important
+            border: 1px solid #7E7F7F !important
         }
 
         div.rst-block pre code {
@@ -474,20 +509,24 @@ ${self.plaintext_footer()}
         div.rst-block pre {
             margin: 1em 0;
             padding: 15px;
-            border: 1px solid #eeeeee;
+            border: 1px solid #7E7F7F;
             -webkit-border-radius: 2px;
             -moz-border-radius: 2px;
             border-radius: 2px;
             overflow: auto;
             font-size: 12px;
             color: #444;
-            background-color: #F5F5F5
+            background-color: #FFFFFF;
+        }
+
+        .clear-both {
+            clear:both;
         }
 
         /*elasticmatch is custom rhodecode tag*/
         .codehilite .c-ElasticMatch {
-                background-color: #faffa6;
-                padding: 0.2em;
+            background-color: #faffa6;
+            padding: 0.2em;
         }
 
         .codehilite .c-ElasticMatch { background-color: #faffa6; padding: 0.2em;}
@@ -581,7 +620,7 @@ ${self.plaintext_footer()}
                         </a>
                     </td>
                 </tr>
-                <tr>
+                <tr style="background-color: #fff">
                     <td style="padding:15px;" valign="top">${self.body()}</td>
                 </tr>
             </table>

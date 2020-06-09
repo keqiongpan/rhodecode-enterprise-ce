@@ -85,12 +85,13 @@ data = {
 }
 %>
 
+## header
 <table style="text-align:left;vertical-align:middle;width: 100%">
     <tr>
     <td style="width:100%;border-bottom:1px solid #dbd9da;">
 
-        <h4 style="margin: 0">
-            <div style="margin-bottom: 4px">
+        <div style="margin: 0; font-weight: bold">
+            <div class="clear-both" style="margin-bottom: 4px">
                 <span style="color:#7E7F7F">@${h.person(updating_user.username)}</span>
                 ${_('updated')}
                 <a href="${pull_request_url}" style="${base.link_css()}">
@@ -99,13 +100,14 @@ data = {
             </div>
             <div style="margin-top: 10px"></div>
             ${_('Pull request')} <code>!${data['pr_id']}: ${data['pr_title']}</code>
-        </h4>
+        </div>
 
     </td>
     </tr>
 
 </table>
-
+<div class="clear-both"></div>
+## main body
 <table style="text-align:left;vertical-align:middle;width: 100%">
     ## spacing def
     <tr>
@@ -137,27 +139,31 @@ data = {
     </tr>
     <tr>
         <td style="padding-right:20px;">${_('Changes')}:</td>
-        <td style="white-space:pre-line">\
+        <td>
             <strong>Changed commits:</strong>
-
-             - Added: ${len(added_commits)}
-             - Removed: ${len(removed_commits)}
+            <ul class="changes-ul">
+                <li>- Added: ${len(added_commits)}</li>
+                <li>- Removed: ${len(removed_commits)}</li>
+            </ul>
 
             <strong>Changed files:</strong>
+            <ul class="changes-ul">
 
             %if not changed_files:
-             No file changes found
+                <li>No file changes found</li>
             %else:
-            %for file_name in added_files:
-             - A <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
-            %endfor
-            %for file_name in modified_files:
-             - M <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
-            %endfor
-            %for file_name in removed_files:
-             - R <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a>
-            %endfor
+                %for file_name in added_files:
+                 <li>- A <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a></li>
+                %endfor
+                %for file_name in modified_files:
+                 <li>-  M <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a></li>
+                %endfor
+                %for file_name in removed_files:
+                 <li>-  R <a href="${pull_request_url + '#a_' + h.FID(ancestor_commit_id, file_name)}">${file_name}</a></li>
+                %endfor
             %endif
+
+            </ul>
         </td>
     </tr>
 
