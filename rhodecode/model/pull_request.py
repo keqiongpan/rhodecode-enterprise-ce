@@ -186,7 +186,7 @@ def get_diff_info(
                     email = commit.author_email
                     user = User.get_from_cs_author(author)
                     if user:
-                        user_counts[user] = user_counts.get(user, 0) + 1
+                        user_counts[user.user_id] = user_counts.get(user.user_id, 0) + 1
                     author_counts[author] = author_counts.get(author, 0) + 1
                     email_counts[email] = email_counts.get(email, 0) + 1
 

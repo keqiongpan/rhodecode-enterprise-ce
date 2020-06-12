@@ -4962,7 +4962,9 @@ class RepoReviewRule(Base, BaseModel):
             else:
                 file_pattern = glob2re(self.file_pattern)
             file_regex = re.compile(file_pattern)
-            for filename in files_changed:
+            for file_data in files_changed:
+                filename = file_data.get('filename')
+
                 if file_regex.search(filename):
                     files_matches = True
                     break
