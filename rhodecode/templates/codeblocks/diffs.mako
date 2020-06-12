@@ -677,9 +677,9 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if line_old_comments:
                 <% has_outdated = any([x.outdated for x in line_old_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(line_old_comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments including outdated, click to show them')}:${len(line_old_comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(line_old_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments')}: ${len(line_old_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -720,9 +720,9 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if line_new_comments:
                 <% has_outdated = any([x.outdated for x in line_new_comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(line_new_comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments including outdated, click to show them')}:${len(line_new_comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(line_new_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments')}: ${len(line_new_comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -776,9 +776,9 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             % if comments:
                 <% has_outdated = any([x.outdated for x in comments]) %>
                 % if has_outdated:
-                    <i title="${_('comments including outdated')}:${len(comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments including outdated, click to show them')}:${len(comments)}" class="icon-comment-toggle" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i title="${_('comments')}: ${len(comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip" title="${_('comments')}: ${len(comments)}" class="icon-comment" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             % endif
             </div>
