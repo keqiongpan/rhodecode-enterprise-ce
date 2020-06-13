@@ -1758,13 +1758,21 @@ class Repository(Base, BaseModel):
 
     @hybrid_property
     def landing_rev(self):
-        # always should return [rev_type, rev]
+        # always should return [rev_type, rev], e.g ['branch', 'master']
         if self._landing_revision:
             _rev_info = self._landing_revision.split(':')
             if len(_rev_info) < 2:
                 _rev_info.insert(0, 'rev')
             return [_rev_info[0], _rev_info[1]]
         return [None, None]
+
+    @property
+    def landing_ref_type(self):
+        return self.landing_rev[0]
+
+    @property
+    def landing_ref_name(self):
+        return self.landing_rev[1]
 
     @landing_rev.setter
     def landing_rev(self, val):
@@ -4954,7 +4962,9 @@ class RepoReviewRule(Base, BaseModel):
             else:
                 file_pattern = glob2re(self.file_pattern)
             file_regex = re.compile(file_pattern)
-            for filename in files_changed:
+            for file_data in files_changed:
+                filename = file_data.get('filename')
+
                 if file_regex.search(filename):
                     files_matches = True
                     break

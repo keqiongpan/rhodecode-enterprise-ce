@@ -125,7 +125,7 @@ class RepoFilesView(RepoAppView):
             self.db_repo_name, branch_name)
         if branch_perm and branch_perm not in ['branch.push', 'branch.push_force']:
             message = _('Branch `{}` changes forbidden by rule {}.').format(
-                branch_name, rule)
+                h.escape(branch_name), rule)
             h.flash(message, 'warning')
 
             if json_mode:
@@ -137,7 +137,7 @@ class RepoFilesView(RepoAppView):
             raise HTTPFound(files_url)
 
     def _get_commit_and_path(self):
-        default_commit_id = self.db_repo.landing_rev[1]
+        default_commit_id = self.db_repo.landing_ref_name
         default_f_path = '/'
 
         commit_id = self.request.matchdict.get(
@@ -181,8 +181,8 @@ class RepoFilesView(RepoAppView):
             raise HTTPFound(
                 h.route_path('repo_summary', repo_name=self.db_repo_name))
 
-        except (CommitDoesNotExistError, LookupError):
-            msg = _('No such commit exists for this repository')
+        except (CommitDoesNotExistError, LookupError) as e:
+            msg = _('No such commit exists for this repository. Commit: {}').format(commit_id)
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
@@ -589,6 +589,24 @@ class RepoFilesView(RepoAppView):
         raise HTTPFound(compare_url)
 
     @LoginRequired()
+    @view_config(
+        route_name='repo_files:default_commit', request_method='GET',
+        renderer=None)
+    def repo_files_default(self):
+        c = self.load_default_context()
+        ref_name = c.rhodecode_db_repo.landing_ref_name
+        landing_url = h.repo_files_by_ref_url(
+            c.rhodecode_db_repo.repo_name,
+            c.rhodecode_db_repo.repo_type,
+            f_path='',
+            ref_name=ref_name,
+            commit_id='tip',
+            query=dict(at=ref_name)
+        )
+
+        raise HTTPFound(landing_url)
+
+    @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
@@ -596,9 +614,6 @@ class RepoFilesView(RepoAppView):
         renderer=None)
     @view_config(
         route_name='repo_files:default_path', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_files:default_commit', request_method='GET',
         renderer=None)
     @view_config(
         route_name='repo_files:rendered', request_method='GET',

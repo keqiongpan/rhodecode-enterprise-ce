@@ -911,11 +911,19 @@ input.filediff-collapse-state {
     * {
         box-sizing: border-box;
     }
+
+    .on-hover-icon {
+        visibility: hidden;
+    }
+
     .filediff-anchor {
         visibility: hidden;
     }
     &:hover {
         .filediff-anchor {
+            visibility: visible;
+        }
+        .on-hover-icon {
             visibility: visible;
         }
     }

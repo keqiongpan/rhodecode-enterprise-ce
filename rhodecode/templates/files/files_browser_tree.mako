@@ -1,10 +1,13 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <%
-    if request.GET.get('at'):
-        query={'at': request.GET.get('at')}
+    at_ref = request.GET.get('at')
+    if at_ref:
+        query={'at': at_ref}
+        default_landing_ref = at_ref or c.rhodecode_db_repo.landing_ref_name
     else:
         query=None
+        default_landing_ref = c.commit.raw_id
 %>
 <div id="file-tree-wrapper" class="browser-body ${('full-load' if c.full_load else '')}">
     <table class="code-browser rctable repo_summary">
@@ -21,7 +24,7 @@
         <tbody id="tbody">
         <tr>
             <td colspan="5">
-                ${h.files_breadcrumbs(c.repo_name,c.commit.raw_id,c.file.path, request.GET.get('at'), limit_items=True)}
+                ${h.files_breadcrumbs(c.repo_name, c.rhodecode_db_repo.repo_type, c.commit.raw_id, c.file.path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'), limit_items=True)}
             </td>
         </tr>
 
@@ -41,7 +44,7 @@
                 % endif
               </span>
             % else:
-              <a href="${h.route_path('repo_files',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=h.safe_unicode(node.path), _query=query)}">
+              <a href="${h.repo_files_by_ref_url(c.repo_name, c.rhodecode_db_repo.repo_type, f_path=h.safe_unicode(node.path), ref_name=default_landing_ref, commit_id=c.commit.raw_id, query=query)}">
                 <i class="${('icon-file-text browser-file' if node.is_file() else 'icon-directory browser-dir')}"></i>${node.name}
               </a>
             % endif

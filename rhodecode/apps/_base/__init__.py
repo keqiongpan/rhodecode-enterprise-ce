@@ -531,8 +531,6 @@ class BaseReferencesView(RepoAppView):
     """
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     def load_refs_context(self, ref_items, partials_template):
@@ -562,7 +560,9 @@ class BaseReferencesView(RepoAppView):
                     'repo_files',
                     repo_name=self.db_repo_name,
                     f_path=ref_name if is_svn else '',
-                    commit_id=commit_id)
+                    commit_id=commit_id,
+                    _query=dict(at=ref_name)
+                )
 
             else:
                 files_url = h.route_path(
@@ -570,7 +570,8 @@ class BaseReferencesView(RepoAppView):
                     repo_name=self.db_repo_name,
                     f_path=ref_name if is_svn else '',
                     commit_id=ref_name,
-                    _query=dict(at=ref_name))
+                    _query=dict(at=ref_name)
+                )
 
             data.append({
                 "name": _render('name', ref_name, files_url, closed),

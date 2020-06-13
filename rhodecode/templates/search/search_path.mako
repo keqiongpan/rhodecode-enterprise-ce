@@ -27,7 +27,7 @@
                 <td class="td-componentname">
                     <i class="icon-file"></i>
                     ${h.link_to(h.literal(entry['f_path']),
-                        h.route_path('repo_files',repo_name=entry['repository'],commit_id='tip',f_path=entry['f_path']))}
+                        h.route_path('repo_files',repo_name=entry['repository'],commit_id=entry.get('commit_id', 'tip'),f_path=entry['f_path']))}
                 </td>
                 <td>
                     %if entry.get('size'):

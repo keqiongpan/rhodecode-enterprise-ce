@@ -35,8 +35,7 @@
         <div class="path-items">
             <li class="breadcrumb-path">
                 <div>
-                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path='')}"><i class="icon-home"></i></a> /
-                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.file.dir_path)}">${c.file.dir_path}</a> ${('/' if c.file.dir_path else '')}
+                    ${h.files_breadcrumbs(c.repo_name, c.rhodecode_db_repo.repo_type, c.commit.raw_id, c.file.path, c.rhodecode_db_repo.landing_ref_name, request.GET.get('at'), limit_items=True, hide_last_item=True, copy_path_icon=False)} /
                 </div>
             </li>
             <li class="location-path">

@@ -19,7 +19,7 @@ A new user `${user.username}` has registered on ${h.format_date(date)}
 ${self.plaintext_footer()}
 </%def>
 
-
+## header
 <table style="text-align:left;vertical-align:middle;width: 100%">
     <tr>
     <td style="width:100%;border-bottom:1px solid #dbd9da;">
@@ -31,7 +31,8 @@ ${self.plaintext_footer()}
     </td>
     </tr>
 </table>
-
+<div class="clear-both"></div>
+## main body
 <table style="text-align:left;vertical-align:middle;width: 100%">
     ## spacing def
     <tr>

@@ -6,7 +6,7 @@ c.template_context['repo_name'] = getattr(c, 'repo_name', '')
 go_import_header = ''
 if hasattr(c, 'rhodecode_db_repo'):
     c.template_context['repo_type'] = c.rhodecode_db_repo.repo_type
-    c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_rev[1]
+    c.template_context['repo_landing_commit'] = c.rhodecode_db_repo.landing_ref_name
     c.template_context['repo_id'] = c.rhodecode_db_repo.repo_id
     c.template_context['repo_view_type'] = h.get_repo_view_type(request)
 

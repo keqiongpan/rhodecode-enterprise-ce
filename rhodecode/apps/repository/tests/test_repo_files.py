@@ -178,10 +178,10 @@ class TestFilesViews(object):
                        commit_id='tip', f_path='/'))
 
         # make sure Files menu url is not tip but new commit
-        landing_rev = backend.repo.landing_rev[1]
+        landing_rev = backend.repo.landing_ref_name
         files_url = route_path('repo_files:default_path',
                                repo_name=backend.repo_name,
-                               commit_id=landing_rev)
+                               commit_id=landing_rev, params={'at': landing_rev})
 
         assert landing_rev != 'tip'
         response.mustcontain(

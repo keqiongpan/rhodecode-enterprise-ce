@@ -256,23 +256,34 @@ tooltip = _ToolTip()
 files_icon = u'<i class="file-breadcrumb-copy tooltip icon-clipboard clipboard-action" data-clipboard-text="{}" title="Copy file path"></i>'
 
 
-def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=False, linkify_last_item=False):
+def files_breadcrumbs(repo_name, repo_type, commit_id, file_path, landing_ref_name=None, at_ref=None,
+                      limit_items=False, linkify_last_item=False, hide_last_item=False,
+                      copy_path_icon=True):
     if isinstance(file_path, str):
         file_path = safe_unicode(file_path)
 
-    route_qry = {'at': at_ref} if at_ref else None
+    if at_ref:
+        route_qry = {'at': at_ref}
+        default_landing_ref = at_ref or landing_ref_name or commit_id
+    else:
+        route_qry = None
+        default_landing_ref = commit_id
 
-    # first segment is a `..` link to repo files
+    # first segment is a `HOME` link to repo files root location
     root_name = literal(u'<i class="icon-home"></i>')
+
     url_segments = [
         link_to(
             root_name,
-            route_path(
-                'repo_files',
-                repo_name=repo_name,
+            repo_files_by_ref_url(
+                repo_name,
+                repo_type,
+                f_path=None,  # None here is a special case for SVN repos,
+                              # that won't prefix with a ref
+                ref_name=default_landing_ref,
                 commit_id=commit_id,
-                f_path='',
-                _query=route_qry),
+                query=route_qry
+            )
         )]
 
     path_segments = file_path.split('/')
@@ -284,6 +295,10 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
 
         last_item = cnt == last_cnt
 
+        if last_item and hide_last_item:
+            # iterate over and hide last element
+            continue
+
         if last_item and linkify_last_item is False:
             # plain version
             url_segments.append(segment_html)
@@ -291,12 +306,14 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
             url_segments.append(
                 link_to(
                     segment_html,
-                    route_path(
-                        'repo_files',
-                        repo_name=repo_name,
-                        commit_id=commit_id,
+                    repo_files_by_ref_url(
+                        repo_name,
+                        repo_type,
                         f_path='/'.join(path_segments[:cnt + 1]),
-                        _query=route_qry),
+                        ref_name=default_landing_ref,
+                        commit_id=commit_id,
+                        query=route_qry
+                    ),
                 ))
 
     limited_url_segments = url_segments[:1] + ['...'] + url_segments[-5:]
@@ -304,7 +321,11 @@ def files_breadcrumbs(repo_name, commit_id, file_path, at_ref=None, limit_items=
         url_segments = limited_url_segments
 
     full_path = file_path
-    icon = files_icon.format(escape(full_path))
+    if copy_path_icon:
+        icon = files_icon.format(escape(full_path))
+    else:
+        icon = ''
+
     if file_path == '':
         return root_name
     else:
@@ -321,6 +342,54 @@ def files_url_data(request):
         matchdict['commit_id'] = 'tip'
 
     return json.dumps(matchdict)
+
+
+def repo_files_by_ref_url(db_repo_name, db_repo_type, f_path, ref_name, commit_id, query=None, ):
+    _is_svn = is_svn(db_repo_type)
+    final_f_path = f_path
+
+    if _is_svn:
+        """
+        For SVN the ref_name cannot be used as a commit_id, it needs to be prefixed with
+        actually commit_id followed by the ref_name. This should be done only in case
+        This is a initial landing url, without additional paths.
+
+        like: /1000/tags/1.0.0/?at=tags/1.0.0
+        """
+
+        if ref_name and ref_name != 'tip':
+            # NOTE(marcink): for svn the ref_name is actually the stored path, so we prefix it
+            # for SVN we only do this magic prefix if it's root, .eg landing revision
+            # of files link. If we are in the tree we don't need this since we traverse the url
+            # that has everything stored
+            if f_path in ['', '/']:
+                final_f_path = '/'.join([ref_name, f_path])
+
+        # SVN always needs a commit_id explicitly, without a named REF
+        default_commit_id = commit_id
+    else:
+        """
+        For git and mercurial we construct a new URL using the names instead of commit_id
+        like: /master/some_path?at=master
+        """
+        # We currently do not support branches with slashes
+        if '/' in ref_name:
+            default_commit_id = commit_id
+        else:
+            default_commit_id = ref_name
+
+    # sometimes we pass f_path as None, to indicate explicit no prefix,
+    # we translate it to string to not have None
+    final_f_path = final_f_path or ''
+
+    files_url = route_path(
+        'repo_files',
+        repo_name=db_repo_name,
+        commit_id=default_commit_id,
+        f_path=final_f_path,
+        _query=query
+    )
+    return files_url
 
 
 def code_highlight(code, lexer, formatter, use_hl_filter=False):
@@ -1492,7 +1561,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
         'id-repr': issue_id,
         'issue-prefix': entry['pref'],
         'serv': entry['url'],
-        'title': desc,
+        'title': bleach.clean(desc, strip=True),
         'hovercard_url': hovercard_url
     }
 

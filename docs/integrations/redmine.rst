@@ -26,3 +26,9 @@ available.
 
 Once you have the API key, create a Redmine integration as outlined in
 :ref:`creating-integrations`.
+
+
+.. note::
+
+    There's an option to configure integration templates. Please see :ref:`integrations-rcextensions` section.
+    rcextensions examples are here: https://code.rhodecode.com/rhodecode-enterprise-ce/files/default/rhodecode/config/rcextensions/examples/custom_integration_templates.py

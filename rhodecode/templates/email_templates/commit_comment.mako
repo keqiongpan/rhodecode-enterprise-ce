@@ -89,12 +89,13 @@ data = {
 }
 %>
 
+## header
 <table style="text-align:left;vertical-align:middle;width: 100%">
     <tr>
     <td style="width:100%;border-bottom:1px solid #dbd9da;">
 
-        <h4 style="margin: 0">
-            <div style="margin-bottom: 4px">
+        <div style="margin: 0; font-weight: bold">
+            <div class="clear-both" style="margin-bottom: 4px">
                 <span style="color:#7E7F7F">@${h.person(user.username)}</span>
                 ${_('left a')}
                 <a href="${commit_comment_url}" style="${base.link_css()}">
@@ -107,13 +108,14 @@ data = {
             </div>
             <div style="margin-top: 10px"></div>
             ${_('Commit')} <code>${data['commit_id']}</code> ${_('of repository')}: ${data['repo_name']}
-        </h4>
+        </div>
 
     </td>
     </tr>
 
 </table>
-
+<div class="clear-both"></div>
+## main body
 <table style="text-align:left;vertical-align:middle;width: 100%">
 
     ## spacing def
