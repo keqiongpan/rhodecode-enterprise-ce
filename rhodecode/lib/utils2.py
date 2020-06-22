@@ -587,51 +587,17 @@ def cleaned_uri(uri):
     return urllib.quote(uri, safe='@$:/')
 
 
-def uri_filter(uri):
-    """
-    Removes user:password from given url string
-
-    :param uri:
-    :rtype: unicode
-    :returns: filtered list of strings
-    """
-    if not uri:
-        return ''
-
-    proto = ''
-
-    for pat in ('https://', 'http://'):
-        if uri.startswith(pat):
-            uri = uri[len(pat):]
-            proto = pat
-            break
-
-    # remove passwords and username
-    uri = uri[uri.find('@') + 1:]
-
-    # get the port
-    cred_pos = uri.find(':')
-    if cred_pos == -1:
-        host, port = uri, None
-    else:
-        host, port = uri[:cred_pos], uri[cred_pos + 1:]
-
-    return filter(None, [proto, host, port])
-
-
 def credentials_filter(uri):
     """
     Returns a url with removed credentials
 
     :param uri:
     """
+    import urlobject
+    url_obj = urlobject.URLObject(cleaned_uri(uri))
+    url_obj = url_obj.without_password().without_username()
 
-    uri = uri_filter(uri)
-    # check if we have port
-    if len(uri) > 2 and uri[2]:
-        uri[2] = ':' + uri[2]
-
-    return ''.join(uri)
+    return url_obj
 
 
 def get_host_info(request):
