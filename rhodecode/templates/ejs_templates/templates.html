@@ -130,6 +130,34 @@ var CG = new ColorGenerator();
 </script>
 
 
+<script id="ejs_commentVersion" type="text/template" class="ejsTemplate">
+
+<%
+if (size > 16) {
+    var gravatar_class = 'gravatar gravatar-large';
+} else {
+    var gravatar_class = 'gravatar';
+}
+
+%>
+
+<%
+if (show_disabled) {
+    var user_cls = 'user user-disabled';
+} else {
+    var user_cls = 'user';
+}
+
+%>
+
+<div style='line-height: 20px'>
+    <img style="margin: -3px 0" class="<%= gravatar_class %>" height="<%= size %>" width="<%= size %>" src="<%- gravatar_url -%>">
+    <strong><%- user_name -%></strong>, <code>v<%- version -%></code> edited <%- timeago_component -%>
+</div>
+
+</script>
+
+
 </div>
 
 <script>

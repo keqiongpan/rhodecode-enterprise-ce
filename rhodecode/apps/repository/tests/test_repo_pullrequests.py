@@ -480,9 +480,7 @@ class TestPullrequestsView(object):
         )
         assert response.status_int == 404
 
-    def test_comment_and_try_edit_already_edited(
-            self, pr_util, csrf_token, xhr_header
-    ):
+    def test_comment_and_try_edit_already_edited(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
         response = self.app.post(
             route_path(
@@ -498,8 +496,9 @@ class TestPullrequestsView(object):
         assert response.json
         comment_id = response.json.get('comment_id', None)
         assert comment_id
+
         test_text = 'test'
-        response = self.app.post(
+        self.app.post(
             route_path(
                 'pullrequest_comment_edit',
                 repo_name=pull_request.target_repo.scm_instance().name,
@@ -528,9 +527,9 @@ class TestPullrequestsView(object):
                 'text': test_text_v2,
                 'version': '0',
             },
-            status=404,
+            status=409,
         )
-        assert response.status_int == 404
+        assert response.status_int == 409
 
         text_form_db = ChangesetComment.query().filter(
             ChangesetComment.comment_id == comment_id).first().text

@@ -33,6 +33,7 @@ from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs, channelstream, hooks_utils
 from rhodecode.lib import audit_logger
+from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
@@ -507,13 +508,13 @@ class CommentsModel(BaseModel):
         comment_version = ChangesetCommentHistory.get_version(comment_id)
         if (comment_version - version) != 1:
             log.warning(
-                'Version mismatch, skipping... '
-                'version {} but should be {}'.format(
-                    (version - 1),
+                'Version mismatch comment_version {} submitted {}, skipping'.format(
                     comment_version,
+                    version
                 )
             )
-            return
+            raise CommentVersionMismatch()
+
         comment_history = ChangesetCommentHistory()
         comment_history.comment_id = comment_id
         comment_history.version = comment_version

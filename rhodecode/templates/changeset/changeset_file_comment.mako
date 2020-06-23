@@ -66,31 +66,47 @@
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
           </div>
+          <%
+          comment_version_selector = 'comment_versions_{}'.format(comment.comment_id)
+          %>
+
           % if comment.history:
               <div class="date">
-                  <span class="comment-area-text">${_('Edited')}:</span>
-                  <select class="comment-version-select" id="comment_history_for_comment_${comment.comment_id}"
-                          onchange="return Rhodecode.comments.showVersion(this)"
-                          name="comment_type">
 
-                      <option style="display: none" value="0">---</option>
-                      % for comment_history in comment.history:
-                          <option data-comment-history-id="${comment_history.comment_history_id}"
-                                  data-comment-id="${comment.comment_id}"
-                                  value="${comment_history.version}">
-                              ${comment_history.version}
-                          </option>
-                      % endfor
-                  </select>
+                 <input id="${comment_version_selector}" name="${comment_version_selector}"
+                        type="hidden"
+                        data-last-version="${comment.history[-1].version}">
+
+                 <script type="text/javascript">
+
+                    var preLoadVersionData = [
+                       % for comment_history in comment.history:
+                            {
+                                id: ${comment_history.comment_history_id},
+                                text: 'v${comment_history.version}',
+                                action: function () {
+                                    Rhodecode.comments.showVersion(
+                                        "${comment.comment_id}",
+                                        "${comment_history.comment_history_id}"
+                                    )
+                                },
+                                comment_version: "${comment_history.version}",
+                                comment_author_username: "${comment_history.author.username}",
+                                comment_author_gravatar: "${h.gravatar_url(comment_history.author.email, 16)}",
+                                comment_created_on: '${h.age_component(comment_history.created_on, time_is_local=True)}',
+                            },
+                       % endfor
+                        ]
+                    initVersionSelector("#${comment_version_selector}", {results: preLoadVersionData});
+
+                  </script>
+
               </div>
           % else:
               <div class="date" style="display: none">
-                  <span class="comment-area-text">${_('Edited')}</span>
-                  <select class="comment-version-select" id="comment_history_for_comment_${comment.comment_id}"
-                          onchange="return Rhodecode.comments.showVersion(this)"
-                          name="comment_type">
-                      <option style="display: none" value="0">---</option>
-                  </select>
+                <input id="${comment_version_selector}" name="${comment_version_selector}"
+                       type="hidden"
+                       data-last-version="0">
               </div>
           %endif
           % if inline:
@@ -169,12 +185,8 @@
             %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):
                ## permissions to delete
                %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
-                    %if comment.comment_type == 'note':
                        <a onclick="return Rhodecode.comments.editComment(this);"
                           class="edit-comment">${_('Edit')}</a>
-                    %else:
-                        <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
-                    %endif
                        | <a onclick="return Rhodecode.comments.deleteComment(this);"
                           class="delete-comment">${_('Delete')}</a>
                %else:

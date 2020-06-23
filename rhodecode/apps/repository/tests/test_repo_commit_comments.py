@@ -378,9 +378,9 @@ class TestRepoCommitCommentsView(TestController):
                 'text': test_text_v2,
                 'version': '0',
             },
-            status=404,
+            status=409,
         )
-        assert response.status_int == 404
+        assert response.status_int == 409
 
         text_form_db = ChangesetComment.query().filter(
             ChangesetComment.comment_id == comment_id).first().text

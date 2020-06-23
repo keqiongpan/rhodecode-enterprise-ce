@@ -148,6 +148,38 @@ select.select2{height:28px;visibility:hidden}
   margin: 0;
 }
 
+
+.drop-menu-comment-history {
+    .drop-menu-core;
+    border: none;
+    padding: 0 6px 0 0;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    position: relative;
+    display: inline-block;
+    line-height: 1em;
+    z-index: 2;
+    cursor: pointer;
+
+    a {
+        display:block;
+        padding: 0;
+        position: relative;
+
+        &:after {
+            position: absolute;
+            content: "\00A0\25BE";
+            right: -0.80em;
+            line-height: 1em;
+            top: -0.20em;
+            width: 1em;
+            font-size: 16px;
+        }
+    }
+
+}
+
 .field-sm .drop-menu {
     padding: 1px 0 0 0;
     a {

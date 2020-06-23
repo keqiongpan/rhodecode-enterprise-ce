@@ -177,3 +177,7 @@ class ArtifactMetadataDuplicate(ValueError):
 
 class ArtifactMetadataBadValueType(ValueError):
     pass
+
+
+class CommentVersionMismatch(ValueError):
+    pass

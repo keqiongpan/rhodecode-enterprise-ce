@@ -24,6 +24,7 @@ Helper functions
 Consists of functions to typically be used within templates, but also
 available to Controllers. This module is available to both as 'h'.
 """
+import base64
 
 import os
 import random
@@ -1352,7 +1353,7 @@ class InitialsGravatar(object):
 
     def generate_svg(self, svg_type=None):
         img_data = self.get_img_data(svg_type)
-        return "data:image/svg+xml;base64,%s" % img_data.encode('base64')
+        return "data:image/svg+xml;base64,%s" % base64.b64encode(img_data)
 
 
 def initials_gravatar(email_address, first_name, last_name, size=30):

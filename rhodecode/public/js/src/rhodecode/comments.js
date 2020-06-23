@@ -496,6 +496,43 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
     return CommentForm;
 });
 
+/* selector for comment versions */
+var initVersionSelector = function(selector, initialData) {
+
+    var formatResult = function(result, container, query, escapeMarkup) {
+
+        return renderTemplate('commentVersion', {
+            show_disabled: true,
+            version: result.comment_version,
+            user_name: result.comment_author_username,
+            gravatar_url: result.comment_author_gravatar,
+            size: 16,
+            timeago_component: result.comment_created_on,
+        })
+    };
+
+    $(selector).select2({
+        placeholder: "Edited",
+        containerCssClass: "drop-menu-comment-history",
+        dropdownCssClass: "drop-menu-dropdown",
+        dropdownAutoWidth: true,
+        minimumResultsForSearch: -1,
+        data: initialData,
+        formatResult: formatResult,
+    });
+
+    $(selector).on('select2-selecting', function (e) {
+        // hide the mast as we later do preventDefault()
+        $("#select2-drop-mask").click();
+        e.preventDefault();
+        e.choice.action();
+    });
+
+    $(selector).on("select2-open", function() {
+        timeagoActivate();
+    });
+};
+
 /* comments controller */
 var CommentsController = function() {
   var mainComment = '#text';
@@ -521,21 +558,8 @@ var CommentsController = function() {
       return false;
   };
 
-   this.showVersion = function (node) {
-       var $node = $(node);
-       var selectedIndex = $node.context.selectedIndex;
-       var option = $node.find('option[value="'+ selectedIndex +'"]');
-       var zero_option = $node.find('option[value="0"]');
-       if (!option){
-           return;
-       }
+   this.showVersion = function (comment_id, comment_history_id) {
 
-       // little trick to cheat onchange and allow to display the same version again
-       $node.context.selectedIndex = 0;
-       zero_option.text(selectedIndex);
-
-       var comment_history_id = option.attr('data-comment-history-id');
-       var comment_id = option.attr('data-comment-id');
        var historyViewUrl = pyroutes.url(
            'repo_commit_comment_history_view',
            {
@@ -557,7 +581,8 @@ var CommentsController = function() {
            });
        };
        _submitAjaxPOST(
-           historyViewUrl, {'csrf_token': CSRF_TOKEN}, successRenderCommit,
+           historyViewUrl, {'csrf_token': CSRF_TOKEN},
+           successRenderCommit,
            failRenderCommit
        );
    };
@@ -863,6 +888,7 @@ var CommentsController = function() {
 
       return commentForm;
   };
+
   this.editComment = function(node) {
       var $node = $(node);
       var $comment = $(node).closest('.comment');
@@ -917,15 +943,16 @@ var CommentsController = function() {
                lineno: lineno,
                f_path: f_path}
            );
+
            // set a CUSTOM submit handler for inline comments.
             commentForm.setHandleFormSubmit(function(o) {
               var text = commentForm.cm.getValue();
               var commentType = commentForm.getCommentType();
-              var resolvesCommentId = commentForm.getResolvesId();
 
               if (text === "") {
                 return;
               }
+
               if (old_comment_text == text) {
                   SwalNoAnimation.fire({
                       title: 'Unable to edit comment',
@@ -937,19 +964,22 @@ var CommentsController = function() {
               var submitEvent = true;
               commentForm.setActionButtonsDisabled(true, excludeCancelBtn, submitEvent);
               commentForm.cm.setOption("readOnly", true);
-              var dropDown = $('#comment_history_for_comment_'+comment_id);
 
-              var version = dropDown.children().last().val()
-              if(!version){
-                  version = 0;
+              // Read last version known
+              var versionSelector = $('#comment_versions_{0}'.format(comment_id));
+              var version = versionSelector.data('lastVersion');
+
+              if (!version) {
+                version = 0;
               }
+
               var postData = {
                   'text': text,
                   'f_path': f_path,
                   'line': lineno,
                   'comment_type': commentType,
-                  'csrf_token': CSRF_TOKEN,
                   'version': version,
+                  'csrf_token': CSRF_TOKEN
               };
 
               var submitSuccessCallback = function(json_data) {
@@ -961,32 +991,61 @@ var CommentsController = function() {
                     'csrf_token': CSRF_TOKEN
                 };
 
+                /* Inject new edited version selector */
                 var updateCommentVersionDropDown = function () {
-                    var dropDown = $('#comment_history_for_comment_'+comment_id);
+                    var versionSelectId = '#comment_versions_'+comment_id;
+                    var preLoadVersionData = [
+                        {
+                            id: json_data['comment_version'],
+                            text: "v{0}".format(json_data['comment_version']),
+                            action: function () {
+                                Rhodecode.comments.showVersion(
+                                    json_data['comment_id'],
+                                    json_data['comment_history_id']
+                                )
+                            },
+                            comment_version: json_data['comment_version'],
+                            comment_author_username: json_data['comment_author_username'],
+                            comment_author_gravatar: json_data['comment_author_gravatar'],
+                            comment_created_on: json_data['comment_created_on'],
+                        },
+                    ]
+
+
+                    if ($(versionSelectId).data('select2')) {
+                        var oldData = $(versionSelectId).data('select2').opts.data.results;
+                        $(versionSelectId).select2("destroy");
+                        preLoadVersionData = oldData.concat(preLoadVersionData)
+                    }
+
+                    initVersionSelector(versionSelectId, {results: preLoadVersionData});
+
                     $comment.attr('data-comment-text', btoa(text));
-                    var version = json_data['comment_version']
-                    var option = new Option(version, version);
-                    var $option = $(option);
-                    $option.attr('data-comment-history-id', json_data['comment_history_id']);
-                    $option.attr('data-comment-id', json_data['comment_id']);
-                    dropDown.append(option);
-                    dropDown.parent().show();
+
+                    var versionSelector = $('#comment_versions_'+comment_id);
+
+                    // set lastVersion so we know our last edit version
+                    versionSelector.data('lastVersion', json_data['comment_version'])
+                    versionSelector.parent().show();
                 }
                 updateCommentVersionDropDown();
+
                 // by default we reset state of comment preserving the text
                 var failRenderCommit = function(jqXHR, textStatus, errorThrown) {
-                    var prefix = "Error while editing of comment.\n"
+                    var prefix = "Error while editing this comment.\n"
                     var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
                     ajaxErrorSwal(message);
-
                 };
+
                 var successRenderCommit = function(o){
                     $comment.show();
                     $comment[0].lastElementChild.innerHTML = o;
-                }
-                var previewUrl = pyroutes.url('repo_commit_comment_preview',
-                {'repo_name': templateContext.repo_name,
-                'commit_id': templateContext.commit_data.commit_id});
+                };
+
+                var previewUrl = pyroutes.url(
+                    'repo_commit_comment_preview',
+             {'repo_name': templateContext.repo_name,
+                    'commit_id': templateContext.commit_data.commit_id});
 
                 _submitAjaxPOST(
                     previewUrl, postData, successRenderCommit,
@@ -999,11 +1058,6 @@ var CommentsController = function() {
                   var target_id = json_data.target_id;
 
                   $comments.find('.cb-comment-add-button').before(html);
-
-                  //mark visually which comment was resolved
-                  if (resolvesCommentId) {
-                      commentForm.markCommentResolved(resolvesCommentId);
-                  }
 
                  //  run global callback on submit
                   commentForm.globalSubmitSuccessCallback();
@@ -1029,16 +1083,25 @@ var CommentsController = function() {
               var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
                   var prefix = "Error while editing comment.\n"
                   var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
-                  ajaxErrorSwal(message);
+                  if (jqXHR.status == 409){
+                    message = 'This comment was probably changed somewhere else. Please reload the content of this comment.'
+                    ajaxErrorSwal(message, 'Comment version mismatch.');
+                  } else {
+                    ajaxErrorSwal(message);
+                  }
+
                   commentForm.resetCommentFormState(text)
               };
               commentForm.submitAjaxPOST(
-                  commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
+                  commentForm.submitUrl, postData,
+                  submitSuccessCallback,
+                  submitFailCallback);
             });
       }
 
       $form.addClass('comment-inline-form-open');
   };
+
   this.createComment = function(node, resolutionComment) {
       var resolvesCommentId = resolutionComment || null;
       var $node = $(node);

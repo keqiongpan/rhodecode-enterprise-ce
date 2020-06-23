@@ -25,7 +25,7 @@ import formencode
 import formencode.htmlfill
 import peppercorn
 from pyramid.httpexceptions import (
-    HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest)
+    HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest, HTTPConflict)
 from pyramid.view import view_config
 from pyramid.renderers import render
 
@@ -34,6 +34,7 @@ from rhodecode.apps._base import RepoAppView, DataGridAppView
 from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.diffs import load_cached_diff, cache_diff, diff_cache_exist
+from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
@@ -1528,6 +1529,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         route_name='pullrequest_comment_edit', request_method='POST',
         renderer='json_ext')
     def pull_request_comment_edit(self):
+        self.load_default_context()
+
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id']
         )
@@ -1566,11 +1569,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 log.warning(
                     'Comment(PR): '
                     'Trying to create new version '
-                    'of existing comment {}'.format(
+                    'with the same comment body {}'.format(
                         comment_id,
                     )
                 )
                 raise HTTPNotFound()
+
             if version.isdigit():
                 version = int(version)
             else:
@@ -1584,24 +1588,30 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 )
                 raise HTTPNotFound()
 
-            comment_history = CommentsModel().edit(
-                comment_id=comment_id,
-                text=text,
-                auth_user=self._rhodecode_user,
-                version=version,
-            )
+            try:
+                comment_history = CommentsModel().edit(
+                    comment_id=comment_id,
+                    text=text,
+                    auth_user=self._rhodecode_user,
+                    version=version,
+                )
+            except CommentVersionMismatch:
+                raise HTTPConflict()
+
             if not comment_history:
                 raise HTTPNotFound()
+
             Session().commit()
             return {
                 'comment_history_id': comment_history.comment_history_id,
                 'comment_id': comment.comment_id,
                 'comment_version': comment_history.version,
+                'comment_author_username': comment_history.author.username,
+                'comment_author_gravatar': h.gravatar_url(comment_history.author.email, 16),
+                'comment_created_on': h.age_component(comment_history.created_on,
+                                                      time_is_local=True),
             }
         else:
-            log.warning(
-                'No permissions for user {} to edit comment_id: {}'.format(
-                    self._rhodecode_db_user, comment_id
-                )
-            )
+            log.warning('No permissions for user %s to edit comment_id: %s',
+                        self._rhodecode_db_user, comment_id)
             raise HTTPNotFound()
