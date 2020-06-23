@@ -173,17 +173,17 @@
                        <a onclick="return Rhodecode.comments.editComment(this);"
                           class="edit-comment">${_('Edit')}</a>
                     %else:
-                        <button class="btn-link" disabled="disabled">${_('Edit')}</button>
+                        <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
                     %endif
                        | <a onclick="return Rhodecode.comments.deleteComment(this);"
                           class="delete-comment">${_('Delete')}</a>
                %else:
-                  <button class="btn-link" disabled="disabled">${_('Edit')}</button>
-                  | <button class="btn-link" disabled="disabled">${_('Delete')}</button>
+                  <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
+                  | <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Delete')}</a>
                %endif
             %else:
-               <button class="btn-link" disabled="disabled">${_('Edit')}</button>
-               | <button class="btn-link" disabled="disabled">${_('Delete')}</button>
+                  <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
+                  | <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Delete')}</a>
             %endif
 
             % if outdated_at_ver:
