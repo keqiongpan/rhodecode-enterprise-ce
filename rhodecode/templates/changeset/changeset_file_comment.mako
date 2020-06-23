@@ -62,6 +62,13 @@
 
           <div class="author ${'author-inline' if inline else 'author-general'}">
               ${base.gravatar_with_user(comment.author.email, 16, tooltip=True)}
+
+              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
+                <span class="tag authortag tooltip" title="${_('Pull request author')}">
+                ${_('author')}
+                </span>
+              % endif
+
           </div>
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
@@ -139,15 +146,9 @@
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
           <div class="comment-links-block">
-              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
-                <span class="tag authortag tooltip" title="${_('Pull request author')}">
-                ${_('author')}
-                </span>
-                |
-              % endif
+
             % if inline:
-                  <div class="pr-version-inline">
-                    <a href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
+                    <a class="pr-version-inline" href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
                         <code class="pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |
@@ -158,25 +159,26 @@
                         </code>
                     % endif
                     </a>
-                  </div>
             % else:
                 % if comment.pull_request_version_id and pr_index_ver:
-                    |
-                    <div class="pr-version">
+
                       % if comment.outdated:
-                        <a href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}">
+                        <a class="pr-version"
+                           href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}"
+                        >
                             ${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}
-                        </a>
+                        </a> |
                       % else:
-                        <div title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
-                            <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
-                            <code class="pr-version-num">
-                                ${'v{}'.format(pr_index_ver)}
-                            </code>
-                            </a>
-                        </div>
+                        <a class="pr-version"
+                           title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}"
+                           href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}"
+                        >
+                        <code class="pr-version-num">
+                            ${'v{}'.format(pr_index_ver)}
+                        </code>
+                        </a> |
                       % endif
-                    </div>
+
                 % endif
             % endif
 
