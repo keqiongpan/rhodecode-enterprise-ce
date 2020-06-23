@@ -21,6 +21,7 @@
 """
 comments model for RhodeCode
 """
+import datetime
 
 import logging
 import traceback
@@ -501,6 +502,8 @@ class CommentsModel(BaseModel):
         comment = ChangesetComment.get(comment_id)
         old_comment_text = comment.text
         comment.text = text
+        comment.modified_at = datetime.datetime.now()
+
         comment_version = ChangesetCommentHistory.get_version(comment_id)
         if (comment_version - version) != 1:
             log.warning(
