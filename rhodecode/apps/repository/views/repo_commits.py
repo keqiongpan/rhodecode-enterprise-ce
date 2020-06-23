@@ -435,17 +435,24 @@ class RepoCommitsView(RepoAppView):
         route_name='repo_commit_comment_history_view', request_method='POST',
         renderer='string', xhr=True)
     def repo_commit_comment_history_view(self):
-        commit_id = self.request.matchdict['commit_id']
+        c = self.load_default_context()
+
         comment_history_id = self.request.matchdict['comment_history_id']
         comment_history = ChangesetCommentHistory.get_or_404(comment_history_id)
-        c = self.load_default_context()
-        c.comment_history = comment_history
+        is_repo_comment = comment_history.comment.repo.repo_id == self.db_repo.repo_id
 
-        rendered_comment = render(
-            'rhodecode:templates/changeset/comment_history.mako',
-            self._get_template_context(c)
-            , self.request)
-        return rendered_comment
+        if is_repo_comment:
+            c.comment_history = comment_history
+
+            rendered_comment = render(
+                'rhodecode:templates/changeset/comment_history.mako',
+                self._get_template_context(c)
+                , self.request)
+            return rendered_comment
+        else:
+            log.warning('No permissions for user %s to show comment_history_id: %s',
+                        self._rhodecode_db_user, comment_history_id)
+            raise HTTPNotFound()
 
     @LoginRequired()
     @NotAnonymous()
@@ -567,7 +574,7 @@ class RepoCommitsView(RepoAppView):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
         super_admin = h.HasPermissionAny('hg.admin')()
         comment_owner = (comment.author.user_id == self._rhodecode_db_user.user_id)
-        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        is_repo_comment = comment.repo.repo_id == self.db_repo.repo_id
         comment_repo_admin = is_repo_admin and is_repo_comment
 
         if super_admin or comment_owner or comment_repo_admin:
@@ -588,9 +595,7 @@ class RepoCommitsView(RepoAppView):
         route_name='repo_commit_comment_edit', request_method='POST',
         renderer='json_ext')
     def repo_commit_comment_edit(self):
-        commit_id = self.request.matchdict['commit_id']
         comment_id = self.request.matchdict['comment_id']
-
         comment = ChangesetComment.get_or_404(comment_id)
 
         if comment.immutable:
@@ -600,7 +605,7 @@ class RepoCommitsView(RepoAppView):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
         super_admin = h.HasPermissionAny('hg.admin')()
         comment_owner = (comment.author.user_id == self._rhodecode_db_user.user_id)
-        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        is_repo_comment = comment.repo.repo_id == self.db_repo.repo_id
         comment_repo_admin = is_repo_admin and is_repo_comment
 
         if super_admin or comment_owner or comment_repo_admin:
