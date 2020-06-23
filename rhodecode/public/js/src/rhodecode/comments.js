@@ -930,8 +930,8 @@ var CommentsController = function() {
               }
               if (old_comment_text == text) {
                   SwalNoAnimation.fire({
-                      title: 'Error',
-                      html: _gettext('Comment body should be changed'),
+                      title: 'Unable to edit comment',
+                      html: _gettext('Comment body was not changed.'),
                   });
                   return;
               }
