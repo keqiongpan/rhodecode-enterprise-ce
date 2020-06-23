@@ -547,23 +547,15 @@ var CommentsController = function() {
            }
        );
        successRenderCommit = function (data) {
-           Swal.fire({
+           SwalNoAnimation.fire({
                html: data,
                title: '',
-               showClass: {
-                   popup: 'swal2-noanimation',
-                   backdrop: 'swal2-noanimation'
-               },
            });
        };
        failRenderCommit = function () {
-           Swal.fire({
+           SwalNoAnimation.fire({
                html: 'Error while loading comment',
                title: '',
-               showClass: {
-                   popup: 'swal2-noanimation',
-                   backdrop: 'swal2-noanimation'
-               },
            });
        };
        _submitAjaxPOST(
@@ -937,13 +929,9 @@ var CommentsController = function() {
                 return;
               }
               if (old_comment_text == text) {
-                  Swal.fire({
+                  SwalNoAnimation.fire({
                       title: 'Error',
                       html: _gettext('Comment body should be changed'),
-                      showClass: {
-                          popup: 'swal2-noanimation',
-                          backdrop: 'swal2-noanimation'
-                      },
                   });
                   return;
               }
