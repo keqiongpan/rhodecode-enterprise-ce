@@ -68,23 +68,25 @@
           </div>
           % if comment.history:
               <div class="date">
-                  <span class="comment-area-text">${_('Comment version')}:</span>
-                  <select class="comment-type" id="comment_history_for_comment_${comment.comment_id}"
+                  <span class="comment-area-text">${_('Edited')}:</span>
+                  <select class="comment-version-select" id="comment_history_for_comment_${comment.comment_id}"
                           onchange="return Rhodecode.comments.showVersion(this)"
                           name="comment_type">
+
                       <option style="display: none" value="0">---</option>
-                      %for comment_history in comment.history:
-                          <option
-                                  data-comment-history-id="${comment_history.comment_history_id}",
-                                  data-comment-id="${comment.comment_id}",
-                                  value="${comment_history.version}">${comment_history.version}</option>
-                      %endfor
+                      % for comment_history in comment.history:
+                          <option data-comment-history-id="${comment_history.comment_history_id}"
+                                  data-comment-id="${comment.comment_id}"
+                                  value="${comment_history.version}">
+                              ${comment_history.version}
+                          </option>
+                      % endfor
                   </select>
               </div>
           % else:
               <div class="date" style="display: none">
-                  <span class="comment-area-text">${_('Comment version')}</span>
-                  <select class="comment-type" id="comment_history_for_comment_${comment.comment_id}"
+                  <span class="comment-area-text">${_('Edited')}</span>
+                  <select class="comment-version-select" id="comment_history_for_comment_${comment.comment_id}"
                           onchange="return Rhodecode.comments.showVersion(this)"
                           name="comment_type">
                       <option style="display: none" value="0">---</option>
@@ -169,19 +171,19 @@
                %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
                     %if comment.comment_type == 'note':
                        <a onclick="return Rhodecode.comments.editComment(this);"
-                          class="edit-comment"> ${_('Edit')}</a>
+                          class="edit-comment">${_('Edit')}</a>
                     %else:
-                        <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
+                        <button class="btn-link" disabled="disabled">${_('Edit')}</button>
                     %endif
                        | <a onclick="return Rhodecode.comments.deleteComment(this);"
-                          class="delete-comment"> ${_('Delete')}</a>
+                          class="delete-comment">${_('Delete')}</a>
                %else:
-                  <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
-                  | <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+                  <button class="btn-link" disabled="disabled">${_('Edit')}</button>
+                  | <button class="btn-link" disabled="disabled">${_('Delete')}</button>
                %endif
             %else:
-               <button class="btn-link" disabled="disabled"> ${_('Edit')}</button>
-               | <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+               <button class="btn-link" disabled="disabled">${_('Edit')}</button>
+               | <button class="btn-link" disabled="disabled">${_('Delete')}</button>
             %endif
 
             % if outdated_at_ver:

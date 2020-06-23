@@ -137,9 +137,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             $(this.commentType).prop('disabled', true);
             $(this.commentType).addClass('disabled');
             var editInfo =
-                '<div class="comment-label note" id="comment-label-6" title="line: ">' +
-                'editing' +
-                '</div>';
+                '';
             $(editInfo).insertBefore($(this.editButton).parent());
         }
 
@@ -554,7 +552,7 @@ var CommentsController = function() {
        };
        failRenderCommit = function () {
            SwalNoAnimation.fire({
-               html: 'Error while loading comment',
+               html: 'Error while loading comment history',
                title: '',
            });
        };
