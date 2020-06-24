@@ -185,8 +185,10 @@
                     % endif
                 % else:
                     <span class="enabled">
-                        <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
-                            tip.zip
+
+                        <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+'.zip')}">
+                            <i class="icon-download"></i>
+                            ${c.rhodecode_db_repo.landing_ref_name}.zip
                             ## replaced by some JS on select
                         </a>
                     </span>

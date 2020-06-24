@@ -76,8 +76,8 @@ $(document).ready(function(){
 
     var initialCommitData = {
         id: null,
-        text: 'tip',
-        type: 'tag',
+        text: '${c.rhodecode_db_repo.landing_ref_name}',
+        type: '${c.rhodecode_db_repo.landing_ref_type}',
         raw_id: null,
         files_url: null
     };
@@ -92,7 +92,8 @@ $(document).ready(function(){
         var fname = e.added.raw_id + ext;
         var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
         // set new label
-        $('#archive_link').html('{0}{1}'.format(escapeHtml(e.added.text), ext));
+        var ico = '<i class="icon-download"></i>';
+        $('#archive_link').html(ico+' {0}{1}'.format(escapeHtml(e.added.text), ext));
 
         // set new url to button,
         $('#archive_link').attr('href', href)
