@@ -362,12 +362,14 @@ class TestPullrequestsView(object):
     ):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
 
         response = self.app.post(
             route_path(
                 'pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=pull_request.pull_request_id,
+                repo_name=target_scm_name,
+                pull_request_id=pull_request_id,
             ),
             params={
                 'close_pull_request': 'true',
@@ -378,6 +380,8 @@ class TestPullrequestsView(object):
         assert response.json
 
         pull_request = PullRequest.get(pull_request_id)
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
         assert pull_request.is_closed()
 
         # check only the latest status, not the review status
@@ -390,8 +394,8 @@ class TestPullrequestsView(object):
         response = self.app.post(
             route_path(
                 'pullrequest_comment_edit',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=pull_request.pull_request_id,
+                repo_name=target_scm_name,
+                pull_request_id=pull_request_id,
                 comment_id=comment_id,
             ),
             extra_environ=xhr_header,
@@ -403,14 +407,15 @@ class TestPullrequestsView(object):
         )
         assert response.status_int == 403
 
-    def test_comment_and_comment_edit(
-            self, pr_util, csrf_token, xhr_header
-    ):
+    def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
         response = self.app.post(
             route_path(
                 'pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id),
             params={
                 'csrf_token': csrf_token,
@@ -426,7 +431,7 @@ class TestPullrequestsView(object):
         self.app.post(
             route_path(
                 'pullrequest_comment_edit',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id,
                 comment_id=comment_id,
             ),
@@ -442,14 +447,15 @@ class TestPullrequestsView(object):
             ChangesetComment.comment_id == comment_id).first().text
         assert test_text == text_form_db
 
-    def test_comment_and_comment_edit(
-            self, pr_util, csrf_token, xhr_header
-    ):
+    def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
         response = self.app.post(
             route_path(
                 'pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id),
             params={
                 'csrf_token': csrf_token,
@@ -465,7 +471,7 @@ class TestPullrequestsView(object):
         response = self.app.post(
             route_path(
                 'pullrequest_comment_edit',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id,
                 comment_id=comment_id,
             ),
@@ -482,10 +488,13 @@ class TestPullrequestsView(object):
 
     def test_comment_and_try_edit_already_edited(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
         response = self.app.post(
             route_path(
                 'pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id),
             params={
                 'csrf_token': csrf_token,
@@ -501,7 +510,7 @@ class TestPullrequestsView(object):
         self.app.post(
             route_path(
                 'pullrequest_comment_edit',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id,
                 comment_id=comment_id,
             ),
@@ -517,7 +526,7 @@ class TestPullrequestsView(object):
         response = self.app.post(
             route_path(
                 'pullrequest_comment_edit',
-                repo_name=pull_request.target_repo.scm_instance().name,
+                repo_name=target_scm_name,
                 pull_request_id=pull_request.pull_request_id,
                 comment_id=comment_id,
             ),
