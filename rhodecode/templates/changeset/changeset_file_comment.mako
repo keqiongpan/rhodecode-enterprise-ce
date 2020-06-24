@@ -33,46 +33,82 @@
 
       <div class="meta">
           <div class="comment-type-label">
-              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}" title="line: ${comment.line_no}">
+              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
+
+              ## TODO COMMENT
               % if comment.comment_type == 'todo':
                   % if comment.resolved:
                       <div class="resolved tooltip" title="${_('Resolved by comment #{}').format(comment.resolved.comment_id)}">
+                          <i class="icon-flag-filled"></i>
                           <a href="#comment-${comment.resolved.comment_id}">${comment.comment_type}</a>
                       </div>
                   % else:
                       <div class="resolved tooltip" style="display: none">
                           <span>${comment.comment_type}</span>
                       </div>
-                      <div class="resolve tooltip" onclick="return Rhodecode.comments.createResolutionComment(${comment.comment_id});" title="${_('Click to resolve this comment')}">
+                      <div class="resolve tooltip" onclick="return Rhodecode.comments.createResolutionComment(${comment.comment_id});" title="${_('Click to create resolution comment.')}">
+                        <i class="icon-flag-filled"></i>
                         ${comment.comment_type}
                       </div>
                   % endif
+              ## NOTE COMMENT
               % else:
+                  ## RESOLVED NOTE
                   % if comment.resolved_comment:
-                    fix
-                    <a href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
-                        <span style="text-decoration: line-through">#${comment.resolved_comment.comment_id}</span>
-                    </a>
+                    <div class="tooltip" title="${_('This comment resolves TODO #{}').format(comment.resolved_comment.comment_id)}">
+                        fix
+                        <a href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
+                            <span style="text-decoration: line-through">#${comment.resolved_comment.comment_id}</span>
+                        </a>
+                    </div>
+                  ## STATUS CHANGE NOTE
+                  % elif not comment.is_inline and comment.status_change:
+                    <%
+                        if comment.pull_request:
+                            status_change_title = 'Status of review for pull request !{}'.format(comment.pull_request.pull_request_id)
+                        else:
+                            status_change_title = 'Status of review for commit {}'.format(h.short_id(comment.commit_id))
+                    %>
+
+                    <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
+                    <div class="changeset-status-lbl tooltip" title="${status_change_title}">
+                         ${comment.status_change[0].status_lbl}
+                    </div>
                   % else:
-                    ${comment.comment_type or 'note'}
+                    <div>
+                        <i class="icon-comment"></i>
+                        ${(comment.comment_type or 'note')}
+                    </div>
                   % endif
               % endif
+
               </div>
           </div>
 
+          % if 0 and comment.status_change:
+          <div class="pull-left">
+              <span  class="tag authortag tooltip" title="${_('Status from pull request.')}">
+                  <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                      ${'!{}'.format(comment.pull_request.pull_request_id)}
+                  </a>
+              </span>
+          </div>
+          % endif
+
           <div class="author ${'author-inline' if inline else 'author-general'}">
               ${base.gravatar_with_user(comment.author.email, 16, tooltip=True)}
-
-              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
-                <span class="tag authortag tooltip" title="${_('Pull request author')}">
-                ${_('author')}
-                </span>
-              % endif
-
           </div>
+
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
           </div>
+
+          % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
+            <span class="tag authortag tooltip" title="${_('Pull request author')}">
+            ${_('author')}
+            </span>
+          % endif
+
           <%
           comment_version_selector = 'comment_versions_{}'.format(comment.comment_id)
           %>
@@ -116,32 +152,6 @@
                        data-last-version="0">
               </div>
           %endif
-          % if inline:
-              <span></span>
-          % else:
-              <div class="status-change">
-                  % if comment.pull_request:
-                      <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
-                          % if comment.status_change:
-                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}:
-                          % else:
-                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}
-                          % endif
-                      </a>
-                  % else:
-                      % if comment.status_change:
-                          ${_('Status change on commit')}:
-                      % endif
-                  % endif
-              </div>
-          % endif
-
-          % if comment.status_change:
-            <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
-            <div title="${_('Commit status')}" class="changeset-status-lbl">
-                 ${comment.status_change[0].status_lbl}
-            </div>
-          % endif
 
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
@@ -150,17 +160,17 @@
             % if inline:
                     <a class="pr-version-inline" href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
-                        <code class="pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
+                        <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % elif pr_index_ver:
-                        <code class="pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
+                        <code class="tooltip pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % endif
                     </a>
             % else:
-                % if comment.pull_request_version_id and pr_index_ver:
+                % if pr_index_ver:
 
                       % if comment.outdated:
                         <a class="pr-version"
@@ -169,7 +179,7 @@
                             ${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}
                         </a> |
                       % else:
-                        <a class="pr-version"
+                        <a class="tooltip pr-version"
                            title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}"
                            href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}"
                         >

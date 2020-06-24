@@ -259,7 +259,10 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
             %>
             <div class="filediff-collapse-indicator icon-"></div>
             <span class="pill-group pull-right" >
-                <span class="pill"><i class="icon-comment"></i> ${len(total_file_comments)}</span>
+                <span class="pill" op="comments">
+
+                    <i class="icon-comment"></i> ${len(total_file_comments)}
+                </span>
             </span>
             ${diff_ops(filediff)}
 

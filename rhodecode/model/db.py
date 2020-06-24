@@ -3806,6 +3806,11 @@ class ChangesetComment(Base, BaseModel):
         return self.pull_request_version_id < version
 
     @property
+    def commit_id(self):
+        """New style naming to stop using .revision"""
+        return self.revision
+
+    @property
     def resolved(self):
         return self.resolved_by[0] if self.resolved_by else None
 
