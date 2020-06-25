@@ -1020,7 +1020,7 @@ var CommentsController = function() {
 
                     initVersionSelector(versionSelectId, {results: preLoadVersionData});
 
-                    $comment.attr('data-comment-text', btoa(text));
+                    $comment.attr('data-comment-text', utf8ToB64(text));
 
                     var versionSelector = $('#comment_versions_'+comment_id);
 

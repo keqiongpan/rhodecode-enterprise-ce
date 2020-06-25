@@ -188,3 +188,7 @@ function b64DecodeUnicode(str) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
 }
+
+function utf8ToB64( str ) {
+    return window.btoa(unescape(encodeURIComponent( str )));
+}
