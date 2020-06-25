@@ -392,7 +392,7 @@
             </a>
         </li>
 
-        %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
+        %if not c.rhodecode_db_repo.archived and h.HasRepoPermissionAll('repository.admin')(c.repo_name):
             <li class="${h.is_active('settings', active)}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
         %endif
 

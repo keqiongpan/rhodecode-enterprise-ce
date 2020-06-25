@@ -167,11 +167,16 @@
         <div style="margin: 0 0 20px 0" class="fake-space"></div>
 
         <div class="field">
+        % if c.rhodecode_db_repo.archived:
+            This repository is already archived. Only super-admin users can un-archive this repository.
+        % else:
             <button class="btn btn-small btn-warning" type="submit"
                     onclick="submitConfirm(event, this, _gettext('Confirm to archive this repository'), _gettext('Archive'), '${c.rhodecode_db_repo.repo_name}')"
             >
                 ${_('Archive this repository')}
             </button>
+        % endif
+
         </div>
         <div class="field">
             <span class="help-block">

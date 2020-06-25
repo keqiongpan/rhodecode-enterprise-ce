@@ -367,8 +367,7 @@ class PermOriginDict(dict):
         self.perm_origin_stack = collections.OrderedDict()
 
     def __setitem__(self, key, (perm, origin, obj_id)):
-        self.perm_origin_stack.setdefault(key, []).append(
-            (perm, origin, obj_id))
+        self.perm_origin_stack.setdefault(key, []).append((perm, origin, obj_id))
         dict.__setitem__(self, key, perm)
 
 
@@ -441,7 +440,7 @@ class PermissionCalculator(object):
 
     def calculate(self):
         if self.user_is_admin and not self.calculate_super_admin_as_user:
-            return self._calculate_admin_permissions()
+            return self._calculate_super_admin_permissions()
 
         self._calculate_global_default_permissions()
         self._calculate_global_permissions()
@@ -452,9 +451,9 @@ class PermissionCalculator(object):
         self._calculate_user_group_permissions()
         return self._permission_structure()
 
-    def _calculate_admin_permissions(self):
+    def _calculate_super_admin_permissions(self):
         """
-        admin user have all default rights for repositories
+        super-admin user have all default rights for repositories
         and groups set to admin
         """
         self.permissions_global.add('hg.admin')
@@ -774,6 +773,7 @@ class PermissionCalculator(object):
         for perm in user_repo_perms:
             r_k = perm.UserRepoToPerm.repository.repo_name
             obj_id = perm.UserRepoToPerm.repository.repo_id
+            archived = perm.UserRepoToPerm.repository.archived
             p = perm.Permission.permission_name
             o = PermOrigin.REPO_USER % perm.UserRepoToPerm.user.username
 
@@ -794,6 +794,15 @@ class PermissionCalculator(object):
                 p = 'repository.admin'
                 o = PermOrigin.SUPER_ADMIN
                 self.permissions_repositories[r_k] = p, o, obj_id
+
+            # finally in case of archived repositories, we downgrade  higher
+            # permissions to read
+            if archived:
+                current_perm = self.permissions_repositories[r_k]
+                if current_perm in ['repository.write', 'repository.admin']:
+                    p = 'repository.read'
+                    o = PermOrigin.ARCHIVED
+                    self.permissions_repositories[r_k] = p, o, obj_id
 
     def _calculate_repository_branch_permissions(self):
         # user group for repositories permissions
