@@ -87,7 +87,7 @@ class TestApi(object):
         id_, params = build_data(self.apikey, 'comment', args='xx')
         response = api_call(self.app, params)
         expected = 'No such method: comment. ' \
-                   'Similar methods: changeset_comment, comment_pull_request, ' \
+                   'Similar methods: changeset_comment, comment_pull_request, edit_comment, ' \
                    'get_pull_request_comments, comment_commit, get_repo_comments'
         assert_error(id_, expected, given=response.body)
 

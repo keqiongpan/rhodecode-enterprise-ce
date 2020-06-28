@@ -21,13 +21,13 @@
 
 import logging
 
-from rhodecode import events
 from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
     validate_repo_permissions, resolve_ref_or_error, validate_set_owner_permissions)
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
+from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -292,10 +292,11 @@ def merge_pull_request(
     else:
         repo = pull_request.target_repo
     auth_user = apiuser
+
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+            user=apiuser, repo_name=repo.repo_name)
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
         else:
@@ -510,9 +511,9 @@ def comment_pull_request(
 
     auth_user = apiuser
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+            user=apiuser, repo_name=repo.repo_name)
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
         else:
@@ -627,6 +628,79 @@ def comment_pull_request(
         'pull_request_id': pull_request.pull_request_id,
         'comment_id': comment.comment_id if comment else None,
         'status': {'given': status, 'was_changed': status_change},
+    }
+    return data
+
+
+@jsonrpc_method()
+def edit_comment(
+        request, apiuser, message, comment_id, version,
+        userid=Optional(OAttr('apiuser')),
+):
+    """
+    Edit comment on the pull request or commit,
+    specified by the `comment_id` and version. Initially version should be 0
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param comment_id: Specify the comment_id for editing
+    :type comment_id: int
+    :param version: version of the comment that will be created, starts from 0
+    :type version: int
+    :param message: The text content of the comment.
+    :type message: str
+    :param userid: Comment on the pull request as this user
+    :type userid: Optional(str or int)
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result : {
+            "comment_history_id":  "<Integer>",
+            "version":       "<Integer>",
+        },
+        error :  null
+    """
+
+    auth_user = apiuser
+    comment = ChangesetComment.get(comment_id)
+
+    is_super_admin = has_superadmin_permission(apiuser)
+    is_repo_admin = HasRepoPermissionAnyApi('repository.admin') \
+        (user=apiuser, repo_name=comment.repo.repo_name)
+
+    if not isinstance(userid, Optional):
+        if is_super_admin or is_repo_admin:
+            apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
+        else:
+            raise JSONRPCError('userid is not the same as your user')
+
+    comment_author = comment.author.user_id == auth_user.user_id
+    if not (comment.immutable is False and (is_super_admin or is_repo_admin) or comment_author):
+        raise JSONRPCError("you don't have access to edit this comment")
+
+    try:
+        comment_history = CommentsModel().edit(
+            comment_id=comment_id,
+            text=message,
+            auth_user=auth_user,
+            version=version,
+        )
+        Session().commit()
+    except CommentVersionMismatch:
+        raise JSONRPCError(
+            'comment ({}) version ({}) mismatch'.format(comment_id, version)
+        )
+    if not comment_history and not message:
+        raise JSONRPCError(
+            "comment ({}) can't be changed with empty string".format(comment_id)
+        )
+    data = {
+        'comment_history_id': comment_history.comment_history_id if comment_history else None,
+        'version': comment_history.version if comment_history else None,
     }
     return data
 
@@ -979,10 +1053,10 @@ def close_pull_request(
     else:
         repo = pull_request.target_repo
 
+    is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+                    user=apiuser, repo_name=repo.repo_name)
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
         else:
             raise JSONRPCError('userid is not the same as your user')

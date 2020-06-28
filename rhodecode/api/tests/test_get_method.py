@@ -37,7 +37,7 @@ class TestGetMethod(object):
         id_, params = build_data(self.apikey, 'get_method', pattern='*comment*')
         response = api_call(self.app, params)
 
-        expected = ['changeset_comment', 'comment_pull_request',
+        expected = ['changeset_comment', 'comment_pull_request', 'edit_comment',
                     'get_pull_request_comments', 'comment_commit', 'get_repo_comments']
         assert_ok(id_, expected, given=response.body)
 
