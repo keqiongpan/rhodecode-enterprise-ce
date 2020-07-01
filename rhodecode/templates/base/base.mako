@@ -243,7 +243,9 @@
 
   <div class="${_class}">
     ${self.gravatar(email, size, tooltip=tooltip, tooltip_alt=contact, user=rc_user)}
-    <span class="${('user user-disabled' if show_disabled else 'user')}"> ${h.link_to_user(rc_user or contact)}</span>
+    <span class="${('user user-disabled' if show_disabled else 'user')}">
+        ${h.link_to_user(rc_user or contact)}
+    </span>
   </div>
 </%def>
 

@@ -960,7 +960,7 @@ def link_to_user(author, length=0, **kwargs):
     if length:
         display_person = shorter(display_person, length)
 
-    if user:
+    if user and user.username != user.DEFAULT_USER:
         return link_to(
             escape(display_person),
             route_path('user_profile', username=user.username),
