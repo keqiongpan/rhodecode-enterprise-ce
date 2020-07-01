@@ -103,7 +103,12 @@ def display_user_sort(obj):
     if obj.username == User.DEFAULT_USER:
         return '#####'
     prefix = PERMISSION_TYPE_SORT.get(obj.permission.split('.')[-1], '')
-    return prefix + obj.username
+    extra_sort_num = '1'  # default
+
+    # NOTE(dan): inactive duplicates goes last
+    if getattr(obj, 'duplicate_perm', None):
+        extra_sort_num = '9'
+    return prefix + extra_sort_num + obj.username
 
 
 def display_user_group_sort(obj):
