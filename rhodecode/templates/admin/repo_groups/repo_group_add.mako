@@ -44,7 +44,12 @@
                      <label for="group_parent_id">${_('Repository group')}:</label>
                  </div>
                  <div class="select">
-                     ${h.select('group_parent_id',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
+                     ${h.select('group_parent_id', request.GET.get('parent_group'),c.repo_groups,class_="medium")}
+                     % if c.personal_repo_group:
+                         <a class="btn" href="#" id="select_my_group" data-personal-group-id="${c.personal_repo_group.group_id}">
+                             ${_('Select my personal group ({})').format(c.personal_repo_group.group_name)}
+                         </a>
+                     % endif
                  </div>
             </div>
 
@@ -106,6 +111,12 @@
             setCopyPermsOption(e.val)
         });
         $('#group_name').focus();
+
+        $('#select_my_group').on('click', function(e){
+            e.preventDefault();
+            $("#group_parent_id").val($(this).data('personalGroupId')).trigger("change");
+        })
+
     })
 </script>
 </%def>

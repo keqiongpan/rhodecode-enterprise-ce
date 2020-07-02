@@ -169,8 +169,8 @@ class AdminReposView(BaseAppView, DataGridAppView):
         c = self.load_default_context()
 
         new_repo = self.request.GET.get('repo', '')
-        parent_group = safe_int(self.request.GET.get('parent_group'))
-        _gr = RepoGroup.get(parent_group)
+        parent_group_id = safe_int(self.request.GET.get('parent_group'))
+        _gr = RepoGroup.get(parent_group_id)
 
         if not HasPermissionAny('hg.admin', 'hg.create.repository')():
             # you're not super admin nor have global create permissions,
@@ -196,9 +196,9 @@ class AdminReposView(BaseAppView, DataGridAppView):
         if not self._rhodecode_user.is_admin and self._rhodecode_user.personal_repo_group:
             parent_group_choice = self._rhodecode_user.personal_repo_group
 
-        if parent_group and _gr:
-            if parent_group in [x[0] for x in c.repo_groups]:
-                parent_group_choice = safe_unicode(parent_group)
+        if parent_group_id and _gr:
+            if parent_group_id in [x[0] for x in c.repo_groups]:
+                parent_group_choice = safe_unicode(parent_group_id)
 
         defaults.update({'repo_group': parent_group_choice})
 

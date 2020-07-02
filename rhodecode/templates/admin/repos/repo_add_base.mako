@@ -46,7 +46,7 @@ ${h.secure_form(h.route_path('repo_create'), request=request)}
                  ${h.select('repo_group',request.GET.get('parent_group'),c.repo_groups,class_="medium")}
                  % if c.personal_repo_group:
                      <a class="btn" href="#" id="select_my_group" data-personal-group-id="${c.personal_repo_group.group_id}">
-                         ${_('Select my personal group (%(repo_group_name)s)') % {'repo_group_name': c.personal_repo_group.group_name}}
+                         ${_('Select my personal group ({})').format(c.personal_repo_group.group_name)}
                      </a>
                  % endif
                  <span class="help-block">${_('Optionally select a group to put this repository into.')}</span>
