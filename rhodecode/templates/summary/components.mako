@@ -97,7 +97,7 @@
           <div class="right-content">
             <div class="commit-info">
                 <div class="tags">
-                <% commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision') %>
+                <% commit_rev = h.safe_int(c.rhodecode_db_repo.changeset_cache.get('revision'), 0) + 1 %>
                 % if c.rhodecode_repo:
                     ${refs_counters(
                         c.rhodecode_repo.branches,
