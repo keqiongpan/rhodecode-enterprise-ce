@@ -214,9 +214,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                      ancestor_commit,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, file_limit,
-                     fulldiff, hide_whitespace_changes, diff_context):
+                     fulldiff, hide_whitespace_changes, diff_context, use_ancestor=True):
 
-        target_ref_id = ancestor_commit.raw_id
+        if use_ancestor:
+            # we might want to not use it for versions
+            target_ref_id = ancestor_commit.raw_id
+
         vcs_diff = PullRequestModel().get_diff(
             source_repo, source_ref_id, target_ref_id,
             hide_whitespace_changes, diff_context)
@@ -593,6 +596,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         else:
             c.inline_comments = display_inline_comments
 
+            use_ancestor = True
+            if from_version_normalized != version_normalized:
+                use_ancestor = False
+
             has_proper_diff_cache = cached_diff and cached_diff.get('commits')
             if not force_recache and has_proper_diff_cache:
                 c.diffset = cached_diff['diff']
@@ -603,7 +610,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     source_ref_id, target_ref_id,
                     target_commit, source_commit,
                     diff_limit, file_limit, c.fulldiff,
-                    hide_whitespace_changes, diff_context)
+                    hide_whitespace_changes, diff_context,
+                    use_ancestor=use_ancestor
+                )
 
                 # save cached diff
                 if caching_enabled:
