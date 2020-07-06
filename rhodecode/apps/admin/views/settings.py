@@ -47,6 +47,7 @@ from rhodecode.model.db import RhodeCodeUi, Repository
 from rhodecode.model.forms import (ApplicationSettingsForm,
     ApplicationUiSettingsForm, ApplicationVisualisationForm,
     LabsSettingsForm, IssueTrackerPatternsForm)
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.repo_group import RepoGroupModel
 
 from rhodecode.model.scm import ScmModel
@@ -253,8 +254,7 @@ class AdminSettingsView(BaseAppView):
         c.active = 'mapping'
         rm_obsolete = self.request.POST.get('destroy', False)
         invalidate_cache = self.request.POST.get('invalidate', False)
-        log.debug(
-            'rescanning repo location with destroy obsolete=%s', rm_obsolete)
+        log.debug('rescanning repo location with destroy obsolete=%s', rm_obsolete)
 
         if invalidate_cache:
             log.debug('invalidating all repositories cache')
@@ -263,6 +263,8 @@ class AdminSettingsView(BaseAppView):
 
         filesystem_repos = ScmModel().repo_scan()
         added, removed = repo2db_mapper(filesystem_repos, rm_obsolete)
+        PermissionModel().trigger_permission_flush()
+
         _repr = lambda l: ', '.join(map(safe_unicode, l)) or '-'
         h.flash(_('Repositories successfully '
                   'rescanned added: %s ; removed: %s') %
