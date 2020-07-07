@@ -89,7 +89,7 @@ from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
 from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.db import Permission, User, Repository
+from rhodecode.model.db import Permission, User, Repository, UserApiKeys
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import IssueTrackerSettingsModel
 

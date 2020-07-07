@@ -1133,14 +1133,16 @@ class UserApiKeys(Base, BaseModel):
 
     # ApiKey role
     ROLE_ALL = 'token_role_all'
-    ROLE_HTTP = 'token_role_http'
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
+    ROLE_HTTP = 'token_role_http'
     ROLE_FEED = 'token_role_feed'
     ROLE_ARTIFACT_DOWNLOAD = 'role_artifact_download'
+    # The last one is ignored in the list as we only
+    # use it for one action, and cannot be created by users
     ROLE_PASSWORD_RESET = 'token_password_reset'
 
-    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
+    ROLES = [ROLE_ALL, ROLE_VCS, ROLE_API, ROLE_HTTP, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
@@ -1203,6 +1205,22 @@ class UserApiKeys(Base, BaseModel):
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
             cls.ROLE_ARTIFACT_DOWNLOAD: _('artifacts downloads'),
+        }.get(role, role)
+
+    @classmethod
+    def _get_role_description(cls, role):
+        return {
+            cls.ROLE_ALL: _('Token for all actions.'),
+            cls.ROLE_HTTP: _('Token to access RhodeCode pages via web interface without '
+                             'login using `api_access_controllers_whitelist` functionality.'),
+            cls.ROLE_VCS: _('Token to interact over git/hg/svn protocols. '
+                            'Requires auth_token authentication plugin to be active. <br/>'
+                            'Such Token should be used then instead of a password to '
+                            'interact with a repository, and additionally can be '
+                            'limited to single repository using repo scope.'),
+            cls.ROLE_API: _('Token limited to api calls.'),
+            cls.ROLE_FEED: _('Token to read RSS/ATOM feed.'),
+            cls.ROLE_ARTIFACT_DOWNLOAD: _('Token for artifacts downloads.'),
         }.get(role, role)
 
     @property
@@ -3783,7 +3801,7 @@ class ChangesetComment(Base, BaseModel):
     def get_index_from_version(cls, pr_version, versions):
         num_versions = [x.pull_request_version_id for x in versions]
         try:
-            return num_versions.index(pr_version) +1
+            return num_versions.index(pr_version) + 1
         except (IndexError, ValueError):
             return
 
