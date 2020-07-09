@@ -2053,9 +2053,9 @@ class MergeCheck(object):
             repo_type = pull_request.target_repo.repo_type
             close_msg = ''
             if repo_type == 'hg':
-                close_msg = _('Source branch will be closed after merge.')
+                close_msg = _('Source branch will be closed before the merge.')
             elif repo_type == 'git':
-                close_msg = _('Source branch will be deleted after merge.')
+                close_msg = _('Source branch will be deleted after the merge.')
 
             merge_details['close_branch'] = dict(
                 details={},

@@ -628,34 +628,42 @@ class MercurialRepository(BaseRepository):
             push_branches=push_branches)
 
     def _local_merge(self, target_ref, merge_message, user_name, user_email,
-                     source_ref, use_rebase=False, dry_run=False):
+                     source_ref, use_rebase=False, close_commit_id=None, dry_run=False):
         """
         Merge the given source_revision into the checked out revision.
 
         Returns the commit id of the merge and a boolean indicating if the
         commit needs to be pushed.
         """
-        self._update(target_ref.commit_id, clean=True)
+        source_ref_commit_id = source_ref.commit_id
+        target_ref_commit_id = target_ref.commit_id
 
-        ancestor = self._ancestor(target_ref.commit_id, source_ref.commit_id)
+        # update our workdir to target ref, for proper merge
+        self._update(target_ref_commit_id, clean=True)
+
+        ancestor = self._ancestor(target_ref_commit_id, source_ref_commit_id)
         is_the_same_branch = self._is_the_same_branch(target_ref, source_ref)
 
-        if ancestor == source_ref.commit_id:
-            # Nothing to do, the changes were already integrated
-            return target_ref.commit_id, False
+        if close_commit_id:
+            # NOTE(marcink): if we get the close commit, this is our new source
+            # which will include the close commit itself.
+            source_ref_commit_id = close_commit_id
 
-        elif ancestor == target_ref.commit_id and is_the_same_branch:
+        if ancestor == source_ref_commit_id:
+            # Nothing to do, the changes were already integrated
+            return target_ref_commit_id, False
+
+        elif ancestor == target_ref_commit_id and is_the_same_branch:
             # In this case we should force a commit message
-            return source_ref.commit_id, True
+            return source_ref_commit_id, True
 
         unresolved = None
         if use_rebase:
             try:
-                bookmark_name = 'rcbook%s%s' % (source_ref.commit_id,
-                                                target_ref.commit_id)
+                bookmark_name = 'rcbook%s%s' % (source_ref_commit_id, target_ref_commit_id)
                 self.bookmark(bookmark_name, revision=source_ref.commit_id)
                 self._remote.rebase(
-                    source=source_ref.commit_id, dest=target_ref.commit_id)
+                    source=source_ref_commit_id, dest=target_ref_commit_id)
                 self._remote.invalidate_vcs_cache()
                 self._update(bookmark_name, clean=True)
                 return self._identify(), True
@@ -678,7 +686,7 @@ class MercurialRepository(BaseRepository):
                     raise
         else:
             try:
-                self._remote.merge(source_ref.commit_id)
+                self._remote.merge(source_ref_commit_id)
                 self._remote.invalidate_vcs_cache()
                 self._remote.commit(
                     message=safe_str(merge_message),
@@ -820,10 +828,12 @@ class MercurialRepository(BaseRepository):
 
         needs_push = False
         if merge_possible:
+
             try:
                 merge_commit_id, needs_push = shadow_repo._local_merge(
                     target_ref, merge_message, merger_name, merger_email,
-                    source_ref, use_rebase=use_rebase, dry_run=dry_run)
+                    source_ref, use_rebase=use_rebase,
+                    close_commit_id=close_commit_id, dry_run=dry_run)
                 merge_possible = True
 
                 # read the state of the close action, if it
