@@ -508,7 +508,7 @@
     ## create action
     <li>
        <a href="#create-actions" onclick="return false;" class="menulink childs">
-        <i class="tooltip icon-plus-circled" title="${_('Create')}"></i>
+        <i class="icon-plus-circled"></i>
        </a>
 
        <div class="action-menu submenu">
