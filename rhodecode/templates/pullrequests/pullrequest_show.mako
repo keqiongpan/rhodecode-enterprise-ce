@@ -471,13 +471,11 @@
                     </div>
                   </div>
                 </div>
-              % elif c.pr_merge_source_commit.changed:
+              % elif c.pr_merge_source_commit.changed and not c.pull_request.is_closed():
                 <div class="box">
                   <div class="alert alert-info">
                     <div>
-                       % if c.pr_merge_source_commit.changed:
                         <strong>${_('There are new changes for `{}:{}` in source repository, please consider updating this pull request.').format(c.pr_merge_source_commit.ref_spec.type, c.pr_merge_source_commit.ref_spec.name)}</strong>
-                       % endif
                     </div>
                   </div>
                 </div>
