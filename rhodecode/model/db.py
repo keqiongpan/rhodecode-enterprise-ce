@@ -3845,6 +3845,13 @@ class ChangesetComment(Base, BaseModel):
     def is_inline(self):
         return self.line_no and self.f_path
 
+    @property
+    def last_version(self):
+        version = 0
+        if self.history:
+            version = self.history[-1].version
+        return version
+
     def get_index_version(self, versions):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)
@@ -3857,6 +3864,7 @@ class ChangesetComment(Base, BaseModel):
 
     def get_api_data(self):
         comment = self
+
         data = {
             'comment_id': comment.comment_id,
             'comment_type': comment.comment_type,
@@ -3869,6 +3877,7 @@ class ChangesetComment(Base, BaseModel):
             'comment_resolved_by': self.resolved,
             'comment_commit_id': comment.revision,
             'comment_pull_request_id': comment.pull_request_id,
+            'comment_last_version': self.last_version
         }
         return data
 

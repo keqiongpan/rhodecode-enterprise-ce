@@ -42,26 +42,27 @@ def make_repo_comments_factory(request):
             comments = []
 
             # general
-            CommentsModel().create(
+            comment = CommentsModel().create(
                 text='General Comment', repo=repo, user=user, commit_id=commit_id,
                 comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
+            comments.append(comment)
 
             # inline
-            CommentsModel().create(
+            comment = CommentsModel().create(
                 text='Inline Comment', repo=repo, user=user, commit_id=commit_id,
                 f_path=file_0, line_no='n1',
                 comment_type=ChangesetComment.COMMENT_TYPE_NOTE, send_email=False)
+            comments.append(comment)
 
             # todo
-            CommentsModel().create(
+            comment = CommentsModel().create(
                 text='INLINE TODO Comment', repo=repo, user=user, commit_id=commit_id,
                 f_path=file_0, line_no='n1',
                 comment_type=ChangesetComment.COMMENT_TYPE_TODO, send_email=False)
+            comments.append(comment)
 
-            @request.addfinalizer
-            def cleanup():
-                for comment in comments:
-                    Session().delete(comment)
+            return comments
+
     return Make()
 
 
@@ -108,3 +109,34 @@ class TestGetRepo(object):
         id_, params = build_data(self.apikey, 'get_repo_comments', **api_call_params)
         response = api_call(self.app, params)
         assert_error(id_, expected, given=response.body)
+
+    def test_api_get_comment(self, make_repo_comments_factory, backend_hg):
+        commits = [{'message': 'A'}, {'message': 'B'}]
+        repo = backend_hg.create_repo(commits=commits)
+
+        comments = make_repo_comments_factory.make_comments(repo)
+        comment_ids = [x.comment_id for x in comments]
+        Session().commit()
+
+        for comment_id in comment_ids:
+            id_, params = build_data(self.apikey, 'get_comment',
+                                     **{'comment_id': comment_id})
+            response = api_call(self.app, params)
+            result = assert_call_ok(id_, given=response.body)
+            assert result['comment_id'] == comment_id
+
+    def test_api_get_comment_no_access(self, make_repo_comments_factory, backend_hg, user_util):
+        commits = [{'message': 'A'}, {'message': 'B'}]
+        repo = backend_hg.create_repo(commits=commits)
+        comments = make_repo_comments_factory.make_comments(repo)
+        comment_id = comments[0].comment_id
+
+        test_user = user_util.create_user()
+        user_util.grant_user_permission_to_repo(repo, test_user, 'repository.none')
+
+        id_, params = build_data(test_user.api_key, 'get_comment',
+                                 **{'comment_id': comment_id})
+        response = api_call(self.app, params)
+        assert_error(id_,
+                     expected='comment `{}` does not exist'.format(comment_id),
+                     given=response.body)
