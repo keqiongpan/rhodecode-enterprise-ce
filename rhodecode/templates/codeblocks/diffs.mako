@@ -314,6 +314,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                     ${hunk.section_header}
                 </td>
             </tr>
+
             ${render_hunk_lines(filediff, c.user_session_attrs["diffmode"], hunk, use_comments=use_comments, inline_comments=inline_comments, active_pattern_entries=active_pattern_entries)}
         % endfor
 
@@ -657,21 +658,28 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 %>
 
 <%def name="render_hunk_lines_sideside(filediff, hunk, use_comments=False, inline_comments=None, active_pattern_entries=None)">
-    %for i, line in enumerate(hunk.sideside):
+
+    <% chunk_count = 1 %>
+    %for loop_obj, item in h.looper(hunk.sideside):
     <%
+    line = item
+    i = loop_obj.index
+    prev_line = loop_obj.previous
     old_line_anchor, new_line_anchor = None, None
 
     if line.original.lineno:
         old_line_anchor = diff_line_anchor(filediff.raw_id, hunk.source_file_path, line.original.lineno, 'o')
     if line.modified.lineno:
         new_line_anchor = diff_line_anchor(filediff.raw_id, hunk.target_file_path, line.modified.lineno, 'n')
+
+    line_action = line.modified.action or line.original.action
+    prev_line_action = prev_line and (prev_line.modified.action or prev_line.original.action)
     %>
 
     <tr class="cb-line">
         <td class="cb-data ${action_class(line.original.action)}"
             data-line-no="${line.original.lineno}"
             >
-            <div>
 
             <% line_old_comments = None %>
             %if line.original.get_comment_args:
@@ -685,7 +693,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                     <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_old_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
-            </div>
         </td>
         <td class="cb-lineno ${action_class(line.original.action)}"
             data-line-no="${line.original.lineno}"
@@ -751,6 +758,12 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             %if use_comments and line.modified.lineno and line_new_comments:
             ${inline_comments_container(line_new_comments, active_pattern_entries=active_pattern_entries)}
             %endif
+                % if line_action in ['+', '-'] and prev_line_action not in ['+', '-']:
+                <div class="nav-chunk" style="visibility: hidden">
+                    <i class="icon-eye" title="viewing diff hunk-${hunk.index}-${chunk_count}"></i>
+                </div>
+                <% chunk_count +=1 %>
+                % endif
         </td>
     </tr>
     %endfor
@@ -903,11 +916,20 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </div>
             </div>
         </div>
-        <div class="fpath-placeholder">
+        <div class="fpath-placeholder pull-left">
             <i class="icon-file-text"></i>
             <strong class="fpath-placeholder-text">
             Context file:
             </strong>
+        </div>
+        <div class="pull-right noselect">
+            <span id="diff_nav">Loading diff...:</span>
+            <span class="cursor-pointer" onclick="scrollToPrevChunk(); return false">
+                <i class="icon-angle-up"></i>
+            </span>
+            <span class="cursor-pointer" onclick="scrollToNextChunk(); return false">
+                <i class="icon-angle-down"></i>
+            </span>
         </div>
         <div class="sidebar_inner_shadow"></div>
         </div>
@@ -1031,10 +1053,84 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             e.preventDefault();
         });
 
+        getCurrentChunk = function () {
+
+            var chunksAll = $('.nav-chunk').filter(function () {
+                return $(this).parents('.filediff').prev().get(0).checked !== true
+            })
+            var chunkSelected = $('.nav-chunk.selected');
+            var initial = false;
+
+            if (chunkSelected.length === 0) {
+                // no initial chunk selected, we pick first
+                chunkSelected = $(chunksAll.get(0));
+                var initial = true;
+            }
+
+            return {
+                'all': chunksAll,
+                'selected': chunkSelected,
+                'initial': initial,
+            }
+        }
+
+        animateDiffNavText = function () {
+            var $diffNav = $('#diff_nav')
+
+            var callback = function () {
+                $diffNav.animate({'opacity': 1.00}, 200)
+            };
+            $diffNav.animate({'opacity': 0.15}, 200, callback);
+        }
+
+        scrollToChunk = function (moveBy) {
+            var chunk = getCurrentChunk();
+            var all = chunk.all
+            var selected = chunk.selected
+
+            var curPos = all.index(selected);
+            var newPos = curPos;
+            if (!chunk.initial) {
+                var newPos = curPos + moveBy;
+            }
+
+            var curElem = all.get(newPos);
+
+            if (curElem === undefined) {
+                // end or back
+                $('#diff_nav').html('No next diff element.')
+                animateDiffNavText()
+                return
+            } else if (newPos < 0) {
+                $('#diff_nav').html('No previous diff element.')
+                animateDiffNavText()
+                return
+            } else {
+                $('#diff_nav').html('Diff navigation:')
+            }
+
+            curElem = $(curElem)
+            var offset = 100;
+            $(window).scrollTop(curElem.position().top - offset);
+
+            //clear selection
+            all.removeClass('selected')
+            curElem.addClass('selected')
+        }
+
+        scrollToPrevChunk = function () {
+            scrollToChunk(-1)
+        }
+        scrollToNextChunk = function () {
+            scrollToChunk(1)
+        }
+
         </script>
     % endif
 
     <script type="text/javascript">
+        $('#diff_nav').html('loading diff...') // wait until whole page is loaded
+
         $(document).ready(function () {
 
             var contextPrefix = _gettext('Context file: ');
@@ -1213,6 +1309,46 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 $('.toggle-wide-diff').addClass('btn-active');
                 updateSticky();
             }
+
+            // DIFF NAV //
+
+            // element to detect scroll direction of
+            var $window = $(window);
+
+            // initialize last scroll position
+            var lastScrollY = $window.scrollTop();
+
+            $window.on('resize scrollstop', {latency: 350}, function () {
+                var visibleChunks = $('.nav-chunk').withinviewport({top: 75});
+
+                // get current scroll position
+                var currentScrollY = $window.scrollTop();
+
+                // determine current scroll direction
+                if (currentScrollY > lastScrollY) {
+                    var y = 'down'
+                } else if (currentScrollY !== lastScrollY) {
+                    var y = 'up';
+                }
+
+                var pos = -1; // by default we use last element in viewport
+                if (y === 'down') {
+                    pos = -1;
+                } else if (y === 'up') {
+                    pos = 0;
+                }
+
+                if (visibleChunks.length > 0) {
+                    $('.nav-chunk').removeClass('selected');
+                    $(visibleChunks.get(pos)).addClass('selected');
+                }
+
+                // update last scroll position to current position
+                lastScrollY = currentScrollY;
+
+            });
+            $('#diff_nav').html('Diff navigation:')
+
         });
     </script>
 

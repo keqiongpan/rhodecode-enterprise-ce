@@ -53,7 +53,7 @@ from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
 
 from pyramid.threadlocal import get_current_request
-
+from tempita import looper
 from webhelpers2.html import literal, HTML, escape
 from webhelpers2.html._autolink import _auto_link_urls
 from webhelpers2.html.tools import (

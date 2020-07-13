@@ -540,10 +540,11 @@ class DiffSet(object):
         })
 
         file_chunks = patch['chunks'][1:]
-        for hunk in file_chunks:
+        for i, hunk in enumerate(file_chunks, 1):
             hunkbit = self.parse_hunk(hunk, source_file, target_file)
             hunkbit.source_file_path = source_file_path
             hunkbit.target_file_path = target_file_path
+            hunkbit.index = i
             filediff.hunks.append(hunkbit)
 
         # Simulate hunk on OPS type line which doesn't really contain any diff
