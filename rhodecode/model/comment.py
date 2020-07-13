@@ -789,8 +789,7 @@ class CommentsModel(BaseModel):
         if action == 'create':
             trigger_hook = hooks_utils.trigger_comment_commit_hooks
         elif action == 'edit':
-            # TODO(dan): when this is supported we trigger edit hook too
-            return
+            trigger_hook = hooks_utils.trigger_comment_commit_edit_hooks
         else:
             return
 

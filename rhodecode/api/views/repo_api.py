@@ -48,6 +48,7 @@ from rhodecode.model.db import (
     Session, ChangesetStatus, RepositoryField, Repository, RepoGroup,
     ChangesetComment)
 from rhodecode.model.permission import PermissionModel
+from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -1869,6 +1870,20 @@ def edit_comment(request, apiuser, message, comment_id, version,
         raise JSONRPCError(
             "comment ({}) can't be changed with empty string".format(comment_id)
         )
+
+    if comment.pull_request:
+        pull_request = comment.pull_request
+        PullRequestModel().trigger_pull_request_hook(
+            pull_request, apiuser, 'comment_edit',
+            data={'comment': comment})
+    else:
+        db_repo = comment.repo
+        commit_id = comment.revision
+        commit = db_repo.get_commit(commit_id)
+        CommentsModel().trigger_commit_comment_hook(
+            db_repo, apiuser, 'edit',
+            data={'comment': comment, 'commit': commit})
+
     data = {
         'comment': comment,
         'version': comment_history.version if comment_history else None,

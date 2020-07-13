@@ -157,6 +157,9 @@ class SlackIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
         if isinstance(event, events.PullRequestCommentEvent):
             (title, text, fields, overrides) \
                 = self.format_pull_request_comment_event(event, data)
+        elif isinstance(event, events.PullRequestCommentEditEvent):
+            (title, text, fields, overrides) \
+                = self.format_pull_request_comment_event(event, data)
         elif isinstance(event, events.PullRequestReviewEvent):
             title, text = self.format_pull_request_review_event(event, data)
         elif isinstance(event, events.PullRequestEvent):

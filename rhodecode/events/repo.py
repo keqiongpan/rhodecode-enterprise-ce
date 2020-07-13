@@ -211,6 +211,42 @@ class RepoCommitCommentEvent(RepoEvent):
             'comment_type': self.comment.comment_type,
             'comment_f_path': self.comment.f_path,
             'comment_line_no': self.comment.line_no,
+            'comment_version': self.comment.last_version,
+        }
+        return data
+
+
+class RepoCommitCommentEditEvent(RepoEvent):
+    """
+    An instance of this class is emitted as an :term:`event` after a comment is edited
+    on repository commit.
+    """
+
+    name = 'repo-commit-edit-comment'
+    display_name = lazy_ugettext('repository commit edit comment')
+    description = lazy_ugettext('Event triggered after a comment was edited '
+                                'on commit inside a repository')
+
+    def __init__(self, repo, commit, comment):
+        super(RepoCommitCommentEditEvent, self).__init__(repo)
+        self.commit = commit
+        self.comment = comment
+
+    def as_dict(self):
+        data = super(RepoCommitCommentEditEvent, self).as_dict()
+        data['commit'] = {
+            'commit_id': self.commit.raw_id,
+            'commit_message': self.commit.message,
+            'commit_branch': self.commit.branch,
+        }
+
+        data['comment'] = {
+            'comment_id': self.comment.comment_id,
+            'comment_text': self.comment.text,
+            'comment_type': self.comment.comment_type,
+            'comment_f_path': self.comment.f_path,
+            'comment_line_no': self.comment.line_no,
+            'comment_version': self.comment.last_version,
         }
         return data
 

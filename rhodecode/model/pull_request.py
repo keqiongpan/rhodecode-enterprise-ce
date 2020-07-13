@@ -703,6 +703,8 @@ class PullRequestModel(BaseModel):
             trigger_hook = hooks_utils.trigger_update_pull_request_hook
         elif action == 'comment':
             trigger_hook = hooks_utils.trigger_comment_pull_request_hook
+        elif action == 'comment_edit':
+            trigger_hook = hooks_utils.trigger_comment_pull_request_edit_hook
         else:
             return
 

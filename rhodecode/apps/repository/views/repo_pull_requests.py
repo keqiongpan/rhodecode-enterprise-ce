@@ -1611,6 +1611,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 raise HTTPNotFound()
 
             Session().commit()
+
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, self._rhodecode_user, 'comment_edit',
+                data={'comment': comment})
+
             return {
                 'comment_history_id': comment_history.comment_history_id,
                 'comment_id': comment.comment_id,

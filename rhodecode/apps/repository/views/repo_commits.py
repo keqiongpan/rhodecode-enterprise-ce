@@ -649,6 +649,12 @@ class RepoCommitsView(RepoAppView):
             if not comment_history:
                 raise HTTPNotFound()
 
+            commit_id = self.request.matchdict['commit_id']
+            commit = self.db_repo.get_commit(commit_id)
+            CommentsModel().trigger_commit_comment_hook(
+                self.db_repo, self._rhodecode_user, 'edit',
+                data={'comment': comment, 'commit': commit})
+
             Session().commit()
             return {
                 'comment_history_id': comment_history.comment_history_id,

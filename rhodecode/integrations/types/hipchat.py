@@ -133,6 +133,8 @@ class HipchatIntegrationType(IntegrationTypeBase, CommitParsingDataHandler):
 
         if isinstance(event, events.PullRequestCommentEvent):
             text = self.format_pull_request_comment_event(event, data)
+        elif isinstance(event, events.PullRequestCommentEditEvent):
+            text = self.format_pull_request_comment_event(event, data)
         elif isinstance(event, events.PullRequestReviewEvent):
             text = self.format_pull_request_review_event(event, data)
         elif isinstance(event, events.PullRequestEvent):

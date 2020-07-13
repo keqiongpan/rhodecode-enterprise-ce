@@ -97,6 +97,34 @@ def trigger_comment_commit_hooks(username, repo_name, repo_type, repo, data=None
     hooks_base.log_comment_commit_repository(**extras)
 
 
+def trigger_comment_commit_edit_hooks(username, repo_name, repo_type, repo, data=None):
+    """
+    Triggers when a comment is edited on a commit
+
+    :param username: username who edits the comment
+    :param repo_name: name of target repo
+    :param repo_type: the type of SCM target repo
+    :param repo: the repo object we trigger the event for
+    :param data: extra data for specific events e.g {'comment': comment_obj, 'commit': commit_obj}
+    """
+    if not _supports_repo_type(repo_type):
+        return
+
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'comment_commit')
+
+    comment = data['comment']
+    commit = data['commit']
+
+    events.trigger(events.RepoCommitCommentEditEvent(repo, commit, comment))
+    extras.update(repo.get_dict())
+
+    extras.commit = commit.serialize()
+    extras.comment = comment.get_api_data()
+    extras.created_by = username
+    # TODO(marcink): rcextensions handlers ??
+    hooks_base.log_comment_commit_repository(**extras)
+
+
 def trigger_create_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
     """
     Triggers create pull request action hooks
@@ -193,6 +221,29 @@ def trigger_comment_pull_request_hook(username, repo_name, repo_type, pull_reque
     events.trigger(events.PullRequestCommentEvent(pull_request, comment))
     extras.update(pull_request.get_api_data())
     extras.comment = comment.get_api_data()
+    hooks_base.log_comment_pull_request(**extras)
+
+
+def trigger_comment_pull_request_edit_hook(username, repo_name, repo_type, pull_request, data=None):
+    """
+    Triggers when a comment was edited on a pull request
+
+    :param username: username who made the edit
+    :param repo_name: name of target repo
+    :param repo_type: the type of SCM target repo
+    :param pull_request: the pull request that comment was made on
+    :param data: extra data for specific events e.g {'comment': comment_obj}
+    """
+    if not _supports_repo_type(repo_type):
+        return
+
+    extras = _get_vcs_operation_context(username, repo_name, repo_type, 'comment_pull_request')
+
+    comment = data['comment']
+    events.trigger(events.PullRequestCommentEditEvent(pull_request, comment))
+    extras.update(pull_request.get_api_data())
+    extras.comment = comment.get_api_data()
+    # TODO(marcink): handle rcextensions...
     hooks_base.log_comment_pull_request(**extras)
 
 
