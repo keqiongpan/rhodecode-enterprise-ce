@@ -855,7 +855,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </button>
 </%def>
 
-<%def name="render_diffset_menu(diffset, range_diff_on=None)">
+<%def name="render_diffset_menu(diffset, range_diff_on=None, commit=None, pull_request_menu=None)">
     <% diffset_container_id = h.md5(diffset.target_ref) %>
 
     <div id="diff-file-sticky" class="diffset-menu clearinner">
@@ -923,13 +923,25 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </strong>
         </div>
         <div class="pull-right noselect">
-            <span id="diff_nav">Loading diff...:</span>
-            <span class="cursor-pointer" onclick="scrollToPrevChunk(); return false">
-                <i class="icon-angle-up"></i>
-            </span>
-            <span class="cursor-pointer" onclick="scrollToNextChunk(); return false">
-                <i class="icon-angle-down"></i>
-            </span>
+
+            %if commit:
+                <span>
+                    <code>${h.show_id(commit)}</code>
+                </span>
+            %elif pull_request_menu and pull_request_menu.get('pull_request'):
+                <span>
+                    <code>!${pull_request_menu['pull_request'].pull_request_id}</code>
+                </span>
+            %endif
+            % if commit or pull_request_menu:
+                <span id="diff_nav">Loading diff...:</span>
+                <span class="cursor-pointer" onclick="scrollToPrevChunk(); return false">
+                    <i class="icon-angle-up"></i>
+                </span>
+                <span class="cursor-pointer" onclick="scrollToNextChunk(); return false">
+                    <i class="icon-angle-down"></i>
+                </span>
+            % endif
         </div>
         <div class="sidebar_inner_shadow"></div>
         </div>
@@ -1053,6 +1065,8 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             e.preventDefault();
         });
 
+        diffNavText = 'diff navigation:'
+
         getCurrentChunk = function () {
 
             var chunksAll = $('.nav-chunk').filter(function () {
@@ -1098,15 +1112,15 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 
             if (curElem === undefined) {
                 // end or back
-                $('#diff_nav').html('No next diff element.')
+                $('#diff_nav').html('no next diff element:')
                 animateDiffNavText()
                 return
             } else if (newPos < 0) {
-                $('#diff_nav').html('No previous diff element.')
+                $('#diff_nav').html('no previous diff element:')
                 animateDiffNavText()
                 return
             } else {
-                $('#diff_nav').html('Diff navigation:')
+                $('#diff_nav').html(diffNavText)
             }
 
             curElem = $(curElem)
@@ -1347,7 +1361,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 lastScrollY = currentScrollY;
 
             });
-            $('#diff_nav').html('Diff navigation:')
+            $('#diff_nav').html(diffNavText);
 
         });
     </script>

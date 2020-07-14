@@ -624,11 +624,12 @@
 
                     <%
                         pr_menu_data = {
-                            'outdated_comm_count_ver': outdated_comm_count_ver
+                            'outdated_comm_count_ver': outdated_comm_count_ver,
+                            'pull_request': c.pull_request
                         }
                     %>
 
-                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on)}
+                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on, pull_request_menu=pr_menu_data)}
 
                     % if c.range_diff_on:
                         % for commit in c.commit_ranges:
