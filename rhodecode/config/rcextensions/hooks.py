@@ -83,6 +83,33 @@ def _comment_commit_repo_hook(*args, **kwargs):
 
 
 @has_kwargs({
+    'repo_name': '',
+    'repo_type': '',
+    'description': '',
+    'private': '',
+    'created_on': '',
+    'enable_downloads': '',
+    'repo_id': '',
+    'user_id': '',
+    'enable_statistics': '',
+    'clone_uri': '',
+    'fork_id': '',
+    'group_id': '',
+    'created_by': '',
+    'repository': '',
+    'comment': '',
+    'commit': ''
+})
+def _comment_edit_commit_repo_hook(*args, **kwargs):
+    """
+    POST CREATE REPOSITORY COMMENT ON COMMIT HOOK. This function will be executed after
+    a comment is made on this repository commit.
+
+    """
+    return HookResponse(0, '')
+
+
+@has_kwargs({
     'group_name': '',
     'group_parent_id': '',
     'group_description': '',
@@ -396,6 +423,38 @@ def _review_pull_request_hook(*args, **kwargs):
     'reviewers': '',
 })
 def _comment_pull_request_hook(*args, **kwargs):
+    """
+    This hook will be executed after comment is made on a pull request
+    """
+    return HookResponse(0, '')
+
+
+@has_kwargs({
+    'server_url': 'url of instance that triggered this hook',
+    'config': 'path to .ini config used',
+    'scm': 'type of version control "git", "hg", "svn"',
+    'username': 'username of actor who triggered this event',
+    'ip': 'ip address of actor who triggered this hook',
+
+    'action': '',
+    'repository': 'repository name',
+    'pull_request_id': '',
+    'url': '',
+    'title': '',
+    'description': '',
+    'status': '',
+    'comment': '',
+    'created_on': '',
+    'updated_on': '',
+    'commit_ids': '',
+    'review_status': '',
+    'mergeable': '',
+    'source': '',
+    'target': '',
+    'author': '',
+    'reviewers': '',
+})
+def _comment_edit_pull_request_hook(*args, **kwargs):
     """
     This hook will be executed after comment is made on a pull request
     """

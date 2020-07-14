@@ -400,7 +400,7 @@ pre_create_user = ExtensionCallback(
         'admin', 'created_by'))
 
 
-log_create_pull_request = ExtensionCallback(
+create_pull_request = ExtensionCallback(
     hook_name='CREATE_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -409,7 +409,7 @@ log_create_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_merge_pull_request = ExtensionCallback(
+merge_pull_request = ExtensionCallback(
     hook_name='MERGE_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -418,7 +418,7 @@ log_merge_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_close_pull_request = ExtensionCallback(
+close_pull_request = ExtensionCallback(
     hook_name='CLOSE_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -427,7 +427,7 @@ log_close_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_review_pull_request = ExtensionCallback(
+review_pull_request = ExtensionCallback(
     hook_name='REVIEW_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -436,7 +436,7 @@ log_review_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_comment_pull_request = ExtensionCallback(
+comment_pull_request = ExtensionCallback(
     hook_name='COMMENT_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -445,7 +445,16 @@ log_comment_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_update_pull_request = ExtensionCallback(
+comment_edit_pull_request = ExtensionCallback(
+    hook_name='COMMENT_EDIT_PULL_REQUEST',
+    kwargs_keys=(
+        'server_url', 'config', 'scm', 'username', 'ip', 'action',
+        'repository', 'pull_request_id', 'url', 'title', 'description',
+        'status', 'comment', 'created_on', 'updated_on', 'commit_ids', 'review_status',
+        'mergeable', 'source', 'target', 'author', 'reviewers'))
+
+
+update_pull_request = ExtensionCallback(
     hook_name='UPDATE_PULL_REQUEST',
     kwargs_keys=(
         'server_url', 'config', 'scm', 'username', 'ip', 'action',
@@ -454,7 +463,7 @@ log_update_pull_request = ExtensionCallback(
         'mergeable', 'source', 'target', 'author', 'reviewers'))
 
 
-log_create_user = ExtensionCallback(
+create_user = ExtensionCallback(
     hook_name='CREATE_USER_HOOK',
     kwargs_keys=(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
@@ -465,7 +474,7 @@ log_create_user = ExtensionCallback(
         'inherit_default_permissions', 'created_by', 'created_on'))
 
 
-log_delete_user = ExtensionCallback(
+delete_user = ExtensionCallback(
     hook_name='DELETE_USER_HOOK',
     kwargs_keys=(
         'username', 'full_name_or_username', 'full_contact', 'user_id',
@@ -476,7 +485,7 @@ log_delete_user = ExtensionCallback(
         'inherit_default_permissions', 'deleted_by'))
 
 
-log_create_repository = ExtensionCallback(
+create_repository = ExtensionCallback(
     hook_name='CREATE_REPO_HOOK',
     kwargs_keys=(
         'repo_name', 'repo_type', 'description', 'private', 'created_on',
@@ -484,7 +493,7 @@ log_create_repository = ExtensionCallback(
         'clone_uri', 'fork_id', 'group_id', 'created_by'))
 
 
-log_delete_repository = ExtensionCallback(
+delete_repository = ExtensionCallback(
     hook_name='DELETE_REPO_HOOK',
     kwargs_keys=(
         'repo_name', 'repo_type', 'description', 'private', 'created_on',
@@ -492,7 +501,7 @@ log_delete_repository = ExtensionCallback(
         'clone_uri', 'fork_id', 'group_id', 'deleted_by', 'deleted_on'))
 
 
-log_comment_commit_repository = ExtensionCallback(
+comment_commit_repository = ExtensionCallback(
     hook_name='COMMENT_COMMIT_REPO_HOOK',
     kwargs_keys=(
         'repo_name', 'repo_type', 'description', 'private', 'created_on',
@@ -500,8 +509,16 @@ log_comment_commit_repository = ExtensionCallback(
         'clone_uri', 'fork_id', 'group_id',
         'repository', 'created_by', 'comment', 'commit'))
 
+comment_edit_commit_repository = ExtensionCallback(
+    hook_name='COMMENT_EDIT_COMMIT_REPO_HOOK',
+    kwargs_keys=(
+        'repo_name', 'repo_type', 'description', 'private', 'created_on',
+        'enable_downloads', 'repo_id', 'user_id', 'enable_statistics',
+        'clone_uri', 'fork_id', 'group_id',
+        'repository', 'created_by', 'comment', 'commit'))
 
-log_create_repository_group = ExtensionCallback(
+
+create_repository_group = ExtensionCallback(
     hook_name='CREATE_REPO_GROUP_HOOK',
     kwargs_keys=(
         'group_name', 'group_parent_id', 'group_description',

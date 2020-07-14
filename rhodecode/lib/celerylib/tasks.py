@@ -33,7 +33,7 @@ from pyramid_mailer.message import Message
 import rhodecode
 from rhodecode.lib import audit_logger
 from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
-from rhodecode.lib.hooks_base import log_create_repository
+from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import safe_int, str2bool
 from rhodecode.model.db import (
     Session, IntegrityError, true, Repository, RepoGroup, User)
@@ -187,7 +187,7 @@ def create_repo(form_data, cur_user):
             clone_uri=clone_uri,
         )
         repo = Repository.get_by_repo_name(repo_name_full)
-        log_create_repository(created_by=owner.username, **repo.get_dict())
+        hooks_base.create_repository(created_by=owner.username, **repo.get_dict())
 
         # update repo commit caches initially
         repo.update_commit_cache()
@@ -273,7 +273,7 @@ def create_repo_fork(form_data, cur_user):
             clone_uri=source_repo_path,
         )
         repo = Repository.get_by_repo_name(repo_name_full)
-        log_create_repository(created_by=owner.username, **repo.get_dict())
+        hooks_base.create_repository(created_by=owner.username, **repo.get_dict())
 
         # update repo commit caches initially
         config = repo._config

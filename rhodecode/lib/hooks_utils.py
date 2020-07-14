@@ -94,7 +94,7 @@ def trigger_comment_commit_hooks(username, repo_name, repo_type, repo, data=None
     extras.commit = commit.serialize()
     extras.comment = comment.get_api_data()
     extras.created_by = username
-    hooks_base.log_comment_commit_repository(**extras)
+    hooks_base.comment_commit_repository(**extras)
 
 
 def trigger_comment_commit_edit_hooks(username, repo_name, repo_type, repo, data=None):
@@ -121,8 +121,7 @@ def trigger_comment_commit_edit_hooks(username, repo_name, repo_type, repo, data
     extras.commit = commit.serialize()
     extras.comment = comment.get_api_data()
     extras.created_by = username
-    # TODO(marcink): rcextensions handlers ??
-    hooks_base.log_comment_commit_repository(**extras)
+    hooks_base.comment_edit_commit_repository(**extras)
 
 
 def trigger_create_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -141,7 +140,7 @@ def trigger_create_pull_request_hook(username, repo_name, repo_type, pull_reques
     extras = _get_vcs_operation_context(username, repo_name, repo_type, 'create_pull_request')
     events.trigger(events.PullRequestCreateEvent(pull_request))
     extras.update(pull_request.get_api_data(with_merge_state=False))
-    hooks_base.log_create_pull_request(**extras)
+    hooks_base.create_pull_request(**extras)
 
 
 def trigger_merge_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -160,7 +159,7 @@ def trigger_merge_pull_request_hook(username, repo_name, repo_type, pull_request
     extras = _get_vcs_operation_context(username, repo_name, repo_type, 'merge_pull_request')
     events.trigger(events.PullRequestMergeEvent(pull_request))
     extras.update(pull_request.get_api_data())
-    hooks_base.log_merge_pull_request(**extras)
+    hooks_base.merge_pull_request(**extras)
 
 
 def trigger_close_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -179,7 +178,7 @@ def trigger_close_pull_request_hook(username, repo_name, repo_type, pull_request
     extras = _get_vcs_operation_context(username, repo_name, repo_type, 'close_pull_request')
     events.trigger(events.PullRequestCloseEvent(pull_request))
     extras.update(pull_request.get_api_data())
-    hooks_base.log_close_pull_request(**extras)
+    hooks_base.close_pull_request(**extras)
 
 
 def trigger_review_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -199,7 +198,7 @@ def trigger_review_pull_request_hook(username, repo_name, repo_type, pull_reques
     status = data.get('status')
     events.trigger(events.PullRequestReviewEvent(pull_request, status))
     extras.update(pull_request.get_api_data())
-    hooks_base.log_review_pull_request(**extras)
+    hooks_base.review_pull_request(**extras)
 
 
 def trigger_comment_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -221,7 +220,7 @@ def trigger_comment_pull_request_hook(username, repo_name, repo_type, pull_reque
     events.trigger(events.PullRequestCommentEvent(pull_request, comment))
     extras.update(pull_request.get_api_data())
     extras.comment = comment.get_api_data()
-    hooks_base.log_comment_pull_request(**extras)
+    hooks_base.comment_pull_request(**extras)
 
 
 def trigger_comment_pull_request_edit_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -243,8 +242,7 @@ def trigger_comment_pull_request_edit_hook(username, repo_name, repo_type, pull_
     events.trigger(events.PullRequestCommentEditEvent(pull_request, comment))
     extras.update(pull_request.get_api_data())
     extras.comment = comment.get_api_data()
-    # TODO(marcink): handle rcextensions...
-    hooks_base.log_comment_pull_request(**extras)
+    hooks_base.comment_edit_pull_request(**extras)
 
 
 def trigger_update_pull_request_hook(username, repo_name, repo_type, pull_request, data=None):
@@ -263,4 +261,4 @@ def trigger_update_pull_request_hook(username, repo_name, repo_type, pull_reques
     extras = _get_vcs_operation_context(username, repo_name, repo_type, 'update_pull_request')
     events.trigger(events.PullRequestUpdateEvent(pull_request))
     extras.update(pull_request.get_api_data())
-    hooks_base.log_update_pull_request(**extras)
+    hooks_base.update_pull_request(**extras)
