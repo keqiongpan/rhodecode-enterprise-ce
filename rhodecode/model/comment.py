@@ -370,13 +370,18 @@ class CommentsModel(BaseModel):
                 repo.repo_name,
                 h.route_url('repo_summary', repo_name=repo.repo_name))
 
+            commit_url = h.route_url('repo_commit', repo_name=repo.repo_name,
+                                     commit_id=commit_id)
+
             # commit specifics
             kwargs.update({
                 'commit': commit_obj,
                 'commit_message': commit_obj.message,
                 'commit_target_repo_url': target_repo_url,
                 'commit_comment_url': commit_comment_url,
-                'commit_comment_reply_url': commit_comment_reply_url
+                'commit_comment_reply_url': commit_comment_reply_url,
+                'commit_url': commit_url,
+                'thread_ids': [commit_url, commit_comment_url],
             })
 
         elif pull_request_obj:
@@ -421,15 +426,14 @@ class CommentsModel(BaseModel):
                 'pr_comment_url': pr_comment_url,
                 'pr_comment_reply_url': pr_comment_reply_url,
                 'pr_closing': closing_pr,
+                'thread_ids': [pr_url, pr_comment_url],
             })
 
         recipients += [self._get_user(u) for u in (extra_recipients or [])]
 
         if send_email:
             # pre-generate the subject for notification itself
-            (subject,
-             _h, _e,  # we don't care about those
-             body_plaintext) = EmailNotificationModel().render_email(
+            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)
 
             mention_recipients = set(

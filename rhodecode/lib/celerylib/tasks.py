@@ -29,6 +29,7 @@ import time
 from pyramid import compat
 from pyramid_mailer.mailer import Mailer
 from pyramid_mailer.message import Message
+from email.utils import formatdate
 
 import rhodecode
 from rhodecode.lib import audit_logger
@@ -40,7 +41,8 @@ from rhodecode.model.db import (
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
-def send_email(recipients, subject, body='', html_body='', email_config=None):
+def send_email(recipients, subject, body='', html_body='', email_config=None,
+               extra_headers=None):
     """
     Sends an email with defined parameters from the .ini files.
 
@@ -50,6 +52,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
     :param body: body of the mail
     :param html_body: html version of body
     :param email_config: specify custom configuration for mailer
+    :param extra_headers: specify custom headers
     """
     log = get_logger(send_email)
 
@@ -108,13 +111,23 @@ def send_email(recipients, subject, body='', html_body='', email_config=None):
         # sendmail_template='',
     )
 
+    if extra_headers is None:
+        extra_headers = {}
+
+    extra_headers.setdefault('Date', formatdate(time.time()))
+
+    if 'thread_ids' in extra_headers:
+        thread_ids = extra_headers.pop('thread_ids')
+        extra_headers['References'] = ' '.join('<{}>'.format(t) for t in thread_ids)
+
     try:
         mailer = Mailer(**email_conf)
 
         message = Message(subject=subject,
                           sender=email_conf['default_sender'],
                           recipients=recipients,
-                          body=body, html=html_body)
+                          body=body, html=html_body,
+                          extra_headers=extra_headers)
         mailer.send_immediately(message)
 
     except Exception:

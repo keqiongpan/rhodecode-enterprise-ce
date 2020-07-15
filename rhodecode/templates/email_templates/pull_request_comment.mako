@@ -16,17 +16,18 @@ data = {
 
     'pr_title': pull_request.title,
     'pr_id': pull_request.pull_request_id,
+    'mention_prefix': '[mention] ' if mention else '',
 }
 %>
 
 
 % if comment_file:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on file `{comment_file}` in pull request !{pr_id}: "{pr_title}"').format(**data) |n}
+    ${_('{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in pull request !{pr_id}: "{pr_title}"').format(**data) |n}
 % else:
     % if status_change:
-    ${(_('[mention]') if mention else '')} ${_('[status: {status}] {user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
+    ${_('{mention_prefix}[status: {status}] {user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
     % else:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
+    ${_('{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
     % endif
 % endif
 

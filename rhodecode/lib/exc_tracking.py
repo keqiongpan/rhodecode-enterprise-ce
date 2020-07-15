@@ -143,8 +143,7 @@ def send_exc_email(request, exc_id, exc_type_name):
         'exc_traceback': read_exception(exc_id, prefix=None),
     }
 
-    (subject, headers, email_body,
-     email_body_plaintext) = EmailNotificationModel().render_email(
+    (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_EMAIL_EXCEPTION, **email_kwargs)
 
     run_task(tasks.send_email, recipients, subject,

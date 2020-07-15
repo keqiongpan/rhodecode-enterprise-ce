@@ -131,15 +131,17 @@ class NotificationModel(BaseModel):
             # inject current recipient
             email_kwargs['recipient'] = recipient
             email_kwargs['mention'] = recipient in mention_recipients
-            (subject, headers, email_body,
-             email_body_plaintext) = EmailNotificationModel().render_email(
+            (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **email_kwargs)
 
-            log.debug(
-                'Creating notification email task for user:`%s`', recipient)
+            extra_headers = None
+            if 'thread_ids' in email_kwargs:
+                extra_headers = {'thread_ids': email_kwargs.pop('thread_ids')}
+
+            log.debug('Creating notification email task for user:`%s`', recipient)
             task = run_task(
                 tasks.send_email, recipient.email, subject,
-                email_body_plaintext, email_body)
+                email_body_plaintext, email_body, extra_headers=extra_headers)
             log.debug('Created email task: %s', task)
 
         return notification
@@ -342,8 +344,7 @@ class EmailNotificationModel(BaseModel):
         """
         Example usage::
 
-            (subject, headers, email_body,
-             email_body_plaintext) = EmailNotificationModel().render_email(
+            (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                 EmailNotificationModel.TYPE_TEST, **email_kwargs)
 
         """
@@ -387,12 +388,6 @@ class EmailNotificationModel(BaseModel):
         subject = email_template.render('subject', **_kwargs)
 
         try:
-            headers = email_template.render('headers', **_kwargs)
-        except AttributeError:
-            # it's not defined in template, ok we can skip it
-            headers = ''
-
-        try:
             body_plaintext = email_template.render('body_plaintext', **_kwargs)
         except AttributeError:
             # it's not defined in template, ok we can skip it
@@ -408,4 +403,4 @@ class EmailNotificationModel(BaseModel):
             log.exception('Failed to parse body with premailer')
             pass
 
-        return subject, headers, body, body_plaintext
+        return subject, body, body_plaintext

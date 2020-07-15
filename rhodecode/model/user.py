@@ -422,9 +422,7 @@ class UserModel(BaseModel):
             }
             notification_type = EmailNotificationModel.TYPE_REGISTRATION
             # pre-generate the subject for notification itself
-            (subject,
-             _h, _e,  # we don't care about those
-             body_plaintext) = EmailNotificationModel().render_email(
+            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)
 
             # create notification objects, and emails
@@ -659,8 +657,7 @@ class UserModel(BaseModel):
                     'first_admin_email': User.get_first_super_admin().email
                 }
 
-                (subject, headers, email_body,
-                 email_body_plaintext) = EmailNotificationModel().render_email(
+                (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                     EmailNotificationModel.TYPE_PASSWORD_RESET, **email_kwargs)
 
                 recipients = [user_email]
@@ -718,8 +715,7 @@ class UserModel(BaseModel):
                 'first_admin_email': User.get_first_super_admin().email
             }
 
-            (subject, headers, email_body,
-             email_body_plaintext) = EmailNotificationModel().render_email(
+            (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                 EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION,
                 **email_kwargs)
 

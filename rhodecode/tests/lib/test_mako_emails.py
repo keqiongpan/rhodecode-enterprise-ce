@@ -35,14 +35,11 @@ def test_get_template_obj(app, request_stub):
 
 def test_render_email(app, http_host_only_stub):
     kwargs = {}
-    subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
+    subject, body, body_plaintext = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_TEST, **kwargs)
 
     # subject
     assert subject == 'Test "Subject" hello "world"'
-
-    # headers
-    assert headers == 'X=Y'
 
     # body plaintext
     assert body_plaintext == 'Email Plaintext Body'
@@ -80,7 +77,7 @@ def test_render_pr_email(app, user_admin):
         'pull_request_url': 'http://localhost/pr1',
     }
 
-    subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
+    subject, body, body_plaintext = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_PULL_REQUEST, **kwargs)
 
     # subject
@@ -133,7 +130,7 @@ def test_render_pr_update_email(app, user_admin):
         'removed_files': file_changes.removed,
     }
 
-    subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
+    subject, body, body_plaintext = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **kwargs)
 
     # subject
@@ -188,7 +185,6 @@ def test_render_comment_subject_no_newlines(app, mention, email_type):
 
         'pull_request_url': 'http://code.rc.com/_pr/123'
     }
-    subject, headers, body, body_plaintext = EmailNotificationModel().render_email(
-        email_type, **kwargs)
+    subject, body, body_plaintext = EmailNotificationModel().render_email(email_type, **kwargs)
 
     assert '\n' not in subject

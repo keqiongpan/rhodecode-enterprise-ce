@@ -578,8 +578,7 @@ class AdminSettingsView(BaseAppView):
             'user': self._rhodecode_db_user
         }
 
-        (subject, headers, email_body,
-         email_body_plaintext) = EmailNotificationModel().render_email(
+        (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
             EmailNotificationModel.TYPE_EMAIL_TEST, **email_kwargs)
 
         recipients = [test_email] if test_email else None

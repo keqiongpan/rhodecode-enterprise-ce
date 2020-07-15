@@ -15,17 +15,18 @@ data = {
     'comment_id': comment_id,
 
     'commit_id': h.show_id(commit),
+    'mention_prefix': '[mention] ' if mention else '',
 }
 %>
 
 
 % if comment_file:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`').format(**data)} ${_('in the `{repo_name}` repository').format(**data) |n}
+    ${_('{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`').format(**data)} ${_('in the `{repo_name}` repository').format(**data) |n}
 % else:
     % if status_change:
-    ${(_('[mention]') if mention else '')} ${_('[status: {status}] {user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
+    ${_('{mention_prefix}[status: {status}] {user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
     % else:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
+    ${_('{mention_prefix}{user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
     % endif
 % endif
 

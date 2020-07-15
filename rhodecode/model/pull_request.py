@@ -1344,12 +1344,11 @@ class PullRequestModel(BaseModel):
             'pull_request_source_repo_url': pr_source_repo_url,
 
             'pull_request_url': pr_url,
+            'thread_ids': [pr_url],
         }
 
         # pre-generate the subject for notification itself
-        (subject,
-         _h, _e,  # we don't care about those
-         body_plaintext) = EmailNotificationModel().render_email(
+        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
             notification_type, **kwargs)
 
         # create notification objects, and emails
@@ -1414,11 +1413,10 @@ class PullRequestModel(BaseModel):
             'added_files': file_changes.added,
             'modified_files': file_changes.modified,
             'removed_files': file_changes.removed,
+            'thread_ids': [pr_url],
         }
 
-        (subject,
-         _h, _e,  # we don't care about those
-         body_plaintext) = EmailNotificationModel().render_email(
+        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
             EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **email_kwargs)
 
         # create notification objects, and emails
