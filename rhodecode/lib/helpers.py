@@ -86,6 +86,7 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
+from rhodecode.lib.vcs.conf.settings import ARCHIVE_SPECS
 from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel

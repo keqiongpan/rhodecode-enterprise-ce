@@ -41,7 +41,7 @@ BACKENDS = {
 
 
 ARCHIVE_SPECS = [
-    ('tbz2', 'application/x-bzip2', 'tbz2'),
+    ('tbz2', 'application/x-bzip2', '.tbz2'),
     ('tbz2', 'application/x-bzip2', '.tar.bz2'),
 
     ('tgz', 'application/x-gzip', '.tgz'),

@@ -28,7 +28,7 @@
                         <i class="icon-down"></i>
                     </a>
 
-                    <div class="btn-action-switcher-container">
+                    <div class="btn-action-switcher-container right-align">
                         <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
                             <li>
                                 <a class="action_button" href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
