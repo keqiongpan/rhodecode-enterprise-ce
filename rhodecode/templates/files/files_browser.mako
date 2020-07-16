@@ -24,7 +24,7 @@
                         ${_('Add File')}
                     </a>
 
-                    <a class="tooltip btn btn-primary" style="margin-left: -1px" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more options')}">
+                    <a class="tooltip btn btn-primary btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more options')}">
                         <i class="icon-down"></i>
                     </a>
 

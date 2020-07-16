@@ -512,7 +512,7 @@
                                     ${_('Update commits')}
                                 </a>
 
-                                <a id="update_commits_switcher" class="tooltip btn btn-primary" style="margin-left: -1px" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more update options')}">
+                                <a id="update_commits_switcher" class="tooltip btn btn-primary btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more update options')}">
                                     <i class="icon-down"></i>
                                 </a>
 
