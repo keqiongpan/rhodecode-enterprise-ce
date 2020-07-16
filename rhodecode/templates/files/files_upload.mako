@@ -61,11 +61,11 @@
     ##${h.secure_form(form_url, id='eform', enctype="multipart/form-data", request=request)}
     <div class="edit-file-fieldset">
         <div class="path-items">
-            <ul>
+            <ul class="tooltip" title="Repository path to store uploaded files. To change it, navigate to different path and click upload from there.">
             <li class="breadcrumb-path">
                 <div>
                     <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path='')}"><i class="icon-home"></i></a> /
-                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">${c.f_path}</a> ${('/' if c.f_path else '')}
+                    <a href="${h.route_path('repo_files', repo_name=c.repo_name, commit_id=c.commit.raw_id, f_path=c.f_path)}">${c.f_path}</a>${('/' if c.f_path else '')}
                 </div>
             </li>
             <li class="location-path">
@@ -79,7 +79,7 @@
     <div class="upload-form table">
         <div>
 
-            <div class="dropzone-wrapper" id="file-uploader">
+            <div class="dropzone-wrapper" id="file-uploader" style="border: none; padding: 40px 0">
                 <div class="dropzone-pure">
                     <div class="dz-message">
                     <i class="icon-upload" style="font-size:36px"></i></br>

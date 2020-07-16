@@ -517,7 +517,7 @@
                                 </a>
 
                                 <div class="btn-action-switcher-container" id="update-commits-switcher">
-                                    <ul class="btn-action-switcher" role="menu">
+                                    <ul class="btn-action-switcher" role="menu" style="min-width: 300px;">
                                         <li>
                                             <a href="#forceUpdate" onclick="updateController.forceUpdateCommits(this); return false">
                                                 ${_('Force update commits')}

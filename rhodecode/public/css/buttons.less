@@ -264,16 +264,15 @@ input[type="button"] {
 
 .btn-action-switcher-container{
   position: absolute;
-  top: 30px;
-  left: -82px;
+  top: 100%;
+  right: 0;
 }
 
 .btn-action-switcher {
     display: block;
     position: relative;
     z-index: 300;
-    min-width: 240px;
-    max-width: 500px;
+    max-width: 600px;
     margin-top: 4px;
     margin-bottom: 24px;
     font-size: 14px;
@@ -283,6 +282,7 @@ input[type="button"] {
     border: 1px solid @grey4;
     border-radius: 3px;
     box-shadow: @dropdown-shadow;
+    overflow: auto;
 
     li {
         display: block;
