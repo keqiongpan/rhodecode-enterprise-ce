@@ -238,7 +238,7 @@ following URL: ``{instance-URL}/_admin/ping``.
    pong[rce-7880] => 203.0.113.23
 
 .. _Markdown: http://daringfireball.net/projects/markdown/
-.. _reStructured Text: http://docutils.sourceforge.net/docs/index.html
+.. _reStructured Text: http://docutils.sourceforge.io/docs/index.html
 
 
 Unarchiving a repository
