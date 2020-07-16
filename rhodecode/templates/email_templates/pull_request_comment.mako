@@ -18,19 +18,21 @@ data = {
     'pr_id': pull_request.pull_request_id,
     'mention_prefix': '[mention] ' if mention else '',
 }
+
+if comment_file:
+    subject_template = email_pr_comment_file_subject_template or \
+    _('{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in pull request !{pr_id}: "{pr_title}"').format(**data)
+else:
+    if status_change:
+        subject_template = email_pr_comment_status_change_subject_template or \
+        _('{mention_prefix}[status: {status}] {user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data)
+    else:
+        subject_template = email_pr_comment_subject_template or \
+        _('{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data)
 %>
 
 
-% if comment_file:
-    ${_('{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in pull request !{pr_id}: "{pr_title}"').format(**data) |n}
-% else:
-    % if status_change:
-    ${_('{mention_prefix}[status: {status}] {user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
-    % else:
-    ${_('{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data) |n}
-    % endif
-% endif
-
+${subject_template.format(**data) |n}
 </%def>
 
 ## PLAINTEXT VERSION OF BODY

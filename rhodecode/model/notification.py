@@ -295,6 +295,27 @@ class NotificationModel(BaseModel):
         }
 
 
+# Templates for Titles, that could be overwritten by rcextensions
+# Title of email for pull-request update
+EMAIL_PR_UPDATE_SUBJECT_TEMPLATE = ''
+# Title of email for request for pull request review
+EMAIL_PR_REVIEW_SUBJECT_TEMPLATE = ''
+
+# Title of email for general comment on pull request
+EMAIL_PR_COMMENT_SUBJECT_TEMPLATE = ''
+# Title of email for general comment which includes status change on pull request
+EMAIL_PR_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE = ''
+# Title of email for inline comment on a file in pull request
+EMAIL_PR_COMMENT_FILE_SUBJECT_TEMPLATE = ''
+
+# Title of email for general comment on commit
+EMAIL_COMMENT_SUBJECT_TEMPLATE = ''
+# Title of email for general comment which includes status change on commit
+EMAIL_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE = ''
+# Title of email for inline comment on a file in commit
+EMAIL_COMMENT_FILE_SUBJECT_TEMPLATE = ''
+
+
 class EmailNotificationModel(BaseModel):
     TYPE_COMMIT_COMMENT = Notification.TYPE_CHANGESET_COMMENT
     TYPE_REGISTRATION = Notification.TYPE_REGISTRATION

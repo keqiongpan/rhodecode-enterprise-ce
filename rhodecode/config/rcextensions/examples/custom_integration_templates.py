@@ -1,5 +1,6 @@
-# This code allows override the integrations templates.
-# Put this into the __init__.py file of rcextensions to override the templates
+# Below code examples allows override the integrations templates, or email titles.
+# Append selected parts at the end of the __init__.py file of rcextensions directory
+# to override the templates
 
 
 # EMAIL Integration
@@ -185,3 +186,18 @@ ${commit['message']}
 ```
 
 ''')
+
+
+# Example to modify emails default title
+from rhodecode.model import notification
+
+notification.EMAIL_PR_UPDATE_SUBJECT_TEMPLATE = '{updating_user} updated pull request. !{pr_id}: "{pr_title}"'
+notification.EMAIL_PR_REVIEW_SUBJECT_TEMPLATE = '{user} requested a pull request review. !{pr_id}: "{pr_title}"'
+
+notification.EMAIL_PR_COMMENT_SUBJECT_TEMPLATE = '{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"'
+notification.EMAIL_PR_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE = '{mention_prefix}[status: {status}] {user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"'
+notification.EMAIL_PR_COMMENT_FILE_SUBJECT_TEMPLATE = '{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in pull request !{pr_id}: "{pr_title}"'
+
+notification.EMAIL_COMMENT_SUBJECT_TEMPLATE = '{mention_prefix}{user} left a {comment_type} on commit `{commit_id}`'
+notification.EMAIL_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE = '{mention_prefix}[status: {status}] {user} left a {comment_type} on commit `{commit_id}`'
+notification.EMAIL_COMMENT_FILE_SUBJECT_TEMPLATE = '{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`'
