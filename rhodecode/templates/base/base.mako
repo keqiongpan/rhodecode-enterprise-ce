@@ -1130,6 +1130,19 @@
             };
             ajaxPOST(url, postData, success, failure);
         }
+
+        var hideLicenseWarning = function () {
+            var fingerprint = templateContext.session_attrs.license_fingerprint;
+            storeUserSessionAttr('rc_user_session_attr.hide_license_warning', fingerprint);
+            $('#notifications').hide();
+        }
+
+        var hideLicenseError = function () {
+            var fingerprint = templateContext.session_attrs.license_fingerprint;
+            storeUserSessionAttr('rc_user_session_attr.hide_license_error', fingerprint);
+            $('#notifications').hide();
+        }
+
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>
