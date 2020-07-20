@@ -24,6 +24,7 @@ Helper functions
 Consists of functions to typically be used within templates, but also
 available to Controllers. This module is available to both as 'h'.
 """
+import base64
 
 import os
 import random
@@ -52,7 +53,7 @@ from pygments.lexers import (
     get_lexer_by_name, get_lexer_for_filename, get_lexer_for_mimetype)
 
 from pyramid.threadlocal import get_current_request
-
+from tempita import looper
 from webhelpers2.html import literal, HTML, escape
 from webhelpers2.html._autolink import _auto_link_urls
 from webhelpers2.html.tools import (
@@ -85,10 +86,11 @@ from rhodecode.lib.utils2 import (
 from rhodecode.lib.markup_renderer import MarkupRenderer, relative_links
 from rhodecode.lib.vcs.exceptions import CommitDoesNotExistError
 from rhodecode.lib.vcs.backends.base import BaseChangeset, EmptyCommit
+from rhodecode.lib.vcs.conf.settings import ARCHIVE_SPECS
 from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.db import Permission, User, Repository
+from rhodecode.model.db import Permission, User, Repository, UserApiKeys
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import IssueTrackerSettingsModel
 
@@ -783,13 +785,24 @@ flash = Flash()
 # SCM FILTERS available via h.
 #==============================================================================
 from rhodecode.lib.vcs.utils import author_name, author_email
-from rhodecode.lib.utils2 import credentials_filter, age, age_from_seconds
+from rhodecode.lib.utils2 import age, age_from_seconds
 from rhodecode.model.db import User, ChangesetStatus
 
-capitalize = lambda x: x.capitalize()
+
 email = author_email
-short_id = lambda x: x[:12]
-hide_credentials = lambda x: ''.join(credentials_filter(x))
+
+
+def capitalize(raw_text):
+    return raw_text.capitalize()
+
+
+def short_id(long_id):
+    return long_id[:12]
+
+
+def hide_credentials(url):
+    from rhodecode.lib.utils2 import credentials_filter
+    return credentials_filter(url)
 
 
 import pytz
@@ -948,7 +961,7 @@ def link_to_user(author, length=0, **kwargs):
     if length:
         display_person = shorter(display_person, length)
 
-    if user:
+    if user and user.username != user.DEFAULT_USER:
         return link_to(
             escape(display_person),
             route_path('user_profile', username=user.username),
@@ -1341,7 +1354,7 @@ class InitialsGravatar(object):
 
     def generate_svg(self, svg_type=None):
         img_data = self.get_img_data(svg_type)
-        return "data:image/svg+xml;base64,%s" % img_data.encode('base64')
+        return "data:image/svg+xml;base64,%s" % base64.b64encode(img_data)
 
 
 def initials_gravatar(email_address, first_name, last_name, size=30):

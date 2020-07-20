@@ -53,7 +53,8 @@ def deferred_can_write_to_group_validator(node, kw):
             # permissions denied we expose as not existing, to prevent
             # resource discovery
             'permission_denied_parent_group':
-                _(u"Parent repository group `{}` does not exist"),
+                _(u"You do not have the permissions to store "
+                  u"repository groups inside repository group `{}`"),
             'permission_denied_root':
                 _(u"You do not have the permission to store "
                   u"repository groups in the root location.")
@@ -100,9 +101,15 @@ def deferred_can_write_to_group_validator(node, kw):
         # we want to allow this...
         forbidden = not (group_admin or (group_write and create_on_write and 0))
 
+        old_name = old_values.get('group_name')
+        if old_name and old_name == old_values.get('submitted_repo_group_name'):
+            # we're editing a repository group, we didn't change the name
+            # we skip the check for write into parent group now
+            # this allows changing settings for this repo group
+            return
+
         if parent_group and forbidden:
-            msg = messages['permission_denied_parent_group'].format(
-                parent_group_name)
+            msg = messages['permission_denied_parent_group'].format(parent_group_name)
             raise colander.Invalid(node, msg)
 
     return can_write_group_validator
@@ -248,6 +255,9 @@ class RepoGroupSchema(colander.Schema):
         validated_name = appstruct['repo_group_name']
 
         # second pass to validate permissions to repo_group
+        if 'old_values' in self.bindings:
+            # save current repo name for name change checks
+            self.bindings['old_values']['submitted_repo_group_name'] = validated_name
         second = RepoGroupAccessSchema().bind(**self.bindings)
         appstruct_second = second.deserialize({'repo_group': validated_name})
         # save result
@@ -286,6 +296,9 @@ class RepoGroupSettingsSchema(RepoGroupSchema):
             validated_name = separator.join([group.group_name, validated_name])
 
         # second pass to validate permissions to repo_group
+        if 'old_values' in self.bindings:
+            # save current repo name for name change checks
+            self.bindings['old_values']['submitted_repo_group_name'] = validated_name
         second = RepoGroupAccessSchema().bind(**self.bindings)
         appstruct_second = second.deserialize({'repo_group': validated_name})
         # save result

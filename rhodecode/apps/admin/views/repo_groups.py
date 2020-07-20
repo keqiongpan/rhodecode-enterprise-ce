@@ -69,6 +69,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
         c.repo_groups = RepoGroup.groups_choices(
             groups=groups_with_admin_rights,
             show_empty_group=allow_empty_group)
+        c.personal_repo_group = self._rhodecode_user.personal_repo_group
 
     def _can_create_repo_group(self, parent_group_id=None):
         is_admin = HasPermissionAny('hg.admin')('group create controller')
@@ -261,15 +262,28 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
 
         # perm check for admin, create_group perm or admin of parent_group
         parent_group_id = safe_int(self.request.GET.get('parent_group'))
+        _gr = RepoGroup.get(parent_group_id)
         if not self._can_create_repo_group(parent_group_id):
             raise HTTPForbidden()
 
         self._load_form_data(c)
 
         defaults = {}  # Future proof for default of repo group
+
+        parent_group_choice = '-1'
+        if not self._rhodecode_user.is_admin and self._rhodecode_user.personal_repo_group:
+            parent_group_choice = self._rhodecode_user.personal_repo_group
+
+        if parent_group_id and _gr:
+            if parent_group_id in [x[0] for x in c.repo_groups]:
+                parent_group_choice = safe_unicode(parent_group_id)
+
+        defaults.update({'group_parent_id': parent_group_choice})
+
         data = render(
             'rhodecode:templates/admin/repo_groups/repo_group_add.mako',
             self._get_template_context(c), self.request)
+
         html = formencode.htmlfill.render(
             data,
             defaults=defaults,

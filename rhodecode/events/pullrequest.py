@@ -19,8 +19,7 @@
 import logging
 
 from rhodecode.translation import lazy_ugettext
-from rhodecode.events.repo import (
-    RepoEvent, _commits_as_dict, _issues_as_dict)
+from rhodecode.events.repo import (RepoEvent, _commits_as_dict, _issues_as_dict)
 
 log = logging.getLogger(__name__)
 
@@ -155,6 +154,46 @@ class PullRequestCommentEvent(PullRequestEvent):
                 'type': self.comment.comment_type,
                 'file': self.comment.f_path,
                 'line': self.comment.line_no,
+                'version': self.comment.last_version,
+                'url': CommentsModel().get_url(
+                    self.comment, request=self.request),
+                'permalink_url': CommentsModel().get_url(
+                    self.comment, request=self.request, permalink=True),
+            }
+        })
+        return data
+
+
+class PullRequestCommentEditEvent(PullRequestEvent):
+    """
+    An instance of this class is emitted as an :term:`event` after a pull
+    request comment is edited.
+    """
+    name = 'pullrequest-comment-edit'
+    display_name = lazy_ugettext('pullrequest comment edited')
+    description = lazy_ugettext('Event triggered after a comment was edited on a code '
+                                'in the pull request')
+
+    def __init__(self, pullrequest, comment):
+        super(PullRequestCommentEditEvent, self).__init__(pullrequest)
+        self.comment = comment
+
+    def as_dict(self):
+        from rhodecode.model.comment import CommentsModel
+        data = super(PullRequestCommentEditEvent, self).as_dict()
+
+        status = None
+        if self.comment.status_change:
+            status = self.comment.status_change[0].status
+
+        data.update({
+            'comment': {
+                'status': status,
+                'text': self.comment.text,
+                'type': self.comment.comment_type,
+                'file': self.comment.f_path,
+                'line': self.comment.line_no,
+                'version': self.comment.last_version,
                 'url': CommentsModel().get_url(
                     self.comment, request=self.request),
                 'permalink_url': CommentsModel().get_url(

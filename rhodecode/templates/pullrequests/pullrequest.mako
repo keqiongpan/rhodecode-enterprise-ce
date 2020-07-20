@@ -250,9 +250,9 @@
        var added = data['stats'][0]
        var deleted = data['stats'][1]
        var commonAncestorId = data['ancestor'];
-
-       var prTitleAndDesc = getTitleAndDescription(
-           sourceRef()[1], commitElements, 5);
+       var _sourceRefType = sourceRef()[0];
+       var _sourceRefName = sourceRef()[1];
+       var prTitleAndDesc = getTitleAndDescription(_sourceRefType, _sourceRefName, commitElements, 5);
 
        var title = prTitleAndDesc[0];
        var proposedDescription = prTitleAndDesc[1];

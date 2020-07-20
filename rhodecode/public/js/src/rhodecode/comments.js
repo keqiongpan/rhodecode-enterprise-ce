@@ -80,9 +80,10 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
 })(function() {
     "use strict";
 
-    function CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId) {
+    function CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId, edit, comment_id) {
+
         if (!(this instanceof CommentForm)) {
-            return new CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId);
+            return new CommentForm(formElement, commitId, pullRequestId, lineNo, initAutocompleteActions, resolvesCommentId, edit, comment_id);
         }
 
         // bind the element instance to our Form
@@ -126,9 +127,19 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.submitButton = $(this.submitForm).find('input[type="submit"]');
         this.submitButtonText = this.submitButton.val();
 
+
         this.previewUrl = pyroutes.url('repo_commit_comment_preview',
             {'repo_name': templateContext.repo_name,
              'commit_id': templateContext.commit_data.commit_id});
+
+        if (edit){
+            this.submitButtonText = _gettext('Updated Comment');
+            $(this.commentType).prop('disabled', true);
+            $(this.commentType).addClass('disabled');
+            var editInfo =
+                '';
+            $(editInfo).insertBefore($(this.editButton).parent());
+        }
 
         if (resolvesCommentId){
             this.resolvesId = '#resolve_comment_{0}'.format(resolvesCommentId);
@@ -153,17 +164,27 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         // based on commitId, or pullRequestId decide where do we submit
         // out data
         if (this.commitId){
-            this.submitUrl = pyroutes.url('repo_commit_comment_create',
+            var pyurl = 'repo_commit_comment_create';
+            if(edit){
+                pyurl = 'repo_commit_comment_edit';
+            }
+            this.submitUrl = pyroutes.url(pyurl,
                 {'repo_name': templateContext.repo_name,
-                 'commit_id': this.commitId});
+                 'commit_id': this.commitId,
+                 'comment_id': comment_id});
             this.selfUrl = pyroutes.url('repo_commit',
                 {'repo_name': templateContext.repo_name,
                  'commit_id': this.commitId});
 
         } else if (this.pullRequestId) {
-            this.submitUrl = pyroutes.url('pullrequest_comment_create',
+            var pyurl = 'pullrequest_comment_create';
+            if(edit){
+                pyurl = 'pullrequest_comment_edit';
+            }
+            this.submitUrl = pyroutes.url(pyurl,
                 {'repo_name': templateContext.repo_name,
-                 'pull_request_id': this.pullRequestId});
+                 'pull_request_id': this.pullRequestId,
+                 'comment_id': comment_id});
             this.selfUrl = pyroutes.url('pullrequest_show',
                 {'repo_name': templateContext.repo_name,
                  'pull_request_id': this.pullRequestId});
@@ -277,7 +298,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.globalSubmitSuccessCallback = function(){
             // default behaviour is to call GLOBAL hook, if it's registered.
             if (window.commentFormGlobalSubmitSuccessCallback !== undefined){
-                commentFormGlobalSubmitSuccessCallback()
+                commentFormGlobalSubmitSuccessCallback();
             }
         };
 
@@ -475,17 +496,96 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
     return CommentForm;
 });
 
+/* selector for comment versions */
+var initVersionSelector = function(selector, initialData) {
+
+    var formatResult = function(result, container, query, escapeMarkup) {
+
+        return renderTemplate('commentVersion', {
+            show_disabled: true,
+            version: result.comment_version,
+            user_name: result.comment_author_username,
+            gravatar_url: result.comment_author_gravatar,
+            size: 16,
+            timeago_component: result.comment_created_on,
+        })
+    };
+
+    $(selector).select2({
+        placeholder: "Edited",
+        containerCssClass: "drop-menu-comment-history",
+        dropdownCssClass: "drop-menu-dropdown",
+        dropdownAutoWidth: true,
+        minimumResultsForSearch: -1,
+        data: initialData,
+        formatResult: formatResult,
+    });
+
+    $(selector).on('select2-selecting', function (e) {
+        // hide the mast as we later do preventDefault()
+        $("#select2-drop-mask").click();
+        e.preventDefault();
+        e.choice.action();
+    });
+
+    $(selector).on("select2-open", function() {
+        timeagoActivate();
+    });
+};
+
 /* comments controller */
 var CommentsController = function() {
   var mainComment = '#text';
   var self = this;
 
-  this.cancelComment = function(node) {
+  this.cancelComment = function (node) {
       var $node = $(node);
-      var $td = $node.closest('td');
+      var edit = $(this).attr('edit');
+      if (edit) {
+          var $general_comments = null;
+          var $inline_comments = $node.closest('div.inline-comments');
+          if (!$inline_comments.length) {
+              $general_comments = $('#comments');
+              var $comment = $general_comments.parent().find('div.comment:hidden');
+              // show hidden general comment form
+              $('#cb-comment-general-form-placeholder').show();
+          } else {
+              var $comment = $inline_comments.find('div.comment:hidden');
+          }
+          $comment.show();
+      }
       $node.closest('.comment-inline-form').remove();
       return false;
   };
+
+   this.showVersion = function (comment_id, comment_history_id) {
+
+       var historyViewUrl = pyroutes.url(
+           'repo_commit_comment_history_view',
+           {
+               'repo_name': templateContext.repo_name,
+               'commit_id': comment_id,
+               'comment_history_id': comment_history_id,
+           }
+       );
+       successRenderCommit = function (data) {
+           SwalNoAnimation.fire({
+               html: data,
+               title: '',
+           });
+       };
+       failRenderCommit = function () {
+           SwalNoAnimation.fire({
+               html: 'Error while loading comment history',
+               title: '',
+           });
+       };
+       _submitAjaxPOST(
+           historyViewUrl, {'csrf_token': CSRF_TOKEN},
+           successRenderCommit,
+           failRenderCommit
+       );
+   };
 
   this.getLineNumber = function(node) {
       var $node = $(node);
@@ -638,12 +738,12 @@ var CommentsController = function() {
     $node.closest('tr').toggleClass('hide-line-comments');
   };
 
-  this.createCommentForm = function(formElement, lineno, placeholderText, initAutocompleteActions, resolvesCommentId){
+  this.createCommentForm = function(formElement, lineno, placeholderText, initAutocompleteActions, resolvesCommentId, edit, comment_id){
       var pullRequestId = templateContext.pull_request_data.pull_request_id;
       var commitId = templateContext.commit_data.commit_id;
 
       var commentForm = new CommentForm(
-          formElement, commitId, pullRequestId, lineno, initAutocompleteActions, resolvesCommentId);
+          formElement, commitId, pullRequestId, lineno, initAutocompleteActions, resolvesCommentId, edit, comment_id);
       var cm = commentForm.getCmInstance();
 
       if (resolvesCommentId){
@@ -780,11 +880,226 @@ var CommentsController = function() {
 
       var _form = $($form[0]);
       var autocompleteActions = ['approve', 'reject', 'as_note', 'as_todo'];
+      var edit = false;
+      var comment_id = null;
       var commentForm = this.createCommentForm(
-          _form, lineNo, placeholderText, autocompleteActions, resolvesCommentId);
+          _form, lineNo, placeholderText, autocompleteActions, resolvesCommentId, edit, comment_id);
       commentForm.initStatusChangeSelector();
 
       return commentForm;
+  };
+
+  this.editComment = function(node) {
+      var $node = $(node);
+      var $comment = $(node).closest('.comment');
+      var comment_id = $comment.attr('data-comment-id');
+      var $form = null
+
+      var $comments = $node.closest('div.inline-comments');
+      var $general_comments = null;
+      var lineno = null;
+
+      if($comments.length){
+          // inline comments setup
+          $form = $comments.find('.comment-inline-form');
+          lineno = self.getLineNumber(node)
+      }
+      else{
+          // general comments setup
+          $comments = $('#comments');
+          $form = $comments.find('.comment-inline-form');
+          lineno = $comment[0].id
+          $('#cb-comment-general-form-placeholder').hide();
+      }
+
+      this.edit = true;
+
+      if (!$form.length) {
+
+          var $filediff = $node.closest('.filediff');
+          $filediff.removeClass('hide-comments');
+          var f_path = $filediff.attr('data-f-path');
+
+          // create a new HTML from template
+
+          var tmpl = $('#cb-comment-inline-form-template').html();
+          tmpl = tmpl.format(escapeHtml(f_path), lineno);
+          $form = $(tmpl);
+          $comment.after($form)
+
+          var _form = $($form[0]).find('form');
+          var autocompleteActions = ['as_note',];
+          var commentForm = this.createCommentForm(
+              _form, lineno, '', autocompleteActions, resolvesCommentId,
+              this.edit, comment_id);
+          var old_comment_text_binary = $comment.attr('data-comment-text');
+          var old_comment_text = b64DecodeUnicode(old_comment_text_binary);
+          commentForm.cm.setValue(old_comment_text);
+          $comment.hide();
+
+           $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
+               form: _form,
+               parent: $comments,
+               lineno: lineno,
+               f_path: f_path}
+           );
+
+           // set a CUSTOM submit handler for inline comments.
+            commentForm.setHandleFormSubmit(function(o) {
+              var text = commentForm.cm.getValue();
+              var commentType = commentForm.getCommentType();
+
+              if (text === "") {
+                return;
+              }
+
+              if (old_comment_text == text) {
+                  SwalNoAnimation.fire({
+                      title: 'Unable to edit comment',
+                      html: _gettext('Comment body was not changed.'),
+                  });
+                  return;
+              }
+              var excludeCancelBtn = false;
+              var submitEvent = true;
+              commentForm.setActionButtonsDisabled(true, excludeCancelBtn, submitEvent);
+              commentForm.cm.setOption("readOnly", true);
+
+              // Read last version known
+              var versionSelector = $('#comment_versions_{0}'.format(comment_id));
+              var version = versionSelector.data('lastVersion');
+
+              if (!version) {
+                version = 0;
+              }
+
+              var postData = {
+                  'text': text,
+                  'f_path': f_path,
+                  'line': lineno,
+                  'comment_type': commentType,
+                  'version': version,
+                  'csrf_token': CSRF_TOKEN
+              };
+
+              var submitSuccessCallback = function(json_data) {
+                $form.remove();
+                $comment.show();
+                var postData = {
+                    'text': text,
+                    'renderer': $comment.attr('data-comment-renderer'),
+                    'csrf_token': CSRF_TOKEN
+                };
+
+                /* Inject new edited version selector */
+                var updateCommentVersionDropDown = function () {
+                    var versionSelectId = '#comment_versions_'+comment_id;
+                    var preLoadVersionData = [
+                        {
+                            id: json_data['comment_version'],
+                            text: "v{0}".format(json_data['comment_version']),
+                            action: function () {
+                                Rhodecode.comments.showVersion(
+                                    json_data['comment_id'],
+                                    json_data['comment_history_id']
+                                )
+                            },
+                            comment_version: json_data['comment_version'],
+                            comment_author_username: json_data['comment_author_username'],
+                            comment_author_gravatar: json_data['comment_author_gravatar'],
+                            comment_created_on: json_data['comment_created_on'],
+                        },
+                    ]
+
+
+                    if ($(versionSelectId).data('select2')) {
+                        var oldData = $(versionSelectId).data('select2').opts.data.results;
+                        $(versionSelectId).select2("destroy");
+                        preLoadVersionData = oldData.concat(preLoadVersionData)
+                    }
+
+                    initVersionSelector(versionSelectId, {results: preLoadVersionData});
+
+                    $comment.attr('data-comment-text', utf8ToB64(text));
+
+                    var versionSelector = $('#comment_versions_'+comment_id);
+
+                    // set lastVersion so we know our last edit version
+                    versionSelector.data('lastVersion', json_data['comment_version'])
+                    versionSelector.parent().show();
+                }
+                updateCommentVersionDropDown();
+
+                // by default we reset state of comment preserving the text
+                var failRenderCommit = function(jqXHR, textStatus, errorThrown) {
+                    var prefix = "Error while editing this comment.\n"
+                    var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                    ajaxErrorSwal(message);
+                };
+
+                var successRenderCommit = function(o){
+                    $comment.show();
+                    $comment[0].lastElementChild.innerHTML = o;
+                };
+
+                var previewUrl = pyroutes.url(
+                    'repo_commit_comment_preview',
+             {'repo_name': templateContext.repo_name,
+                    'commit_id': templateContext.commit_data.commit_id});
+
+                _submitAjaxPOST(
+                    previewUrl, postData, successRenderCommit,
+                    failRenderCommit
+                );
+
+                try {
+                  var html = json_data.rendered_text;
+                  var lineno = json_data.line_no;
+                  var target_id = json_data.target_id;
+
+                  $comments.find('.cb-comment-add-button').before(html);
+
+                 //  run global callback on submit
+                  commentForm.globalSubmitSuccessCallback();
+
+                } catch (e) {
+                  console.error(e);
+                }
+
+                // re trigger the linkification of next/prev navigation
+                linkifyComments($('.inline-comment-injected'));
+                timeagoActivate();
+                tooltipActivate();
+
+                if (window.updateSticky !== undefined) {
+                    // potentially our comments change the active window size, so we
+                    // notify sticky elements
+                    updateSticky()
+                }
+
+                commentForm.setActionButtonsDisabled(false);
+
+              };
+              var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
+                  var prefix = "Error while editing comment.\n"
+                  var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                  if (jqXHR.status == 409){
+                    message = 'This comment was probably changed somewhere else. Please reload the content of this comment.'
+                    ajaxErrorSwal(message, 'Comment version mismatch.');
+                  } else {
+                    ajaxErrorSwal(message);
+                  }
+
+                  commentForm.resetCommentFormState(text)
+              };
+              commentForm.submitAjaxPOST(
+                  commentForm.submitUrl, postData,
+                  submitSuccessCallback,
+                  submitFailCallback);
+            });
+      }
+
+      $form.addClass('comment-inline-form-open');
   };
 
   this.createComment = function(node, resolutionComment) {
@@ -792,6 +1107,7 @@ var CommentsController = function() {
       var $node = $(node);
       var $td = $node.closest('td');
       var $form = $td.find('.comment-inline-form');
+      this.edit = false;
 
       if (!$form.length) {
 
@@ -816,8 +1132,9 @@ var CommentsController = function() {
           var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
           var _form = $($form[0]).find('form');
           var autocompleteActions = ['as_note', 'as_todo'];
+          var comment_id=null;
           var commentForm = this.createCommentForm(
-              _form, lineno, placeholderText, autocompleteActions, resolvesCommentId);
+              _form, lineno, placeholderText, autocompleteActions, resolvesCommentId, this.edit, comment_id);
 
           $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
               form: _form,

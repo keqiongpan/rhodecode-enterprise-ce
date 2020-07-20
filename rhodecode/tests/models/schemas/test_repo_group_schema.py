@@ -113,6 +113,7 @@ class TestRepoGroupSchema(object):
                 repo_group_owner=user_regular.username
             ))
 
-        expected = 'Parent repository group `{}` does not exist'.format(
-            test_repo_group.group_name)
+        expected = 'You do not have the permissions to store ' \
+                   'repository groups inside repository group `{}`'\
+            .format(test_repo_group.group_name)
         assert excinfo.value.asdict()['repo_group'] == expected

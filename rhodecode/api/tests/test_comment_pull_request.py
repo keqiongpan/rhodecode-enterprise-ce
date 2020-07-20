@@ -21,7 +21,7 @@
 import pytest
 
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import UserLog, User
+from rhodecode.model.db import UserLog, User, ChangesetComment
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.tests import TEST_USER_ADMIN_LOGIN
 from rhodecode.api.tests.utils import (
@@ -218,8 +218,20 @@ class TestCommentPullRequest(object):
         assert_error(id_, expected, given=response.body)
 
     @pytest.mark.backends("git", "hg")
-    def test_api_comment_pull_request_non_admin_with_userid_error(
-            self, pr_util):
+    def test_api_comment_pull_request_non_admin_with_userid_error(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+        id_, params = build_data(
+            self.apikey_regular, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            userid=TEST_USER_ADMIN_LOGIN)
+        response = api_call(self.app, params)
+
+        expected = 'userid is not the same as your user'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_comment_pull_request_non_admin_with_userid_error(self, pr_util):
         pull_request = pr_util.create_pull_request()
         id_, params = build_data(
             self.apikey_regular, 'comment_pull_request',
@@ -243,4 +255,136 @@ class TestCommentPullRequest(object):
         response = api_call(self.app, params)
 
         expected = 'Invalid commit_id `XXX` for this pull request.'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_edit_comment(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+
+        id_, params = build_data(
+            self.apikey,
+            'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            message='test message',
+        )
+        response = api_call(self.app, params)
+        json_response = response.json
+        comment_id = json_response['result']['comment_id']
+
+        message_after_edit = 'just message'
+        id_, params = build_data(
+            self.apikey,
+            'edit_comment',
+            comment_id=comment_id,
+            message=message_after_edit,
+            version=0,
+        )
+        response = api_call(self.app, params)
+        json_response = response.json
+        assert json_response['result']['version'] == 1
+
+        text_form_db = ChangesetComment.get(comment_id).text
+        assert message_after_edit == text_form_db
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_edit_comment_wrong_version(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            message='test message')
+        response = api_call(self.app, params)
+        json_response = response.json
+        comment_id = json_response['result']['comment_id']
+
+        message_after_edit = 'just message'
+        id_, params = build_data(
+            self.apikey_regular,
+            'edit_comment',
+            comment_id=comment_id,
+            message=message_after_edit,
+            version=1,
+        )
+        response = api_call(self.app, params)
+        expected = 'comment ({}) version ({}) mismatch'.format(comment_id, 1)
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_edit_comment_wrong_version(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+
+        id_, params = build_data(
+            self.apikey, 'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request.pull_request_id,
+            message='test message')
+        response = api_call(self.app, params)
+        json_response = response.json
+        comment_id = json_response['result']['comment_id']
+
+        id_, params = build_data(
+            self.apikey,
+            'edit_comment',
+            comment_id=comment_id,
+            message='',
+            version=0,
+        )
+        response = api_call(self.app, params)
+        expected = "comment ({}) can't be changed with empty string".format(comment_id, 1)
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_edit_comment_wrong_user_set_by_non_admin(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+        id_, params = build_data(
+            self.apikey,
+            'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request_id,
+            message='test message'
+        )
+        response = api_call(self.app, params)
+        json_response = response.json
+        comment_id = json_response['result']['comment_id']
+
+        id_, params = build_data(
+            self.apikey_regular,
+            'edit_comment',
+            comment_id=comment_id,
+            message='just message',
+            version=0,
+            userid=TEST_USER_ADMIN_LOGIN
+        )
+        response = api_call(self.app, params)
+        expected = 'userid is not the same as your user'
+        assert_error(id_, expected, given=response.body)
+
+    @pytest.mark.backends("git", "hg")
+    def test_api_edit_comment_wrong_user_with_permissions_to_edit_comment(self, pr_util):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+        id_, params = build_data(
+            self.apikey,
+            'comment_pull_request',
+            repoid=pull_request.target_repo.repo_name,
+            pullrequestid=pull_request_id,
+            message='test message'
+        )
+        response = api_call(self.app, params)
+        json_response = response.json
+        comment_id = json_response['result']['comment_id']
+
+        id_, params = build_data(
+            self.apikey_regular,
+            'edit_comment',
+            comment_id=comment_id,
+            message='just message',
+            version=0,
+        )
+        response = api_call(self.app, params)
+        expected = "you don't have access to edit this comment"
         assert_error(id_, expected, given=response.body)

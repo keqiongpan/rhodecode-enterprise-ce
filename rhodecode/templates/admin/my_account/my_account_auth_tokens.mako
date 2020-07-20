@@ -11,9 +11,15 @@
     <div class="panel-body">
     <div class="apikeys_wrap">
       <p>
-         ${_('Authentication tokens can be used to interact with the API, or VCS-over-http. '
-         'Each token can have a role. Token with a role can be used only in given context, '
-         'e.g. VCS tokens can be used together with the authtoken auth plugin for git/hg/svn operations only.')}
+         ${_('Available roles')}:
+        <ul>
+         % for role in h.UserApiKeys.ROLES:
+             <li>
+                 <span class="tag disabled">${h.UserApiKeys._get_role_name(role)}</span>
+                 <span>${h.UserApiKeys._get_role_description(role) |n}</span>
+             </li>
+         % endfor
+        </ul>
       </p>
       <table class="rctable auth_tokens">
         <tr>
@@ -36,7 +42,7 @@
                 </td>
                 <td class="td-wrap">${auth_token.description}</td>
                 <td class="td-tags">
-                    <span class="tag disabled">${auth_token.role_humanized}</span>
+                    <span class="tooltip tag disabled" title="${h.UserApiKeys._get_role_description(auth_token.role)}">${auth_token.role_humanized}</span>
                 </td>
                 <td class="td">${auth_token.scope_humanized}</td>
                 <td class="td-exp">

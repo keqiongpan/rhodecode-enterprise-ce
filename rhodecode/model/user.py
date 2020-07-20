@@ -262,8 +262,7 @@ class UserModel(BaseModel):
 
         from rhodecode.lib.auth import (
             get_crypt_password, check_password)
-        from rhodecode.lib.hooks_base import (
-            log_create_user, check_allowed_create_user)
+        from rhodecode.lib import hooks_base
 
         def _password_change(new_user, password):
             old_password = new_user.password or ''
@@ -327,7 +326,7 @@ class UserModel(BaseModel):
             if new_active_user and strict_creation_check:
                 # raises UserCreationError if it's not allowed for any reason to
                 # create new active user, this also executes pre-create hooks
-                check_allowed_create_user(user_data, cur_user, strict_check=True)
+                hooks_base.check_allowed_create_user(user_data, cur_user, strict_check=True)
             events.trigger(events.UserPreCreate(user_data))
             new_user = User()
             edit = False
@@ -390,7 +389,7 @@ class UserModel(BaseModel):
                 kwargs = new_user.get_dict()
                 # backward compat, require api_keys present
                 kwargs['api_keys'] = kwargs['auth_tokens']
-                log_create_user(created_by=cur_user, **kwargs)
+                hooks_base.create_user(created_by=cur_user, **kwargs)
                 events.trigger(events.UserPostCreate(user_data))
             return new_user
         except (DatabaseError,):
@@ -423,9 +422,7 @@ class UserModel(BaseModel):
             }
             notification_type = EmailNotificationModel.TYPE_REGISTRATION
             # pre-generate the subject for notification itself
-            (subject,
-             _h, _e,  # we don't care about those
-             body_plaintext) = EmailNotificationModel().render_email(
+            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)
 
             # create notification objects, and emails
@@ -569,7 +566,7 @@ class UserModel(BaseModel):
     def delete(self, user, cur_user=None, handle_repos=None,
                handle_repo_groups=None, handle_user_groups=None,
                handle_pull_requests=None, handle_artifacts=None, handle_new_owner=None):
-        from rhodecode.lib.hooks_base import log_delete_user
+        from rhodecode.lib import hooks_base
 
         if not cur_user:
             cur_user = getattr(get_current_rhodecode_user(), 'username', None)
@@ -638,7 +635,7 @@ class UserModel(BaseModel):
             self.sa.expire(user)
             self.sa.delete(user)
 
-            log_delete_user(deleted_by=cur_user, **user_data)
+            hooks_base.delete_user(deleted_by=cur_user, **user_data)
         except Exception:
             log.error(traceback.format_exc())
             raise
@@ -660,8 +657,7 @@ class UserModel(BaseModel):
                     'first_admin_email': User.get_first_super_admin().email
                 }
 
-                (subject, headers, email_body,
-                 email_body_plaintext) = EmailNotificationModel().render_email(
+                (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                     EmailNotificationModel.TYPE_PASSWORD_RESET, **email_kwargs)
 
                 recipients = [user_email]
@@ -719,8 +715,7 @@ class UserModel(BaseModel):
                 'first_admin_email': User.get_first_super_admin().email
             }
 
-            (subject, headers, email_body,
-             email_body_plaintext) = EmailNotificationModel().render_email(
+            (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
                 EmailNotificationModel.TYPE_PASSWORD_RESET_CONFIRMATION,
                 **email_kwargs)
 

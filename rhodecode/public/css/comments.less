@@ -65,7 +65,7 @@ tr.inline-comments div {
     float: left;
 
     padding: 0.4em 0.4em;
-    margin: 3px 5px 0px -10px;
+    margin: 2px 4px 0px 0px;
     display: inline-block;
     min-height: 0;
 
@@ -76,12 +76,13 @@ tr.inline-comments div {
     font-family: @text-italic;
     font-style: italic;
     background: #fff none;
-    color: @grey4;
+    color: @grey3;
     border: 1px solid @grey4;
     white-space: nowrap;
 
     text-transform: uppercase;
-    min-width: 40px;
+    min-width: 50px;
+    border-radius: 4px;
 
     &.todo {
         color: @color5;
@@ -253,12 +254,10 @@ tr.inline-comments div {
     }
 
     .pr-version {
-        float: left;
-        margin: 0px 4px;
+        display: inline-block;
     }
     .pr-version-inline {
-        float: left;
-        margin: 0px 4px;
+        display: inline-block;
     }
     .pr-version-num {
         font-size: 10px;
@@ -445,6 +444,13 @@ form.comment-form {
         width: 100%;
         display: block;
     }
+}
+
+.comment-version-select {
+    margin: 0px;
+    border-radius: inherit;
+    border-color: @grey6;
+    height: 20px;
 }
 
 .comment-type {

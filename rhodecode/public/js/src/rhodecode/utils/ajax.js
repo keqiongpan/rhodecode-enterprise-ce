@@ -130,10 +130,13 @@ function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
     }
 }
 
-function ajaxErrorSwal(message) {
+function ajaxErrorSwal(message, title) {
+
+    var title = (typeof title !== 'undefined') ? title : _gettext('Ajax Request Error');
+
     SwalNoAnimation.fire({
         icon: 'error',
-        title: _gettext('Ajax Request Error'),
+        title: title,
         html: '<span style="white-space: pre-line">{0}</span>'.format(message),
         showClass: {
             popup: 'swal2-noanimation',

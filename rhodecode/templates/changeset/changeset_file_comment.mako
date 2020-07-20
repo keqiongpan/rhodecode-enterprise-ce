@@ -3,8 +3,12 @@
 ## <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 ## ${comment.comment_block(comment)}
 ##
-<%namespace name="base" file="/base/base.mako"/>
 
+<%!
+    from rhodecode.lib import html_filters
+%>
+
+<%namespace name="base" file="/base/base.mako"/>
 <%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
   <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
   <% latest_ver = len(getattr(c, 'versions', [])) %>
@@ -21,113 +25,170 @@
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
        data-comment-type="${comment.comment_type}"
+       data-comment-renderer="${comment.renderer}"
+       data-comment-text="${comment.text | html_filters.base64,n}"
        data-comment-line-no="${comment.line_no}"
        data-comment-inline=${h.json.dumps(inline)}
        style="${'display: none;' if outdated_at_ver else ''}">
 
       <div class="meta">
           <div class="comment-type-label">
-              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}" title="line: ${comment.line_no}">
+              <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
+
+              ## TODO COMMENT
               % if comment.comment_type == 'todo':
                   % if comment.resolved:
                       <div class="resolved tooltip" title="${_('Resolved by comment #{}').format(comment.resolved.comment_id)}">
+                          <i class="icon-flag-filled"></i>
                           <a href="#comment-${comment.resolved.comment_id}">${comment.comment_type}</a>
                       </div>
                   % else:
                       <div class="resolved tooltip" style="display: none">
                           <span>${comment.comment_type}</span>
                       </div>
-                      <div class="resolve tooltip" onclick="return Rhodecode.comments.createResolutionComment(${comment.comment_id});" title="${_('Click to resolve this comment')}">
+                      <div class="resolve tooltip" onclick="return Rhodecode.comments.createResolutionComment(${comment.comment_id});" title="${_('Click to create resolution comment.')}">
+                        <i class="icon-flag-filled"></i>
                         ${comment.comment_type}
                       </div>
                   % endif
+              ## NOTE COMMENT
               % else:
+                  ## RESOLVED NOTE
                   % if comment.resolved_comment:
-                    fix
-                    <a href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
-                        <span style="text-decoration: line-through">#${comment.resolved_comment.comment_id}</span>
-                    </a>
+                    <div class="tooltip" title="${_('This comment resolves TODO #{}').format(comment.resolved_comment.comment_id)}">
+                        fix
+                        <a href="#comment-${comment.resolved_comment.comment_id}" onclick="Rhodecode.comments.scrollToComment($('#comment-${comment.resolved_comment.comment_id}'), 0, ${h.json.dumps(comment.resolved_comment.outdated)})">
+                            <span style="text-decoration: line-through">#${comment.resolved_comment.comment_id}</span>
+                        </a>
+                    </div>
+                  ## STATUS CHANGE NOTE
+                  % elif not comment.is_inline and comment.status_change:
+                    <%
+                        if comment.pull_request:
+                            status_change_title = 'Status of review for pull request !{}'.format(comment.pull_request.pull_request_id)
+                        else:
+                            status_change_title = 'Status of review for commit {}'.format(h.short_id(comment.commit_id))
+                    %>
+
+                    <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
+                    <div class="changeset-status-lbl tooltip" title="${status_change_title}">
+                         ${comment.status_change[0].status_lbl}
+                    </div>
                   % else:
-                    ${comment.comment_type or 'note'}
+                    <div>
+                        <i class="icon-comment"></i>
+                        ${(comment.comment_type or 'note')}
+                    </div>
                   % endif
               % endif
+
               </div>
           </div>
+
+          % if 0 and comment.status_change:
+          <div class="pull-left">
+              <span  class="tag authortag tooltip" title="${_('Status from pull request.')}">
+                  <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
+                      ${'!{}'.format(comment.pull_request.pull_request_id)}
+                  </a>
+              </span>
+          </div>
+          % endif
 
           <div class="author ${'author-inline' if inline else 'author-general'}">
               ${base.gravatar_with_user(comment.author.email, 16, tooltip=True)}
           </div>
+
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
           </div>
-          % if inline:
-              <span></span>
-          % else:
-              <div class="status-change">
-                  % if comment.pull_request:
-                      <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id)}">
-                          % if comment.status_change:
-                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}:
-                          % else:
-                              ${_('pull request !{}').format(comment.pull_request.pull_request_id)}
-                          % endif
-                      </a>
-                  % else:
-                      % if comment.status_change:
-                          ${_('Status change on commit')}:
-                      % endif
-                  % endif
-              </div>
+
+          % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
+            <span class="tag authortag tooltip" title="${_('Pull request author')}">
+            ${_('author')}
+            </span>
           % endif
 
-          % if comment.status_change:
-            <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
-            <div title="${_('Commit status')}" class="changeset-status-lbl">
-                 ${comment.status_change[0].status_lbl}
-            </div>
-          % endif
+          <%
+          comment_version_selector = 'comment_versions_{}'.format(comment.comment_id)
+          %>
+
+          % if comment.history:
+              <div class="date">
+
+                 <input id="${comment_version_selector}" name="${comment_version_selector}"
+                        type="hidden"
+                        data-last-version="${comment.history[-1].version}">
+
+                 <script type="text/javascript">
+
+                    var preLoadVersionData = [
+                       % for comment_history in comment.history:
+                            {
+                                id: ${comment_history.comment_history_id},
+                                text: 'v${comment_history.version}',
+                                action: function () {
+                                    Rhodecode.comments.showVersion(
+                                        "${comment.comment_id}",
+                                        "${comment_history.comment_history_id}"
+                                    )
+                                },
+                                comment_version: "${comment_history.version}",
+                                comment_author_username: "${comment_history.author.username}",
+                                comment_author_gravatar: "${h.gravatar_url(comment_history.author.email, 16)}",
+                                comment_created_on: '${h.age_component(comment_history.created_on, time_is_local=True)}',
+                            },
+                       % endfor
+                        ]
+                    initVersionSelector("#${comment_version_selector}", {results: preLoadVersionData});
+
+                  </script>
+
+              </div>
+          % else:
+              <div class="date" style="display: none">
+                <input id="${comment_version_selector}" name="${comment_version_selector}"
+                       type="hidden"
+                       data-last-version="0">
+              </div>
+          %endif
 
           <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
 
           <div class="comment-links-block">
-              % if comment.pull_request and comment.pull_request.author.user_id == comment.author.user_id:
-                <span class="tag authortag tooltip" title="${_('Pull request author')}">
-                ${_('author')}
-                </span>
-                |
-              % endif
+
             % if inline:
-                  <div class="pr-version-inline">
-                    <a href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
+                    <a class="pr-version-inline" href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
-                        <code class="pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
+                        <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             outdated ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % elif pr_index_ver:
-                        <code class="pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
+                        <code class="tooltip pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
                             ${'v{}'.format(pr_index_ver)} |
                         </code>
                     % endif
                     </a>
-                  </div>
             % else:
-                % if comment.pull_request_version_id and pr_index_ver:
-                    |
-                    <div class="pr-version">
+                % if pr_index_ver:
+
                       % if comment.outdated:
-                        <a href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}">
+                        <a class="pr-version"
+                           href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}"
+                        >
                             ${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}
-                        </a>
+                        </a> |
                       % else:
-                        <div title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
-                            <a href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}">
-                            <code class="pr-version-num">
-                                ${'v{}'.format(pr_index_ver)}
-                            </code>
-                            </a>
-                        </div>
+                        <a class="tooltip pr-version"
+                           title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}"
+                           href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}"
+                        >
+                        <code class="pr-version-num">
+                            ${'v{}'.format(pr_index_ver)}
+                        </code>
+                        </a> |
                       % endif
-                    </div>
+
                 % endif
             % endif
 
@@ -136,21 +197,25 @@
             %if not outdated_at_ver and (not comment.pull_request or (comment.pull_request and not comment.pull_request.is_closed())):
                ## permissions to delete
                %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
-                  ## TODO: dan: add edit comment here
-                  <a onclick="return Rhodecode.comments.deleteComment(this);" class="delete-comment"> ${_('Delete')}</a>
+                       <a onclick="return Rhodecode.comments.editComment(this);"
+                          class="edit-comment">${_('Edit')}</a>
+                       | <a onclick="return Rhodecode.comments.deleteComment(this);"
+                          class="delete-comment">${_('Delete')}</a>
                %else:
-                  <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+                  <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
+                  | <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Delete')}</a>
                %endif
             %else:
-               <button class="btn-link" disabled="disabled"> ${_('Delete')}</button>
+                  <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Edit')}</a>
+                  | <a class="tooltip edit-comment link-disabled" disabled="disabled" title="${_('Action unavailable')}">${_('Delete')}</a>
             %endif
 
             % if outdated_at_ver:
-               | <a onclick="return Rhodecode.comments.prevOutdatedComment(this);" class="prev-comment"> ${_('Prev')}</a>
-               | <a onclick="return Rhodecode.comments.nextOutdatedComment(this);" class="next-comment"> ${_('Next')}</a>
+                | <a onclick="return Rhodecode.comments.prevOutdatedComment(this);" class="tooltip prev-comment" title="${_('Jump to the previous outdated comment')}"> <i class="icon-angle-left"></i> </a>
+                | <a onclick="return Rhodecode.comments.nextOutdatedComment(this);" class="tooltip next-comment" title="${_('Jump to the next outdated comment')}"> <i class="icon-angle-right"></i></a>
             % else:
-               | <a onclick="return Rhodecode.comments.prevComment(this);" class="prev-comment"> ${_('Prev')}</a>
-               | <a onclick="return Rhodecode.comments.nextComment(this);" class="next-comment"> ${_('Next')}</a>
+                | <a onclick="return Rhodecode.comments.prevComment(this);" class="tooltip prev-comment" title="${_('Jump to the previous comment')}"> <i class="icon-angle-left"></i></a>
+                | <a onclick="return Rhodecode.comments.nextComment(this);" class="tooltip next-comment" title="${_('Jump to the next comment')}"> <i class="icon-angle-right"></i></a>
             % endif
 
           </div>

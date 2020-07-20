@@ -25,7 +25,7 @@ import formencode
 import formencode.htmlfill
 import peppercorn
 from pyramid.httpexceptions import (
-    HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest)
+    HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest, HTTPConflict)
 from pyramid.view import view_config
 from pyramid.renderers import render
 
@@ -34,6 +34,7 @@ from rhodecode.apps._base import RepoAppView, DataGridAppView
 from rhodecode.lib import helpers as h, diffs, codeblocks, channelstream
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.diffs import load_cached_diff, cache_diff, diff_cache_exist
+from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
@@ -213,9 +214,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                      ancestor_commit,
                      source_ref_id, target_ref_id,
                      target_commit, source_commit, diff_limit, file_limit,
-                     fulldiff, hide_whitespace_changes, diff_context):
+                     fulldiff, hide_whitespace_changes, diff_context, use_ancestor=True):
 
-        target_ref_id = ancestor_commit.raw_id
+        if use_ancestor:
+            # we might want to not use it for versions
+            target_ref_id = ancestor_commit.raw_id
+
         vcs_diff = PullRequestModel().get_diff(
             source_repo, source_ref_id, target_ref_id,
             hide_whitespace_changes, diff_context)
@@ -568,7 +572,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             c.commit_ranges.append(comm)
 
         c.missing_requirements = missing_requirements
-
         c.ancestor_commit = ancestor_commit
         c.statuses = source_repo.statuses(
             [x.raw_id for x in c.commit_ranges])
@@ -593,6 +596,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         else:
             c.inline_comments = display_inline_comments
 
+            use_ancestor = True
+            if from_version_normalized != version_normalized:
+                use_ancestor = False
+
             has_proper_diff_cache = cached_diff and cached_diff.get('commits')
             if not force_recache and has_proper_diff_cache:
                 c.diffset = cached_diff['diff']
@@ -604,7 +611,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         source_ref_id, target_ref_id,
                         target_commit, source_commit,
                         diff_limit, file_limit, c.fulldiff,
-                        hide_whitespace_changes, diff_context)
+                        hide_whitespace_changes, diff_context,
+                        use_ancestor=use_ancestor
+					)
+
                     # save cached diff
                     if caching_enabled:
                         cache_diff(cache_file_path, c.diffset, diff_commit_cache)
@@ -1522,5 +1532,106 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             return True
         else:
             log.warning('No permissions for user %s to delete comment_id: %s',
+                        self._rhodecode_db_user, comment_id)
+            raise HTTPNotFound()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='pullrequest_comment_edit', request_method='POST',
+        renderer='json_ext')
+    def pull_request_comment_edit(self):
+        self.load_default_context()
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id']
+        )
+        comment = ChangesetComment.get_or_404(
+            self.request.matchdict['comment_id']
+        )
+        comment_id = comment.comment_id
+
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
+
+        if pull_request.is_closed():
+            log.debug('comment: forbidden because pull request is closed')
+            raise HTTPForbidden()
+
+        if not comment:
+            log.debug('Comment with id:%s not found, skipping', comment_id)
+            # comment already deleted in another call probably
+            return True
+
+        if comment.pull_request.is_closed():
+            # don't allow deleting comments on closed pull request
+            raise HTTPForbidden()
+
+        is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = comment.author.user_id == self._rhodecode_user.user_id
+        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
+            text = self.request.POST.get('text')
+            version = self.request.POST.get('version')
+            if text == comment.text:
+                log.warning(
+                    'Comment(PR): '
+                    'Trying to create new version '
+                    'with the same comment body {}'.format(
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+
+            if version.isdigit():
+                version = int(version)
+            else:
+                log.warning(
+                    'Comment(PR): Wrong version type {} {} '
+                    'for comment {}'.format(
+                        version,
+                        type(version),
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+
+            try:
+                comment_history = CommentsModel().edit(
+                    comment_id=comment_id,
+                    text=text,
+                    auth_user=self._rhodecode_user,
+                    version=version,
+                )
+            except CommentVersionMismatch:
+                raise HTTPConflict()
+
+            if not comment_history:
+                raise HTTPNotFound()
+
+            Session().commit()
+
+            PullRequestModel().trigger_pull_request_hook(
+                pull_request, self._rhodecode_user, 'comment_edit',
+                data={'comment': comment})
+
+            return {
+                'comment_history_id': comment_history.comment_history_id,
+                'comment_id': comment.comment_id,
+                'comment_version': comment_history.version,
+                'comment_author_username': comment_history.author.username,
+                'comment_author_gravatar': h.gravatar_url(comment_history.author.email, 16),
+                'comment_created_on': h.age_component(comment_history.created_on,
+                                                      time_is_local=True),
+            }
+        else:
+            log.warning('No permissions for user %s to edit comment_id: %s',
                         self._rhodecode_db_user, comment_id)
             raise HTTPNotFound()

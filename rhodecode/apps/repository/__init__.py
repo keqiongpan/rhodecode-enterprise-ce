@@ -79,12 +79,20 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/preview', repo_route=True)
 
     config.add_route(
+        name='repo_commit_comment_history_view',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_history_id}/history_view', repo_route=True)
+
+    config.add_route(
         name='repo_commit_comment_attachment_upload',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/attachment_upload', repo_route=True)
 
     config.add_route(
         name='repo_commit_comment_delete',
         pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/delete', repo_route=True)
+
+    config.add_route(
+        name='repo_commit_comment_edit',
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/edit', repo_route=True)
 
     # still working url for backward compat.
     config.add_route(
@@ -326,6 +334,11 @@ def includeme(config):
         name='pullrequest_comment_create',
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment',
         repo_route=True)
+
+    config.add_route(
+        name='pullrequest_comment_edit',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment/{comment_id}/edit',
+        repo_route=True, repo_accepted_types=['hg', 'git'])
 
     config.add_route(
         name='pullrequest_comment_delete',

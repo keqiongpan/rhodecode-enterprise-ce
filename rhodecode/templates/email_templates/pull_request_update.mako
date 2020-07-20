@@ -10,9 +10,11 @@ data = {
     'pr_id': pull_request.pull_request_id,
     'pr_title': pull_request.title,
 }
+
+subject_template = email_pr_update_subject_template or _('{updating_user} updated pull request. !{pr_id}: "{pr_title}"')
 %>
 
-${_('{updating_user} updated pull request. !{pr_id}: "{pr_title}"').format(**data) |n}
+${subject_template.format(**data) |n}
 </%def>
 
 ## PLAINTEXT VERSION OF BODY

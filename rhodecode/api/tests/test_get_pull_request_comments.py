@@ -61,6 +61,7 @@ class TestGetPullRequestComments(object):
              'comment_type': 'note',
              'comment_resolved_by': None,
              'pull_request_version': None,
+             'comment_last_version': 0,
              'comment_commit_id': None,
              'comment_pull_request_id': pull_request.pull_request_id
              }

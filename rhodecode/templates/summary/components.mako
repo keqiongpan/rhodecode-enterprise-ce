@@ -97,7 +97,7 @@
           <div class="right-content">
             <div class="commit-info">
                 <div class="tags">
-                <% commit_rev = c.rhodecode_db_repo.changeset_cache.get('revision') %>
+                <% commit_rev = h.safe_int(c.rhodecode_db_repo.changeset_cache.get('revision'), 0) + 1 %>
                 % if c.rhodecode_repo:
                     ${refs_counters(
                         c.rhodecode_repo.branches,
@@ -184,12 +184,37 @@
                        ${h.link_to(_('Enable downloads'),h.route_path('edit_repo',repo_name=c.repo_name, _anchor='repo_enable_downloads'))}
                     % endif
                 % else:
-                    <span class="enabled">
-                        <a id="archive_link" class="btn btn-small" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name,fname='tip.zip')}">
-                            tip.zip
-                            ## replaced by some JS on select
-                        </a>
-                    </span>
+                    <div class="enabled pull-left" style="margin-right: 10px">
+
+                        <div class="btn-group btn-group-actions">
+                            <a class="archive_link btn btn-small" data-ext=".zip" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+'.zip')}">
+                                <i class="icon-download"></i>
+                                ${c.rhodecode_db_repo.landing_ref_name}.zip
+                                ## replaced by some JS on select
+                            </a>
+
+                            <a class="tooltip btn btn-primary btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more download options')}">
+                                <i class="icon-down"></i>
+                            </a>
+
+                            <div class="btn-action-switcher-container left-align">
+                                <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
+                                    % for a_type, content_type, extension in h.ARCHIVE_SPECS:
+                                    % if extension not in ['.zip']:
+                                    <li>
+
+                                        <a class="archive_link" data-ext="${extension}" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+extension)}">
+                                            <i class="icon-download"></i>
+                                            ${c.rhodecode_db_repo.landing_ref_name+extension}
+                                        </a>
+                                    </li>
+                                    % endif
+                                    % endfor
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
                     ${h.hidden('download_options')}
                 % endif
               </div>

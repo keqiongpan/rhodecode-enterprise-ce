@@ -70,7 +70,7 @@ replacing '-' and '_' into spaces
 * @param limit
 * @returns {*[]}
 */
-var getTitleAndDescription = function(sourceRef, elements, limit) {
+var getTitleAndDescription = function(sourceRefType, sourceRef, elements, limit) {
   var title = '';
   var desc = '';
 
@@ -85,7 +85,9 @@ var getTitleAndDescription = function(sourceRef, elements, limit) {
   }
   else {
       // use reference name
-      title = sourceRef.replace(/-/g, ' ').replace(/_/g, ' ').capitalizeFirstLetter();
+      var normalizedRef = sourceRef.replace(/-/g, ' ').replace(/_/g, ' ').capitalizeFirstLetter()
+      var refType = sourceRefType;
+      title = 'Changes from {0}: {1}'.format(refType, normalizedRef);
   }
 
   return [title, desc]

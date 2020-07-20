@@ -259,21 +259,34 @@ input[type="button"] {
     &:not(.open) .btn-action-switcher-container {
         display: none;
     }
+
+    .btn-more-option {
+        margin-left: -1px;
+        padding-left: 2px;
+        padding-right: 2px;
+        border-left: 1px solid @grey3;
+    }
 }
 
 
-.btn-action-switcher-container{
+.btn-action-switcher-container {
   position: absolute;
-  top: 30px;
-  left: -82px;
+  top: 100%;
+
+  &.left-align {
+    left: 0;
+  }
+  &.right-align {
+    right: 0;
+  }
+
 }
 
 .btn-action-switcher {
     display: block;
     position: relative;
     z-index: 300;
-    min-width: 240px;
-    max-width: 500px;
+    max-width: 600px;
     margin-top: 4px;
     margin-bottom: 24px;
     font-size: 14px;
@@ -283,6 +296,7 @@ input[type="button"] {
     border: 1px solid @grey4;
     border-radius: 3px;
     box-shadow: @dropdown-shadow;
+    overflow: auto;
 
     li {
         display: block;

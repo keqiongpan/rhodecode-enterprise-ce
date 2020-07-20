@@ -21,6 +21,7 @@
 """
 comments model for RhodeCode
 """
+import datetime
 
 import logging
 import traceback
@@ -32,10 +33,17 @@ from sqlalchemy.sql.functions import coalesce
 
 from rhodecode.lib import helpers as h, diffs, channelstream, hooks_utils
 from rhodecode.lib import audit_logger
-from rhodecode.lib.utils2 import extract_mentioned_users, safe_str
+from rhodecode.lib.exceptions import CommentVersionMismatch
+from rhodecode.lib.utils2 import extract_mentioned_users, safe_str, safe_int
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    ChangesetComment, User, Notification, PullRequest, AttributeDict)
+    ChangesetComment,
+    User,
+    Notification,
+    PullRequest,
+    AttributeDict,
+    ChangesetCommentHistory,
+)
 from rhodecode.model.notification import NotificationModel
 from rhodecode.model.meta import Session
 from rhodecode.model.settings import VcsSettingsModel
@@ -362,13 +370,18 @@ class CommentsModel(BaseModel):
                 repo.repo_name,
                 h.route_url('repo_summary', repo_name=repo.repo_name))
 
+            commit_url = h.route_url('repo_commit', repo_name=repo.repo_name,
+                                     commit_id=commit_id)
+
             # commit specifics
             kwargs.update({
                 'commit': commit_obj,
                 'commit_message': commit_obj.message,
                 'commit_target_repo_url': target_repo_url,
                 'commit_comment_url': commit_comment_url,
-                'commit_comment_reply_url': commit_comment_reply_url
+                'commit_comment_reply_url': commit_comment_reply_url,
+                'commit_url': commit_url,
+                'thread_ids': [commit_url, commit_comment_url],
             })
 
         elif pull_request_obj:
@@ -413,15 +426,14 @@ class CommentsModel(BaseModel):
                 'pr_comment_url': pr_comment_url,
                 'pr_comment_reply_url': pr_comment_reply_url,
                 'pr_closing': closing_pr,
+                'thread_ids': [pr_url, pr_comment_url],
             })
 
         recipients += [self._get_user(u) for u in (extra_recipients or [])]
 
         if send_email:
             # pre-generate the subject for notification itself
-            (subject,
-             _h, _e,  # we don't care about those
-             body_plaintext) = EmailNotificationModel().render_email(
+            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)
 
             mention_recipients = set(
@@ -478,6 +490,60 @@ class CommentsModel(BaseModel):
             registry=get_current_registry())
 
         return comment
+
+    def edit(self, comment_id, text, auth_user, version):
+        """
+        Change existing comment for commit or pull request.
+
+        :param comment_id:
+        :param text:
+        :param auth_user: current authenticated user calling this method
+        :param version: last comment version
+        """
+        if not text:
+            log.warning('Missing text for comment, skipping...')
+            return
+
+        comment = ChangesetComment.get(comment_id)
+        old_comment_text = comment.text
+        comment.text = text
+        comment.modified_at = datetime.datetime.now()
+        version = safe_int(version)
+
+        # NOTE(marcink): this returns initial comment + edits, so v2 from ui
+        # would return 3 here
+        comment_version = ChangesetCommentHistory.get_version(comment_id)
+
+        if isinstance(version, (int, long)) and (comment_version - version) != 1:
+            log.warning(
+                'Version mismatch comment_version {} submitted {}, skipping'.format(
+                    comment_version-1,  # -1 since note above
+                    version
+                )
+            )
+            raise CommentVersionMismatch()
+
+        comment_history = ChangesetCommentHistory()
+        comment_history.comment_id = comment_id
+        comment_history.version = comment_version
+        comment_history.created_by_user_id = auth_user.user_id
+        comment_history.text = old_comment_text
+        # TODO add email notification
+        Session().add(comment_history)
+        Session().add(comment)
+        Session().flush()
+
+        if comment.pull_request:
+            action = 'repo.pull_request.comment.edit'
+        else:
+            action = 'repo.commit.comment.edit'
+
+        comment_data = comment.get_api_data()
+        comment_data['old_comment_text'] = old_comment_text
+        self._log_audit_action(
+            action, {'data': comment_data}, auth_user, comment)
+
+        return comment_history
 
     def delete(self, comment, auth_user):
         """
@@ -712,6 +778,7 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.line_no == None)\
             .filter(ChangesetComment.f_path == None)\
             .filter(ChangesetComment.pull_request == pull_request)
+
         return comments
 
     @staticmethod
@@ -726,8 +793,7 @@ class CommentsModel(BaseModel):
         if action == 'create':
             trigger_hook = hooks_utils.trigger_comment_commit_hooks
         elif action == 'edit':
-            # TODO(dan): when this is supported we trigger edit hook too
-            return
+            trigger_hook = hooks_utils.trigger_comment_commit_edit_hooks
         else:
             return
 

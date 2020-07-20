@@ -384,7 +384,8 @@ def attach_context_attributes(context, request, user_id=None, is_api=None):
     session_attrs = {
         # defaults
         "clone_url_format": "http",
-        "diffmode": "sideside"
+        "diffmode": "sideside",
+        "license_fingerprint": request.session.get('license_fingerprint')
     }
 
     if not is_api:

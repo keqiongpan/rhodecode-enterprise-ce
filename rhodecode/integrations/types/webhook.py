@@ -144,11 +144,13 @@ class WebhookIntegrationType(IntegrationTypeBase):
         events.PullRequestMergeEvent,
         events.PullRequestUpdateEvent,
         events.PullRequestCommentEvent,
+        events.PullRequestCommentEditEvent,
         events.PullRequestReviewEvent,
         events.PullRequestCreateEvent,
         events.RepoPushEvent,
         events.RepoCreateEvent,
         events.RepoCommitCommentEvent,
+        events.RepoCommitCommentEditEvent,
     ]
 
     def settings_schema(self):

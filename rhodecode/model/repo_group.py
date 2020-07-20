@@ -308,13 +308,13 @@ class RepoGroupModel(BaseModel):
                 self._create_group(new_repo_group.group_name)
 
             # trigger the post hook
-            from rhodecode.lib.hooks_base import log_create_repository_group
+            from rhodecode.lib import hooks_base
             repo_group = RepoGroup.get_by_group_name(group_name)
 
             # update repo group commit caches initially
             repo_group.update_commit_cache()
 
-            log_create_repository_group(
+            hooks_base.create_repository_group(
                 created_by=user.username, **repo_group.get_dict())
 
             # Trigger create event.

@@ -35,6 +35,7 @@ def route_path(name, params=None, **kwargs):
         'repo_commit_comment_create': '/{repo_name}/changeset/{commit_id}/comment/create',
         'repo_commit_comment_preview': '/{repo_name}/changeset/{commit_id}/comment/preview',
         'repo_commit_comment_delete': '/{repo_name}/changeset/{commit_id}/comment/{comment_id}/delete',
+        'repo_commit_comment_edit': '/{repo_name}/changeset/{commit_id}/comment/{comment_id}/edit',
     }[name].format(**kwargs)
 
     if params:
@@ -267,6 +268,164 @@ class TestRepoCommitCommentsView(TestController):
             route_path('repo_commit',
                        repo_name=backend.repo_name, commit_id=commit_id))
         assert_comment_links(response, 0, 0)
+
+    def test_edit(self, backend):
+        self.log_user()
+        commit_id = backend.repo.get_commit('300').raw_id
+        text = u'CommentOnCommit'
+
+        params = {'text': text, 'csrf_token': self.csrf_token}
+        self.app.post(
+            route_path(
+                'repo_commit_comment_create',
+                repo_name=backend.repo_name, commit_id=commit_id),
+            params=params)
+
+        comments = ChangesetComment.query().all()
+        assert len(comments) == 1
+        comment_id = comments[0].comment_id
+        test_text = 'test_text'
+        self.app.post(
+            route_path(
+                'repo_commit_comment_edit',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+                comment_id=comment_id,
+            ),
+            params={
+                'csrf_token': self.csrf_token,
+                'text': test_text,
+                'version': '0',
+            })
+
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+        assert test_text == text_form_db
+
+    def test_edit_without_change(self, backend):
+        self.log_user()
+        commit_id = backend.repo.get_commit('300').raw_id
+        text = u'CommentOnCommit'
+
+        params = {'text': text, 'csrf_token': self.csrf_token}
+        self.app.post(
+            route_path(
+                'repo_commit_comment_create',
+                repo_name=backend.repo_name, commit_id=commit_id),
+            params=params)
+
+        comments = ChangesetComment.query().all()
+        assert len(comments) == 1
+        comment_id = comments[0].comment_id
+
+        response = self.app.post(
+            route_path(
+                'repo_commit_comment_edit',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+                comment_id=comment_id,
+            ),
+            params={
+                'csrf_token': self.csrf_token,
+                'text': text,
+                'version': '0',
+            },
+            status=404,
+        )
+        assert response.status_int == 404
+
+    def test_edit_try_edit_already_edited(self, backend):
+        self.log_user()
+        commit_id = backend.repo.get_commit('300').raw_id
+        text = u'CommentOnCommit'
+
+        params = {'text': text, 'csrf_token': self.csrf_token}
+        self.app.post(
+            route_path(
+                'repo_commit_comment_create',
+                repo_name=backend.repo_name, commit_id=commit_id
+            ),
+            params=params,
+        )
+
+        comments = ChangesetComment.query().all()
+        assert len(comments) == 1
+        comment_id = comments[0].comment_id
+        test_text = 'test_text'
+        self.app.post(
+            route_path(
+                'repo_commit_comment_edit',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+                comment_id=comment_id,
+            ),
+            params={
+                'csrf_token': self.csrf_token,
+                'text': test_text,
+                'version': '0',
+            }
+        )
+        test_text_v2 = 'test_v2'
+        response = self.app.post(
+            route_path(
+                'repo_commit_comment_edit',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+                comment_id=comment_id,
+            ),
+            params={
+                'csrf_token': self.csrf_token,
+                'text': test_text_v2,
+                'version': '0',
+            },
+            status=409,
+        )
+        assert response.status_int == 409
+
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+
+        assert test_text == text_form_db
+        assert test_text_v2 != text_form_db
+
+    def test_edit_forbidden_for_immutable_comments(self, backend):
+        self.log_user()
+        commit_id = backend.repo.get_commit('300').raw_id
+        text = u'CommentOnCommit'
+
+        params = {'text': text, 'csrf_token': self.csrf_token, 'version': '0'}
+        self.app.post(
+            route_path(
+                'repo_commit_comment_create',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+            ),
+            params=params
+        )
+
+        comments = ChangesetComment.query().all()
+        assert len(comments) == 1
+        comment_id = comments[0].comment_id
+
+        comment = ChangesetComment.get(comment_id)
+        comment.immutable_state = ChangesetComment.OP_IMMUTABLE
+        Session().add(comment)
+        Session().commit()
+
+        response = self.app.post(
+            route_path(
+                'repo_commit_comment_edit',
+                repo_name=backend.repo_name,
+                commit_id=commit_id,
+                comment_id=comment_id,
+            ),
+            params={
+                'csrf_token': self.csrf_token,
+                'text': 'test_text',
+            },
+            status=403,
+        )
+        assert response.status_int == 403
 
     def test_delete_forbidden_for_immutable_comments(self, backend):
         self.log_user()

@@ -159,7 +159,14 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
 
     def __init__(self, arguments):
         arguments['lock_factory'] = CustomLockFactory
-        super(FileNamespaceBackend, self).__init__(arguments)
+        db_file = arguments.get('filename')
+
+        log.debug('initialing %s DB in %s', self.__class__.__name__, db_file)
+        try:
+            super(FileNamespaceBackend, self).__init__(arguments)
+        except Exception:
+            log.error('Failed to initialize db at: %s', db_file)
+            raise
 
     def __repr__(self):
         return '{} `{}`'.format(self.__class__, self.filename)

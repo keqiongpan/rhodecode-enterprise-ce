@@ -15,20 +15,24 @@ data = {
     'comment_id': comment_id,
 
     'commit_id': h.show_id(commit),
+    'mention_prefix': '[mention] ' if mention else '',
 }
+
+
+if comment_file:
+    subject_template = email_comment_file_subject_template or \
+    _('{mention_prefix}{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}` in the `{repo_name}` repository').format(**data)
+else:
+    if status_change:
+        subject_template = email_comment_status_change_subject_template or \
+        _('{mention_prefix}[status: {status}] {user} left a {comment_type} on commit `{commit_id}` in the `{repo_name}` repository').format(**data)
+    else:
+        subject_template = email_comment_subject_template or \
+        _('{mention_prefix}{user} left a {comment_type} on commit `{commit_id}` in the `{repo_name}` repository').format(**data)
 %>
 
 
-% if comment_file:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on file `{comment_file}` in commit `{commit_id}`').format(**data)} ${_('in the `{repo_name}` repository').format(**data) |n}
-% else:
-    % if status_change:
-    ${(_('[mention]') if mention else '')} ${_('[status: {status}] {user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
-    % else:
-    ${(_('[mention]') if mention else '')} ${_('{user} left a {comment_type} on commit `{commit_id}`').format(**data) |n} ${_('in the `{repo_name}` repository').format(**data) |n}
-    % endif
-% endif
-
+${subject_template.format(**data) |n}
 </%def>
 
 ## PLAINTEXT VERSION OF BODY

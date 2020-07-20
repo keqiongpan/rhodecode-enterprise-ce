@@ -3,6 +3,7 @@
 ##    <%namespace name="dpb" file="/base/default_perms_box.mako"/>
 ##    ${dpb.default_perms_box(<url_to_form>)}
 ##    ${dpb.default_perms_radios()}
+<%namespace name="base" file="/base/base.mako"/>
 
 <%def name="default_perms_radios(global_permissions_template = False, suffix='', **kwargs)">
 <div class="main-content-full-width">
@@ -11,10 +12,22 @@
     ## displayed according to checkbox selection
     <div class="panel-heading">
       %if not global_permissions_template:
-        <h3 class="inherit_overlay_default panel-title">${_('Inherited Permissions')}</h3>
-        <h3 class="inherit_overlay panel-title">${_('Custom Permissions')}</h3>
+        <h3 class="inherit_overlay_default panel-title">
+            % if hasattr(c, 'user'):
+            ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')} &nbsp;-
+            % endif
+            ${_('Inherited Permissions')}
+        </h3>
+        <h3 class="inherit_overlay panel-title">
+            % if hasattr(c, 'user'):
+            ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')} &nbsp;-
+            % endif
+            ${_('Custom Permissions')}
+        </h3>
       %else:
-        <h3 class="panel-title">${_('Default Global Permissions')}</h3>
+        <h3 class="panel-title">
+            ${_('Default Global Permissions')}
+        </h3>
       %endif
     </div>
 

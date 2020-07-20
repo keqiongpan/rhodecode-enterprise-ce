@@ -76,8 +76,8 @@ $(document).ready(function(){
 
     var initialCommitData = {
         id: null,
-        text: 'tip',
-        type: 'tag',
+        text: '${c.rhodecode_db_repo.landing_ref_name}',
+        type: '${c.rhodecode_db_repo.landing_ref_type}',
         raw_id: null,
         files_url: null
     };
@@ -87,15 +87,22 @@ $(document).ready(function(){
     // on change of download options
     $('#download_options').on('change', function(e) {
         // format of Object {text: "v0.0.3", type: "tag", id: "rev"}
-        var ext = '.zip';
-        var selected_cs = e.added;
-        var fname = e.added.raw_id + ext;
-        var href = pyroutes.url('repo_archivefile', {'repo_name': templateContext.repo_name, 'fname':fname});
-        // set new label
-        $('#archive_link').html('{0}{1}'.format(escapeHtml(e.added.text), ext));
+        var selectedReference = e.added;
+        var ico = '<i class="icon-download"></i>';
 
-        // set new url to button,
-        $('#archive_link').attr('href', href)
+        $.each($('.archive_link'), function (key, val) {
+            var ext = $(this).data('ext');
+            var fname = selectedReference.raw_id + ext;
+            var href = pyroutes.url('repo_archivefile', {
+                'repo_name': templateContext.repo_name,
+                'fname': fname
+            });
+            // set new label
+            $(this).html(ico + ' {0}{1}'.format(escapeHtml(e.added.text), ext));
+            // set new url to button,
+            $(this).attr('href', href)
+        });
+
     });
 
 

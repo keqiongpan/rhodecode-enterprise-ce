@@ -703,6 +703,8 @@ class PullRequestModel(BaseModel):
             trigger_hook = hooks_utils.trigger_update_pull_request_hook
         elif action == 'comment':
             trigger_hook = hooks_utils.trigger_comment_pull_request_hook
+        elif action == 'comment_edit':
+            trigger_hook = hooks_utils.trigger_comment_pull_request_edit_hook
         else:
             return
 
@@ -1342,12 +1344,11 @@ class PullRequestModel(BaseModel):
             'pull_request_source_repo_url': pr_source_repo_url,
 
             'pull_request_url': pr_url,
+            'thread_ids': [pr_url],
         }
 
         # pre-generate the subject for notification itself
-        (subject,
-         _h, _e,  # we don't care about those
-         body_plaintext) = EmailNotificationModel().render_email(
+        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
             notification_type, **kwargs)
 
         # create notification objects, and emails
@@ -1412,11 +1413,10 @@ class PullRequestModel(BaseModel):
             'added_files': file_changes.added,
             'modified_files': file_changes.modified,
             'removed_files': file_changes.removed,
+            'thread_ids': [pr_url],
         }
 
-        (subject,
-         _h, _e,  # we don't care about those
-         body_plaintext) = EmailNotificationModel().render_email(
+        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
             EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **email_kwargs)
 
         # create notification objects, and emails
@@ -2053,9 +2053,9 @@ class MergeCheck(object):
             repo_type = pull_request.target_repo.repo_type
             close_msg = ''
             if repo_type == 'hg':
-                close_msg = _('Source branch will be closed after merge.')
+                close_msg = _('Source branch will be closed before the merge.')
             elif repo_type == 'git':
-                close_msg = _('Source branch will be deleted after merge.')
+                close_msg = _('Source branch will be deleted after the merge.')
 
             merge_details['close_branch'] = dict(
                 details={},

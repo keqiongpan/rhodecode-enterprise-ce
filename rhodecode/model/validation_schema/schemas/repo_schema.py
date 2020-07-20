@@ -141,17 +141,23 @@ def deferred_can_write_to_group_validator(node, kw):
 
         is_root_location = value is types.RootLocation
         # NOT initialized validators, we must call them
-        can_create_repos_at_root = HasPermissionAny(
-            'hg.admin', 'hg.create.repository')
+        can_create_repos_at_root = HasPermissionAny('hg.admin', 'hg.create.repository')
 
         # if values is root location, we simply need to check if we can write
         # to root location !
         if is_root_location:
+
             if can_create_repos_at_root(user=request_user):
                 # we can create repo group inside tool-level. No more checks
                 # are required
                 return
             else:
+                old_name = old_values.get('repo_name')
+                if old_name and old_name == old_values.get('submitted_repo_name'):
+                    # since we didn't change the name, we can skip validation and
+                    # allow current users without store-in-root permissions to update
+                    return
+
                 # "fake" node name as repo_name, otherwise we oddly report
                 # the error as if it was coming form repo_group
                 # however repo_group is empty when using root location.
@@ -372,6 +378,9 @@ class RepoSchema(colander.MappingSchema):
         validated_name = appstruct['repo_name']
 
         # second pass to validate permissions to repo_group
+        if 'old_values' in self.bindings:
+            # save current repo name for name change checks
+            self.bindings['old_values']['submitted_repo_name'] = validated_name
         second = RepoGroupAccessSchema().bind(**self.bindings)
         appstruct_second = second.deserialize({'repo_group': validated_name})
         # save result
@@ -429,6 +438,9 @@ class RepoSettingsSchema(RepoSchema):
             validated_name = separator.join([group.group_name, validated_name])
 
         # second pass to validate permissions to repo_group
+        if 'old_values' in self.bindings:
+            # save current repo name for name change checks
+            self.bindings['old_values']['submitted_repo_name'] = validated_name
         second = RepoGroupAccessSchema().bind(**self.bindings)
         appstruct_second = second.deserialize({'repo_group': validated_name})
         # save result

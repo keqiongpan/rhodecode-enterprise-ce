@@ -48,6 +48,7 @@ from .utils import (
 
 
 FILE_TREE_CACHE_VER = 'v4'
+LICENSE_CACHE_VER = 'v2'
 
 
 def configure_dogpile_cache(settings):

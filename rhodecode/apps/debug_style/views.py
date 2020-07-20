@@ -376,8 +376,7 @@ users: description edit fixes
         }
 
         template_type = email_id.split('+')[0]
-        (c.subject, c.headers, c.email_body,
-         c.email_body_plaintext) = EmailNotificationModel().render_email(
+        (c.subject, c.email_body, c.email_body_plaintext) = EmailNotificationModel().render_email(
             template_type, **email_kwargs.get(email_id, {}))
 
         test_email = self.request.GET.get('email')

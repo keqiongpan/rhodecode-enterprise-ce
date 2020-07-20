@@ -302,7 +302,7 @@ class TestGistsController(TestController):
         assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
-            '<a href="/_profiles/test_admin">test_admin</a></span>')
+            '<a href="/_profiles/test_admin">test_admin</a>')
 
         response.mustcontain('gist-desc')
 
@@ -328,7 +328,7 @@ class TestGistsController(TestController):
         assert_response = response.assert_response()
         assert_response.element_equals_to(
             'div.rc-user span.user',
-            '<a href="/_profiles/test_admin">test_admin</a></span>')
+            '<a href="/_profiles/test_admin">test_admin</a>')
         response.mustcontain('gist-desc')
 
     def test_show_as_raw(self, create_gist):

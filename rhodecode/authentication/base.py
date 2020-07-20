@@ -743,7 +743,7 @@ def authenticate(username, password, environ=None, auth_type=None,
         log.debug('AUTH_CACHE_TTL for plugin `%s` active: %s (TTL: %s)',
                   plugin.get_id(), plugin_cache_active, cache_ttl)
 
-        user_id = user.user_id if user else None
+        user_id = user.user_id if user else 'no-user'
         # don't cache for empty users
         plugin_cache_active = plugin_cache_active and user_id
         cache_namespace_uid = 'cache_user_auth.{}'.format(user_id)

@@ -28,6 +28,7 @@ from rhodecode.events import (
     PullRequestCreateEvent,
     PullRequestUpdateEvent,
     PullRequestCommentEvent,
+    PullRequestCommentEditEvent,
     PullRequestReviewEvent,
     PullRequestMergeEvent,
     PullRequestCloseEvent,
@@ -72,6 +73,21 @@ def test_pullrequest_comment_events_serialized(pr_util, config_stub):
     event = PullRequestCommentEvent(pr, comment)
     data = event.as_dict()
     assert data['name'] == PullRequestCommentEvent.name
+    assert data['repo']['repo_name'] == pr.target_repo.repo_name
+    assert data['pullrequest']['pull_request_id'] == pr.pull_request_id
+    assert data['pullrequest']['url']
+    assert data['pullrequest']['permalink_url']
+    assert data['comment']['text'] == comment.text
+
+
+@pytest.mark.backends("git", "hg")
+def test_pullrequest_comment_edit_events_serialized(pr_util, config_stub):
+    pr = pr_util.create_pull_request()
+    comment = CommentsModel().get_comments(
+        pr.target_repo.repo_id, pull_request=pr)[0]
+    event = PullRequestCommentEditEvent(pr, comment)
+    data = event.as_dict()
+    assert data['name'] == PullRequestCommentEditEvent.name
     assert data['repo']['repo_name'] == pr.target_repo.repo_name
     assert data['pullrequest']['pull_request_id'] == pr.pull_request_id
     assert data['pullrequest']['url']

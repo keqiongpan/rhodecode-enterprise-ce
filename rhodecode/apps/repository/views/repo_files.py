@@ -125,7 +125,7 @@ class RepoFilesView(RepoAppView):
             self.db_repo_name, branch_name)
         if branch_perm and branch_perm not in ['branch.push', 'branch.push_force']:
             message = _('Branch `{}` changes forbidden by rule {}.').format(
-                h.escape(branch_name), rule)
+                h.escape(branch_name), h.escape(rule))
             h.flash(message, 'warning')
 
             if json_mode:

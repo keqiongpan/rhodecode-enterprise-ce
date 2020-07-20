@@ -433,7 +433,7 @@ def test_permission_calculator_admin_permissions(
 
     calculator = auth.PermissionCalculator(
         user.user_id, {}, False, False, True, 'higherwin')
-    permissions = calculator._calculate_admin_permissions()
+    permissions = calculator._calculate_super_admin_permissions()
 
     assert permissions['repositories_groups'][repo_group.group_name] == \
         'group.admin'

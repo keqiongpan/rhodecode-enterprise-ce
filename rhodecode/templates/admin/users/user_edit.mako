@@ -27,8 +27,8 @@
 <%def name="main()">
 <div class="box user_settings">
   % if not c.user.active:
-    <div class="alert alert-warning text-center">
-        <strong>${_('This user is set as disabled')}</strong>
+    <div class="alert alert-warning text-center" style="margin: 0 0 15px 0">
+        <strong>${_('This user is set as non-active and disabled.')}</strong>
     </div>
   % endif
 

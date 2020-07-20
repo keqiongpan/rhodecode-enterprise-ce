@@ -103,12 +103,7 @@ def display_user_sort(obj):
     if obj.username == User.DEFAULT_USER:
         return '#####'
     prefix = PERMISSION_TYPE_SORT.get(obj.permission.split('.')[-1], '')
-    extra_sort_num = '1'  # default
-
-    # NOTE(dan): inactive duplicates goes last
-    if getattr(obj, 'duplicate_perm', None):
-        extra_sort_num = '9'
-    return prefix + extra_sort_num + obj.username
+    return prefix + obj.username
 
 
 def display_user_group_sort(obj):
@@ -1133,16 +1128,14 @@ class UserApiKeys(Base, BaseModel):
 
     # ApiKey role
     ROLE_ALL = 'token_role_all'
+    ROLE_HTTP = 'token_role_http'
     ROLE_VCS = 'token_role_vcs'
     ROLE_API = 'token_role_api'
-    ROLE_HTTP = 'token_role_http'
     ROLE_FEED = 'token_role_feed'
     ROLE_ARTIFACT_DOWNLOAD = 'role_artifact_download'
-    # The last one is ignored in the list as we only
-    # use it for one action, and cannot be created by users
     ROLE_PASSWORD_RESET = 'token_password_reset'
 
-    ROLES = [ROLE_ALL, ROLE_VCS, ROLE_API, ROLE_HTTP, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
+    ROLES = [ROLE_ALL, ROLE_HTTP, ROLE_VCS, ROLE_API, ROLE_FEED, ROLE_ARTIFACT_DOWNLOAD]
 
     user_api_key_id = Column("user_api_key_id", Integer(), nullable=False, unique=True, default=None, primary_key=True)
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=True, unique=None, default=None)
@@ -1205,22 +1198,6 @@ class UserApiKeys(Base, BaseModel):
             cls.ROLE_API: _('api calls'),
             cls.ROLE_FEED: _('feed access'),
             cls.ROLE_ARTIFACT_DOWNLOAD: _('artifacts downloads'),
-        }.get(role, role)
-
-    @classmethod
-    def _get_role_description(cls, role):
-        return {
-            cls.ROLE_ALL: _('Token for all actions.'),
-            cls.ROLE_HTTP: _('Token to access RhodeCode pages via web interface without '
-                             'login using `api_access_controllers_whitelist` functionality.'),
-            cls.ROLE_VCS: _('Token to interact over git/hg/svn protocols. '
-                            'Requires auth_token authentication plugin to be active. <br/>'
-                            'Such Token should be used then instead of a password to '
-                            'interact with a repository, and additionally can be '
-                            'limited to single repository using repo scope.'),
-            cls.ROLE_API: _('Token limited to api calls.'),
-            cls.ROLE_FEED: _('Token to read RSS/ATOM feed.'),
-            cls.ROLE_ARTIFACT_DOWNLOAD: _('Token for artifacts downloads.'),
         }.get(role, role)
 
     @property
@@ -1781,21 +1758,13 @@ class Repository(Base, BaseModel):
 
     @hybrid_property
     def landing_rev(self):
-        # always should return [rev_type, rev], e.g ['branch', 'master']
+        # always should return [rev_type, rev]
         if self._landing_revision:
             _rev_info = self._landing_revision.split(':')
             if len(_rev_info) < 2:
                 _rev_info.insert(0, 'rev')
             return [_rev_info[0], _rev_info[1]]
         return [None, None]
-
-    @property
-    def landing_ref_type(self):
-        return self.landing_rev[0]
-
-    @property
-    def landing_ref_name(self):
-        return self.landing_rev[1]
 
     @landing_rev.setter
     def landing_rev(self, val):
@@ -3801,7 +3770,7 @@ class ChangesetComment(Base, BaseModel):
     def get_index_from_version(cls, pr_version, versions):
         num_versions = [x.pull_request_version_id for x in versions]
         try:
-            return num_versions.index(pr_version) + 1
+            return num_versions.index(pr_version) +1
         except (IndexError, ValueError):
             return
 
@@ -3829,11 +3798,6 @@ class ChangesetComment(Base, BaseModel):
         return self.pull_request_version_id < version
 
     @property
-    def commit_id(self):
-        """New style naming to stop using .revision"""
-        return self.revision
-
-    @property
     def resolved(self):
         return self.resolved_by[0] if self.resolved_by else None
 
@@ -3844,13 +3808,6 @@ class ChangesetComment(Base, BaseModel):
     @property
     def is_inline(self):
         return self.line_no and self.f_path
-
-    @property
-    def last_version(self):
-        version = 0
-        if self.history:
-            version = self.history[-1].version
-        return version
 
     def get_index_version(self, versions):
         return self.get_index_from_version(
@@ -3864,7 +3821,6 @@ class ChangesetComment(Base, BaseModel):
 
     def get_api_data(self):
         comment = self
-
         data = {
             'comment_id': comment.comment_id,
             'comment_type': comment.comment_type,
@@ -3877,7 +3833,6 @@ class ChangesetComment(Base, BaseModel):
             'comment_resolved_by': self.resolved,
             'comment_commit_id': comment.revision,
             'comment_pull_request_id': comment.pull_request_id,
-            'comment_last_version': self.last_version
         }
         return data
 
@@ -5030,9 +4985,7 @@ class RepoReviewRule(Base, BaseModel):
             else:
                 file_pattern = glob2re(self.file_pattern)
             file_regex = re.compile(file_pattern)
-            for file_data in files_changed:
-                filename = file_data.get('filename')
-
+            for filename in files_changed:
                 if file_regex.search(filename):
                     files_matches = True
                     break

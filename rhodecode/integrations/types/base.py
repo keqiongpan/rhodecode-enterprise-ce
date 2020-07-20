@@ -331,6 +331,26 @@ class WebhookDataHandler(CommitParsingDataHandler):
 
         return [(url, self.headers, data)]
 
+    def repo_commit_comment_edit_handler(self, event, data):
+        url = self.get_base_parsed_template(data)
+        log.debug('register %s call(%s) to url %s', self.name, event, url)
+        comment_vars = [
+            ('commit_comment_id', data['comment']['comment_id']),
+            ('commit_comment_text', data['comment']['comment_text']),
+            ('commit_comment_type', data['comment']['comment_type']),
+
+            ('commit_comment_f_path', data['comment']['comment_f_path']),
+            ('commit_comment_line_no', data['comment']['comment_line_no']),
+
+            ('commit_comment_commit_id', data['commit']['commit_id']),
+            ('commit_comment_commit_branch', data['commit']['commit_branch']),
+            ('commit_comment_commit_message', data['commit']['commit_message']),
+        ]
+        for k, v in comment_vars:
+            url = UrlTmpl(url).safe_substitute(**{k: v})
+
+        return [(url, self.headers, data)]
+
     def repo_create_event_handler(self, event, data):
         url = self.get_base_parsed_template(data)
         log.debug('register %s call(%s) to url %s', self.name, event, url)
@@ -360,6 +380,8 @@ class WebhookDataHandler(CommitParsingDataHandler):
             return self.repo_create_event_handler(event, data)
         elif isinstance(event, events.RepoCommitCommentEvent):
             return self.repo_commit_comment_handler(event, data)
+        elif isinstance(event, events.RepoCommitCommentEditEvent):
+            return self.repo_commit_comment_edit_handler(event, data)
         elif isinstance(event, events.PullRequestEvent):
             return self.pull_request_event_handler(event, data)
         else:

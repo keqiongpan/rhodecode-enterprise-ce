@@ -74,7 +74,7 @@ link_config = [
     },
     {
         "name": "rst_help",
-        "target": "http://docutils.sourceforge.net/docs/user/rst/quickref.html",
+        "target": "http://docutils.sourceforge.io/docs/user/rst/quickref.html",
         "external_target": "https://docutils.sourceforge.io/docs/user/rst/quickref.html",
     },
     {

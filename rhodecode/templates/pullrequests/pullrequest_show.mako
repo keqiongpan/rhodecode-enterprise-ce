@@ -471,13 +471,11 @@
                     </div>
                   </div>
                 </div>
-              % elif c.pr_merge_source_commit.changed:
+              % elif c.pr_merge_source_commit.changed and not c.pull_request.is_closed():
                 <div class="box">
                   <div class="alert alert-info">
                     <div>
-                       % if c.pr_merge_source_commit.changed:
                         <strong>${_('There are new changes for `{}:{}` in source repository, please consider updating this pull request.').format(c.pr_merge_source_commit.ref_spec.type, c.pr_merge_source_commit.ref_spec.name)}</strong>
-                       % endif
                     </div>
                   </div>
                 </div>
@@ -514,12 +512,12 @@
                                     ${_('Update commits')}
                                 </a>
 
-                                <a id="update_commits_switcher" class="tooltip btn btn-primary" style="margin-left: -1px" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more update options')}">
+                                <a id="update_commits_switcher" class="tooltip btn btn-primary btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more update options')}">
                                     <i class="icon-down"></i>
                                 </a>
 
-                                <div class="btn-action-switcher-container" id="update-commits-switcher">
-                                    <ul class="btn-action-switcher" role="menu">
+                                <div class="btn-action-switcher-container right-align" id="update-commits-switcher">
+                                    <ul class="btn-action-switcher" role="menu" style="min-width: 300px;">
                                         <li>
                                             <a href="#forceUpdate" onclick="updateController.forceUpdateCommits(this); return false">
                                                 ${_('Force update commits')}
@@ -626,11 +624,12 @@
 
                     <%
                         pr_menu_data = {
-                            'outdated_comm_count_ver': outdated_comm_count_ver
+                            'outdated_comm_count_ver': outdated_comm_count_ver,
+                            'pull_request': c.pull_request
                         }
                     %>
 
-                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on)}
+                    ${cbdiffs.render_diffset_menu(c.diffset, range_diff_on=c.range_diff_on, pull_request_menu=pr_menu_data)}
 
                     % if c.range_diff_on:
                         % for commit in c.commit_ranges:

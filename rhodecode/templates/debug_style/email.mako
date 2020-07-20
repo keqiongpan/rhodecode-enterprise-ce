@@ -8,11 +8,6 @@
 SUBJECT:
 <pre>${c.subject}</pre>
 
-HEADERS:
-<pre>
-${c.headers}
-</pre>
-
 PLAINTEXT:
 <pre>
 ${c.email_body_plaintext|n}

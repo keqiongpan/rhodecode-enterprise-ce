@@ -31,11 +31,15 @@ from rhodecode.api.utils import (
     validate_set_owner_permissions)
 from rhodecode.lib import audit_logger, rc_cache
 from rhodecode.lib import repo_maintenance
-from rhodecode.lib.auth import HasPermissionAnyApi, HasUserGroupPermissionAnyApi
+from rhodecode.lib.auth import (
+    HasPermissionAnyApi, HasUserGroupPermissionAnyApi,
+    HasRepoPermissionAnyApi)
 from rhodecode.lib.celerylib.utils import get_task_id
-from rhodecode.lib.utils2 import str2bool, time_to_datetime, safe_str, safe_int, safe_unicode
+from rhodecode.lib.utils2 import (
+    str2bool, time_to_datetime, safe_str, safe_int, safe_unicode)
 from rhodecode.lib.ext_json import json
-from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
+from rhodecode.lib.exceptions import (
+    StatusChangeOnClosedPullRequestError, CommentVersionMismatch)
 from rhodecode.lib.vcs import RepositoryError
 from rhodecode.lib.vcs.exceptions import NodeDoesNotExistError
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -44,6 +48,7 @@ from rhodecode.model.db import (
     Session, ChangesetStatus, RepositoryField, Repository, RepoGroup,
     ChangesetComment)
 from rhodecode.model.permission import PermissionModel
+from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
 from rhodecode.model.scm import ScmModel, RepoList
 from rhodecode.model.settings import SettingsModel, VcsSettingsModel
@@ -1719,7 +1724,8 @@ def get_repo_comments(request, apiuser, repoid,
                   "comment_resolved_by": null,
                   "comment_status": [],
                   "comment_text": "This file needs a header",
-                  "comment_type": "todo"
+                  "comment_type": "todo",
+                  "comment_last_version: 0
                 }
             ],
             "error" :  null
@@ -1750,6 +1756,157 @@ def get_repo_comments(request, apiuser, repoid,
         repo=repo, comment_type=comment_type, user=user, commit_id=commit_id)
     return comments
 
+
+@jsonrpc_method()
+def get_comment(request, apiuser, comment_id):
+    """
+    Get single comment from repository or pull_request
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param comment_id: comment id found in the URL of comment
+    :type comment_id: str or int
+
+    Example error output:
+
+    .. code-block:: bash
+
+        {
+            "id" : <id_given_in_input>,
+            "result" : {
+                  "comment_author": <USER_DETAILS>,
+                  "comment_created_on": "2017-02-01T14:38:16.309",
+                  "comment_f_path": "file.txt",
+                  "comment_id": 282,
+                  "comment_lineno": "n1",
+                  "comment_resolved_by": null,
+                  "comment_status": [],
+                  "comment_text": "This file needs a header",
+                  "comment_type": "todo",
+                  "comment_last_version: 0
+            },
+            "error" :  null
+        }
+
+    """
+
+    comment = ChangesetComment.get(comment_id)
+    if not comment:
+        raise JSONRPCError('comment `%s` does not exist' % (comment_id,))
+
+    perms = ('repository.read', 'repository.write', 'repository.admin')
+    has_comment_perm = HasRepoPermissionAnyApi(*perms)\
+        (user=apiuser, repo_name=comment.repo.repo_name)
+
+    if not has_comment_perm:
+        raise JSONRPCError('comment `%s` does not exist' % (comment_id,))
+
+    return comment
+
+
+@jsonrpc_method()
+def edit_comment(request, apiuser, message, comment_id, version,
+                 userid=Optional(OAttr('apiuser'))):
+    """
+    Edit comment on the pull request or commit,
+    specified by the `comment_id` and version. Initially version should be 0
+
+    :param apiuser: This is filled automatically from the |authtoken|.
+    :type apiuser: AuthUser
+    :param comment_id: Specify the comment_id for editing
+    :type comment_id: int
+    :param version: version of the comment that will be created, starts from 0
+    :type version: int
+    :param message: The text content of the comment.
+    :type message: str
+    :param userid: Comment on the pull request as this user
+    :type userid: Optional(str or int)
+
+    Example output:
+
+    .. code-block:: bash
+
+        id : <id_given_in_input>
+        result : {
+            "comment": "<comment data>",
+            "version": "<Integer>",
+        },
+        error :  null
+    """
+
+    auth_user = apiuser
+    comment = ChangesetComment.get(comment_id)
+    if not comment:
+        raise JSONRPCError('comment `%s` does not exist' % (comment_id,))
+
+    is_super_admin = has_superadmin_permission(apiuser)
+    is_repo_admin = HasRepoPermissionAnyApi('repository.admin')\
+        (user=apiuser, repo_name=comment.repo.repo_name)
+
+    if not isinstance(userid, Optional):
+        if is_super_admin or is_repo_admin:
+            apiuser = get_user_or_error(userid)
+            auth_user = apiuser.AuthUser()
+        else:
+            raise JSONRPCError('userid is not the same as your user')
+
+    comment_author = comment.author.user_id == auth_user.user_id
+    if not (comment.immutable is False and (is_super_admin or is_repo_admin) or comment_author):
+        raise JSONRPCError("you don't have access to edit this comment")
+
+    try:
+        comment_history = CommentsModel().edit(
+            comment_id=comment_id,
+            text=message,
+            auth_user=auth_user,
+            version=version,
+        )
+        Session().commit()
+    except CommentVersionMismatch:
+        raise JSONRPCError(
+            'comment ({}) version ({}) mismatch'.format(comment_id, version)
+        )
+    if not comment_history and not message:
+        raise JSONRPCError(
+            "comment ({}) can't be changed with empty string".format(comment_id)
+        )
+
+    if comment.pull_request:
+        pull_request = comment.pull_request
+        PullRequestModel().trigger_pull_request_hook(
+            pull_request, apiuser, 'comment_edit',
+            data={'comment': comment})
+    else:
+        db_repo = comment.repo
+        commit_id = comment.revision
+        commit = db_repo.get_commit(commit_id)
+        CommentsModel().trigger_commit_comment_hook(
+            db_repo, apiuser, 'edit',
+            data={'comment': comment, 'commit': commit})
+
+    data = {
+        'comment': comment,
+        'version': comment_history.version if comment_history else None,
+    }
+    return data
+
+
+# TODO(marcink): write this with all required logic for deleting a comments in PR or commits
+# @jsonrpc_method()
+# def delete_comment(request, apiuser, comment_id):
+#     auth_user = apiuser
+#
+#     comment = ChangesetComment.get(comment_id)
+#     if not comment:
+#         raise JSONRPCError('comment `%s` does not exist' % (comment_id,))
+#
+#     is_super_admin = has_superadmin_permission(apiuser)
+#     is_repo_admin = HasRepoPermissionAnyApi('repository.admin')\
+#         (user=apiuser, repo_name=comment.repo.repo_name)
+#
+#     comment_author = comment.author.user_id == auth_user.user_id
+#     if not (comment.immutable is False and (is_super_admin or is_repo_admin) or comment_author):
+#         raise JSONRPCError("you don't have access to edit this comment")
 
 @jsonrpc_method()
 def grant_user_permission(request, apiuser, repoid, userid, perm):

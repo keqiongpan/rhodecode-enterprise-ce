@@ -30,6 +30,7 @@ from rhodecode.model.db import (
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
+from rhodecode.model.comment import CommentsModel
 from rhodecode.tests import (
     assert_session_flash, TEST_USER_ADMIN_LOGIN, TEST_USER_REGULAR_LOGIN)
 
@@ -54,6 +55,7 @@ def route_path(name, params=None, **kwargs):
         'pullrequest_delete': '/{repo_name}/pull-request/{pull_request_id}/delete',
         'pullrequest_comment_create': '/{repo_name}/pull-request/{pull_request_id}/comment',
         'pullrequest_comment_delete': '/{repo_name}/pull-request/{pull_request_id}/comment/{comment_id}/delete',
+        'pullrequest_comment_edit': '/{repo_name}/pull-request/{pull_request_id}/comment/{comment_id}/edit',
     }[name].format(**kwargs)
 
     if params:
@@ -113,6 +115,223 @@ class TestPullrequestsView(object):
 
         if range_diff == "1":
             response.mustcontain('Turn off: Show the diff as commit range')
+
+    def test_show_versions_of_pr(self, backend, csrf_token):
+        commits = [
+            {'message': 'initial-commit',
+             'added': [FileNode('test-file.txt', 'LINE1\n')]},
+
+            {'message': 'commit-1',
+             'changed': [FileNode('test-file.txt', 'LINE1\nLINE2\n')]},
+            # Above is the initial version of PR that changes a single line
+
+            # from now on we'll add 3x commit adding a nother line on each step
+            {'message': 'commit-2',
+             'changed': [FileNode('test-file.txt', 'LINE1\nLINE2\nLINE3\n')]},
+
+            {'message': 'commit-3',
+             'changed': [FileNode('test-file.txt', 'LINE1\nLINE2\nLINE3\nLINE4\n')]},
+
+            {'message': 'commit-4',
+             'changed': [FileNode('test-file.txt', 'LINE1\nLINE2\nLINE3\nLINE4\nLINE5\n')]},
+        ]
+
+        commit_ids = backend.create_master_repo(commits)
+        target = backend.create_repo(heads=['initial-commit'])
+        source = backend.create_repo(heads=['commit-1'])
+        source_repo_name = source.repo_name
+        target_repo_name = target.repo_name
+
+        target_ref = 'branch:{branch}:{commit_id}'.format(
+            branch=backend.default_branch_name, commit_id=commit_ids['initial-commit'])
+        source_ref = 'branch:{branch}:{commit_id}'.format(
+             branch=backend.default_branch_name, commit_id=commit_ids['commit-1'])
+
+        response = self.app.post(
+            route_path('pullrequest_create', repo_name=source.repo_name),
+            [
+                ('source_repo', source.repo_name),
+                ('source_ref', source_ref),
+                ('target_repo', target.repo_name),
+                ('target_ref',  target_ref),
+                ('common_ancestor', commit_ids['initial-commit']),
+                ('pullrequest_title', 'Title'),
+                ('pullrequest_desc', 'Description'),
+                ('description_renderer', 'markdown'),
+                ('__start__', 'review_members:sequence'),
+                    ('__start__', 'reviewer:mapping'),
+                        ('user_id', '1'),
+                        ('__start__', 'reasons:sequence'),
+                            ('reason', 'Some reason'),
+                        ('__end__', 'reasons:sequence'),
+                        ('__start__', 'rules:sequence'),
+                        ('__end__', 'rules:sequence'),
+                        ('mandatory', 'False'),
+                    ('__end__', 'reviewer:mapping'),
+                ('__end__', 'review_members:sequence'),
+                ('__start__', 'revisions:sequence'),
+                    ('revisions', commit_ids['commit-1']),
+                ('__end__', 'revisions:sequence'),
+                ('user', ''),
+                ('csrf_token', csrf_token),
+            ],
+            status=302)
+
+        location = response.headers['Location']
+
+        pull_request_id = location.rsplit('/', 1)[1]
+        assert pull_request_id != 'new'
+        pull_request = PullRequest.get(int(pull_request_id))
+
+        pull_request_id = pull_request.pull_request_id
+
+        # Show initial version of PR
+        response = self.app.get(
+            route_path('pullrequest_show',
+                       repo_name=target_repo_name,
+                       pull_request_id=pull_request_id))
+
+        response.mustcontain('commit-1')
+        response.mustcontain(no=['commit-2'])
+        response.mustcontain(no=['commit-3'])
+        response.mustcontain(no=['commit-4'])
+
+        response.mustcontain('cb-addition"></span><span>LINE2</span>')
+        response.mustcontain(no=['LINE3'])
+        response.mustcontain(no=['LINE4'])
+        response.mustcontain(no=['LINE5'])
+
+        # update PR #1
+        source_repo = Repository.get_by_repo_name(source_repo_name)
+        backend.pull_heads(source_repo, heads=['commit-2'])
+        response = self.app.post(
+            route_path('pullrequest_update',
+                       repo_name=target_repo_name, pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token})
+
+        # update PR #2
+        source_repo = Repository.get_by_repo_name(source_repo_name)
+        backend.pull_heads(source_repo, heads=['commit-3'])
+        response = self.app.post(
+            route_path('pullrequest_update',
+                       repo_name=target_repo_name, pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token})
+
+        # update PR #3
+        source_repo = Repository.get_by_repo_name(source_repo_name)
+        backend.pull_heads(source_repo, heads=['commit-4'])
+        response = self.app.post(
+            route_path('pullrequest_update',
+                       repo_name=target_repo_name, pull_request_id=pull_request_id),
+            params={'update_commits': 'true', 'csrf_token': csrf_token})
+
+        # Show final version !
+        response = self.app.get(
+            route_path('pullrequest_show',
+                       repo_name=target_repo_name,
+                       pull_request_id=pull_request_id))
+
+        # 3 updates, and the latest == 4
+        response.mustcontain('4 versions available for this pull request')
+        response.mustcontain(no=['rhodecode diff rendering error'])
+
+        # initial show must have 3 commits, and 3 adds
+        response.mustcontain('commit-1')
+        response.mustcontain('commit-2')
+        response.mustcontain('commit-3')
+        response.mustcontain('commit-4')
+
+        response.mustcontain('cb-addition"></span><span>LINE2</span>')
+        response.mustcontain('cb-addition"></span><span>LINE3</span>')
+        response.mustcontain('cb-addition"></span><span>LINE4</span>')
+        response.mustcontain('cb-addition"></span><span>LINE5</span>')
+
+        # fetch versions
+        pr = PullRequest.get(pull_request_id)
+        versions = [x.pull_request_version_id for x in pr.versions.all()]
+        assert len(versions) == 3
+
+        # show v1,v2,v3,v4
+        def cb_line(text):
+            return 'cb-addition"></span><span>{}</span>'.format(text)
+
+        def cb_context(text):
+            return '<span class="cb-code"><span class="cb-action cb-context">' \
+                   '</span><span>{}</span></span>'.format(text)
+
+        commit_tests = {
+            # in response, not in response
+            1: (['commit-1'], ['commit-2', 'commit-3', 'commit-4']),
+            2: (['commit-1', 'commit-2'], ['commit-3', 'commit-4']),
+            3: (['commit-1', 'commit-2', 'commit-3'], ['commit-4']),
+            4: (['commit-1', 'commit-2', 'commit-3', 'commit-4'], []),
+        }
+        diff_tests = {
+            1: (['LINE2'], ['LINE3', 'LINE4', 'LINE5']),
+            2: (['LINE2', 'LINE3'], ['LINE4', 'LINE5']),
+            3: (['LINE2', 'LINE3', 'LINE4'], ['LINE5']),
+            4: (['LINE2', 'LINE3', 'LINE4', 'LINE5'], []),
+        }
+        for idx, ver in enumerate(versions, 1):
+
+            response = self.app.get(
+                route_path('pullrequest_show',
+                           repo_name=target_repo_name,
+                           pull_request_id=pull_request_id,
+                           params={'version': ver}))
+
+            response.mustcontain(no=['rhodecode diff rendering error'])
+            response.mustcontain('Showing changes at v{}'.format(idx))
+
+            yes, no = commit_tests[idx]
+            for y in yes:
+                response.mustcontain(y)
+            for n in no:
+                response.mustcontain(no=n)
+
+            yes, no = diff_tests[idx]
+            for y in yes:
+                response.mustcontain(cb_line(y))
+            for n in no:
+                response.mustcontain(no=n)
+
+        # show diff between versions
+        diff_compare_tests = {
+            1: (['LINE3'], ['LINE1', 'LINE2']),
+            2: (['LINE3', 'LINE4'], ['LINE1', 'LINE2']),
+            3: (['LINE3', 'LINE4', 'LINE5'], ['LINE1', 'LINE2']),
+        }
+        for idx, ver in enumerate(versions, 1):
+            adds, context = diff_compare_tests[idx]
+
+            to_ver = ver+1
+            if idx == 3:
+                to_ver = 'latest'
+
+            response = self.app.get(
+                route_path('pullrequest_show',
+                           repo_name=target_repo_name,
+                           pull_request_id=pull_request_id,
+                           params={'from_version': versions[0], 'version': to_ver}))
+
+            response.mustcontain(no=['rhodecode diff rendering error'])
+
+            for a in adds:
+                response.mustcontain(cb_line(a))
+            for c in context:
+                response.mustcontain(cb_context(c))
+
+        # test version v2 -> v3
+        response = self.app.get(
+            route_path('pullrequest_show',
+                       repo_name=target_repo_name,
+                       pull_request_id=pull_request_id,
+                       params={'from_version': versions[1], 'version': versions[2]}))
+
+        response.mustcontain(cb_context('LINE1'))
+        response.mustcontain(cb_context('LINE2'))
+        response.mustcontain(cb_context('LINE3'))
+        response.mustcontain(cb_line('LINE4'))
 
     def test_close_status_visibility(self, pr_util, user_util, csrf_token):
         # Logout
@@ -338,8 +557,8 @@ class TestPullrequestsView(object):
 
         response = self.app.post(
             route_path('pullrequest_comment_create',
-                repo_name=pull_request.target_repo.scm_instance().name,
-                pull_request_id=pull_request.pull_request_id),
+                       repo_name=pull_request.target_repo.scm_instance().name,
+                       pull_request_id=pull_request.pull_request_id),
             params={
                 'close_pull_request': 'true',
                 'csrf_token': csrf_token},
@@ -354,6 +573,222 @@ class TestPullrequestsView(object):
         status = ChangesetStatusModel().get_status(
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_REJECTED
+
+    def test_comment_and_close_pull_request_try_edit_comment(
+            self, pr_util, csrf_token, xhr_header
+    ):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request_id,
+            ),
+            params={
+                'close_pull_request': 'true',
+                'csrf_token': csrf_token,
+            },
+            extra_environ=xhr_header)
+
+        assert response.json
+
+        pull_request = PullRequest.get(pull_request_id)
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+        assert pull_request.is_closed()
+
+        # check only the latest status, not the review status
+        status = ChangesetStatusModel().get_status(
+            pull_request.source_repo, pull_request=pull_request)
+        assert status == ChangesetStatus.STATUS_REJECTED
+
+        comment_id = response.json.get('comment_id', None)
+        test_text = 'test'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+            },
+            status=403,
+        )
+        assert response.status_int == 403
+
+    def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+        test_text = 'test'
+        self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+
+        )
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+        assert test_text == text_form_db
+
+    def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+        test_text = 'init'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+            status=404,
+
+        )
+        assert response.status_int == 404
+
+    def test_comment_and_try_edit_already_edited(self, pr_util, csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request()
+        target_scm = pull_request.target_repo.scm_instance()
+        target_scm_name = target_scm.name
+
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_create',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id),
+            params={
+                'csrf_token': csrf_token,
+                'text': 'init',
+            },
+            extra_environ=xhr_header,
+        )
+        assert response.json
+        comment_id = response.json.get('comment_id', None)
+        assert comment_id
+
+        test_text = 'test'
+        self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text,
+                'version': '0',
+            },
+
+        )
+        test_text_v2 = 'test_v2'
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=target_scm_name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': test_text_v2,
+                'version': '0',
+            },
+            status=409,
+        )
+        assert response.status_int == 409
+
+        text_form_db = ChangesetComment.query().filter(
+            ChangesetComment.comment_id == comment_id).first().text
+
+        assert test_text == text_form_db
+        assert test_text_v2 != text_form_db
+
+    def test_comment_and_comment_edit_permissions_forbidden(
+            self, autologin_regular_user, user_regular, user_admin, pr_util,
+            csrf_token, xhr_header):
+        pull_request = pr_util.create_pull_request(
+            author=user_admin.username, enable_notifications=False)
+        comment = CommentsModel().create(
+            text='test',
+            repo=pull_request.target_repo.scm_instance().name,
+            user=user_admin,
+            pull_request=pull_request,
+        )
+        response = self.app.post(
+            route_path(
+                'pullrequest_comment_edit',
+                repo_name=pull_request.target_repo.scm_instance().name,
+                pull_request_id=pull_request.pull_request_id,
+                comment_id=comment.comment_id,
+            ),
+            extra_environ=xhr_header,
+            params={
+                'csrf_token': csrf_token,
+                'text': 'test_text',
+            },
+            status=403,
+        )
+        assert response.status_int == 403
 
     def test_create_pull_request(self, backend, csrf_token):
         commits = [

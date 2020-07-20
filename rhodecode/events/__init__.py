@@ -53,7 +53,8 @@ from rhodecode.events.user import (  # pragma: no cover
 )
 
 from rhodecode.events.repo import (  # pragma: no cover
-    RepoEvent, RepoCommitCommentEvent,
+    RepoEvent,
+    RepoCommitCommentEvent, RepoCommitCommentEditEvent,
     RepoPreCreateEvent, RepoCreateEvent,
     RepoPreDeleteEvent, RepoDeleteEvent,
     RepoPrePushEvent,   RepoPushEvent,
@@ -72,8 +73,8 @@ from rhodecode.events.pullrequest import (  # pragma: no cover
     PullRequestCreateEvent,
     PullRequestUpdateEvent,
     PullRequestCommentEvent,
+    PullRequestCommentEditEvent,
     PullRequestReviewEvent,
     PullRequestMergeEvent,
     PullRequestCloseEvent,
-    PullRequestCommentEvent,
 )

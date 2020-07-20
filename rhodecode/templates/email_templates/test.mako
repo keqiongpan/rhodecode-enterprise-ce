@@ -5,10 +5,6 @@
 Test "Subject" ${_('hello "world"')|n}
 </%def>
 
-<%def name="headers()" filter="n,trim">
-X=Y
-</%def>
-
 ## plain text version of the email. Empty by default
 <%def name="body_plaintext()" filter="n,trim">
 Email Plaintext Body

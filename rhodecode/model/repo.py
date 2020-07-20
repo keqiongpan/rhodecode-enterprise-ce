@@ -33,7 +33,7 @@ from rhodecode import events
 from rhodecode.lib.auth import HasUserGroupPermissionAny
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.exceptions import AttachedForksError, AttachedPullRequestsError
-from rhodecode.lib.hooks_base import log_delete_repository
+from rhodecode.lib import hooks_base
 from rhodecode.lib.user_log_filter import user_log_filter
 from rhodecode.lib.utils import make_db_config
 from rhodecode.lib.utils2 import (
@@ -767,7 +767,7 @@ class RepoModel(BaseModel):
                     'deleted_by': cur_user,
                     'deleted_on': time.time(),
                 })
-                log_delete_repository(**old_repo_dict)
+                hooks_base.delete_repository(**old_repo_dict)
                 events.trigger(events.RepoDeleteEvent(repo))
             except Exception:
                 log.error(traceback.format_exc())

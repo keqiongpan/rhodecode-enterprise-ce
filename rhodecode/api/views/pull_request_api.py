@@ -21,7 +21,6 @@
 
 import logging
 
-from rhodecode import events
 from rhodecode.api import jsonrpc_method, JSONRPCError, JSONRPCValidationError
 from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
@@ -36,8 +35,7 @@ from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment, PullR
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.validation_schema import Invalid
-from rhodecode.model.validation_schema.schemas.reviewer_schema import(
-    ReviewerListSchema)
+from rhodecode.model.validation_schema.schemas.reviewer_schema import ReviewerListSchema
 
 log = logging.getLogger(__name__)
 
@@ -292,10 +290,11 @@ def merge_pull_request(
     else:
         repo = pull_request.target_repo
     auth_user = apiuser
+
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+            user=apiuser, repo_name=repo.repo_name)
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
         else:
@@ -379,6 +378,7 @@ def get_pull_request_comments(
               },
               "comment_text": "Example text",
               "comment_type": null,
+              "comment_last_version: 0,
               "pull_request_version": null,
               "comment_commit_id": None,
               "comment_pull_request_id": <pull_request_id>
@@ -510,9 +510,9 @@ def comment_pull_request(
 
     auth_user = apiuser
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+            user=apiuser, repo_name=repo.repo_name)
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
         else:
@@ -979,10 +979,10 @@ def close_pull_request(
     else:
         repo = pull_request.target_repo
 
+    is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
+                    user=apiuser, repo_name=repo.repo_name)
     if not isinstance(userid, Optional):
-        if (has_superadmin_permission(apiuser) or
-                HasRepoPermissionAnyApi('repository.admin')(
-                    user=apiuser, repo_name=repo.repo_name)):
+        if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
         else:
             raise JSONRPCError('userid is not the same as your user')

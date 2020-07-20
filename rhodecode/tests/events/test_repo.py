@@ -29,7 +29,8 @@ from rhodecode.events.repo import (
     RepoPrePullEvent, RepoPullEvent,
     RepoPrePushEvent, RepoPushEvent,
     RepoPreCreateEvent, RepoCreateEvent,
-    RepoPreDeleteEvent, RepoDeleteEvent, RepoCommitCommentEvent,
+    RepoPreDeleteEvent, RepoDeleteEvent,
+    RepoCommitCommentEvent, RepoCommitCommentEditEvent
 )
 
 
@@ -138,6 +139,30 @@ def test_repo_commit_event(config_stub, repo_stub, EventClass):
         'comment_type': 'comment_type',
         'f_path': 'f_path',
         'line_no': 'line_no',
+        'last_version': 0,
+    })
+    event = EventClass(repo=repo_stub, commit=commit, comment=comment)
+    data = event.as_dict()
+    assert data['commit']['commit_id']
+    assert data['comment']['comment_id']
+
+
+@pytest.mark.parametrize('EventClass', [RepoCommitCommentEditEvent])
+def test_repo_commit_edit_event(config_stub, repo_stub, EventClass):
+
+    commit = StrictAttributeDict({
+        'raw_id': 'raw_id',
+        'message': 'message',
+        'branch': 'branch',
+    })
+
+    comment = StrictAttributeDict({
+        'comment_id': 'comment_id',
+        'text': 'text',
+        'comment_type': 'comment_type',
+        'f_path': 'f_path',
+        'line_no': 'line_no',
+        'last_version': 0,
     })
     event = EventClass(repo=repo_stub, commit=commit, comment=comment)
     data = event.as_dict()

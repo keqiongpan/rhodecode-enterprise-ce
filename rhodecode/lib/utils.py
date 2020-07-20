@@ -30,6 +30,7 @@ import os
 import re
 import sys
 import shutil
+import socket
 import tempfile
 import traceback
 import tarfile
@@ -782,3 +783,18 @@ def generate_platform_uuid():
     except Exception as e:
         log.error('Failed to generate host uuid: %s', e)
         return 'UNDEFINED'
+
+
+def send_test_email(recipients, email_body='TEST EMAIL'):
+    """
+    Simple code for generating test emails.
+    Usage::
+
+        from rhodecode.lib import utils
+        utils.send_test_email()
+    """
+    from rhodecode.lib.celerylib import tasks, run_task
+
+    email_body = email_body_plaintext = email_body
+    subject = 'SUBJECT FROM: {}'.format(socket.gethostname())
+    tasks.send_email(recipients, subject, email_body_plaintext, email_body)

@@ -998,6 +998,21 @@ input.filediff-collapse-state {
 
     /**** END COMMENTS ****/
 
+
+    .nav-chunk {
+        position: absolute;
+        right: 20px;
+        margin-top: -17px;
+    }
+
+    .nav-chunk.selected {
+        visibility: visible !important;
+    }
+
+    #diff_nav {
+        color: @grey3;
+    }
+
 }
 
 
@@ -1061,6 +1076,10 @@ input.filediff-collapse-state {
         }
         &[op="removed"] { /* deleted file */
             background: @color5;
+            color: white;
+        }
+        &[op="comments"] { /* comments on file */
+            background: @grey4;
             color: white;
         }
     }

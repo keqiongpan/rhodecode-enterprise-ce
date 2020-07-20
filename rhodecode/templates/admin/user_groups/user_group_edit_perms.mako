@@ -74,10 +74,15 @@
                                         <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
                                     % endif
                                 % else:
-                                    ${h.link_to_user(_user.username)}
-                                    %if getattr(_user, 'duplicate_perm', None):
-                                        (${_('inactive duplicate')})
-                                    %endif
+                                    % if getattr(_user, 'duplicate_perm', None):
+                                        <span class="user-perm-duplicate">
+                                            ${h.link_to_user(_user.username)}
+                                            <span class="tooltip" title="${_('This entry is a duplicate, most probably left-over from previously set permission. This user has a higher permission set, so this entry is inactive. Please revoke this permission manually.')}">(${_('inactive duplicate')})
+                                            </span>
+                                        </span>
+                                    % else:
+                                        ${h.link_to_user(_user.username)}
+                                    % endif
                                 % endif
                             </span>
                         </td>
@@ -122,10 +127,15 @@
                                         <span class="user-perm-help-text"> - ${_('permission for other logged in users')}</span>
                                     % endif
                                 % else:
-                                    ${h.link_to_user(_user.username)}
-                                    %if getattr(_user, 'duplicate_perm', None):
-                                        (${_('inactive duplicate')})
-                                    %endif
+                                    % if getattr(_user, 'duplicate_perm', None):
+                                        <span class="user-perm-duplicate">
+                                            ${h.link_to_user(_user.username)}
+                                            <span class="tooltip" title="${_('This entry is a duplicate, most probably left-over from previously set permission. This user has a higher permission set, so this entry is inactive. Please revoke this permission manually.')}">(${_('inactive duplicate')})
+                                            </span>
+                                        </span>
+                                    % else:
+                                        ${h.link_to_user(_user.username)}
+                                    % endif
                                 % endif
                                 <span class="user-perm-help-text">(${_('delegated admin')})</span>
                             </span>

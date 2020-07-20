@@ -68,9 +68,6 @@ text_monospace = "'Menlo', 'Liberation Mono', 'Consolas', 'DejaVu Sans Mono', 'U
 
 %>
 
-## headers we additionally can set for email
-<%def name="headers()" filter="n,trim"></%def>
-
 <%def name="plaintext_footer()" filter="trim">
 ${_('This is a notification from RhodeCode.')} ${instance_url}
 </%def>

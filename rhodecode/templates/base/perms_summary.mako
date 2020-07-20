@@ -2,14 +2,15 @@
 ## usage:
 ##    <%namespace name="p" file="/base/perms_summary.mako"/>
 ##    ${p.perms_summary(c.perm_user.permissions)}
+<%namespace name="base" file="/base/base.mako"/>
 
 <%def name="perms_summary(permissions, show_all=False, actions=True, side_link=None)">
 <% section_to_label = {
-    'global': 'Global Permissions',
-    'repository_branches': 'Repository Branch Rules',
-    'repositories': 'Repository Access Permissions',
-    'user_groups': 'User Group Permissions',
-    'repositories_groups': 'Repository Group Permissions',
+    'global': 'Global Permissions Summary',
+    'repository_branches': 'Repository Branch Rules Summary',
+    'repositories': 'Repository Access Permissions Summary',
+    'user_groups': 'User Group Permissions Summary',
+    'repositories_groups': 'Repository Group Permissions Summary',
 } %>
 
 <div id="perms" class="table fields">
@@ -18,7 +19,11 @@
 
   <div class="panel panel-default">
     <div class="panel-heading" id="${section.replace("_","-")}-permissions">
-        <h3 class="panel-title">${section_to_label.get(section, section)} - <span id="total_count_${section}"></span>
+        <h3 class="panel-title">
+            % if hasattr(c, 'user'):
+            ${base.gravatar_with_user(c.user.username, 16, tooltip=False, _class='pull-left')} &nbsp;-
+            % endif
+            ${section_to_label.get(section, section)} - <span id="total_count_${section}"></span>
         <a class="permalink" href="#${section.replace("_","-")}-permissions"> ¶</a>
         </h3>
         % if side_link:

@@ -560,6 +560,7 @@ class Backend(object):
 
     invalid_repo_name = re.compile(r'[^0-9a-zA-Z]+')
     _master_repo = None
+    _master_repo_path = ''
     _commit_ids = {}
 
     def __init__(self, alias, repo_name, test_name, test_repo_container):
@@ -624,6 +625,8 @@ class Backend(object):
         Returns a commit map which maps from commit message to raw_id.
         """
         self._master_repo = self.create_repo(commits=commits)
+        self._master_repo_path = self._master_repo.repo_full_path
+
         return self._commit_ids
 
     def create_repo(
@@ -661,11 +664,10 @@ class Backend(object):
         """
         Make sure that repo contains all commits mentioned in `heads`
         """
-        vcsmaster = self._master_repo.scm_instance()
         vcsrepo = repo.scm_instance()
         vcsrepo.config.clear_section('hooks')
         commit_ids = [self._commit_ids[h] for h in heads]
-        vcsrepo.pull(vcsmaster.path, commit_ids=commit_ids)
+        vcsrepo.pull(self._master_repo_path, commit_ids=commit_ids)
 
     def create_fork(self):
         repo_to_fork = self.repo_name

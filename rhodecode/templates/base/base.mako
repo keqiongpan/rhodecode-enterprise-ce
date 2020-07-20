@@ -1,11 +1,7 @@
 ## -*- coding: utf-8 -*-
 
 <%!
-    ## base64 filter e.g ${ example | base64 }
-    def base64(text):
-        import base64
-        from rhodecode.lib.helpers import safe_str
-        return base64.encodestring(safe_str(text))
+    from rhodecode.lib import html_filters
 %>
 
 <%inherit file="root.mako"/>
@@ -247,7 +243,9 @@
 
   <div class="${_class}">
     ${self.gravatar(email, size, tooltip=tooltip, tooltip_alt=contact, user=rc_user)}
-    <span class="${('user user-disabled' if show_disabled else 'user')}"> ${h.link_to_user(rc_user or contact)}</span>
+    <span class="${('user user-disabled' if show_disabled else 'user')}">
+        ${h.link_to_user(rc_user or contact)}
+    </span>
   </div>
 </%def>
 
@@ -396,7 +394,7 @@
             </a>
         </li>
 
-        %if h.HasRepoPermissionAll('repository.admin')(c.repo_name):
+        %if not c.rhodecode_db_repo.archived and h.HasRepoPermissionAll('repository.admin')(c.repo_name):
             <li class="${h.is_active('settings', active)}"><a class="menulink" href="${h.route_path('edit_repo',repo_name=c.repo_name)}"><div class="menulabel">${_('Repository Settings')}</div></a></li>
         %endif
 
@@ -510,7 +508,7 @@
     ## create action
     <li>
        <a href="#create-actions" onclick="return false;" class="menulink childs">
-        <i class="tooltip icon-plus-circled" title="${_('Create')}"></i>
+        <i class="icon-plus-circled"></i>
        </a>
 
        <div class="action-menu submenu">
@@ -1132,6 +1130,19 @@
             };
             ajaxPOST(url, postData, success, failure);
         }
+
+        var hideLicenseWarning = function () {
+            var fingerprint = templateContext.session_attrs.license_fingerprint;
+            storeUserSessionAttr('rc_user_session_attr.hide_license_warning', fingerprint);
+            $('#notifications').hide();
+        }
+
+        var hideLicenseError = function () {
+            var fingerprint = templateContext.session_attrs.license_fingerprint;
+            storeUserSessionAttr('rc_user_session_attr.hide_license_error', fingerprint);
+            $('#notifications').hide();
+        }
+
     </script>
     <script src="${h.asset('js/rhodecode/base/keyboard-bindings.js', ver=c.rhodecode_version_hash)}"></script>
 </%def>

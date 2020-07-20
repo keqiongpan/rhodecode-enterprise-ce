@@ -75,7 +75,7 @@ Below config if for an Apache Reverse Proxy configuration.
         # Url to running RhodeCode instance. This is shown as `- URL:` when
         # running rccontrol status.
 
-        ProxyPass / http://127.0.0.1:10002/ timeout=7200 Keepalive=On
+        ProxyPass / http://127.0.0.1:10002/ connectiontimeout=7200 timeout=7200 Keepalive=On
         ProxyPassReverse / http://127.0.0.1:10002/
 
         # strict http prevents from https -> http downgrade

@@ -233,8 +233,8 @@ class TestCreateRepoGroup(object):
 
         expected = {
             'repo_group':
-                'Parent repository group `{}` does not exist'.format(
-                    repo_group_name)}
+                u"You do not have the permissions to store "
+                u"repository groups inside repository group `{}`".format(repo_group_name)}
         try:
             assert_error(id_, expected, given=response.body)
         finally:

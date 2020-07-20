@@ -17,14 +17,30 @@
             </div>
 
             % if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
-              <div>
-                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
-                    ${_('Upload File')}
-                </a>
-                <a class="btn btn-primary new-file" href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
-                    ${_('Add File')}
-                </a>
-              </div>
+
+            <div class="new-file">
+                <div class="btn-group btn-group-actions">
+                    <a class="btn btn-primary no-margin" href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
+                        ${_('Add File')}
+                    </a>
+
+                    <a class="tooltip btn btn-primary btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more options')}">
+                        <i class="icon-down"></i>
+                    </a>
+
+                    <div class="btn-action-switcher-container right-align">
+                        <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
+                            <li>
+                                <a class="action_button" href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
+                                    <i class="icon-upload"></i>
+                                    ${_('Upload File')}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             % endif
 
             % if c.enable_downloads:

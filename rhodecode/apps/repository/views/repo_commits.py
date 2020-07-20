@@ -20,9 +20,9 @@
 
 
 import logging
-import collections
 
-from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound, HTTPForbidden
+from pyramid.httpexceptions import (
+    HTTPNotFound, HTTPBadRequest, HTTPFound, HTTPForbidden, HTTPConflict)
 from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -39,13 +39,14 @@ from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.diffs import (
     cache_diff, load_cached_diff, diff_cache_exist, get_diff_context,
     get_diff_whitespace_flag)
-from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
+from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError, CommentVersionMismatch
 import rhodecode.lib.helpers as h
 from rhodecode.lib.utils2 import safe_unicode, str2bool
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError)
-from rhodecode.model.db import ChangesetComment, ChangesetStatus, FileStore
+from rhodecode.model.db import ChangesetComment, ChangesetStatus, FileStore, \
+    ChangesetCommentHistory
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.meta import Session
@@ -431,6 +432,34 @@ class RepoCommitsView(RepoAppView):
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
     @view_config(
+        route_name='repo_commit_comment_history_view', request_method='POST',
+        renderer='string', xhr=True)
+    def repo_commit_comment_history_view(self):
+        c = self.load_default_context()
+
+        comment_history_id = self.request.matchdict['comment_history_id']
+        comment_history = ChangesetCommentHistory.get_or_404(comment_history_id)
+        is_repo_comment = comment_history.comment.repo.repo_id == self.db_repo.repo_id
+
+        if is_repo_comment:
+            c.comment_history = comment_history
+
+            rendered_comment = render(
+                'rhodecode:templates/changeset/comment_history.mako',
+                self._get_template_context(c)
+                , self.request)
+            return rendered_comment
+        else:
+            log.warning('No permissions for user %s to show comment_history_id: %s',
+                        self._rhodecode_db_user, comment_history_id)
+            raise HTTPNotFound()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
         route_name='repo_commit_comment_attachment_upload', request_method='POST',
         renderer='json_ext', xhr=True)
     def repo_commit_comment_attachment_upload(self):
@@ -545,7 +574,7 @@ class RepoCommitsView(RepoAppView):
         is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
         super_admin = h.HasPermissionAny('hg.admin')()
         comment_owner = (comment.author.user_id == self._rhodecode_db_user.user_id)
-        is_repo_comment = comment.repo.repo_name == self.db_repo_name
+        is_repo_comment = comment.repo.repo_id == self.db_repo.repo_id
         comment_repo_admin = is_repo_admin and is_repo_comment
 
         if super_admin or comment_owner or comment_repo_admin:
@@ -554,6 +583,90 @@ class RepoCommitsView(RepoAppView):
             return True
         else:
             log.warning('No permissions for user %s to delete comment_id: %s',
+                        self._rhodecode_db_user, comment_id)
+            raise HTTPNotFound()
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @CSRFRequired()
+    @view_config(
+        route_name='repo_commit_comment_edit', request_method='POST',
+        renderer='json_ext')
+    def repo_commit_comment_edit(self):
+        self.load_default_context()
+
+        comment_id = self.request.matchdict['comment_id']
+        comment = ChangesetComment.get_or_404(comment_id)
+
+        if comment.immutable:
+            # don't allow deleting comments that are immutable
+            raise HTTPForbidden()
+
+        is_repo_admin = h.HasRepoPermissionAny('repository.admin')(self.db_repo_name)
+        super_admin = h.HasPermissionAny('hg.admin')()
+        comment_owner = (comment.author.user_id == self._rhodecode_db_user.user_id)
+        is_repo_comment = comment.repo.repo_id == self.db_repo.repo_id
+        comment_repo_admin = is_repo_admin and is_repo_comment
+
+        if super_admin or comment_owner or comment_repo_admin:
+            text = self.request.POST.get('text')
+            version = self.request.POST.get('version')
+            if text == comment.text:
+                log.warning(
+                    'Comment(repo): '
+                    'Trying to create new version '
+                    'with the same comment body {}'.format(
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+
+            if version.isdigit():
+                version = int(version)
+            else:
+                log.warning(
+                    'Comment(repo): Wrong version type {} {} '
+                    'for comment {}'.format(
+                        version,
+                        type(version),
+                        comment_id,
+                    )
+                )
+                raise HTTPNotFound()
+
+            try:
+                comment_history = CommentsModel().edit(
+                    comment_id=comment_id,
+                    text=text,
+                    auth_user=self._rhodecode_user,
+                    version=version,
+                )
+            except CommentVersionMismatch:
+                raise HTTPConflict()
+
+            if not comment_history:
+                raise HTTPNotFound()
+
+            commit_id = self.request.matchdict['commit_id']
+            commit = self.db_repo.get_commit(commit_id)
+            CommentsModel().trigger_commit_comment_hook(
+                self.db_repo, self._rhodecode_user, 'edit',
+                data={'comment': comment, 'commit': commit})
+
+            Session().commit()
+            return {
+                'comment_history_id': comment_history.comment_history_id,
+                'comment_id': comment.comment_id,
+                'comment_version': comment_history.version,
+                'comment_author_username': comment_history.author.username,
+                'comment_author_gravatar': h.gravatar_url(comment_history.author.email, 16),
+                'comment_created_on': h.age_component(comment_history.created_on,
+                                                      time_is_local=True),
+            }
+        else:
+            log.warning('No permissions for user %s to edit comment_id: %s',
                         self._rhodecode_db_user, comment_id)
             raise HTTPNotFound()
 

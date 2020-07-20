@@ -61,6 +61,8 @@ markdown_tags = [
     "img",
     "a",
     "input",
+    "details",
+    "summary"
 ]
 
 markdown_attrs = {
