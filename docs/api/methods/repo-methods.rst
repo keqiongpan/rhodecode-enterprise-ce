@@ -173,6 +173,37 @@ delete_repo
        error:  null
 
 
+edit_comment 
+------------
+
+.. py:function:: edit_comment(apiuser, message, comment_id, version, userid=<Optional:<OptionalAttr:apiuser>>)
+
+   Edit comment on the pull request or commit,
+   specified by the `comment_id` and version. Initially version should be 0
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param comment_id: Specify the comment_id for editing
+   :type comment_id: int
+   :param version: version of the comment that will be created, starts from 0
+   :type version: int
+   :param message: The text content of the comment.
+   :type message: str
+   :param userid: Comment on the pull request as this user
+   :type userid: Optional(str or int)
+
+   Example output:
+
+   .. code-block:: bash
+
+       id : <id_given_in_input>
+       result : {
+           "comment": "<comment data>",
+           "version": "<Integer>",
+       },
+       error :  null
+
+
 fork_repo 
 ---------
 
@@ -234,6 +265,40 @@ fork_repo
                  "task": "<celery task id or None if done sync>"
                }
        error:  null
+
+
+get_comment 
+-----------
+
+.. py:function:: get_comment(apiuser, comment_id)
+
+   Get single comment from repository or pull_request
+
+   :param apiuser: This is filled automatically from the |authtoken|.
+   :type apiuser: AuthUser
+   :param comment_id: comment id found in the URL of comment
+   :type comment_id: str or int
+
+   Example error output:
+
+   .. code-block:: bash
+
+       {
+           "id" : <id_given_in_input>,
+           "result" : {
+                 "comment_author": <USER_DETAILS>,
+                 "comment_created_on": "2017-02-01T14:38:16.309",
+                 "comment_f_path": "file.txt",
+                 "comment_id": 282,
+                 "comment_lineno": "n1",
+                 "comment_resolved_by": null,
+                 "comment_status": [],
+                 "comment_text": "This file needs a header",
+                 "comment_type": "todo",
+                 "comment_last_version: 0
+           },
+           "error" :  null
+       }
 
 
 get_repo 
@@ -436,7 +501,8 @@ get_repo_comments
                  "comment_resolved_by": null,
                  "comment_status": [],
                  "comment_text": "This file needs a header",
-                 "comment_type": "todo"
+                 "comment_type": "todo",
+                 "comment_last_version: 0
                }
            ],
            "error" :  null
