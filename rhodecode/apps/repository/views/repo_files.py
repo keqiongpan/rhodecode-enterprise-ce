@@ -211,7 +211,7 @@ class RepoFilesView(RepoAppView):
 
         return file_node
 
-    def _is_valid_head(self, commit_id, repo):
+    def _is_valid_head(self, commit_id, repo, landing_ref):
         branch_name = sha_commit_id = ''
         is_head = False
         log.debug('Checking if commit_id `%s` is a head for %s.', commit_id, repo)
@@ -237,7 +237,11 @@ class RepoFilesView(RepoAppView):
                 return branch_name, sha_commit_id, is_head
 
         # checked branches, means we only need to try to get the branch/commit_sha
-        if not repo.is_empty():
+        if repo.is_empty():
+            is_head = True
+            branch_name = landing_ref
+            sha_commit_id = EmptyCommit().raw_id
+        else:
             commit = repo.get_commit(commit_id=commit_id)
             if commit:
                 branch_name = commit.branch
@@ -696,8 +700,9 @@ class RepoFilesView(RepoAppView):
                         if not c.renderer:
                             c.lines = filenode_as_lines_tokens(c.file)
 
-                _branch_name, _sha_commit_id, is_head = self._is_valid_head(
-                    commit_id, self.rhodecode_vcs_repo)
+                _branch_name, _sha_commit_id, is_head = \
+                    self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                        landing_ref=self.db_repo.landing_ref_name)
                 c.on_branch_head = is_head
 
                 branch = c.commit.branch if (
@@ -1135,7 +1140,8 @@ class RepoFilesView(RepoAppView):
 
         commit_id, f_path = self._get_commit_and_path()
         _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                landing_ref=self.db_repo.landing_ref_name)
 
         new_path = self.request.POST.get('path')
         operation = self.request.POST.get('operation')
@@ -1173,7 +1179,8 @@ class RepoFilesView(RepoAppView):
 
         self._ensure_not_locked()
         _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path)
         self.check_branch_permission(_branch_name)
@@ -1201,7 +1208,8 @@ class RepoFilesView(RepoAppView):
 
         self._ensure_not_locked()
         _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path)
         self.check_branch_permission(_branch_name)
@@ -1251,7 +1259,8 @@ class RepoFilesView(RepoAppView):
 
         self._ensure_not_locked()
         _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path, commit_id=commit_id)
         self.check_branch_permission(_branch_name, commit_id=commit_id)
@@ -1292,7 +1301,8 @@ class RepoFilesView(RepoAppView):
                                          commit_id=c.commit.raw_id, f_path=f_path))
 
         _branch_name, _sha_commit_id, is_head = \
-            self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+            self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path, commit_id=commit_id)
         self.check_branch_permission(_branch_name, commit_id=commit_id)
@@ -1380,7 +1390,8 @@ class RepoFilesView(RepoAppView):
             _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
-                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                    landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path, commit_id=commit_id)
         self.check_branch_permission(_branch_name, commit_id=commit_id)
@@ -1421,7 +1432,8 @@ class RepoFilesView(RepoAppView):
             _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
-                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                    landing_ref=self.db_repo.landing_ref_name)
 
         self.forbid_non_head(is_head, f_path, commit_id=commit_id)
         self.check_branch_permission(_branch_name, commit_id=commit_id)
@@ -1517,7 +1529,8 @@ class RepoFilesView(RepoAppView):
             _branch_name, _sha_commit_id, is_head = c.commit.branch, '', True
         else:
             _branch_name, _sha_commit_id, is_head = \
-                self._is_valid_head(commit_id, self.rhodecode_vcs_repo)
+                self._is_valid_head(commit_id, self.rhodecode_vcs_repo,
+                                    landing_ref=self.db_repo.landing_ref_name)
 
         error = self.forbid_non_head(is_head, f_path, json_mode=True)
         if error:
