@@ -561,7 +561,7 @@ class PermissionModel(BaseModel):
         default_user_id = User.get_default_user_id()
         user_write_permissions = collections.OrderedDict()
 
-        # write+ and DEFAULT user for inheritance
+        # write or higher and DEFAULT user for inheritance
         for perm in db_repo.permissions():
             if perm.permission in write_plus or perm.user_id == default_user_id:
                 user_write_permissions[perm.user_id] = perm
@@ -571,7 +571,7 @@ class PermissionModel(BaseModel):
         write_plus = ['repository.write', 'repository.admin']
         user_group_write_permissions = collections.OrderedDict()
 
-        # write+ and DEFAULT user for inheritance
+        # write or higher and DEFAULT user for inheritance
         for p in db_repo.permission_user_groups():
             if p.permission in write_plus:
                 user_group_write_permissions[p.users_group_id] = p
