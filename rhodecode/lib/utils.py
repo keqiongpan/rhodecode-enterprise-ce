@@ -644,7 +644,7 @@ def load_rcextensions(root_path):
         rcextensions = None
 
     if rcextensions:
-        log.debug('Found rcextensions module loaded %s...', rcextensions)
+        log.info('Loaded rcextensions from %s...', rcextensions)
         rhodecode.EXTENSIONS = rcextensions
 
         # Additional mappings that are not present in the pygments lexers

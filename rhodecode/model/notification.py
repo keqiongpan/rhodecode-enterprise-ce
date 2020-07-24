@@ -384,7 +384,15 @@ class EmailNotificationModel(BaseModel):
         instance_url = h.route_url('home')
         _kwargs = {
             'instance_url': instance_url,
-            'whitespace_filter': self.whitespace_filter
+            'whitespace_filter': self.whitespace_filter,
+            'email_pr_update_subject_template': EMAIL_PR_UPDATE_SUBJECT_TEMPLATE,
+            'email_pr_review_subject_template': EMAIL_PR_REVIEW_SUBJECT_TEMPLATE,
+            'email_pr_comment_subject_template': EMAIL_PR_COMMENT_SUBJECT_TEMPLATE,
+            'email_pr_comment_status_change_subject_template': EMAIL_PR_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE,
+            'email_pr_comment_file_subject_template': EMAIL_PR_COMMENT_FILE_SUBJECT_TEMPLATE,
+            'email_comment_subject_template': EMAIL_COMMENT_SUBJECT_TEMPLATE,
+            'email_comment_status_change_subject_template': EMAIL_COMMENT_STATUS_CHANGE_SUBJECT_TEMPLATE,
+            'email_comment_file_subject_template': EMAIL_COMMENT_FILE_SUBJECT_TEMPLATE,
         }
         _kwargs.update(kwargs)
         return _kwargs
