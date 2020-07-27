@@ -83,7 +83,7 @@ class VcsServer(object):
         else:
             if permission in self.write_perms:
                 log.info(
-                    'WRITE+ Permissions for User "%s" detected to repo "%s"!',
+                    'WRITE, or Higher Permissions for User "%s" detected to repo "%s"!',
                     self.user, self.repo_name)
                 return 0
 

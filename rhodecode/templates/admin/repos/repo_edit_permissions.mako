@@ -106,9 +106,9 @@
 
                                     %if getattr(_user, 'branch_rules', None):
                                         % if used_by_n_rules == 1:
-                                            (${_('used by {} branch rule, requires write+ permissions').format(used_by_n_rules)})
+                                            (${_('used by {} branch rule, requires write or higher permissions').format(used_by_n_rules)})
                                         % else:
-                                            (${_('used by {} branch rules, requires write+ permissions').format(used_by_n_rules)})
+                                            (${_('used by {} branch rules, requires write or higher permissions').format(used_by_n_rules)})
                                         % endif
                                     %endif
                                 % endif

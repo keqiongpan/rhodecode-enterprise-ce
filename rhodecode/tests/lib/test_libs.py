@@ -38,36 +38,29 @@ from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.db import Repository, CacheKey
 
 
-def _urls_for_proto(proto):
-    return [
-        ('%s://127.0.0.1' % proto, ['%s://' % proto, '127.0.0.1'],
-         '%s://127.0.0.1' % proto),
-        ('%s://marcink@127.0.0.1' % proto, ['%s://' % proto, '127.0.0.1'],
-         '%s://127.0.0.1' % proto),
-        ('%s://marcink:pass@127.0.0.1' % proto, ['%s://' % proto, '127.0.0.1'],
-         '%s://127.0.0.1' % proto),
-        ('%s://127.0.0.1:8080' % proto, ['%s://' % proto, '127.0.0.1', '8080'],
-         '%s://127.0.0.1:8080' % proto),
-        ('%s://domain.org' % proto, ['%s://' % proto, 'domain.org'],
-         '%s://domain.org' % proto),
-        ('%s://user:pass@domain.org:8080' % proto,
-         ['%s://' % proto, 'domain.org', '8080'],
-         '%s://domain.org:8080' % proto),
+TEST_URLS = [
+        ('127.0.0.1', '127.0.0.1'),
+        ('marcink@127.0.0.1', '127.0.0.1'),
+        ('marcink:pass@127.0.0.1', '127.0.0.1'),
+        ('marcink@domain.name:pass@127.0.0.1', '127.0.0.1'),
+
+        ('127.0.0.1:8080', '127.0.0.1:8080'),
+        ('marcink@127.0.0.1:8080', '127.0.0.1:8080'),
+        ('marcink:pass@127.0.0.1:8080', '127.0.0.1:8080'),
+        ('marcink@domain.name:pass@127.0.0.1:8080', '127.0.0.1:8080'),
+
+        ('domain.org', 'domain.org'),
+        ('user:pass@domain.org:8080', 'domain.org:8080'),
+        ('user@domain.org:pass@domain.org:8080', 'domain.org:8080'),
     ]
 
-TEST_URLS = _urls_for_proto('http') + _urls_for_proto('https')
 
-
-@pytest.mark.parametrize("test_url, expected, expected_creds", TEST_URLS)
-def test_uri_filter(test_url, expected, expected_creds):
-    from rhodecode.lib.utils2 import uri_filter
-    assert uri_filter(test_url) == expected
-
-
-@pytest.mark.parametrize("test_url, expected, expected_creds", TEST_URLS)
-def test_credentials_filter(test_url, expected, expected_creds):
+@pytest.mark.parametrize("protocol", ['http://', 'https://'])
+@pytest.mark.parametrize("test_url, expected", TEST_URLS)
+def test_credentials_filter(protocol, test_url, expected):
     from rhodecode.lib.utils2 import credentials_filter
-    assert credentials_filter(test_url) == expected_creds
+    test_url = protocol + test_url
+    assert credentials_filter(test_url) == protocol + expected
 
 
 @pytest.mark.parametrize("str_bool, expected", [

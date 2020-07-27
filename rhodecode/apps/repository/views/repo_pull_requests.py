@@ -604,68 +604,74 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             if not force_recache and has_proper_diff_cache:
                 c.diffset = cached_diff['diff']
             else:
-                c.diffset = self._get_diffset(
-                    c.source_repo.repo_name, commits_source_repo,
-                    c.ancestor_commit,
-                    source_ref_id, target_ref_id,
-                    target_commit, source_commit,
-                    diff_limit, file_limit, c.fulldiff,
-                    hide_whitespace_changes, diff_context,
-                    use_ancestor=use_ancestor
-                )
-
-                # save cached diff
-                if caching_enabled:
-                    cache_diff(cache_file_path, c.diffset, diff_commit_cache)
-
-            c.limited_diff = c.diffset.limited_diff
-
-            # calculate removed files that are bound to comments
-            comment_deleted_files = [
-                fname for fname in display_inline_comments
-                if fname not in c.diffset.file_stats]
-
-            c.deleted_files_comments = collections.defaultdict(dict)
-            for fname, per_line_comments in display_inline_comments.items():
-                if fname in comment_deleted_files:
-                    c.deleted_files_comments[fname]['stats'] = 0
-                    c.deleted_files_comments[fname]['comments'] = list()
-                    for lno, comments in per_line_comments.items():
-                        c.deleted_files_comments[fname]['comments'].extend(comments)
-
-            # maybe calculate the range diff
-            if c.range_diff_on:
-                # TODO(marcink): set whitespace/context
-                context_lcl = 3
-                ign_whitespace_lcl = False
-
-                for commit in c.commit_ranges:
-                    commit2 = commit
-                    commit1 = commit.first_parent
-
-                    range_diff_cache_file_path = diff_cache_exist(
-                        cache_path, 'diff', commit.raw_id,
-                        ign_whitespace_lcl, context_lcl, c.fulldiff)
-
-                    cached_diff = None
-                    if caching_enabled:
-                        cached_diff = load_cached_diff(range_diff_cache_file_path)
-
-                    has_proper_diff_cache = cached_diff and cached_diff.get('diff')
-                    if not force_recache and has_proper_diff_cache:
-                        diffset = cached_diff['diff']
-                    else:
-                        diffset = self._get_range_diffset(
-                            commits_source_repo, source_repo,
-                            commit1, commit2, diff_limit, file_limit,
-                            c.fulldiff, ign_whitespace_lcl, context_lcl
-                        )
+                try:
+                    c.diffset = self._get_diffset(
+                        c.source_repo.repo_name, commits_source_repo,
+                        c.ancestor_commit,
+                        source_ref_id, target_ref_id,
+                        target_commit, source_commit,
+                        diff_limit, file_limit, c.fulldiff,
+                        hide_whitespace_changes, diff_context,
+                        use_ancestor=use_ancestor
+					)
 
                     # save cached diff
                     if caching_enabled:
-                        cache_diff(range_diff_cache_file_path, diffset, None)
+                        cache_diff(cache_file_path, c.diffset, diff_commit_cache)
+                except CommitDoesNotExistError:
+                    log.exception('Failed to generate diffset')
+                    c.missing_commits = True
 
-                    c.changes[commit.raw_id] = diffset
+            if not c.missing_commits:
+
+                c.limited_diff = c.diffset.limited_diff
+
+                # calculate removed files that are bound to comments
+                comment_deleted_files = [
+                    fname for fname in display_inline_comments
+                    if fname not in c.diffset.file_stats]
+
+                c.deleted_files_comments = collections.defaultdict(dict)
+                for fname, per_line_comments in display_inline_comments.items():
+                    if fname in comment_deleted_files:
+                        c.deleted_files_comments[fname]['stats'] = 0
+                        c.deleted_files_comments[fname]['comments'] = list()
+                        for lno, comments in per_line_comments.items():
+                            c.deleted_files_comments[fname]['comments'].extend(comments)
+
+                # maybe calculate the range diff
+                if c.range_diff_on:
+                    # TODO(marcink): set whitespace/context
+                    context_lcl = 3
+                    ign_whitespace_lcl = False
+
+                    for commit in c.commit_ranges:
+                        commit2 = commit
+                        commit1 = commit.first_parent
+
+                        range_diff_cache_file_path = diff_cache_exist(
+                            cache_path, 'diff', commit.raw_id,
+                            ign_whitespace_lcl, context_lcl, c.fulldiff)
+
+                        cached_diff = None
+                        if caching_enabled:
+                            cached_diff = load_cached_diff(range_diff_cache_file_path)
+
+                        has_proper_diff_cache = cached_diff and cached_diff.get('diff')
+                        if not force_recache and has_proper_diff_cache:
+                            diffset = cached_diff['diff']
+                        else:
+                            diffset = self._get_range_diffset(
+                                commits_source_repo, source_repo,
+                                commit1, commit2, diff_limit, file_limit,
+                                c.fulldiff, ign_whitespace_lcl, context_lcl
+                            )
+
+                        # save cached diff
+                        if caching_enabled:
+                            cache_diff(range_diff_cache_file_path, diffset, None)
+
+                        c.changes[commit.raw_id] = diffset
 
         # this is a hack to properly display links, when creating PR, the
         # compare view and others uses different notation, and

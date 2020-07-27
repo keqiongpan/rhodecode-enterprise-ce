@@ -54,7 +54,7 @@ class RepoSettingsPermissionsView(RepoAppView):
         c = self.load_default_context()
         c.active = 'permissions'
         if self.request.GET.get('branch_permissions'):
-            h.flash(_('Explicitly add user or user group with write+ '
+            h.flash(_('Explicitly add user or user group with write or higher '
                       'permission to modify their branch permissions.'),
                     category='notice')
         return self._get_template_context(c)
