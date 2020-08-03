@@ -4134,6 +4134,23 @@ class _PullRequestBase(BaseModel):
         return json.dumps(self.reviewer_data)
 
     @property
+    def last_merge_metadata_parsed(self):
+        metadata = {}
+        if not self.last_merge_metadata:
+            return metadata
+
+        if hasattr(self.last_merge_metadata, 'de_coerce'):
+            for k, v in self.last_merge_metadata.de_coerce().items():
+                if k in ['target_ref', 'source_ref']:
+                    metadata[k] = Reference(v['type'], v['name'], v['commit_id'])
+                else:
+                    if hasattr(v, 'de_coerce'):
+                        metadata[k] = v.de_coerce()
+                    else:
+                        metadata[k] = v
+        return metadata
+
+    @property
     def work_in_progress(self):
         """checks if pull request is work in progress by checking the title"""
         title = self.title.upper()
