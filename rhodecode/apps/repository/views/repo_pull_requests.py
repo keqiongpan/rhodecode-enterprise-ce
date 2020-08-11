@@ -351,6 +351,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
         if self.db_repo_name != pull_request_at_ver.target_repo.repo_name:
+            log.warning('Mismatch between the current repo: %s, and target %s',
+                        self.db_repo_name, pull_request_at_ver.target_repo.repo_name)
             raise HTTPNotFound()
 
         c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
