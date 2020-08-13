@@ -170,8 +170,7 @@ def validate_repo_permissions(apiuser, repoid, repo, perms):
     """
     if not HasRepoPermissionAnyApi(*perms)(
             user=apiuser, repo_name=repo.repo_name):
-        raise JSONRPCError(
-            'repository `%s` does not exist' % repoid)
+        raise JSONRPCError('repository `%s` does not exist' % repoid)
 
     return True
 
