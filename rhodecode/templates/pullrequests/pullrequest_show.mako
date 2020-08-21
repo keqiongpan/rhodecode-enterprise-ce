@@ -280,159 +280,14 @@
 
   </div>
 
-    ## REVIEW RULES
-    <div id="review_rules" style="display: none" class="reviewers-title block-right">
-        <div class="pr-details-title">
-            ${_('Reviewer rules')}
-          %if c.allowed_to_update:
-            <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
-          %endif
-        </div>
-        <div class="pr-reviewer-rules">
-            ## review rules will be appended here, by default reviewers logic
-        </div>
-        <input id="review_data" type="hidden" name="review_data" value="">
-    </div>
 
-    ## REVIEWERS
-    <div class="reviewers-title first-panel block-right">
-      <div class="pr-details-title">
-          ${_('Pull request reviewers')}
-          %if c.allowed_to_update:
-            <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
-          %endif
-      </div>
-    </div>
-    <div id="reviewers" class="block-right pr-details-content reviewers">
 
-        ## members redering block
-        <input type="hidden" name="__start__" value="review_members:sequence">
-        <ul id="review_members" class="group_members">
-
-        % for review_obj, member, reasons, mandatory, status in c.pull_request_reviewers:
-            <script>
-                var member = ${h.json.dumps(h.reviewer_as_json(member, reasons=reasons, mandatory=mandatory, user_group=review_obj.rule_user_group_data()))|n};
-                var status = "${(status[0][1].status if status else 'not_reviewed')}";
-                var status_lbl = "${h.commit_status_lbl(status[0][1].status if status else 'not_reviewed')}";
-                var allowed_to_update = ${h.json.dumps(c.allowed_to_update)};
-
-                var entry = renderTemplate('reviewMemberEntry', {
-                    'member': member,
-                    'mandatory': member.mandatory,
-                    'reasons': member.reasons,
-                    'allowed_to_update': allowed_to_update,
-                    'review_status': status,
-                    'review_status_label': status_lbl,
-                    'user_group': member.user_group,
-                    'create': false
-                });
-                $('#review_members').append(entry)
-            </script>
-
-        % endfor
-
-        </ul>
-
-        <input type="hidden" name="__end__" value="review_members:sequence">
-        ## end members redering block
-
-        %if not c.pull_request.is_closed():
-            <div id="add_reviewer" class="ac" style="display: none;">
-            %if c.allowed_to_update:
-                % if not c.forbid_adding_reviewers:
-                    <div id="add_reviewer_input" class="reviewer_ac">
-                       ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
-                       <div id="reviewers_container"></div>
-                    </div>
-                % endif
-                <div class="pull-right">
-                    <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
-                </div>
-            %endif
-            </div>
-        %endif
-    </div>
-
-    ## TODOs will be listed here
-    <div class="reviewers-title block-right">
-      <div class="pr-details-title">
-          ## Only show unresolved, that is only what matters
-          TODO Comments - ${len(c.unresolved_comments)} / ${(len(c.unresolved_comments) + len(c.resolved_comments))}
-
-          % if not c.at_version:
-              % if c.resolved_comments:
-                  <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.unresolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
-              % else:
-                  <span class="block-right last-item noselect">Show resolved</span>
-              % endif
-          % endif
-      </div>
-    </div>
-    <div class="block-right pr-details-content reviewers">
-
-        <table class="todo-table">
-              <%
-                def sorter(entry):
-                    user_id = entry.author.user_id
-                    resolved = '1' if entry.resolved else '0'
-                    if user_id == c.rhodecode_user.user_id:
-                        # own comments first
-                        user_id = 0
-                    return '{}_{}_{}'.format(resolved, user_id, str(entry.comment_id).zfill(100))
-              %>
-
-          % if c.at_version:
-              <tr>
-                <td class="unresolved-todo-text">${_('unresolved TODOs unavailable in this view')}.</td>
-              </tr>
-          % else:
-              % for todo_comment in sorted(c.unresolved_comments + c.resolved_comments, key=sorter):
-                  <% resolved = todo_comment.resolved %>
-                  % if inline:
-                      <% outdated_at_ver = todo_comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
-                  % else:
-                      <% outdated_at_ver = todo_comment.older_than_version(getattr(c, 'at_version_num', None)) %>
-                  % endif
-
-                  <tr ${('class="unresolved-todo" style="display: none"' if resolved else '') |n}>
-
-                      <td class="td-todo-number">
-                          % if resolved:
-                              <a class="permalink todo-resolved tooltip" title="${_('Resolved by comment #{}').format(todo_comment.resolved.comment_id)}" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                          % else:
-                              <a class="permalink" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                          % endif
-                      </td>
-                      <td class="td-todo-gravatar">
-                          ${base.gravatar(todo_comment.author.email, 16, user=todo_comment.author, tooltip=True, extra_class=['no-margin'])}
-                      </td>
-                      <td class="todo-comment-text-wrapper">
-                          <div class="todo-comment-text">
-                            <code>${h.chop_at_smart(todo_comment.text, '\n', suffix_if_chopped='...')}</code>
-                          </div>
-                      </td>
-
-                  </tr>
-              % endfor
-
-              % if len(c.unresolved_comments) == 0:
-                  <tr>
-                    <td class="unresolved-todo-text">${_('No unresolved TODOs')}.</td>
-                  </tr>
-              % endif
-
-          % endif
-
-        </table>
-
-    </div>
-  </div>
 
   </div>
 
-  <div class="box">
+</div>
+
+<div class="box">
 
   % if c.state_progressing:
 
@@ -616,9 +471,11 @@
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
                     % if c.at_version:
                         <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['display']) %>
+                        <% c.inline_comments_flat = c.inline_versions[c.at_version_num]['display'] %>
                         <% c.comments = c.comment_versions[c.at_version_num]['display'] %>
                     % else:
                         <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['until']) %>
+                        <% c.inline_comments_flat = c.inline_versions[c.at_version_num]['until'] %>
                         <% c.comments = c.comment_versions[c.at_version_num]['until'] %>
                     % endif
 
@@ -704,7 +561,7 @@
    % endif
   </div>
 
-  <script type="text/javascript">
+<script type="text/javascript">
 
       versionController = new VersionController();
       versionController.init();
@@ -916,6 +773,439 @@
 
   </script>
 
-</div>
 
+### NAVBOG RIGHT
+<style>
+
+    .right-sidebar {
+        position: fixed;
+        top: 0px;
+        bottom: 0;
+        right: 0;
+
+        background: #fafafa;
+        z-index: 200;
+    }
+
+    .right-sidebar {
+        border-left: 1px solid #dbdbdb;
+    }
+
+    .right-sidebar.right-sidebar-expanded {
+        width: 320px;
+        overflow: scroll;
+    }
+
+    .right-sidebar.right-sidebar-collapsed {
+        width: 62px;
+        padding: 0;
+        display: block;
+        overflow: hidden;
+    }
+
+    .sidenav {
+        float: right;
+        will-change: min-height;
+        background: #fafafa;
+        width: 100%;
+    }
+
+    .sidebar-toggle {
+        height: 30px;
+        text-align: center;
+        margin: 15px 0 0 0;
+    }
+    .sidebar-toggle a {
+
+    }
+
+    .sidebar-content {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+
+    .sidebar-heading {
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-top: 10px;
+    }
+
+    .sidebar-element {
+        margin-top: 20px;
+    }
+    .right-sidebar-collapsed-state {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 0 10px;
+        cursor: pointer;
+        font-size: 1.3em;
+        margin: 0 -10px;
+    }
+
+    .right-sidebar-collapsed-state:hover {
+        background-color: #dbd9da;
+    }
+
+    .navbar__inner {
+        height: 100%;
+        background: #fafafa;
+        position: relative;
+    }
+
+</style>
+
+
+
+<aside class="right-sidebar right-sidebar-expanded">
+    <div class="sidenav">
+        ## TOGGLE
+        <div class="sidebar-toggle" onclick="toggleSidebar(); return false">
+            <a href="#toggleSidebar">
+
+            </a>
+        </div>
+
+        ## CONTENT
+        <div class="sidebar-content">
+
+            ## RULES SUMMARY/RULES
+            <div class="sidebar-element clear-both">
+
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Reviewers')}">
+                    <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                    <br/>${len(c.pull_request_reviewers)}
+                </div>
+
+                ## REVIEW RULES
+                <div id="review_rules" style="display: none" class="">
+                    <div class="pr-details-title">
+                        <span class="sidebar-heading">
+                            ${_('Reviewer rules')}
+                        </span>
+
+                    </div>
+                    <div class="pr-reviewer-rules">
+                        ## review rules will be appended here, by default reviewers logic
+                    </div>
+                    <input id="review_data" type="hidden" name="review_data" value="">
+                </div>
+
+                ## REVIEWERS
+                <div class="right-sidebar-expanded-state pr-details-title">
+                    <span class="sidebar-heading">
+                        <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                        ${_('Reviewers')} - ${len(c.pull_request_reviewers)}
+                    </span>
+                      %if c.allowed_to_update:
+                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
+                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                      %endif
+                </div>
+                <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
+
+                    ## members redering block
+                    <input type="hidden" name="__start__" value="review_members:sequence">
+                    <ul id="review_members" class="group_members">
+
+                    % for review_obj, member, reasons, mandatory, status in c.pull_request_reviewers:
+                        <script>
+                            var member = ${h.json.dumps(h.reviewer_as_json(member, reasons=reasons, mandatory=mandatory, user_group=review_obj.rule_user_group_data()))|n};
+                            var status = "${(status[0][1].status if status else 'not_reviewed')}";
+                            var status_lbl = "${h.commit_status_lbl(status[0][1].status if status else 'not_reviewed')}";
+                            var allowed_to_update = ${h.json.dumps(c.allowed_to_update)};
+
+                            var entry = renderTemplate('reviewMemberEntry', {
+                                'member': member,
+                                'mandatory': member.mandatory,
+                                'reasons': member.reasons,
+                                'allowed_to_update': allowed_to_update,
+                                'review_status': status,
+                                'review_status_label': status_lbl,
+                                'user_group': member.user_group,
+                                'create': false
+                            });
+                            $('#review_members').append(entry)
+                        </script>
+
+                    % endfor
+
+                    </ul>
+
+                    <input type="hidden" name="__end__" value="review_members:sequence">
+                    ## end members redering block
+
+                    %if not c.pull_request.is_closed():
+                        <div id="add_reviewer" class="ac" style="display: none;">
+                        %if c.allowed_to_update:
+                            % if not c.forbid_adding_reviewers:
+                                <div id="add_reviewer_input" class="reviewer_ac">
+                                   ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                   <div id="reviewers_container"></div>
+                                </div>
+                            % endif
+                            <div class="pull-right">
+                                <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                            </div>
+                        %endif
+                        </div>
+                    %endif
+                </div>
+            </div>
+
+            ## OBSERVERS
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
+                    <i class="icon-eye"></i>
+                    <br/> 0
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading">
+                    <i class="icon-eye"></i>
+                    ${_('Observers')}
+                  </span>
+                </div>
+                <div class="right-sidebar-expanded-state pr-details-content">
+                    No observers - 0
+                </div>
+            </div>
+
+            ## TODOs
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="TODOs">
+                  <i class="icon-flag-filled"></i>
+                  <br/> ${len(c.unresolved_comments)}
+                </div>
+
+                ## TODOs will be listed here
+                <div class="right-sidebar-expanded-state pr-details-title">
+                      ## Only show unresolved, that is only what matters
+                      <span class="sidebar-heading">
+                      <i class="icon-flag-filled"></i>
+                      TODOs - ${len(c.unresolved_comments)}
+                      ##/ ${(len(c.unresolved_comments) + len(c.resolved_comments))}
+                      </span>
+
+                      % if not c.at_version:
+                          % if c.resolved_comments:
+                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.unresolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
+                          % else:
+                              <span class="block-right last-item noselect">Show resolved</span>
+                          % endif
+                      % endif
+                  </div>
+
+                <div class="right-sidebar-expanded-state pr-details-content">
+
+                    <table class="todo-table">
+                          <%
+                            def sorter(entry):
+                                user_id = entry.author.user_id
+                                resolved = '1' if entry.resolved else '0'
+                                if user_id == c.rhodecode_user.user_id:
+                                    # own comments first
+                                    user_id = 0
+                                return '{}_{}_{}'.format(resolved, user_id, str(entry.comment_id).zfill(100))
+                          %>
+
+                      % if c.at_version:
+                          <tr>
+                            <td class="unresolved-todo-text">${_('unresolved TODOs unavailable in this view')}.</td>
+                          </tr>
+                      % else:
+                          % for todo_comment in sorted(c.unresolved_comments + c.resolved_comments, key=sorter):
+                              <% resolved = todo_comment.resolved %>
+                              % if inline:
+                                  <% outdated_at_ver = todo_comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
+                              % else:
+                                  <% outdated_at_ver = todo_comment.older_than_version(getattr(c, 'at_version_num', None)) %>
+                              % endif
+
+                              <tr ${('class="unresolved-todo" style="display: none"' if resolved else '') |n}>
+
+                                  <td class="td-todo-number">
+                                      % if resolved:
+                                          <a class="permalink todo-resolved tooltip" title="${_('Resolved by comment #{}').format(todo_comment.resolved.comment_id)}" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
+                                          <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
+                                      % else:
+                                          <a class="permalink" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
+                                          <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
+                                      % endif
+                                  </td>
+                                  <td class="td-todo-gravatar">
+                                      ${base.gravatar(todo_comment.author.email, 16, user=todo_comment.author, tooltip=True, extra_class=['no-margin'])}
+                                  </td>
+                                  <td class="todo-comment-text-wrapper">
+                                      <div class="todo-comment-text">
+                                        <code>${h.chop_at_smart(todo_comment.text, '\n', suffix_if_chopped='...')}</code>
+                                      </div>
+                                  </td>
+
+                              </tr>
+                          % endfor
+
+                          % if len(c.unresolved_comments) == 0:
+                              <tr>
+                                <td class="unresolved-todo-text">${_('No unresolved TODOs')}.</td>
+                              </tr>
+                          % endif
+
+                      % endif
+
+                    </table>
+
+                </div>
+            </div>
+
+            ## COMMENTS
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    <br/> ${len(c.inline_comments_flat+c.comments)}
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    ${_('Comments')} - ${len(c.inline_comments_flat+c.comments)}
+                      ##${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))} /
+                      ##${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(len(c.inline_comments_flat))}
+
+                      ## TODO check why this ins't working
+                        % if pull_request_menu:
+                            <%
+                            outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
+                            %>
+
+                            % if outdated_comm_count_ver:
+                                <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+                                    (${_("{} Outdated").format(outdated_comm_count_ver)})
+                                </a>
+                                <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+                                <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+                            % else:
+                                (${_("{} Outdated").format(outdated_comm_count_ver)})
+                            % endif
+
+                        % endif
+                  </span>
+                  <span class="block-right action_button last-item noselect" onclick="return versionController.toggleElement(this, '.hidden-comment');" data-toggle-on="Show all" data-toggle-off="Hide all">Show all</span>
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-content">
+                    <table class="todo-table">
+                      <%
+                        def sorter(entry):
+                            user_id = entry.author.user_id
+                            return '{}'.format(str(entry.comment_id).zfill(100))
+                      %>
+
+                     % for comment_obj in reversed(sorted(c.inline_comments_flat + c.comments, key=sorter)):
+                         <%
+                            display = ''
+                            _cls = ''
+                         %>
+                         ## SKIP TODOs we display them above
+                          % if comment_obj.is_todo:
+                              <% display = 'none' %>
+                          % endif
+
+                          ## Skip outdated comments
+                          % if comment_obj.outdated:
+                              <% display = 'none' %>
+                              <% _cls = 'hidden-comment' %>
+                          % endif
+
+                          <tr class="${_cls}" style="display: ${display}">
+                              <td class="td-todo-number">
+                                  <a class="permalink" href="#comment-${comment_obj.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${comment_obj.outdated_js})">
+                                  % if comment_obj.outdated:
+                                      <i class="tooltip icon-comment-toggle" title="Outdated"></i>
+                                  % elif comment_obj.is_inline:
+                                      <i class="tooltip icon-code" title="Inline"></i>
+                                  % else:
+                                      <i class="tooltip icon-comment" title="General"></i>
+                                  % endif
+                                  ${comment_obj.comment_id}
+                                  </a>
+                              </td>
+                              <td class="td-todo-gravatar">
+                                  ${base.gravatar(comment_obj.author.email, 16, user=comment_obj.author, tooltip=True, extra_class=['no-margin'])}
+                              </td>
+                              <td class="todo-comment-text-wrapper">
+                                  <div class="todo-comment-text">
+                                    <code>${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}</code>
+                                  </div>
+                              </td>
+                          </tr>
+                     % endfor
+
+                </table>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</aside>
+
+
+<script>
+    var $sideBar = $('.right-sidebar');
+    var marginExpanded = {'margin': '0 320px 0 0'};
+    var marginCollapsed = {'margin': '0 50px 0 0'};
+
+    if($sideBar.hasClass('right-sidebar-expanded')) {
+        $('.outerwrapper').css(marginExpanded);
+        $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
+        $('.right-sidebar-collapsed-state').hide();
+        $('.right-sidebar-expanded-state').show();
+        updateSticky()
+
+    } else {
+        $('.outerwrapper').css(marginCollapsed);
+        $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
+        $('.right-sidebar-collapsed-state').hide();
+        $('.right-sidebar-expanded-state').show();
+        updateSticky()
+    }
+
+    var toggleSidebar = function(){
+        var $sideBar = $('.right-sidebar');
+
+        if($sideBar.hasClass('right-sidebar-expanded')) {
+            // collapse now
+            $sideBar.removeClass('right-sidebar-expanded')
+            $sideBar.addClass('right-sidebar-collapsed')
+            $('.outerwrapper').css(marginCollapsed);
+            $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
+            $('.right-sidebar-collapsed-state').show();
+            $('.right-sidebar-expanded-state').hide();
+
+        } else {
+            // expand now
+            $('.outerwrapper').css(marginExpanded);
+            $sideBar.addClass('right-sidebar-expanded')
+            $sideBar.removeClass('right-sidebar-collapsed')
+            $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
+            $('.right-sidebar-collapsed-state').hide();
+            $('.right-sidebar-expanded-state').show();
+        }
+
+        // update our other sticky header in same context
+        updateSticky()
+    }
+
+    var sidebarElement = document.getElementById('pr-nav-sticky');
+
+        ##  sidebar = new StickySidebar(sidebarElement, {
+        ##        containerSelector: '.main',
+        ##        minWidth: 62,
+        ##        innerWrapperSelector: '.navbar__inner',
+        ##        stickyClass: 'is-sticky',
+        ##  });
+
+</script>
 </%def>

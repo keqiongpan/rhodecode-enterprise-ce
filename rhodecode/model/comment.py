@@ -641,7 +641,7 @@ class CommentsModel(BaseModel):
         q = self._get_inline_comments_query(repo_id, revision, pull_request)
         return self._group_comments_by_path_and_line_number(q)
 
-    def get_inline_comments_count(self, inline_comments, skip_outdated=True,
+    def get_inline_comments_as_list(self, inline_comments, skip_outdated=True,
                                   version=None):
         inline_cnt = 0
         for fname, per_line_comments in inline_comments.iteritems():

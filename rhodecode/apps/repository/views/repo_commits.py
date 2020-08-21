@@ -166,8 +166,8 @@ class RepoCommitsView(RepoAppView):
             if method == 'show':
                 inline_comments = CommentsModel().get_inline_comments(
                     self.db_repo.repo_id, revision=commit.raw_id)
-                c.inline_cnt = CommentsModel().get_inline_comments_count(
-                    inline_comments)
+                c.inline_cnt = len(CommentsModel().get_inline_comments_as_list(
+                    inline_comments))
                 c.inline_comments = inline_comments
 
                 cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(

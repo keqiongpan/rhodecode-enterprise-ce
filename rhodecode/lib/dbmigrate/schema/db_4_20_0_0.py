@@ -3810,10 +3810,6 @@ class ChangesetComment(Base, BaseModel):
         return self.display_state == self.COMMENT_OUTDATED
 
     @property
-    def outdated_js(self):
-        return json.dumps(self.display_state == self.COMMENT_OUTDATED)
-
-    @property
     def immutable(self):
         return self.immutable_state == self.OP_IMMUTABLE
 
@@ -4496,8 +4492,6 @@ class PullRequestReviewers(Base, BaseModel):
     __table_args__ = (
         base_table_args,
     )
-    ROLE_REVIEWER = u'reviewer'
-    ROLE_OBSERVER = u'observer'
 
     @hybrid_property
     def reasons(self):
@@ -4525,8 +4519,6 @@ class PullRequestReviewers(Base, BaseModel):
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
 
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
-    role = Column('role', Unicode(255), nullable=True, default=ROLE_REVIEWER)
-
     user = relationship('User')
     pull_request = relationship('PullRequest')
 
@@ -5450,11 +5442,8 @@ class FileStore(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     @classmethod
-    def get_by_store_uid(cls, file_store_uid, safe=False):
-        if safe:
-            return FileStore.query().filter(FileStore.file_uid == file_store_uid).first()
-        else:
-            return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
+    def get_by_store_uid(cls, file_store_uid):
+        return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
 
     @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',

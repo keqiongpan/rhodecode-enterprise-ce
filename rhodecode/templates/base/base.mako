@@ -38,10 +38,12 @@
       <div class="main">
           ${next.main()}
       </div>
+
   </div>
   <!-- END CONTENT -->
 
 </div>
+
 <!-- FOOTER -->
 <div id="footer">
    <div id="footer-inner" class="title wrapper">

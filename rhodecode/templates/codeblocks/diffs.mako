@@ -159,45 +159,45 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         </div>
         % endif
 
-        ## comments
-        <div class="pull-right">
-            <div class="comments-number" style="padding-left: 10px">
-                % if hasattr(c, 'comments') and hasattr(c, 'inline_cnt'):
-                    <i class="icon-comment" style="color: #949494">COMMENTS:</i>
-                    % if c.comments:
-                        <a href="#comments">${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))}</a>,
-                    % else:
-                        ${_('0 General')}
-                    % endif
-
-                    % if c.inline_cnt:
-                        <a href="#" onclick="return Rhodecode.comments.nextComment();"
-                           id="inline-comments-counter">${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(c.inline_cnt)}
-                        </a>
-                    % else:
-                        ${_('0 Inline')}
-                    % endif
-                % endif
-
-                % if pull_request_menu:
-                    <%
-                    outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
-                    %>
-
-                    % if outdated_comm_count_ver:
-                        <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
-                            (${_("{} Outdated").format(outdated_comm_count_ver)})
-                        </a>
-                        <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
-                        <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
-                    % else:
-                        (${_("{} Outdated").format(outdated_comm_count_ver)})
-                    % endif
-
-                % endif
-
-            </div>
-        </div>
+##         ## comments
+##         <div class="pull-right">
+##             <div class="comments-number" style="padding-left: 10px">
+##                 % if hasattr(c, 'comments') and hasattr(c, 'inline_cnt'):
+##                     <i class="icon-comment" style="color: #949494">COMMENTS:</i>
+##                     % if c.comments:
+##                         <a href="#comments">${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))}</a>,
+##                     % else:
+##                         ${_('0 General')}
+##                     % endif
+##
+##                     % if c.inline_cnt:
+##                         <a href="#" onclick="return Rhodecode.comments.nextComment();"
+##                            id="inline-comments-counter">${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(c.inline_cnt)}
+##                         </a>
+##                     % else:
+##                         ${_('0 Inline')}
+##                     % endif
+##                 % endif
+##
+##                 % if pull_request_menu:
+##                     <%
+##                     outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
+##                     %>
+##
+##                     % if outdated_comm_count_ver:
+##                         <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                         </a>
+##                         <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+##                         <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+##                     % else:
+##                         (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                     % endif
+##
+##                 % endif
+##
+##             </div>
+##         </div>
 
     </div>
 
@@ -934,7 +934,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 </span>
             %endif
             % if commit or pull_request_menu:
-                <span id="diff_nav">Loading diff...:</span>
+                <span class="tooltip" title="Navigate to previous or next change inside files." id="diff_nav">Loading diff...:</span>
                 <span class="cursor-pointer" onclick="scrollToPrevChunk(); return false">
                     <i class="icon-angle-up"></i>
                 </span>

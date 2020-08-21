@@ -39,25 +39,26 @@ var CG = new ColorGenerator();
 </script>
 
 <script id="ejs_reviewMemberEntry" type="text/template" class="ejsTemplate">
+    <%
+        if (create) {
+            var edit_visibility = 'visible';
+        } else {
+            var edit_visibility = 'hidden';
+        }
 
-<li id="reviewer_<%= member.user_id %>" class="reviewer_entry">
-        <%
-            if (create) {
-                var edit_visibility = 'visible';
-            } else {
-                var edit_visibility = 'hidden';
-            }
+        if (member.user_group && member.user_group.vote_rule) {
+            var groupStyle = 'border-right: 2px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
+        } else {
+            var groupStyle = 'border-right: 2px solid transparent';
+        }
+    %>
 
-            if (member.user_group && member.user_group.vote_rule) {
-                var groupStyle = 'border-left: 1px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
-            } else {
-                var groupStyle = 'border-left: 1px solid white';
-            }
-        %>
+<li id="reviewer_<%= member.user_id %>" class="reviewer_entry" style="<%= groupStyle%>" tooltip="Review Group">
 
-    <div class="reviewers_member" style="<%= groupStyle%>" >
+    <div class="reviewers_member">
         <div class="reviewer_status tooltip" title="<%= review_status_label %>">
           <i class="icon-circle review-status-<%= review_status %>"></i>
+
         </div>
       <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
         <% if (mandatory) { %>

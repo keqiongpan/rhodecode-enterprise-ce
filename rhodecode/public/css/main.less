@@ -484,10 +484,6 @@ ul.auth_plugins {
     white-space: pre-line;
 }
 
-.pr-details-title {
-    height: 16px
-}
-
 .pr-details-title-author-pref {
     padding-right: 10px
 }
@@ -1492,26 +1488,17 @@ table.integrations {
 
 // Pull Requests
 .summary-details {
-    width: 72%;
+    width: 100%;
 }
 .pr-summary {
     border-bottom: @border-thickness solid @grey5;
     margin-bottom: @space;
 }
 
-.reviewers-title {
-  width: 25%;
-  min-width: 200px;
-
-  &.first-panel {
-    margin-top: 34px;
-  }
-}
-
 .reviewers {
-    width: 25%;
-    min-width: 200px;
+  width: 98%;
 }
+
 .reviewers ul li {
     position: relative;
     width: 100%;
@@ -1593,6 +1580,9 @@ table.integrations {
     cursor: pointer;
 }
 .pr-details-title {
+    height: 20px;
+    line-height: 20px;
+
     padding-bottom: 8px;
     border-bottom: @border-thickness solid @grey5;
 
@@ -1617,7 +1607,7 @@ table.integrations {
   text-decoration: line-through;
 }
 
-.todo-table {
+.todo-table, .comments-table {
   width: 100%;
 
   td {
