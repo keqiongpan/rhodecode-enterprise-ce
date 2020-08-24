@@ -139,6 +139,18 @@ def is_vcs_call(environ):
     return False
 
 
+def get_path_elem(route_path):
+    if not route_path:
+        return None
+
+    cleaned_route_path = route_path.lstrip('/')
+    if cleaned_route_path:
+        cleaned_route_path_elems = cleaned_route_path.split('/')
+        if cleaned_route_path_elems:
+            return cleaned_route_path_elems[0]
+    return None
+
+
 def detect_vcs_request(environ, backends):
     checks = {
         'hg': (is_hg, SimpleHg),
@@ -146,6 +158,17 @@ def detect_vcs_request(environ, backends):
         'svn': (is_svn, SimpleSvn),
     }
     handler = None
+    # List of path views first chunk we don't do any checks
+    white_list = [
+        # e.g /_file_store/download
+        '_file_store'
+    ]
+
+    path_info = environ['PATH_INFO']
+
+    if get_path_elem(path_info) in white_list:
+        log.debug('path `%s` in whitelist, skipping...', path_info)
+        return handler
 
     if VCS_TYPE_KEY in environ:
         raw_type = environ[VCS_TYPE_KEY]
