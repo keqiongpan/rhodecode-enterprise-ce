@@ -90,7 +90,7 @@ from rhodecode.lib.vcs.conf.settings import ARCHIVE_SPECS
 from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.db import Permission, User, Repository, UserApiKeys
+from rhodecode.model.db import Permission, User, Repository, UserApiKeys, FileStore
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import IssueTrackerSettingsModel
 
@@ -1357,12 +1357,63 @@ class InitialsGravatar(object):
         return "data:image/svg+xml;base64,%s" % base64.b64encode(img_data)
 
 
-def initials_gravatar(email_address, first_name, last_name, size=30):
+def initials_gravatar(email_address, first_name, last_name, size=30, store_on_disk=False):
+    request = get_current_request()
+
     svg_type = None
     if email_address == User.DEFAULT_USER_EMAIL:
         svg_type = 'default_user'
+
     klass = InitialsGravatar(email_address, first_name, last_name, size)
-    return klass.generate_svg(svg_type=svg_type)
+
+    if store_on_disk:
+        from rhodecode.apps.file_store import utils as store_utils
+        from rhodecode.apps.file_store.exceptions import FileNotAllowedException, \
+            FileOverSizeException
+        from rhodecode.model.db import Session
+
+        image_key = md5_safe(email_address.lower()
+                             + first_name.lower() + last_name.lower())
+
+        storage = store_utils.get_file_storage(request.registry.settings)
+        filename = '{}.svg'.format(image_key)
+        subdir = 'gravatars'
+        # since final name has a counter, we apply the 0
+        uid = storage.apply_counter(0, store_utils.uid_filename(filename, randomized=False))
+        store_uid = os.path.join(subdir, uid)
+
+        db_entry = FileStore.get_by_store_uid(store_uid)
+        if db_entry:
+            return request.route_path('download_file', fid=store_uid)
+
+        img_data = klass.get_img_data(svg_type=svg_type)
+        img_file = store_utils.bytes_to_file_obj(img_data)
+
+        try:
+            store_uid, metadata = storage.save_file(
+                img_file, filename, directory=subdir,
+                extensions=['.svg'], randomized_name=False)
+        except (FileNotAllowedException, FileOverSizeException):
+            raise
+
+        try:
+            entry = FileStore.create(
+                file_uid=store_uid, filename=metadata["filename"],
+                file_hash=metadata["sha256"], file_size=metadata["size"],
+                file_display_name=filename,
+                file_description=u'user gravatar `{}`'.format(safe_unicode(filename)),
+                hidden=True, check_acl=False, user_id=1
+            )
+            Session().add(entry)
+            Session().commit()
+            log.debug('Stored upload in DB as %s', entry)
+        except Exception:
+            raise
+
+        return request.route_path('download_file', fid=store_uid)
+
+    else:
+        return klass.generate_svg(svg_type=svg_type)
 
 
 def gravatar_url(email_address, size=30, request=None):
