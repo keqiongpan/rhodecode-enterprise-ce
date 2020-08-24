@@ -43,10 +43,10 @@ def includeme(config):
         pattern='/_file_store/upload')
     config.add_route(
         name='download_file',
-        pattern='/_file_store/download/{fid}')
+        pattern='/_file_store/download/{fid:.*}')
     config.add_route(
         name='download_file_by_token',
-        pattern='/_file_store/token-download/{_auth_token}/{fid}')
+        pattern='/_file_store/token-download/{_auth_token}/{fid:.*}')
 
     # Scan module for configuration decorators.
     config.scan('.views', ignore='.tests')

@@ -20,7 +20,7 @@
 
 
 import uuid
-
+import StringIO
 import pathlib2
 
 
@@ -52,3 +52,7 @@ def uid_filename(filename, randomized=True):
         hash_key = '{}.{}'.format(filename, 'store')
         uid = uuid.uuid5(uuid.NAMESPACE_URL, hash_key)
     return str(uid) + ext.lower()
+
+
+def bytes_to_file_obj(bytes_data):
+    return StringIO.StringIO(bytes_data)

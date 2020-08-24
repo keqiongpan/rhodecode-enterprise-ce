@@ -5442,8 +5442,11 @@ class FileStore(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     @classmethod
-    def get_by_store_uid(cls, file_store_uid):
-        return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
+    def get_by_store_uid(cls, file_store_uid, safe=False):
+        if safe:
+            return FileStore.query().filter(FileStore.file_uid == file_store_uid).first()
+        else:
+            return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
 
     @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',
