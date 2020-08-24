@@ -1357,8 +1357,7 @@ class InitialsGravatar(object):
         return "data:image/svg+xml;base64,%s" % base64.b64encode(img_data)
 
 
-def initials_gravatar(email_address, first_name, last_name, size=30, store_on_disk=False):
-    request = get_current_request()
+def initials_gravatar(request, email_address, first_name, last_name, size=30, store_on_disk=False):
 
     svg_type = None
     if email_address == User.DEFAULT_USER_EMAIL:
@@ -1416,12 +1415,18 @@ def initials_gravatar(email_address, first_name, last_name, size=30, store_on_di
         return klass.generate_svg(svg_type=svg_type)
 
 
-def gravatar_url(email_address, size=30, request=None):
-    request = get_current_request()
-    _use_gravatar = request.call_context.visual.use_gravatar
-    _gravatar_url = request.call_context.visual.gravatar_url
+def gravatar_external(request, gravatar_url_tmpl, email_address, size=30):
+    return safe_str(gravatar_url_tmpl)\
+        .replace('{email}', email_address) \
+        .replace('{md5email}', md5_safe(email_address.lower())) \
+        .replace('{netloc}', request.host) \
+        .replace('{scheme}', request.scheme) \
+        .replace('{size}', safe_str(size))
 
-    _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
+
+def gravatar_url(email_address, size=30, request=None):
+    request = request or get_current_request()
+    _use_gravatar = request.call_context.visual.use_gravatar
 
     email_address = email_address or User.DEFAULT_USER_EMAIL
     if isinstance(email_address, unicode):
@@ -1430,21 +1435,15 @@ def gravatar_url(email_address, size=30, request=None):
 
     # empty email or default user
     if not email_address or email_address == User.DEFAULT_USER_EMAIL:
-        return initials_gravatar(User.DEFAULT_USER_EMAIL, '', '', size=size)
+        return initials_gravatar(request, User.DEFAULT_USER_EMAIL, '', '', size=size)
 
     if _use_gravatar:
-        # TODO: Disuse pyramid thread locals. Think about another solution to
-        # get the host and schema here.
-        request = get_current_request()
-        tmpl = safe_str(_gravatar_url)
-        tmpl = tmpl.replace('{email}', email_address)\
-                   .replace('{md5email}', md5_safe(email_address.lower())) \
-                   .replace('{netloc}', request.host)\
-                   .replace('{scheme}', request.scheme)\
-                   .replace('{size}', safe_str(size))
-        return tmpl
+        gravatar_url_tmpl = request.call_context.visual.gravatar_url \
+                            or User.DEFAULT_GRAVATAR_URL
+        return gravatar_external(request, gravatar_url_tmpl, email_address, size=size)
+
     else:
-        return initials_gravatar(email_address, '', '', size=size)
+        return initials_gravatar(request, email_address, '', '', size=size)
 
 
 def breadcrumb_repo_link(repo):
