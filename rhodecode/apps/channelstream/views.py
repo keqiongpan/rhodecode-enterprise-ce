@@ -34,7 +34,7 @@ from rhodecode.lib.channelstream import (
     get_user_data,
     parse_channels_info,
     update_history_from_logs,
-    STATE_PUBLIC_KEYS)
+    USER_STATE_PUBLIC_KEYS)
 
 from rhodecode.lib.auth import NotAnonymous
 
@@ -86,14 +86,16 @@ class ChannelstreamView(BaseAppView):
                 'display_name': None,
                 'display_link': None,
             }
-        user_data['permissions'] = self._rhodecode_user.permissions_safe
+
+        #user_data['permissions'] = self._rhodecode_user.permissions_safe
+
         payload = {
             'username': user.username,
             'user_state': user_data,
             'conn_id': str(uuid.uuid4()),
             'channels': channels,
             'channel_configs': {},
-            'state_public_keys': STATE_PUBLIC_KEYS,
+            'state_public_keys': USER_STATE_PUBLIC_KEYS,
             'info': {
                 'exclude_channels': ['broadcast']
             }
@@ -118,10 +120,13 @@ class ChannelstreamView(BaseAppView):
                 'Channelstream service at {} is down'.format(channelstream_url))
             return HTTPBadGateway()
 
+        channel_info = connect_result.get('channels_info')
+        if not channel_info:
+            raise HTTPBadRequest()
+
         connect_result['channels'] = channels
         connect_result['channels_info'] = parse_channels_info(
-            connect_result['channels_info'],
-            include_channel_info=filtered_channels)
+            channel_info, include_channel_info=filtered_channels)
         update_history_from_logs(self.channelstream_config,
                                  filtered_channels, connect_result)
         return connect_result
@@ -167,10 +172,15 @@ class ChannelstreamView(BaseAppView):
             log.exception(
                 'Channelstream service at {} is down'.format(channelstream_url))
             return HTTPBadGateway()
+
+        channel_info = connect_result.get('channels_info')
+        if not channel_info:
+            raise HTTPBadRequest()
+
         # include_channel_info will limit history only to new channel
         # to not overwrite histories on other channels in client
         connect_result['channels_info'] = parse_channels_info(
-            connect_result['channels_info'],
+            channel_info,
             include_channel_info=filtered_channels)
         update_history_from_logs(
             self.channelstream_config, filtered_channels, connect_result)

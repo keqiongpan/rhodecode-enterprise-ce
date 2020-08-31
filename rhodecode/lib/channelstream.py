@@ -37,8 +37,9 @@ log = logging.getLogger(__name__)
 
 LOCK = ReadWriteMutex()
 
-STATE_PUBLIC_KEYS = ['id', 'username', 'first_name', 'last_name',
-                     'icon_link', 'display_name', 'display_link']
+USER_STATE_PUBLIC_KEYS = [
+    'id', 'username', 'first_name', 'last_name',
+    'icon_link', 'display_name', 'display_link']
 
 
 class ChannelstreamException(Exception):
@@ -64,6 +65,8 @@ def channelstream_request(config, payload, endpoint, raise_exc=True):
                       'x-channelstream-endpoint': endpoint,
                       'Content-Type': 'application/json'}
     req_url = get_channelstream_server_url(config, endpoint)
+
+    log.debug('Sending a channelstream request to endpoint: `%s`', req_url)
     response = None
     try:
         response = requests.post(req_url, data=json.dumps(payload),
@@ -76,6 +79,7 @@ def channelstream_request(config, payload, endpoint, raise_exc=True):
         log.exception('Exception related to Channelstream happened')
         if raise_exc:
             raise ChannelstreamConnectionException()
+    log.debug('Got channelstream response: %s', response)
     return response
 
 
@@ -154,7 +158,7 @@ def parse_channels_info(info_result, include_channel_info=None):
     for userinfo in info_result['users']:
         user_state_dict[userinfo['user']] = {
             k: v for k, v in userinfo['state'].items()
-            if k in STATE_PUBLIC_KEYS
+            if k in USER_STATE_PUBLIC_KEYS
             }
 
     channels_info = {}
@@ -163,9 +167,9 @@ def parse_channels_info(info_result, include_channel_info=None):
         if c_name not in include_channel_info:
             continue
         connected_list = []
-        for userinfo in c_info['users']:
+        for username in c_info['users']:
             connected_list.append({
-                'user': userinfo['user'],
+                'user': username,
                 'state': user_state_dict[userinfo['user']]
             })
         channels_info[c_name] = {'users': connected_list,
@@ -230,6 +234,14 @@ def get_connection_validators(registry):
 
 def post_message(channel, message, username, registry=None):
 
+    message_obj = message
+    if isinstance(message, basestring):
+        message_obj = {
+            'message': message,
+            'level': 'success',
+            'topic': '/notifications'
+        }
+
     if not registry:
         registry = get_current_registry()
 
@@ -243,11 +255,7 @@ def post_message(channel, message, username, registry=None):
             'user': 'system',
             'exclude_users': [username],
             'channel': channel,
-            'message': {
-                'message': message,
-                'level': 'success',
-                'topic': '/notifications'
-            }
+            'message': message_obj
         }
 
         try:
