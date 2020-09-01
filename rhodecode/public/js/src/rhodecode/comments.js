@@ -558,7 +558,7 @@ var CommentsController = function() {
       return false;
   };
 
-   this.showVersion = function (comment_id, comment_history_id) {
+  this.showVersion = function (comment_id, comment_history_id) {
 
        var historyViewUrl = pyroutes.url(
            'repo_commit_comment_history_view',
@@ -585,7 +585,7 @@ var CommentsController = function() {
            successRenderCommit,
            failRenderCommit
        );
-   };
+  };
 
   this.getLineNumber = function(node) {
       var $node = $(node);
@@ -670,8 +670,20 @@ var CommentsController = function() {
 
       var success = function(response) {
         $comment.remove();
+
+        if (window.updateSticky !== undefined) {
+            // potentially our comments change the active window size, so we
+            // notify sticky elements
+            updateSticky()
+        }
+
+        if (window.refreshAllComments !== undefined) {
+          // if we have this handler, run it, and refresh all comments boxes
+          refreshAllComments()
+        }
         return false;
       };
+
       var failure = function(jqXHR, textStatus, errorThrown) {
         var prefix = "Error while deleting this comment.\n"
         var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
@@ -682,6 +694,9 @@ var CommentsController = function() {
         return false;
       };
       ajaxPOST(url, postData, success, failure);
+
+
+
   }
 
   this.deleteComment = function(node) {
@@ -727,6 +742,15 @@ var CommentsController = function() {
       $filediff.find('.hide-line-comments').removeClass('hide-line-comments');
       $filediff.toggleClass('hide-comments');
     }
+
+    // since we change the height of the diff container that has anchor points for upper
+    // sticky header, we need to tell it to re-calculate those
+    if (window.updateSticky !== undefined) {
+        // potentially our comments change the active window size, so we
+        // notify sticky elements
+        updateSticky()
+    }
+
     return false;
   };
 
@@ -747,7 +771,7 @@ var CommentsController = function() {
       var cm = commentForm.getCmInstance();
 
       if (resolvesCommentId){
-        var placeholderText = _gettext('Leave a resolution comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
+        placeholderText = _gettext('Leave a resolution comment, or click resolve button to resolve TODO comment #{0}').format(resolvesCommentId);
       }
 
       setTimeout(function() {
@@ -1077,9 +1101,15 @@ var CommentsController = function() {
                     updateSticky()
                 }
 
+                if (window.refreshAllComments !== undefined) {
+                      // if we have this handler, run it, and refresh all comments boxes
+                      refreshAllComments()
+                }
+
                 commentForm.setActionButtonsDisabled(false);
 
               };
+
               var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
                   var prefix = "Error while editing comment.\n"
                   var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
@@ -1207,6 +1237,11 @@ var CommentsController = function() {
                   // potentially our comments change the active window size, so we
                   // notify sticky elements
                   updateSticky()
+              }
+
+              if (window.refreshAllComments !== undefined) {
+                  // if we have this handler, run it, and refresh all comments boxes
+                  refreshAllComments()
               }
 
               commentForm.setActionButtonsDisabled(false);

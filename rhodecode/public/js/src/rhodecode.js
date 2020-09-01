@@ -677,7 +677,9 @@ var feedLifetimeOptions = function(query, initialData){
     query.callback(data);
 };
 
-
+/*
+* Retrievew via  templateContext.session_attrs.key
+* */
 var storeUserSessionAttr = function (key, val) {
 
     var postData = {

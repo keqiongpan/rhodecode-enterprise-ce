@@ -3821,16 +3821,35 @@ class ChangesetComment(Base, BaseModel):
         """
         Checks if comment is outdated for given pull request version
         """
-        return self.outdated and self.pull_request_version_id != version
+        def version_check():
+            return self.pull_request_version_id and self.pull_request_version_id != version
+
+        if self.is_inline:
+            return self.outdated and version_check()
+        else:
+            # general comments don't have .outdated set, also latest don't have a version
+            return version_check()
+
+    def outdated_at_version_js(self, version):
+        """
+        Checks if comment is outdated for given pull request version
+        """
+        return json.dumps(self.outdated_at_version(version))
 
     def older_than_version(self, version):
         """
         Checks if comment is made from previous version than given
         """
         if version is None:
-            return self.pull_request_version_id is not None
+            return self.pull_request_version != version
 
-        return self.pull_request_version_id < version
+        return self.pull_request_version < version
+
+    def older_than_version_js(self, version):
+        """
+        Checks if comment is made from previous version than given
+        """
+        return json.dumps(self.older_than_version(version))
 
     @property
     def commit_id(self):
@@ -4327,6 +4346,7 @@ class PullRequest(Base, _PullRequestBase):
     __table_args__ = (
         base_table_args,
     )
+    LATEST_VER = 'latest'
 
     pull_request_id = Column(
         'pull_request_id', Integer(), nullable=False, primary_key=True)
@@ -4384,6 +4404,10 @@ class PullRequest(Base, _PullRequestBase):
             @property
             def pull_request_version_id(self):
                 return getattr(pull_request_obj, 'pull_request_version_id', None)
+
+            @property
+            def pull_request_last_version(self):
+                return pull_request_obj.pull_request_last_version
 
         attrs = StrictAttributeDict(pull_request_obj.get_api_data(with_merge_state=False))
 
@@ -4448,6 +4472,10 @@ class PullRequest(Base, _PullRequestBase):
         updated will have 2 versions
         """
         return self.versions.count() + 1
+
+    @property
+    def pull_request_last_version(self):
+        return self.versions_count
 
 
 class PullRequestVersion(Base, _PullRequestBase):

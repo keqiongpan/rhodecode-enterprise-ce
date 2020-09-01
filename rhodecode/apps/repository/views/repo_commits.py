@@ -87,6 +87,7 @@ class RepoCommitsView(RepoAppView):
         diff_limit = c.visual.cut_off_limit_diff
         file_limit = c.visual.cut_off_limit_file
 
+
         # get ranges of commit ids if preset
         commit_range = commit_id_range.split('...')[:2]
 
@@ -226,6 +227,7 @@ class RepoCommitsView(RepoAppView):
 
         # sort comments by how they were generated
         c.comments = sorted(c.comments, key=lambda x: x.comment_id)
+        c.at_version_num = None
 
         if len(c.commit_ranges) == 1:
             c.commit = c.commit_ranges[0]

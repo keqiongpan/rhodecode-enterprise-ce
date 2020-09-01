@@ -28,9 +28,12 @@ export class RhodecodeApp extends PolymerElement {
         super.connectedCallback();
         ccLog.debug('rhodeCodeApp created');
         $.Topic('/notifications').subscribe(this.handleNotifications.bind(this));
+        $.Topic('/comment').subscribe(this.handleComment.bind(this));
         $.Topic('/favicon/update').subscribe(this.faviconUpdate.bind(this));
         $.Topic('/connection_controller/subscribe').subscribe(
-            this.subscribeToChannelTopic.bind(this));
+            this.subscribeToChannelTopic.bind(this)
+        );
+
         // this event can be used to coordinate plugins to do their
         // initialization before channelstream is kicked off
         $.Topic('/__MAIN_APP__').publish({});
@@ -71,6 +74,14 @@ export class RhodecodeApp extends PolymerElement {
 
     }
 
+    handleComment(data) {
+        if (data.message.comment_id) {
+          if (window.refreshAllComments !== undefined) {
+              refreshAllComments()
+          }
+        }
+    }
+
     faviconUpdate(data) {
         this.shadowRoot.querySelector('rhodecode-favicon').counter = data.count;
     }
@@ -95,6 +106,7 @@ export class RhodecodeApp extends PolymerElement {
             }
             // append any additional channels registered in other plugins
             $.Topic('/connection_controller/subscribe').processPrepared();
+
             channelstreamConnection.connect();
         }
     }
@@ -157,8 +169,7 @@ export class RhodecodeApp extends PolymerElement {
 
     handleConnected(event) {
         var channelstreamConnection = this.getChannelStreamConnection();
-        channelstreamConnection.set('channelsState',
-            event.detail.channels_info);
+        channelstreamConnection.set('channelsState', event.detail.channels_info);
         channelstreamConnection.set('userState', event.detail.state);
         channelstreamConnection.set('channels', event.detail.channels);
         this.propagageChannelsState();

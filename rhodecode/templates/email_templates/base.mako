@@ -360,13 +360,13 @@ ${self.plaintext_footer()}
 
         div.markdown-block ul.checkbox li, div.markdown-block ol.checkbox li {
             list-style: none !important;
-            margin: 6px !important;
+            margin: 0px !important;
             padding: 0 !important
         }
 
         div.markdown-block ul li, div.markdown-block ol li {
             list-style: disc !important;
-            margin: 6px !important;
+            margin: 0px !important;
             padding: 0 !important
         }
 

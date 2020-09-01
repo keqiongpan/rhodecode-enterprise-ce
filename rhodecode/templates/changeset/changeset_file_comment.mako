@@ -10,12 +10,14 @@
 
 <%namespace name="base" file="/base/base.mako"/>
 <%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
-  <% pr_index_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
+
+  <% comment_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
   <% latest_ver = len(getattr(c, 'versions', [])) %>
+
   % if inline:
-      <% outdated_at_ver = comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
+      <% outdated_at_ver = comment.outdated_at_version(c.at_version_num) %>
   % else:
-      <% outdated_at_ver = comment.older_than_version(getattr(c, 'at_version_num', None)) %>
+      <% outdated_at_ver = comment.older_than_version(c.at_version_num) %>
   % endif
 
   <div class="comment
@@ -153,38 +155,38 @@
               </div>
           %endif
 
-          <a class="permalink" href="#comment-${comment.comment_id}"> &para;</a>
+          <a class="permalink" href="#comment-${comment.comment_id}">&para; #${comment.comment_id}</a>
 
           <div class="comment-links-block">
 
             % if inline:
                     <a class="pr-version-inline" href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
-                        <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
-                            outdated ${'v{}'.format(pr_index_ver)} |
+                        <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}">
+                            outdated ${'v{}'.format(comment_ver)} |
                         </code>
-                    % elif pr_index_ver:
-                        <code class="tooltip pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}">
-                            ${'v{}'.format(pr_index_ver)} |
+                    % elif comment_ver:
+                        <code class="tooltip pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}">
+                            ${'v{}'.format(comment_ver)} |
                         </code>
                     % endif
                     </a>
             % else:
-                % if pr_index_ver:
+                % if comment_ver:
 
                       % if comment.outdated:
                         <a class="pr-version"
                            href="?version=${comment.pull_request_version_id}#comment-${comment.comment_id}"
                         >
-                            ${_('Outdated comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}
+                            ${_('Outdated comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}
                         </a> |
                       % else:
                         <a class="tooltip pr-version"
-                           title="${_('Comment from pull request version v{0}, latest v{1}').format(pr_index_ver, latest_ver)}"
+                           title="${_('Comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}"
                            href="${h.route_path('pullrequest_show',repo_name=comment.pull_request.target_repo.repo_name,pull_request_id=comment.pull_request.pull_request_id, version=comment.pull_request_version_id)}"
                         >
                         <code class="pr-version-num">
-                            ${'v{}'.format(pr_index_ver)}
+                            ${'v{}'.format(comment_ver)}
                         </code>
                         </a> |
                       % endif

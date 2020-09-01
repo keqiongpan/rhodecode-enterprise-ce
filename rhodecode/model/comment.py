@@ -91,8 +91,7 @@ class CommentsModel(BaseModel):
         # group by versions, and count until, and display objects
 
         comment_groups = collections.defaultdict(list)
-        [comment_groups[
-             _co.pull_request_version_id].append(_co) for _co in comments]
+        [comment_groups[_co.pull_request_version_id].append(_co) for _co in comments]
 
         def yield_comments(pos):
             for co in comment_groups[pos]:
@@ -456,38 +455,54 @@ class CommentsModel(BaseModel):
         else:
             action = 'repo.commit.comment.create'
 
+        comment_id = comment.comment_id
         comment_data = comment.get_api_data()
+
         self._log_audit_action(
             action, {'data': comment_data}, auth_user, comment)
 
-        msg_url = ''
         channel = None
         if commit_obj:
-            msg_url = commit_comment_url
             repo_name = repo.repo_name
             channel = u'/repo${}$/commit/{}'.format(
                 repo_name,
                 commit_obj.raw_id
             )
         elif pull_request_obj:
-            msg_url = pr_comment_url
             repo_name = pr_target_repo.repo_name
             channel = u'/repo${}$/pr/{}'.format(
                 repo_name,
-                pull_request_id
+                pull_request_obj.pull_request_id
             )
 
-        message = '<strong>{}</strong> {} - ' \
-                  '<a onclick="window.location=\'{}\';' \
-                  'window.location.reload()">' \
-                  '<strong>{}</strong></a>'
-        message = message.format(
-            user.username, _('made a comment'), msg_url,
-            _('Show it now'))
+        if channel:
+            username = user.username
+            message = '<strong>{}</strong> {} #{}, {}'
+            message = message.format(
+                username,
+                _('posted a new comment'),
+                comment_id,
+                _('Refresh the page to see new comments.'))
 
-        channelstream.post_message(
-            channel, message, user.username,
-            registry=get_current_registry())
+            message_obj = {
+                'message': message,
+                'level': 'success',
+                'topic': '/notifications'
+            }
+
+            channelstream.post_message(
+                channel, message_obj, user.username,
+                registry=get_current_registry())
+
+            message_obj = {
+                'message': None,
+                'user': username,
+                'comment_id': comment_id,
+                'topic': '/comment'
+            }
+            channelstream.post_message(
+                channel, message_obj, user.username,
+                registry=get_current_registry())
 
         return comment
 
@@ -642,15 +657,15 @@ class CommentsModel(BaseModel):
         return self._group_comments_by_path_and_line_number(q)
 
     def get_inline_comments_as_list(self, inline_comments, skip_outdated=True,
-                                  version=None):
-        inline_cnt = 0
+                                    version=None):
+        inline_comms = []
         for fname, per_line_comments in inline_comments.iteritems():
             for lno, comments in per_line_comments.iteritems():
                 for comm in comments:
                     if not comm.outdated_at_version(version) and skip_outdated:
-                        inline_cnt += 1
+                        inline_comms.append(comm)
 
-        return inline_cnt
+        return inline_comms
 
     def get_outdated_comments(self, repo_id, pull_request):
         # TODO: johbo: Remove `repo_id`, it is not needed to find the comments

@@ -1510,18 +1510,14 @@ table.integrations {
   min-height: 55px;
 }
 
-.reviewers_member {
-    width: 100%;
-    overflow: auto;
-}
 .reviewer_reason {
     padding-left: 20px;
     line-height: 1.5em;
 }
 .reviewer_status {
     display: inline-block;
-    width: 25px;
-    min-width: 25px;
+    width: 20px;
+    min-width: 20px;
     height: 1.2em;
     line-height: 1em;
 }
@@ -1544,23 +1540,17 @@ table.integrations {
 }
 
 .reviewer_member_mandatory {
-    position: absolute;
-    left: 15px;
-    top: 8px;
     width: 16px;
     font-size: 11px;
     margin: 0;
     padding: 0;
     color: black;
+    opacity: 0.4;
 }
 
 .reviewer_member_mandatory_remove,
 .reviewer_member_remove {
-    position: absolute;
-    right: 0;
-    top: 0;
     width: 16px;
-    margin-bottom: 10px;
     padding: 0;
     color: black;
 }
@@ -1617,7 +1607,8 @@ table.integrations {
   .td-todo-number {
     text-align: left;
     white-space: nowrap;
-    width: 15%;
+    width: 1%;
+    padding-right: 2px;
   }
 
   .td-todo-gravatar {
@@ -1641,10 +1632,13 @@ table.integrations {
   text-overflow: ellipsis;
 }
 
+table.group_members {
+  width: 100%
+}
+
 .group_members {
     margin-top: 0;
     padding: 0;
-    list-style: outside none none;
 
     img {
         height: @gravatar-size;

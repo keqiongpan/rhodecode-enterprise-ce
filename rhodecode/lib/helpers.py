@@ -810,8 +810,7 @@ import tzlocal
 local_timezone = tzlocal.get_localzone()
 
 
-def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
-    title = value or format_date(datetime_iso)
+def get_timezone(datetime_iso, time_is_local=False):
     tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
@@ -822,6 +821,12 @@ def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
         timezone = force_timezone or local_timezone
         offset = timezone.localize(datetime_iso).strftime('%z')
         tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
+    return tzinfo
+
+
+def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
+    title = value or format_date(datetime_iso)
+    tzinfo = get_timezone(datetime_iso, time_is_local=time_is_local)
 
     return literal(
         '<time class="timeago {cls}" title="{tt_title}" datetime="{dt}{tzinfo}">{title}</time>'.format(
@@ -1650,17 +1655,18 @@ def get_active_pattern_entries(repo_name):
 
 pr_pattern_re = re.compile(r'(?:(?:^!)|(?: !))(\d+)')
 
+allowed_link_formats = [
+    'html', 'rst', 'markdown', 'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
+
 
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
-    allowed_formats = ['html', 'rst', 'markdown',
-                       'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
-    if link_format not in allowed_formats:
+    if link_format not in allowed_link_formats:
         raise ValueError('Link format can be only one of:{} got {}'.format(
-                         allowed_formats, link_format))
+                         allowed_link_formats, link_format))
 
     if active_entries is None:
-        log.debug('Fetch active patterns for repo: %s', repo_name)
+        log.debug('Fetch active issue tracker patterns for repo: %s', repo_name)
         active_entries = get_active_pattern_entries(repo_name)
 
     issues_data = []
@@ -1718,7 +1724,8 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     return new_text, issues_data
 
 
-def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None):
+def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None,
+                          issues_container=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1740,6 +1747,9 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     # process issue tracker patterns
     new_text, issues = process_patterns(new_text, repository or '',
                                         active_entries=active_pattern_entries)
+
+    if issues_container is not None:
+        issues_container.extend(issues)
 
     return literal(new_text)
 
@@ -1781,7 +1791,7 @@ def renderer_from_filename(filename, exclude=None):
 
 
 def render(source, renderer='rst', mentions=False, relative_urls=None,
-           repo_name=None, active_pattern_entries=None):
+           repo_name=None, active_pattern_entries=None, issues_container=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_urls:
@@ -1798,6 +1808,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues = process_patterns(
                 source, repo_name, link_format='rst',
                 active_entries=active_pattern_entries)
+            if issues_container is not None:
+                issues_container.extend(issues)
 
         return literal(
             '<div class="rst-block">%s</div>' %
@@ -1810,6 +1822,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues = process_patterns(
                 source, repo_name, link_format='markdown',
                 active_entries=active_pattern_entries)
+            if issues_container is not None:
+                issues_container.extend(issues)
 
         return literal(
             '<div class="markdown-block">%s</div>' %

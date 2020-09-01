@@ -1,6 +1,10 @@
 <%text>
 <div style="display: none">
 
+<script>
+var CG = new ColorGenerator();
+</script>
+
 <script id="ejs_gravatarWithUser" type="text/template" class="ejsTemplate">
 
 <%
@@ -34,10 +38,6 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
 
 </script>
 
-<script>
-var CG = new ColorGenerator();
-</script>
-
 <script id="ejs_reviewMemberEntry" type="text/template" class="ejsTemplate">
     <%
         if (create) {
@@ -47,26 +47,24 @@ var CG = new ColorGenerator();
         }
 
         if (member.user_group && member.user_group.vote_rule) {
-            var groupStyle = 'border-right: 2px solid '+CG.asRGB(CG.getColor(member.user_group.vote_rule));
+            var reviewGroup = '<i class="icon-user-group"></i>';
+            var reviewGroupColor = CG.asRGB(CG.getColor(member.user_group.vote_rule));
         } else {
-            var groupStyle = 'border-right: 2px solid transparent';
+            var reviewGroup = null;
+            var reviewGroupColor = 'transparent';
         }
     %>
 
-<li id="reviewer_<%= member.user_id %>" class="reviewer_entry" style="<%= groupStyle%>" tooltip="Review Group">
+<tr id="reviewer_<%= member.user_id %>" class="reviewer_entry" tooltip="Review Group" data-reviewer-user-id="<%= member.user_id %>">
 
-    <div class="reviewers_member">
+    <td style="width: 20px">
         <div class="reviewer_status tooltip" title="<%= review_status_label %>">
           <i class="icon-circle review-status-<%= review_status %>"></i>
-
         </div>
-      <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
-        <% if (mandatory) { %>
-            <div class="reviewer_member_mandatory tooltip" title="Mandatory reviewer">
-                <i class="icon-lock"></i>
-            </div>
-        <% } %>
+    </td>
 
+    <td>
+      <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
         <%-
           renderTemplate('gravatarWithUser', {
             'size': 16,
@@ -78,12 +76,44 @@ var CG = new ColorGenerator();
             'gravatar_url':  member.gravatar_link
             })
         %>
+        <span class="tooltip presence-state" style="display: none" title="This users is currently at this page">
+          <i class="icon-eye" style="color: #0ac878"></i>
+        </span>
       </div>
+    </td>
 
+    <td style="width: 10px">
+    <% if (reviewGroup !== null) { %>
+        <span class="tooltip" title="Member of review group from rule: `<%= member.user_group.name %>`" style="color: <%= reviewGroupColor %>">
+        <%- reviewGroup %>
+        </span>
+    <% } %>
+    </td>
+
+    <% if (mandatory) { %>
+    <td style="text-align: right;width: 10px;">
+        <div class="reviewer_member_mandatory tooltip" title="Mandatory reviewer">
+            <i class="icon-lock"></i>
+        </div>
+    </td>
+
+    <% } else { %>
+    <td>
+        <% if (allowed_to_update) { %>
+          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
+              <i class="icon-remove"></i>
+          </div>
+        <% } %>
+    </td>
+    <% } %>
+
+</tr>
+
+<tr>
+    <td colspan="4" style="display: none" class="pr-user-rule-container">
       <input type="hidden" name="__start__" value="reviewer:mapping">
 
-
-        <%if (member.user_group && member.user_group.vote_rule) {%>
+        <%if (member.user_group && member.user_group.vote_rule) { %>
             <div class="reviewer_reason">
 
               <%if (member.user_group.vote_rule == -1) {%>
@@ -92,7 +122,7 @@ var CG = new ColorGenerator();
                - group votes required: <%= member.user_group.vote_rule %>
               <%}%>
             </div>
-        <%}%>
+        <%} %>
 
         <input type="hidden" name="__start__" value="reasons:sequence">
           <% for (var i = 0; i < reasons.length; i++) { %>
@@ -100,36 +130,23 @@ var CG = new ColorGenerator();
               <div class="reviewer_reason">- <%= reason %></div>
               <input type="hidden" name="reason" value="<%= reason %>">
           <% } %>
-        <input type="hidden" name="__end__" value="reasons:sequence">
+          <input type="hidden" name="__end__" value="reasons:sequence">
 
-        <input type="hidden" name="__start__" value="rules:sequence">
+          <input type="hidden" name="__start__" value="rules:sequence">
           <% for (var i = 0; i < member.rules.length; i++) { %>
               <% var rule = member.rules[i] %>
               <input type="hidden" name="rule_id" value="<%= rule %>">
           <% } %>
-        <input type="hidden" name="__end__" value="rules:sequence">
+          <input type="hidden" name="__end__" value="rules:sequence">
 
-        <input id="reviewer_<%= member.user_id %>_input" type="hidden" value="<%= member.user_id %>" name="user_id" />
-        <input type="hidden" name="mandatory" value="<%= mandatory %>"/>
+          <input id="reviewer_<%= member.user_id %>_input" type="hidden" value="<%= member.user_id %>" name="user_id" />
+          <input type="hidden" name="mandatory" value="<%= mandatory %>"/>
 
       <input type="hidden" name="__end__" value="reviewer:mapping">
-
-      <% if (mandatory) { %>
-            <div class="reviewer_member_mandatory_remove" style="visibility: <%= edit_visibility %>;">
-                <i class="icon-remove"></i>
-            </div>
-      <% } else { %>
-        <% if (allowed_to_update) { %>
-          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
-              <i class="icon-remove" ></i>
-          </div>
-        <% } %>
-      <% } %>
-    </div>
-</li>
+    </td>
+</tr>
 
 </script>
-
 
 <script id="ejs_commentVersion" type="text/template" class="ejsTemplate">
 
@@ -157,7 +174,6 @@ if (show_disabled) {
 </div>
 
 </script>
-
 
 </div>
 

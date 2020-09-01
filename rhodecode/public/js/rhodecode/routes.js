@@ -246,6 +246,8 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_comment_create', '/%(repo_name)s/pull-request/%(pull_request_id)s/comment', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_comment_edit', '/%(repo_name)s/pull-request/%(pull_request_id)s/comment/%(comment_id)s/edit', ['repo_name', 'pull_request_id', 'comment_id']);
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request/%(pull_request_id)s/comment/%(comment_id)s/delete', ['repo_name', 'pull_request_id', 'comment_id']);
+    pyroutes.register('pullrequest_comments', '/%(repo_name)s/pull-request/%(pull_request_id)s/comments', ['repo_name', 'pull_request_id']);
+    pyroutes.register('pullrequest_todos', '/%(repo_name)s/pull-request/%(pull_request_id)s/todos', ['repo_name', 'pull_request_id']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
     pyroutes.register('edit_repo_advanced_archive', '/%(repo_name)s/settings/advanced/archive', ['repo_name']);

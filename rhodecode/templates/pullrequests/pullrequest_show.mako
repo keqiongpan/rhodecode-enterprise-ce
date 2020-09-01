@@ -21,7 +21,120 @@
     ${self.repo_menu(active='showpullrequest')}
 </%def>
 
+<%def name="comments_table(comments, counter_num, todo_comments=False)">
+    <%
+        old_comments = False
+        if todo_comments:
+            cls_ = 'todos-content-table'
+            def sorter(entry):
+                user_id = entry.author.user_id
+                resolved = '1' if entry.resolved else '0'
+                if user_id == c.rhodecode_user.user_id:
+                    # own comments first
+                    user_id = 0
+                return '{}'.format(str(entry.comment_id).zfill(10000))
+        else:
+            cls_ = 'comments-content-table'
+            def sorter(entry):
+                user_id = entry.author.user_id
+                return '{}'.format(str(entry.comment_id).zfill(10000))
+
+
+
+    %>
+    <table class="todo-table ${cls_}" data-total-count="${len(comments)}" data-counter="${counter_num}">
+
+     % for loop_obj, comment_obj in h.looper(reversed(sorted(comments, key=sorter))):
+         <%
+            display = ''
+            _cls = ''
+         %>
+         <% comment_ver_index = comment_obj.get_index_version(getattr(c, 'versions', [])) %>
+         <%
+             prev_comment_ver_index = 0
+             if loop_obj.previous:
+                prev_comment_ver_index = loop_obj.previous.get_index_version(getattr(c, 'versions', []))
+         %>
+         <% hidden_at_ver = comment_obj.outdated_at_version_js(c.at_version_num) %>
+         <% is_from_old_ver = comment_obj.older_than_version_js(c.at_version_num) %>
+         <%
+         if (prev_comment_ver_index > comment_ver_index) and old_comments is False:
+           old_comments = True
+         %>
+          % if todo_comments:
+              % if comment_obj.resolved:
+                  <% _cls = 'resolved-todo' %>
+                  <% display = 'none' %>
+              % endif
+          % else:
+              ## SKIP TODOs we display them in other area
+              % if comment_obj.is_todo:
+                  <% display = 'none' %>
+              % endif
+              ## Skip outdated comments
+              % if comment_obj.outdated:
+                  <% display = 'none' %>
+                  <% _cls = 'hidden-comment' %>
+              % endif
+          % endif
+
+          % if not todo_comments and old_comments:
+          <tr class="old-comments-marker">
+              <td colspan="3"> <code>comments from older versions</code> </td>
+          </tr>
+          ## reset markers so we only show this marker once
+          <% old_comments = None %>
+          % endif
+
+          <tr class="${_cls}" style="display: ${display};">
+              <td class="td-todo-number">
+
+                  <a class="${('todo-resolved' if comment_obj.resolved else '')} permalink"
+                     href="#comment-${comment_obj.comment_id}"
+                     onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${hidden_at_ver})">
+
+                  % if todo_comments:
+                    % if comment_obj.is_inline:
+                      <i class="tooltip icon-code" title="Inline TODO comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
+                    % else:
+                      <i class="tooltip icon-comment" title="General TODO comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
+                    % endif
+                  % else:
+                    % if comment_obj.outdated:
+                      <i class="tooltip icon-comment-toggle" title="Inline Outdated made in v${comment_ver_index}."></i>
+                    % elif comment_obj.is_inline:
+                      <i class="tooltip icon-code" title="Inline comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
+                    % else:
+                      <i class="tooltip icon-comment" title="General comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
+                    % endif
+                  % endif
+
+                  #${comment_obj.comment_id}
+                  </a>
+              </td>
+
+              <td class="td-todo-gravatar">
+                  ${base.gravatar(comment_obj.author.email, 16, user=comment_obj.author, tooltip=True, extra_class=['no-margin'])}
+              </td>
+              <td class="todo-comment-text-wrapper">
+                  <div class="tooltip todo-comment-text timeago" title="${h.format_date(comment_obj.created_on)}" datetime="${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}">
+                    <code>${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}</code>
+                  </div>
+              </td>
+          </tr>
+     % endfor
+
+    </table>
+
+</%def>
+
+
 <%def name="main()">
+## Container to gather extracted Tickets
+<%
+    c.referenced_commit_issues = []
+    c.referenced_desc_issues = []
+%>
 
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
@@ -79,7 +192,7 @@
     </div>
 
     <div id="pr-desc" class="input" title="${_('Rendered using {} renderer').format(c.renderer)}">
-        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name)}
+        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name, issues_container=c.referenced_desc_issues)}
     </div>
 
     <div id="pr-desc-edit" class="input textarea" style="display: none;">
@@ -88,29 +201,6 @@
     </div>
 
     <div id="summary" class="fields pr-details-content">
-
-       ## review
-       <div class="field">
-        <div class="label-pr-detail">
-            <label>${_('Review status')}:</label>
-        </div>
-        <div class="input">
-          %if c.pull_request_review_status:
-          <div class="tag status-tag-${c.pull_request_review_status}">
-            <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-            <span class="changeset-status-lbl">
-              %if c.pull_request.is_closed():
-                  ${_('Closed')},
-              %endif
-
-              ${h.commit_status_lbl(c.pull_request_review_status)}
-
-            </span>
-          </div>
-            - ${_ungettext('calculated based on {} reviewer vote', 'calculated based on {} reviewers votes', len(c.pull_request_reviewers)).format(len(c.pull_request_reviewers))}
-          %endif
-        </div>
-       </div>
 
        ## source
        <div class="field">
@@ -231,7 +321,7 @@
                                 </code>
                            </td>
                            <td>
-                               <input ${('checked="checked"' if c.from_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                               <input ${('checked="checked"' if c.from_version_index == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
                                <input ${('checked="checked"' if c.at_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_target" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
                            </td>
                            <td>
@@ -279,8 +369,6 @@
     </div>
 
   </div>
-
-
 
 
   </div>
@@ -339,9 +427,9 @@
               <div class="compare_view_commits_title">
                   % if not c.compare_mode:
 
-                    % if c.at_version_pos:
+                    % if c.at_version_index:
                         <h4>
-                        ${_('Showing changes at v%d, commenting is disabled.') % c.at_version_pos}
+                        ${_('Showing changes at v{}, commenting is disabled.').format(c.at_version_index)}
                         </h4>
                     % endif
 
@@ -394,10 +482,11 @@
               </div>
 
               % if not c.missing_commits:
+                ## COMPARE RANGE DIFF MODE
                 % if c.compare_mode:
                     % if c.at_version:
                     <h4>
-                        ${_('Commits and changes between v{ver_from} and {ver_to} of this pull request, commenting is disabled').format(ver_from=c.from_version_pos, ver_to=c.at_version_pos if c.at_version_pos else 'latest')}:
+                        ${_('Commits and changes between v{ver_from} and {ver_to} of this pull request, commenting is disabled').format(ver_from=c.from_version_index, ver_to=c.at_version_index if c.at_version_index else 'latest')}:
                     </h4>
 
                     <div class="subtitle-compare">
@@ -452,7 +541,7 @@
                                 </td>
                                 <td class="mid td-description">
                                     <div class="log-container truncate-wrap">
-                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name)}</div>
+                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name, issues_container=c.referenced_commit_issues)}</div>
                                     </div>
                                 </td>
                             </tr>
@@ -463,21 +552,13 @@
 
                     % endif
 
+                ## Regular DIFF
                 % else:
                     <%include file="/compare/compare_commits.mako" />
                 % endif
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                    % if c.at_version:
-                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['display']) %>
-                        <% c.inline_comments_flat = c.inline_versions[c.at_version_num]['display'] %>
-                        <% c.comments = c.comment_versions[c.at_version_num]['display'] %>
-                    % else:
-                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['until']) %>
-                        <% c.inline_comments_flat = c.inline_versions[c.at_version_num]['until'] %>
-                        <% c.comments = c.comment_versions[c.at_version_num]['until'] %>
-                    % endif
 
                     <%
                         pr_menu_data = {
@@ -524,7 +605,7 @@
       ## comments heading with count
       <div class="comments-heading">
         <i class="icon-comment"></i>
-        ${_('Comments')} ${len(c.comments)}
+        ${_('General Comments')} ${len(c.comments)}
       </div>
 
       ## render general comments
@@ -561,6 +642,354 @@
    % endif
   </div>
 
+
+### NAVBOG RIGHT
+<style>
+
+    .right-sidebar {
+        position: fixed;
+        top: 0px;
+        bottom: 0;
+        right: 0;
+
+        background: #fafafa;
+        z-index: 50;
+    }
+
+    .right-sidebar {
+        border-left: 1px solid #dbdbdb;
+    }
+
+    .right-sidebar.right-sidebar-expanded {
+        width: 320px;
+        overflow: scroll;
+    }
+
+    .right-sidebar.right-sidebar-collapsed {
+        width: 50px;
+        padding: 0;
+        display: block;
+        overflow: hidden;
+    }
+
+    .sidenav {
+        float: right;
+        will-change: min-height;
+        background: #fafafa;
+        width: 100%;
+        padding-top: 50px;
+    }
+
+    .sidebar-toggle {
+        height: 30px;
+        text-align: center;
+        margin: 15px 0px 0 0;
+    }
+    .sidebar-toggle a {
+
+    }
+
+    .sidebar-content {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .sidebar-heading {
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-top: 10px;
+    }
+
+    .sidebar-element {
+        margin-top: 20px;
+    }
+    .right-sidebar-collapsed-state {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 0 10px;
+        cursor: pointer;
+        font-size: 1.3em;
+        margin: 0 -15px;
+    }
+
+    .right-sidebar-collapsed-state:hover {
+        background-color: #dbd9da;
+    }
+
+    .old-comments-marker {
+        text-align: center;
+    }
+
+    .old-comments-marker td {
+        padding-top: 15px;
+        border-bottom: 1px solid #dbd9da;
+    }
+
+    #add_reviewer {
+        padding-top: 10px;
+    }
+
+</style>
+
+<aside class="right-sidebar right-sidebar-expanded" id="pr-nav-sticky" style="display: none">
+    <div class="sidenav navbar__inner" >
+        ## TOGGLE
+        <div class="sidebar-toggle" onclick="toggleSidebar(); return false">
+            <a href="#toggleSidebar">
+
+            </a>
+        </div>
+
+        ## CONTENT
+        <div class="sidebar-content">
+
+            ## RULES SUMMARY/RULES
+            <div class="sidebar-element clear-both">
+
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Reviewers')}">
+                    <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                    ${len(c.allowed_reviewers)}
+                </div>
+
+                ## REVIEW RULES
+                <div id="review_rules" style="display: none" class="">
+                    <div class="right-sidebar-expanded-state pr-details-title">
+                        <span class="sidebar-heading">
+                            ${_('Reviewer rules')}
+                        </span>
+
+                    </div>
+                    <div class="pr-reviewer-rules">
+                        ## review rules will be appended here, by default reviewers logic
+                    </div>
+                    <input id="review_data" type="hidden" name="review_data" value="">
+                </div>
+
+                ## REVIEWERS
+                <div class="right-sidebar-expanded-state pr-details-title">
+                    <span class="tooltip sidebar-heading" title="${_ungettext('Review status calculated based on {} reviewer vote', 'Review status calculated based on {} reviewers votes', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))}">
+                        <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                        ${_('Reviewers')}
+                    </span>
+                    %if c.allowed_to_update:
+                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
+                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                    %else:
+                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Show rules')}</span>
+                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                    %endif
+                </div>
+
+                <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
+
+                    ## members redering block
+                    <input type="hidden" name="__start__" value="review_members:sequence">
+
+                    <table id="review_members" class="group_members">
+                    ## This content is loaded via JS and ReviewersPanel
+                    </table>
+
+                    <input type="hidden" name="__end__" value="review_members:sequence">
+                    ## end members redering block
+
+                    %if not c.pull_request.is_closed():
+                        <div id="add_reviewer" class="ac" style="display: none;">
+                        %if c.allowed_to_update:
+                            % if not c.forbid_adding_reviewers:
+                                <div id="add_reviewer_input" class="reviewer_ac">
+                                   ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                   <div id="reviewers_container"></div>
+                                </div>
+                            % endif
+                            <div class="pull-right">
+                                <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                            </div>
+                        %endif
+                        </div>
+                    %endif
+                </div>
+            </div>
+
+##             ## OBSERVERS
+##             <div class="sidebar-element clear-both">
+##                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
+##                     <i class="icon-eye"></i>
+##                     0
+##                 </div>
+##
+##                 <div class="right-sidebar-expanded-state pr-details-title">
+##                   <span class="sidebar-heading">
+##                     <i class="icon-eye"></i>
+##                     ${_('Observers')}
+##                   </span>
+##                 </div>
+##                 <div class="right-sidebar-expanded-state pr-details-content">
+##                     No observers
+##                 </div>
+##             </div>
+
+            ## TODOs
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="TODOs">
+                  <i class="icon-flag-filled"></i>
+                  <span id="todos-count">${len(c.unresolved_comments)}</span>
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                      ## Only show unresolved, that is only what matters
+                      <span class="sidebar-heading noselect" onclick="refreshTODOs(); return false">
+                      <i class="icon-flag-filled"></i>
+                      TODOs
+                      </span>
+
+                      % if not c.at_version:
+                          % if c.resolved_comments:
+                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.resolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
+                          % else:
+                              <span class="block-right last-item noselect">Show resolved</span>
+                          % endif
+                      % endif
+                  </div>
+
+                <div class="right-sidebar-expanded-state pr-details-content">
+
+                  % if c.at_version:
+                      <table>
+                          <tr>
+                            <td class="unresolved-todo-text">${_('TODOs unavailable when browsing versions')}.</td>
+                          </tr>
+                      </table>
+                  % else:
+                    % if c.unresolved_comments + c.resolved_comments:
+                      ${comments_table(c.unresolved_comments + c.resolved_comments, len(c.unresolved_comments), todo_comments=True)}
+                    % else:
+                        <table>
+                            <tr>
+                                <td>
+                                    ${_('No TODOs yet')}
+                                </td>
+                            </tr>
+                        </table>
+                    % endif
+                  % endif
+                </div>
+            </div>
+
+            ## COMMENTS
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    <span id="comments-count">${len(c.inline_comments_flat+c.comments)}</span>
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading noselect" onclick="refreshComments(); return false">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    ${_('Comments')}
+
+##                    % if outdated_comm_count_ver:
+##                         <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                         </a>
+##                         <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+##                         <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+
+##                         % else:
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                    % endif
+
+                  </span>
+
+                  % if outdated_comm_count_ver:
+                    <span class="block-right action_button last-item noselect" onclick="return versionController.toggleElement(this, '.hidden-comment');" data-toggle-on="Show outdated" data-toggle-off="Hide outdated">Show outdated</span>
+                  % else:
+                    <span class="block-right last-item noselect">Show hidden</span>
+                  % endif
+
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-content">
+                % if c.inline_comments_flat + c.comments:
+                    ${comments_table(c.inline_comments_flat + c.comments, len(c.inline_comments_flat+c.comments))}
+                % else:
+                    <table>
+                        <tr>
+                            <td>
+                                ${_('No Comments yet')}
+                            </td>
+                        </tr>
+                    </table>
+                % endif
+                </div>
+
+            </div>
+
+            ## Referenced Tickets
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Referenced Tickets')}">
+                    <i class="icon-info-circled"></i>
+                    ${(len(c.referenced_desc_issues) + len(c.referenced_commit_issues))}
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading">
+                    <i class="icon-info-circled"></i>
+                    ${_('Referenced Tickets')}
+                  </span>
+                </div>
+                <div class="right-sidebar-expanded-state pr-details-content">
+                    <table>
+
+                        <tr><td><code>${_('Pull Request Description')}</code></td></tr>
+                        % if c.referenced_desc_issues:
+                            % for ticket_dict in c.referenced_desc_issues:
+                            <tr>
+                                <td>
+                                    <a href="${ticket_dict.get('url')}">
+                                    ${ticket_dict.get('id')}
+                                    </a>
+                                </td>
+                            </tr>
+                            % endfor
+                        % else:
+                            <tr>
+                                <td>
+                                    ${_('No Ticket data found.')}
+                                </td>
+                            </tr>
+                        % endif
+
+                        <tr><td style="padding-top: 10px"><code>${_('Commit Messages')}</code></td></tr>
+                        % if c.referenced_commit_issues:
+                            % for ticket_dict in c.referenced_commit_issues:
+                            <tr>
+                                <td>
+                                    <a href="${ticket_dict.get('url')}">
+                                    ${ticket_dict.get('id')}
+                                    </a>
+                                </td>
+                            </tr>
+                            % endfor
+                        % else:
+                            <tr>
+                                <td>
+                                    ${_('No Ticket data found.')}
+                                </td>
+                            </tr>
+                        % endif
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</aside>
+
+## This JS needs to be at the end
 <script type="text/javascript">
 
       versionController = new VersionController();
@@ -570,6 +999,61 @@
       commitsController = new CommitsController();
 
       updateController = new UpdatePrController();
+
+/** leak object to top level scope **/
+window.PullRequestPresenceController;
+
+(function () {
+    "use strict";
+
+    window.PullRequestPresenceController = function (channel) {
+        var self = this;
+        this.channel = channel;
+        this.users = {};
+
+        this.storeUsers = function (users) {
+            self.users = {}
+            $.each(users, function(index, value) {
+                var userId = value.state.id;
+                self.users[userId] = value.state;
+            })
+        }
+
+        this.render = function () {
+            $.each($('.reviewer_entry'), function(index, value) {
+                var userData = $(value).data();
+                if(self.users[userData.reviewerUserId] !== undefined){
+                    $(value).find('.presence-state').show();
+                } else {
+                    $(value).find('.presence-state').hide();
+                }
+            })
+        };
+
+        this.handlePresence = function (data) {
+
+            if (data.type == 'presence' && data.channel === self.channel) {
+                this.storeUsers(data.users);
+                this.render()
+            }
+        };
+
+        this.handleChannelUpdate = function (data) {
+
+            if (data.channel === this.channel) {
+                this.storeUsers(data.state.users);
+                this.render()
+            }
+
+        };
+
+        /* subscribe our chat to topics that are interesting to it */
+        $.Topic('/connection_controller/channel_update').subscribe(this.handleChannelUpdate.bind(this));
+        $.Topic('/connection_controller/presence').subscribe(this.handlePresence.bind(this));
+    };
+
+})();
+
 
       $(function () {
 
@@ -616,6 +1100,8 @@
               closeButton: $('#close_edit_reviewers'),
               addButton: $('#add_reviewer'),
               removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove'),
+              reviewRules: ${c.pull_request_default_reviewers_data_json | n},
+              setReviewers: ${c.pull_request_set_reviewers_data_json | n},
 
               init: function () {
                   var self = this;
@@ -624,24 +1110,50 @@
                   });
                   this.closeButton.on('click', function (e) {
                       self.close();
+                      self.renderReviewers();
                   });
+
+                  self.renderReviewers();
+
+              },
+
+              renderReviewers: function () {
+
+                $('#review_members').html('')
+                $.each(this.setReviewers.reviewers, function (key, val) {
+                    var member = val;
+
+                    var entry = renderTemplate('reviewMemberEntry', {
+                        'member': member,
+                        'mandatory': member.mandatory,
+                        'reasons': member.reasons,
+                        'allowed_to_update': member.allowed_to_update,
+                        'review_status': member.review_status,
+                        'review_status_label': member.review_status_label,
+                        'user_group': member.user_group,
+                        'create': false
+                    });
+
+                    $('#review_members').append(entry)
+                });
+                tooltipActivate();
+
               },
 
               edit: function (event) {
                   this.editButton.hide();
                   this.closeButton.show();
                   this.addButton.show();
-                  this.removeButtons.css('visibility', 'visible');
+                  $(this.removeButtons.selector).css('visibility', 'visible');
                   // review rules
-                  reviewersController.loadReviewRules(
-                      ${c.pull_request.reviewer_data_json | n});
+                  reviewersController.loadReviewRules(this.reviewRules);
               },
 
               close: function (event) {
                   this.editButton.show();
                   this.closeButton.hide();
                   this.addButton.hide();
-                  this.removeButtons.css('visibility', 'hidden');
+                  $(this.removeButtons.selector).css('visibility', 'hidden');
                   // hide review rules
                   reviewersController.hideReviewRules()
               }
@@ -670,13 +1182,82 @@
               $('.action-buttons-extra').css('opacity', 0.3);
 
               $('.pull-request-merge').load(
-                      loadUrl, function () {
-                          $('.pull-request-merge').css('opacity', 1);
+                  loadUrl, function () {
+                      $('.pull-request-merge').css('opacity', 1);
 
-                          $('.action-buttons-extra').css('opacity', 1);
-                      }
+                      $('.action-buttons-extra').css('opacity', 1);
+                  }
               );
           };
+
+          refreshComments = function () {
+            var params = {
+                'pull_request_id': templateContext.pull_request_data.pull_request_id,
+                'repo_name': templateContext.repo_name,
+                'version': '${request.GET.get('version', '')}',
+            };
+            var data = {"comments[]": ["1"]};
+            var loadUrl = pyroutes.url('pullrequest_comments', params);
+            var $targetElem = $('.comments-content-table');
+            $targetElem.css('opacity', 0.3);
+            $targetElem.load(
+                  loadUrl, data, function (responseText, textStatus, jqXHR) {
+                    if (jqXHR.status !== 200) {
+                        return false;
+                    }
+                    var $counterElem = $('#comments-count');
+                    var newCount = $(responseText).data('counter');
+                    if (newCount !== undefined) {
+                        var callback = function () {
+                            $counterElem.animate({'opacity': 1.00}, 200)
+                            $counterElem.html(newCount);
+                        };
+                        $counterElem.animate({'opacity': 0.15}, 200, callback);
+                    }
+
+
+                    $targetElem.css('opacity', 1);
+                    tooltipActivate();
+                  }
+            );
+          }
+
+          refreshTODOs = function () {
+            var params = {
+                'pull_request_id': templateContext.pull_request_data.pull_request_id,
+                'repo_name': templateContext.repo_name,
+                'version': '${request.GET.get('version', '')}',
+            };
+            var data = {"comments[]": ["1"]};
+            var loadUrl = pyroutes.url('pullrequest_todos', params);
+            var $targetElem = $('.todos-content-table');
+            $targetElem.css('opacity', 0.3);
+            $targetElem.load(
+                  loadUrl, data, function (responseText, textStatus, jqXHR) {
+                    if (jqXHR.status !== 200) {
+                        return false;
+                    }
+                    var $counterElem = $('#todos-count')
+                    var newCount = $(responseText).data('counter');
+                    if (newCount !== undefined) {
+                        var callback = function () {
+                            $counterElem.animate({'opacity': 1.00}, 200)
+                            $counterElem.html(newCount);
+                        };
+                        $counterElem.animate({'opacity': 0.15}, 200, callback);
+                    }
+
+                    $targetElem.css('opacity', 1);
+                    tooltipActivate();
+                  }
+            );
+
+          }
+
+          refreshAllComments = function() {
+              refreshComments();
+              refreshTODOs();
+          }
 
           closePullRequest = function (status) {
               if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
@@ -771,441 +1352,91 @@
 
       })
 
-  </script>
+      $(document).ready(function () {
 
-
-### NAVBOG RIGHT
-<style>
-
-    .right-sidebar {
-        position: fixed;
-        top: 0px;
-        bottom: 0;
-        right: 0;
-
-        background: #fafafa;
-        z-index: 200;
-    }
-
-    .right-sidebar {
-        border-left: 1px solid #dbdbdb;
-    }
-
-    .right-sidebar.right-sidebar-expanded {
-        width: 320px;
-        overflow: scroll;
-    }
-
-    .right-sidebar.right-sidebar-collapsed {
-        width: 62px;
-        padding: 0;
-        display: block;
-        overflow: hidden;
-    }
-
-    .sidenav {
-        float: right;
-        will-change: min-height;
-        background: #fafafa;
-        width: 100%;
-    }
-
-    .sidebar-toggle {
-        height: 30px;
-        text-align: center;
-        margin: 15px 0 0 0;
-    }
-    .sidebar-toggle a {
-
-    }
-
-    .sidebar-content {
-        margin-left: 5px;
-        margin-right: 5px;
-    }
-
-    .sidebar-heading {
-        font-size: 1.2em;
-        font-weight: 700;
-        margin-top: 10px;
-    }
-
-    .sidebar-element {
-        margin-top: 20px;
-    }
-    .right-sidebar-collapsed-state {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 0 10px;
-        cursor: pointer;
-        font-size: 1.3em;
-        margin: 0 -10px;
-    }
-
-    .right-sidebar-collapsed-state:hover {
-        background-color: #dbd9da;
-    }
-
-    .navbar__inner {
-        height: 100%;
-        background: #fafafa;
-        position: relative;
-    }
-
-</style>
-
-
-
-<aside class="right-sidebar right-sidebar-expanded">
-    <div class="sidenav">
-        ## TOGGLE
-        <div class="sidebar-toggle" onclick="toggleSidebar(); return false">
-            <a href="#toggleSidebar">
-
-            </a>
-        </div>
-
-        ## CONTENT
-        <div class="sidebar-content">
-
-            ## RULES SUMMARY/RULES
-            <div class="sidebar-element clear-both">
-
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Reviewers')}">
-                    <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-                    <br/>${len(c.pull_request_reviewers)}
-                </div>
-
-                ## REVIEW RULES
-                <div id="review_rules" style="display: none" class="">
-                    <div class="pr-details-title">
-                        <span class="sidebar-heading">
-                            ${_('Reviewer rules')}
-                        </span>
-
-                    </div>
-                    <div class="pr-reviewer-rules">
-                        ## review rules will be appended here, by default reviewers logic
-                    </div>
-                    <input id="review_data" type="hidden" name="review_data" value="">
-                </div>
-
-                ## REVIEWERS
-                <div class="right-sidebar-expanded-state pr-details-title">
-                    <span class="sidebar-heading">
-                        <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-                        ${_('Reviewers')} - ${len(c.pull_request_reviewers)}
-                    </span>
-                      %if c.allowed_to_update:
-                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
-                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
-                      %endif
-                </div>
-                <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
-
-                    ## members redering block
-                    <input type="hidden" name="__start__" value="review_members:sequence">
-                    <ul id="review_members" class="group_members">
-
-                    % for review_obj, member, reasons, mandatory, status in c.pull_request_reviewers:
-                        <script>
-                            var member = ${h.json.dumps(h.reviewer_as_json(member, reasons=reasons, mandatory=mandatory, user_group=review_obj.rule_user_group_data()))|n};
-                            var status = "${(status[0][1].status if status else 'not_reviewed')}";
-                            var status_lbl = "${h.commit_status_lbl(status[0][1].status if status else 'not_reviewed')}";
-                            var allowed_to_update = ${h.json.dumps(c.allowed_to_update)};
-
-                            var entry = renderTemplate('reviewMemberEntry', {
-                                'member': member,
-                                'mandatory': member.mandatory,
-                                'reasons': member.reasons,
-                                'allowed_to_update': allowed_to_update,
-                                'review_status': status,
-                                'review_status_label': status_lbl,
-                                'user_group': member.user_group,
-                                'create': false
-                            });
-                            $('#review_members').append(entry)
-                        </script>
-
-                    % endfor
-
-                    </ul>
-
-                    <input type="hidden" name="__end__" value="review_members:sequence">
-                    ## end members redering block
-
-                    %if not c.pull_request.is_closed():
-                        <div id="add_reviewer" class="ac" style="display: none;">
-                        %if c.allowed_to_update:
-                            % if not c.forbid_adding_reviewers:
-                                <div id="add_reviewer_input" class="reviewer_ac">
-                                   ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
-                                   <div id="reviewers_container"></div>
-                                </div>
-                            % endif
-                            <div class="pull-right">
-                                <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
-                            </div>
-                        %endif
-                        </div>
-                    %endif
-                </div>
-            </div>
-
-            ## OBSERVERS
-            <div class="sidebar-element clear-both">
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
-                    <i class="icon-eye"></i>
-                    <br/> 0
-                </div>
-
-                <div class="right-sidebar-expanded-state pr-details-title">
-                  <span class="sidebar-heading">
-                    <i class="icon-eye"></i>
-                    ${_('Observers')}
-                  </span>
-                </div>
-                <div class="right-sidebar-expanded-state pr-details-content">
-                    No observers - 0
-                </div>
-            </div>
-
-            ## TODOs
-            <div class="sidebar-element clear-both">
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="TODOs">
-                  <i class="icon-flag-filled"></i>
-                  <br/> ${len(c.unresolved_comments)}
-                </div>
-
-                ## TODOs will be listed here
-                <div class="right-sidebar-expanded-state pr-details-title">
-                      ## Only show unresolved, that is only what matters
-                      <span class="sidebar-heading">
-                      <i class="icon-flag-filled"></i>
-                      TODOs - ${len(c.unresolved_comments)}
-                      ##/ ${(len(c.unresolved_comments) + len(c.resolved_comments))}
-                      </span>
-
-                      % if not c.at_version:
-                          % if c.resolved_comments:
-                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.unresolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
-                          % else:
-                              <span class="block-right last-item noselect">Show resolved</span>
-                          % endif
-                      % endif
-                  </div>
-
-                <div class="right-sidebar-expanded-state pr-details-content">
-
-                    <table class="todo-table">
-                          <%
-                            def sorter(entry):
-                                user_id = entry.author.user_id
-                                resolved = '1' if entry.resolved else '0'
-                                if user_id == c.rhodecode_user.user_id:
-                                    # own comments first
-                                    user_id = 0
-                                return '{}_{}_{}'.format(resolved, user_id, str(entry.comment_id).zfill(100))
-                          %>
-
-                      % if c.at_version:
-                          <tr>
-                            <td class="unresolved-todo-text">${_('unresolved TODOs unavailable in this view')}.</td>
-                          </tr>
-                      % else:
-                          % for todo_comment in sorted(c.unresolved_comments + c.resolved_comments, key=sorter):
-                              <% resolved = todo_comment.resolved %>
-                              % if inline:
-                                  <% outdated_at_ver = todo_comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
-                              % else:
-                                  <% outdated_at_ver = todo_comment.older_than_version(getattr(c, 'at_version_num', None)) %>
-                              % endif
-
-                              <tr ${('class="unresolved-todo" style="display: none"' if resolved else '') |n}>
-
-                                  <td class="td-todo-number">
-                                      % if resolved:
-                                          <a class="permalink todo-resolved tooltip" title="${_('Resolved by comment #{}').format(todo_comment.resolved.comment_id)}" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                                          <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                                      % else:
-                                          <a class="permalink" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                                          <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                                      % endif
-                                  </td>
-                                  <td class="td-todo-gravatar">
-                                      ${base.gravatar(todo_comment.author.email, 16, user=todo_comment.author, tooltip=True, extra_class=['no-margin'])}
-                                  </td>
-                                  <td class="todo-comment-text-wrapper">
-                                      <div class="todo-comment-text">
-                                        <code>${h.chop_at_smart(todo_comment.text, '\n', suffix_if_chopped='...')}</code>
-                                      </div>
-                                  </td>
-
-                              </tr>
-                          % endfor
-
-                          % if len(c.unresolved_comments) == 0:
-                              <tr>
-                                <td class="unresolved-todo-text">${_('No unresolved TODOs')}.</td>
-                              </tr>
-                          % endif
-
-                      % endif
-
-                    </table>
-
-                </div>
-            </div>
-
-            ## COMMENTS
-            <div class="sidebar-element clear-both">
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
-                    <i class="icon-comment" style="color: #949494"></i>
-                    <br/> ${len(c.inline_comments_flat+c.comments)}
-                </div>
-
-                <div class="right-sidebar-expanded-state pr-details-title">
-                  <span class="sidebar-heading">
-                    <i class="icon-comment" style="color: #949494"></i>
-                    ${_('Comments')} - ${len(c.inline_comments_flat+c.comments)}
-                      ##${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))} /
-                      ##${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(len(c.inline_comments_flat))}
-
-                      ## TODO check why this ins't working
-                        % if pull_request_menu:
-                            <%
-                            outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
-                            %>
-
-                            % if outdated_comm_count_ver:
-                                <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
-                                    (${_("{} Outdated").format(outdated_comm_count_ver)})
-                                </a>
-                                <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
-                                <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
-                            % else:
-                                (${_("{} Outdated").format(outdated_comm_count_ver)})
-                            % endif
-
-                        % endif
-                  </span>
-                  <span class="block-right action_button last-item noselect" onclick="return versionController.toggleElement(this, '.hidden-comment');" data-toggle-on="Show all" data-toggle-off="Hide all">Show all</span>
-                </div>
-
-                <div class="right-sidebar-expanded-state pr-details-content">
-                    <table class="todo-table">
-                      <%
-                        def sorter(entry):
-                            user_id = entry.author.user_id
-                            return '{}'.format(str(entry.comment_id).zfill(100))
-                      %>
-
-                     % for comment_obj in reversed(sorted(c.inline_comments_flat + c.comments, key=sorter)):
-                         <%
-                            display = ''
-                            _cls = ''
-                         %>
-                         ## SKIP TODOs we display them above
-                          % if comment_obj.is_todo:
-                              <% display = 'none' %>
-                          % endif
-
-                          ## Skip outdated comments
-                          % if comment_obj.outdated:
-                              <% display = 'none' %>
-                              <% _cls = 'hidden-comment' %>
-                          % endif
-
-                          <tr class="${_cls}" style="display: ${display}">
-                              <td class="td-todo-number">
-                                  <a class="permalink" href="#comment-${comment_obj.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${comment_obj.outdated_js})">
-                                  % if comment_obj.outdated:
-                                      <i class="tooltip icon-comment-toggle" title="Outdated"></i>
-                                  % elif comment_obj.is_inline:
-                                      <i class="tooltip icon-code" title="Inline"></i>
-                                  % else:
-                                      <i class="tooltip icon-comment" title="General"></i>
-                                  % endif
-                                  ${comment_obj.comment_id}
-                                  </a>
-                              </td>
-                              <td class="td-todo-gravatar">
-                                  ${base.gravatar(comment_obj.author.email, 16, user=comment_obj.author, tooltip=True, extra_class=['no-margin'])}
-                              </td>
-                              <td class="todo-comment-text-wrapper">
-                                  <div class="todo-comment-text">
-                                    <code>${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}</code>
-                                  </div>
-                              </td>
-                          </tr>
-                     % endfor
-
-                </table>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-</aside>
-
-
-<script>
-    var $sideBar = $('.right-sidebar');
-    var marginExpanded = {'margin': '0 320px 0 0'};
-    var marginCollapsed = {'margin': '0 50px 0 0'};
-
-    if($sideBar.hasClass('right-sidebar-expanded')) {
-        $('.outerwrapper').css(marginExpanded);
-        $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
-        $('.right-sidebar-collapsed-state').hide();
-        $('.right-sidebar-expanded-state').show();
-        updateSticky()
-
-    } else {
-        $('.outerwrapper').css(marginCollapsed);
-        $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
-        $('.right-sidebar-collapsed-state').hide();
-        $('.right-sidebar-expanded-state').show();
-        updateSticky()
-    }
-
-    var toggleSidebar = function(){
         var $sideBar = $('.right-sidebar');
+        var marginExpVal = '320'
+        var marginColVal = '50'
+        var marginExpanded = {'margin': '0 {0}px 0 0'.format(marginExpVal)};
+        var marginCollapsed = {'margin': '0 {0}px 0 0'.format(marginColVal)};
+        var marginExpandedHeader = {'margin': '0 -{0}px 0 0'.format(marginExpVal), 'z-index': 10000};
+        var marginCollapsedHeader = {'margin': '0 -{0}px 0 0'.format(marginColVal), 'z-index': 10000};
 
-        if($sideBar.hasClass('right-sidebar-expanded')) {
-            // collapse now
-            $sideBar.removeClass('right-sidebar-expanded')
-            $sideBar.addClass('right-sidebar-collapsed')
+        var updateStickyHeader = function() {
+          if (window.updateSticky !== undefined) {
+              // potentially our comments change the active window size, so we
+              // notify sticky elements
+              updateSticky()
+          }
+        }
+
+        var expandSidebar = function() {
+            var $sideBar = $('.right-sidebar');
+            $('.outerwrapper').css(marginExpanded);
+            $('.header').css(marginExpandedHeader);
+            $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
+            $('.right-sidebar-collapsed-state').hide();
+            $('.right-sidebar-expanded-state').show();
+
+            $sideBar.addClass('right-sidebar-expanded')
+            $sideBar.removeClass('right-sidebar-collapsed')
+        }
+
+        var collapseSidebar = function() {
+            var $sideBar = $('.right-sidebar');
             $('.outerwrapper').css(marginCollapsed);
+            $('.header').css(marginCollapsedHeader);
             $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
             $('.right-sidebar-collapsed-state').show();
             $('.right-sidebar-expanded-state').hide();
 
-        } else {
-            // expand now
-            $('.outerwrapper').css(marginExpanded);
-            $sideBar.addClass('right-sidebar-expanded')
-            $sideBar.removeClass('right-sidebar-collapsed')
-            $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
-            $('.right-sidebar-collapsed-state').hide();
-            $('.right-sidebar-expanded-state').show();
+            $sideBar.removeClass('right-sidebar-expanded')
+            $sideBar.addClass('right-sidebar-collapsed')
         }
 
-        // update our other sticky header in same context
-        updateSticky()
-    }
+        toggleSidebar = function () {
+            var $sideBar = $('.right-sidebar');
 
-    var sidebarElement = document.getElementById('pr-nav-sticky');
+            if ($sideBar.hasClass('right-sidebar-expanded')) {
+                // expanded -> collapsed transition
+                collapseSidebar();
+                var sidebarState = 'collapsed';
 
-        ##  sidebar = new StickySidebar(sidebarElement, {
-        ##        containerSelector: '.main',
-        ##        minWidth: 62,
-        ##        innerWrapperSelector: '.navbar__inner',
-        ##        stickyClass: 'is-sticky',
-        ##  });
+            } else {
+                // collapsed -> expanded
+                expandSidebar();
+                var sidebarState = 'expanded';
+            }
 
-</script>
+            // update our other sticky header in same context
+            updateStickyHeader();
+            storeUserSessionAttr('rc_user_session_attr.sidebarState', sidebarState);
+        }
+
+        var expanded = $sideBar.hasClass('right-sidebar-expanded');
+
+        if (templateContext.session_attrs.sidebarState === 'expanded') {
+            expanded = true
+        } else if (templateContext.session_attrs.sidebarState === 'collapsed') {
+            expanded = false
+        }
+
+        // show sidebar since it's hidden on load
+        $('.right-sidebar').show();
+
+        // init based on set initial class, or if defined user session attrs
+        if (expanded) {
+             expandSidebar();
+             updateStickyHeader();
+
+        } else {
+             collapseSidebar();
+             updateStickyHeader();
+        }
+        var channel = '${c.pr_broadcast_channel}';
+        new PullRequestPresenceController(channel)
+
+    })
+  </script>
+
 </%def>

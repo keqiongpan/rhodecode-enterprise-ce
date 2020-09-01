@@ -21,8 +21,9 @@
     ## to speed up lookups cache some functions before the loop
     <%
         active_patterns = h.get_active_pattern_entries(c.repo_name)
-        urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns)
+        urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns, issues_container=getattr(c, 'referenced_commit_issues', None))
     %>
+
     %for commit in c.commit_ranges:
         <tr id="row-${commit.raw_id}"
             commit_id="${commit.raw_id}"

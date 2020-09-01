@@ -98,10 +98,13 @@ ReviewersController = function () {
     var self = this;
     this.$reviewRulesContainer = $('#review_rules');
     this.$rulesList = this.$reviewRulesContainer.find('.pr-reviewer-rules');
+    this.$userRule = $('.pr-user-rule-container');
     this.forbidReviewUsers = undefined;
     this.$reviewMembers = $('#review_members');
     this.currentRequest = null;
     this.diffData = null;
+    this.enabledRules = [];
+
     //dummy handler, we might register our own later
     this.diffDataHandler = function(data){};
 
@@ -116,14 +119,17 @@ ReviewersController = function () {
 
     this.hideReviewRules = function () {
         self.$reviewRulesContainer.hide();
+        $(self.$userRule.selector).hide();
     };
 
     this.showReviewRules = function () {
         self.$reviewRulesContainer.show();
+        $(self.$userRule.selector).show();
     };
 
     this.addRule = function (ruleText) {
         self.showReviewRules();
+        self.enabledRules.push(ruleText);
         return '<div>- {0}</div>'.format(ruleText)
     };
 
@@ -179,6 +185,7 @@ ReviewersController = function () {
                     _gettext('Reviewers picked from source code changes.'))
             )
         }
+
         if (data.rules.forbid_adding_reviewers) {
             $('#add_reviewer_input').remove();
             self.$rulesList.append(
@@ -186,6 +193,7 @@ ReviewersController = function () {
                     _gettext('Adding new reviewers is forbidden.'))
             )
         }
+
         if (data.rules.forbid_author_to_review) {
             self.forbidReviewUsers.push(data.rules_data.pr_author);
             self.$rulesList.append(
@@ -193,6 +201,7 @@ ReviewersController = function () {
                     _gettext('Author is not allowed to be a reviewer.'))
             )
         }
+
         if (data.rules.forbid_commit_author_to_review) {
 
             if (data.rules_data.forbidden_users) {
@@ -206,6 +215,12 @@ ReviewersController = function () {
                 self.addRule(
                     _gettext('Commit Authors are not allowed to be a reviewer.'))
             )
+        }
+
+        // we don't have any rules set, so we inform users about it
+        if (self.enabledRules.length === 0) {
+            self.addRule(
+                _gettext('No review rules set.'))
         }
 
         return self.forbidReviewUsers
@@ -347,11 +362,12 @@ ReviewersController = function () {
                 members.innerHTML += renderTemplate('reviewMemberEntry', {
                     'member': reviewer_obj,
                     'mandatory': mandatory,
+                    'reasons': reasons,
                     'allowed_to_update': true,
                     'review_status': 'not_reviewed',
                     'review_status_label': _gettext('Not Reviewed'),
-                    'reasons': reasons,
-                    'create': true
+                    'user_group': reviewer_obj.user_group,
+                    'create': true,
                 });
                 tooltipActivate();
             }
@@ -600,7 +616,7 @@ VersionController = function () {
         var $elem = $(elem);
         var $target = $(target);
 
-        if ($target.is(':visible')) {
+        if ($target.is(':visible') || $target.length === 0) {
             $target.hide();
             $elem.html($elem.data('toggleOn'))
         } else {
