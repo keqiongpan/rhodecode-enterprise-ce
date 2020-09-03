@@ -224,7 +224,10 @@ class RedisAuthSessions(BaseAuthSessions):
             data = client.get(key)
             if data:
                 json_data = pickle.loads(data)
-                accessed_time = json_data['_accessed_time']
+                try:
+                    accessed_time = json_data['_accessed_time']
+                except KeyError:
+                    accessed_time = 0
                 if accessed_time < expiry_time:
                     client.delete(key)
                     deleted_keys += 1
