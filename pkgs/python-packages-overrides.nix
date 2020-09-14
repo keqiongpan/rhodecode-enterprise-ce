@@ -32,6 +32,8 @@ self: super: {
     patches = [
       ./patches/beaker/patch-beaker-lock-func-debug.diff
       ./patches/beaker/patch-beaker-metadata-reuse.diff
+      ./patches/beaker/patch-beaker-improved-redis.diff
+      ./patches/beaker/patch-beaker-improved-redis-2.diff
     ];
   });
 
