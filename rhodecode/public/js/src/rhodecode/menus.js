@@ -36,3 +36,74 @@ var quick_repo_menu = function() {
     hide_quick_repo_menus();
   });
 };
+
+
+window.toggleElement = function (elem, target) {
+  var $elem = $(elem);
+  var $target = $(target);
+
+  if ($target.is(':visible') || $target.length === 0) {
+    $target.hide();
+    $elem.html($elem.data('toggleOn'))
+  } else {
+    $target.show();
+    $elem.html($elem.data('toggleOff'))
+  }
+
+  return false
+}
+
+var marginExpVal = '300' // needs a sync with `.right-sidebar.right-sidebar-expanded` value
+var marginColVal = '40'  // needs a sync with `.right-sidebar.right-sidebar-collapsed` value
+
+var marginExpanded = {'margin': '0 {0}px 0 0'.format(marginExpVal)};
+var marginCollapsed = {'margin': '0 {0}px 0 0'.format(marginColVal)};
+
+var updateStickyHeader = function () {
+    if (window.updateSticky !== undefined) {
+        // potentially our comments change the active window size, so we
+        // notify sticky elements
+        updateSticky()
+    }
+}
+
+var expandSidebar = function () {
+    var $sideBar = $('.right-sidebar');
+    $('.outerwrapper').css(marginExpanded);
+    $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
+    $('.right-sidebar-collapsed-state').hide();
+    $('.right-sidebar-expanded-state').show();
+    $('.branding').addClass('display-none');
+    $sideBar.addClass('right-sidebar-expanded')
+    $sideBar.removeClass('right-sidebar-collapsed')
+}
+
+var collapseSidebar = function () {
+    var $sideBar = $('.right-sidebar');
+    $('.outerwrapper').css(marginCollapsed);
+    $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
+    $('.right-sidebar-collapsed-state').show();
+    $('.right-sidebar-expanded-state').hide();
+    $('.branding').removeClass('display-none');
+    $sideBar.removeClass('right-sidebar-expanded')
+    $sideBar.addClass('right-sidebar-collapsed')
+}
+
+window.toggleSidebar = function () {
+    var $sideBar = $('.right-sidebar');
+
+    if ($sideBar.hasClass('right-sidebar-expanded')) {
+        // expanded -> collapsed transition
+        collapseSidebar();
+        var sidebarState = 'collapsed';
+
+    } else {
+        // collapsed -> expanded
+        expandSidebar();
+        var sidebarState = 'expanded';
+    }
+
+    // update our other sticky header in same context
+    updateStickyHeader();
+    storeUserSessionAttr('rc_user_session_attr.sidebarState', sidebarState);
+}

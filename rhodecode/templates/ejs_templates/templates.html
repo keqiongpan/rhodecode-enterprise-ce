@@ -53,6 +53,14 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
             var reviewGroup = null;
             var reviewGroupColor = 'transparent';
         }
+        var rule_show = rule_show || false;
+
+        if (rule_show) {
+            var rule_visibility = 'table-cell';
+        } else {
+            var rule_visibility = 'none';
+        }
+
     %>
 
 <tr id="reviewer_<%= member.user_id %>" class="reviewer_entry" tooltip="Review Group" data-reviewer-user-id="<%= member.user_id %>">
@@ -98,9 +106,9 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
     </td>
 
     <% } else { %>
-    <td>
+    <td style="text-align: right;width: 10px;">
         <% if (allowed_to_update) { %>
-          <div class="reviewer_member_remove action_button" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
+          <div class="reviewer_member_remove" onclick="reviewersController.removeReviewMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
               <i class="icon-remove"></i>
           </div>
         <% } %>
@@ -110,7 +118,7 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
 </tr>
 
 <tr>
-    <td colspan="4" style="display: none" class="pr-user-rule-container">
+    <td colspan="4" style="display: <%= rule_visibility %>" class="pr-user-rule-container">
       <input type="hidden" name="__start__" value="reviewer:mapping">
 
         <%if (member.user_group && member.user_group.vote_rule) { %>

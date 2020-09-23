@@ -18,8 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
 import logging
+import collections
 
 from pyramid.httpexceptions import (
     HTTPNotFound, HTTPBadRequest, HTTPFound, HTTPForbidden, HTTPConflict)
@@ -34,14 +34,14 @@ from rhodecode.apps.file_store.exceptions import FileNotAllowedException, FileOv
 from rhodecode.lib import diffs, codeblocks
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
-
+from rhodecode.lib.ext_json import json
 from rhodecode.lib.compat import OrderedDict
 from rhodecode.lib.diffs import (
     cache_diff, load_cached_diff, diff_cache_exist, get_diff_context,
     get_diff_whitespace_flag)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError, CommentVersionMismatch
 import rhodecode.lib.helpers as h
-from rhodecode.lib.utils2 import safe_unicode, str2bool
+from rhodecode.lib.utils2 import safe_unicode, str2bool, StrictAttributeDict
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError)
@@ -87,7 +87,6 @@ class RepoCommitsView(RepoAppView):
         diff_limit = c.visual.cut_off_limit_diff
         file_limit = c.visual.cut_off_limit_file
 
-
         # get ranges of commit ids if preset
         commit_range = commit_id_range.split('...')[:2]
 
@@ -116,6 +115,7 @@ class RepoCommitsView(RepoAppView):
         except Exception:
             log.exception("General failure")
             raise HTTPNotFound()
+        single_commit = len(c.commit_ranges) == 1
 
         c.changes = OrderedDict()
         c.lines_added = 0
@@ -129,23 +129,48 @@ class RepoCommitsView(RepoAppView):
         c.inline_comments = []
         c.files = []
 
-        c.statuses = []
         c.comments = []
         c.unresolved_comments = []
         c.resolved_comments = []
-        if len(c.commit_ranges) == 1:
+
+        # Single commit
+        if single_commit:
             commit = c.commit_ranges[0]
             c.comments = CommentsModel().get_comments(
                 self.db_repo.repo_id,
                 revision=commit.raw_id)
-            c.statuses.append(ChangesetStatusModel().get_status(
-                self.db_repo.repo_id, commit.raw_id))
+
             # comments from PR
             statuses = ChangesetStatusModel().get_statuses(
                 self.db_repo.repo_id, commit.raw_id,
                 with_revisions=True)
-            prs = set(st.pull_request for st in statuses
-                      if st.pull_request is not None)
+
+            prs = set()
+            reviewers = list()
+            reviewers_duplicates = set()  # to not have duplicates from multiple votes
+            for c_status in statuses:
+
+                # extract associated pull-requests from votes
+                if c_status.pull_request:
+                    prs.add(c_status.pull_request)
+
+                # extract reviewers
+                _user_id = c_status.author.user_id
+                if _user_id not in reviewers_duplicates:
+                    reviewers.append(
+                        StrictAttributeDict({
+                            'user': c_status.author,
+
+                            # fake attributed for commit, page that we don't have
+                            # but we share the display with PR page
+                            'mandatory': False,
+                            'reasons': [],
+                            'rule_user_group_data': lambda: None
+                        })
+                    )
+                    reviewers_duplicates.add(_user_id)
+
+            c.allowed_reviewers = reviewers
             # from associated statuses, check the pull requests, and
             # show comments from them
             for pr in prs:
@@ -155,6 +180,37 @@ class RepoCommitsView(RepoAppView):
                 .get_commit_unresolved_todos(commit.raw_id)
             c.resolved_comments = CommentsModel()\
                 .get_commit_resolved_todos(commit.raw_id)
+
+            c.inline_comments_flat = CommentsModel()\
+                .get_commit_inline_comments(commit.raw_id)
+
+            review_statuses = ChangesetStatusModel().aggregate_votes_by_user(
+                statuses, reviewers)
+
+            c.commit_review_status = ChangesetStatus.STATUS_NOT_REVIEWED
+
+            c.commit_set_reviewers_data_json = collections.OrderedDict({'reviewers': []})
+
+            for review_obj, member, reasons, mandatory, status in review_statuses:
+                member_reviewer = h.reviewer_as_json(
+                    member, reasons=reasons, mandatory=mandatory,
+                    user_group=None
+                )
+
+                current_review_status = status[0][1].status if status else ChangesetStatus.STATUS_NOT_REVIEWED
+                member_reviewer['review_status'] = current_review_status
+                member_reviewer['review_status_label'] = h.commit_status_lbl(current_review_status)
+                member_reviewer['allowed_to_update'] = False
+                c.commit_set_reviewers_data_json['reviewers'].append(member_reviewer)
+
+            c.commit_set_reviewers_data_json = json.dumps(c.commit_set_reviewers_data_json)
+
+            # NOTE(marcink): this uses the same voting logic as in pull-requests
+            c.commit_review_status = ChangesetStatusModel().calculate_status(review_statuses)
+            c.commit_broadcast_channel = u'/repo${}$/commit/{}'.format(
+                c.repo_name,
+                commit.raw_id
+            )
 
         diff = None
         # Iterate over ranges (default commit view is always one commit)
@@ -397,6 +453,7 @@ class RepoCommitsView(RepoAppView):
         }
         if comment:
             c.co = comment
+            c.at_version_num = 0
             rendered_comment = render(
                 'rhodecode:templates/changeset/changeset_comment_block.mako',
                 self._get_template_context(c), self.request)

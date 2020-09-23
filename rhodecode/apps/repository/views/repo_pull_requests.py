@@ -39,7 +39,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
-from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
@@ -473,9 +473,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             c.pull_request_set_reviewers_data_json['reviewers'].append(member_reviewer)
 
         c.pull_request_set_reviewers_data_json = json.dumps(c.pull_request_set_reviewers_data_json)
-
-
-
 
         general_comments, inline_comments = \
             self.register_comments_vars(c, pull_request_latest, versions)
@@ -980,7 +977,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         version = self.request.GET.get('version')
 
         _render = self.request.get_partial_renderer(
-            'rhodecode:templates/pullrequests/pullrequest_show.mako')
+            'rhodecode:templates/base/sidebar.mako')
         c = _render.get_call_context()
 
         (pull_request_latest,
@@ -999,7 +996,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         self.register_comments_vars(c, pull_request_latest, versions)
         all_comments = c.inline_comments_flat + c.comments
-        return _render('comments_table', all_comments, len(all_comments))
+
+        existing_ids = filter(
+            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+        return _render('comments_table', all_comments, len(all_comments),
+                       existing_ids=existing_ids)
 
     @LoginRequired()
     @NotAnonymous()
@@ -1017,7 +1018,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         version = self.request.GET.get('version')
 
         _render = self.request.get_partial_renderer(
-            'rhodecode:templates/pullrequests/pullrequest_show.mako')
+            'rhodecode:templates/base/sidebar.mako')
         c = _render.get_call_context()
         (pull_request_latest,
          pull_request_at_ver,
@@ -1039,7 +1040,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             .get_pull_request_resolved_todos(pull_request)
 
         all_comments = c.unresolved_comments + c.resolved_comments
-        return _render('comments_table', all_comments, len(c.unresolved_comments), todo_comments=True)
+        existing_ids = filter(
+            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+        return _render('comments_table', all_comments, len(c.unresolved_comments),
+                       todo_comments=True, existing_ids=existing_ids)
 
     @LoginRequired()
     @NotAnonymous()

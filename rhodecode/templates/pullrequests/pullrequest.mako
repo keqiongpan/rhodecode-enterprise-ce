@@ -19,21 +19,74 @@
 <div class="box">
     ${h.secure_form(h.route_path('pullrequest_create', repo_name=c.repo_name, _query=request.GET.mixed()), id='pull_request_form', request=request)}
 
-        <div class="box pr-summary">
+        <div class="box">
 
             <div class="summary-details block-left">
 
-
-                <div class="pr-details-title">
-                    ${_('New pull request')}
-                </div>
-
                 <div class="form" style="padding-top: 10px">
-                    <!-- fields -->
 
                     <div class="fields" >
 
-                         <div class="field">
+                        ## COMMIT FLOW
+                        <div class="field">
+                            <div class="label label-textarea">
+                                <label for="commit_flow">${_('Commit flow')}:</label>
+                            </div>
+
+                            <div class="content">
+                                <div class="flex-container">
+                                    <div style="width: 45%;">
+                                        <div class="panel panel-default source-panel">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">${_('Source repository')}</h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div style="display:none">${c.rhodecode_db_repo.description}</div>
+                                                ${h.hidden('source_repo')}
+                                                ${h.hidden('source_ref')}
+
+                                                <div id="pr_open_message"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="width: 90px; text-align: center; padding-top: 30px">
+                                    <div>
+                                        <i class="icon-right" style="font-size: 2.2em"></i>
+                                    </div>
+                                    <div style="position: relative; top: 10px">
+                                    <span class="tag tag">
+                                        <span id="switch_base"></span>
+                                    </span>
+                                    </div>
+
+                                </div>
+
+                                    <div style="width: 45%;">
+
+                                    <div class="panel panel-default target-panel">
+                                        <div class="panel-heading">
+                                            <h3 class="panel-title">${_('Target repository')}</h3>
+                                        </div>
+                                        <div class="panel-body">
+                                          <div style="display:none" id="target_repo_desc"></div>
+                                          ${h.hidden('target_repo')}
+                                          ${h.hidden('target_ref')}
+                                          <span id="target_ref_loading" style="display: none">
+                                              ${_('Loading refs...')}
+                                          </span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        ## TITLE
+                        <div class="field">
                             <div class="label">
                                 <label for="pullrequest_title">${_('Title')}:</label>
                             </div>
@@ -43,8 +96,9 @@
                             <p class="help-block">
                                 Start the title with WIP: to prevent accidental merge of Work In Progress pull request before it's ready.
                             </p>
-                         </div>
+                        </div>
 
+                        ## DESC
                         <div class="field">
                             <div class="label label-textarea">
                                 <label for="pullrequest_desc">${_('Description')}:</label>
@@ -55,39 +109,49 @@
                             </div>
                         </div>
 
+                        ## REVIEWERS
                         <div class="field">
                             <div class="label label-textarea">
-                                <label for="commit_flow">${_('Commit flow')}:</label>
-                            </div>
-
-                            ## TODO: johbo: Abusing the "content" class here to get the
-                            ## desired effect. Should be replaced by a proper solution.
-
-                            ##ORG
-                            <div class="content">
-                                <strong>${_('Source repository')}:</strong>
-                                ${c.rhodecode_db_repo.description}
+                                <label for="pullrequest_reviewers">${_('Reviewers')}:</label>
                             </div>
                             <div class="content">
-                                ${h.hidden('source_repo')}
-                                ${h.hidden('source_ref')}
-                            </div>
+                                ## REVIEW RULES
+                                <div id="review_rules" style="display: none" class="reviewers-title">
+                                    <div class="pr-details-title">
+                                        ${_('Reviewer rules')}
+                                    </div>
+                                    <div class="pr-reviewer-rules">
+                                        ## review rules will be appended here, by default reviewers logic
+                                    </div>
+                                </div>
 
-                            ##OTHER, most Probably the PARENT OF THIS FORK
-                            <div class="content">
-                                ## filled with JS
-                                <div id="target_repo_desc"></div>
-                            </div>
+                                ## REVIEWERS
+                                <div class="reviewers-title">
+                                    <div class="pr-details-title">
+                                        ${_('Pull request reviewers')}
+                                        <span class="calculate-reviewers"> - ${_('loading...')}</span>
+                                    </div>
+                                </div>
+                                <div id="reviewers" class="pr-details-content reviewers">
+                                    ## members goes here, filled via JS based on initial selection !
+                                    <input type="hidden" name="__start__" value="review_members:sequence">
+                                    <table id="review_members" class="group_members">
+                                    ## This content is loaded via JS and ReviewersPanel
+                                    </table>
+                                    <input type="hidden" name="__end__" value="review_members:sequence">
 
-                            <div class="content">
-                                ${h.hidden('target_repo')}
-                                ${h.hidden('target_ref')}
-                                <span id="target_ref_loading" style="display: none">
-                                    ${_('Loading refs...')}
-                                </span>
+                                    <div id="add_reviewer_input" class='ac'>
+                                        <div class="reviewer_ac">
+                                            ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                            <div id="reviewers_container"></div>
+                                        </div>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
 
+                        ## SUBMIT
                         <div class="field">
                             <div class="label label-textarea">
                                 <label for="pullrequest_submit"></label>
@@ -96,66 +160,14 @@
                                 <div class="pr-submit-button">
                                     <input id="pr_submit" class="btn" name="save" type="submit" value="${_('Submit Pull Request')}">
                                 </div>
-                                <div id="pr_open_message"></div>
                             </div>
                         </div>
-
-                        <div class="pr-spacing-container"></div>
                     </div>
                 </div>
             </div>
-            <div>
-                ## AUTHOR
-                <div class="reviewers-title block-right">
-                  <div class="pr-details-title">
-                      ${_('Author of this pull request')}
-                  </div>
-                </div>
-                <div class="block-right pr-details-content reviewers">
-                    <ul class="group_members">
-                      <li>
-                        ${self.gravatar_with_user(c.rhodecode_user.email, 16, tooltip=True)}
-                      </li>
-                    </ul>
-                </div>
 
-                ## REVIEW RULES
-                <div id="review_rules" style="display: none" class="reviewers-title block-right">
-                    <div class="pr-details-title">
-                        ${_('Reviewer rules')}
-                    </div>
-                    <div class="pr-reviewer-rules">
-                        ## review rules will be appended here, by default reviewers logic
-                    </div>
-                </div>
-
-                ## REVIEWERS
-                <div class="reviewers-title block-right">
-                    <div class="pr-details-title">
-                        ${_('Pull request reviewers')}
-                        <span class="calculate-reviewers"> - ${_('loading...')}</span>
-                    </div>
-                </div>
-                <div id="reviewers" class="block-right pr-details-content reviewers">
-                    ## members goes here, filled via JS based on initial selection !
-                    <input type="hidden" name="__start__" value="review_members:sequence">
-                    <ul id="review_members" class="group_members"></ul>
-                    <input type="hidden" name="__end__" value="review_members:sequence">
-                    <div id="add_reviewer_input" class='ac'>
-                        <div class="reviewer_ac">
-                            ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
-                            <div id="reviewers_container"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-        <div class="box">
-            <div>
-                ## overview pulled by ajax
-                <div id="pull_request_overview"></div>
-            </div>
-        </div>
+
     ${h.end_form()}
 </div>
 
@@ -243,8 +255,6 @@
 
    var diffDataHandler = function(data) {
 
-       $('#pull_request_overview').html(data);
-
        var commitElements = data['commits'];
        var files = data['files'];
        var added = data['stats'][0]
@@ -303,26 +313,32 @@
 
        msg += '<input type="hidden" name="__end__" value="revisions:sequence">'
        msg += _ngettext(
-           'This pull requests will consist of <strong>{0} commit</strong>.',
-           'This pull requests will consist of <strong>{0} commits</strong>.',
+           'Compare summary: <strong>{0} commit</strong>',
+           'Compare summary: <strong>{0} commits</strong>',
            commitElements.length).format(commitElements.length)
 
-       msg += '\n';
+       msg += '';
        msg += _ngettext(
-           '<strong>{0} file</strong> changed, ',
-           '<strong>{0} files</strong> changed, ',
+           '<strong>, and {0} file</strong> changed.',
+           '<strong>, and {0} files</strong> changed.',
            files.length).format(files.length)
-       msg += '<span class="op-added">{0} lines inserted</span>, <span class="op-deleted">{1} lines deleted</span>.'.format(added, deleted)
 
-       msg += '\n\n <a class="" id="pull_request_overview_url" href="{0}" target="_blank">${_('Show detailed compare.')}</a>'.format(url);
+       msg += '\n Diff: <span class="op-added">{0} lines inserted</span>, <span class="op-deleted">{1} lines deleted </span>.'.format(added, deleted)
+
+       msg += '\n <a class="" id="pull_request_overview_url" href="{0}" target="_blank">${_('Show detailed compare.')}</a>'.format(url);
 
        if (commitElements.length) {
            var commitsLink = '<a href="#pull_request_overview"><strong>{0}</strong></a>'.format(commitElements.length);
            prButtonLock(false, msg.replace('__COMMITS__', commitsLink), 'compare');
        }
        else {
-           prButtonLock(true, "${_('There are no commits to merge.')}", 'compare');
+           var noCommitsMsg = '<span class="alert-text-warning">{0}</span>'.format(
+               _gettext('There are no commits to merge.'));
+           prButtonLock(true, noCommitsMsg, 'compare');
        }
+
+       //make both panels equal
+       $('.target-panel').height($('.source-panel').height())
 
    };
 
@@ -429,10 +445,12 @@
 
    var targetRepoChanged = function(repoData) {
        // generate new DESC of target repo displayed next to select
+
+       $('#target_repo_desc').html(repoData['description']);
+
        var prLink = pyroutes.url('pullrequest_new', {'repo_name': repoData['name']});
-       $('#target_repo_desc').html(
-           "<strong>${_('Target repository')}</strong>: {0}. <a href=\"{1}\">Switch base, and use as source.</a>".format(repoData['description'], prLink)
-       );
+       var title = _gettext('Switch target repository with the source.')
+       $('#switch_base').html("<a class=\"tooltip\" title=\"{0}\" href=\"{1}\">Switch sides</a>".format(title, prLink))
 
        // generate dynamic select2 for refs.
        initTargetRefs(repoData['refs']['select2_refs'],

@@ -1,6 +1,8 @@
 <%inherit file="/base/base.mako"/>
 <%namespace name="base" file="/base/base.mako"/>
 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+<%namespace name="sidebar" file="/base/sidebar.mako"/>
+
 
 <%def name="title()">
     ${_('{} Pull Request !{}').format(c.repo_name, c.pull_request.pull_request_id)}
@@ -21,113 +23,6 @@
     ${self.repo_menu(active='showpullrequest')}
 </%def>
 
-<%def name="comments_table(comments, counter_num, todo_comments=False)">
-    <%
-        old_comments = False
-        if todo_comments:
-            cls_ = 'todos-content-table'
-            def sorter(entry):
-                user_id = entry.author.user_id
-                resolved = '1' if entry.resolved else '0'
-                if user_id == c.rhodecode_user.user_id:
-                    # own comments first
-                    user_id = 0
-                return '{}'.format(str(entry.comment_id).zfill(10000))
-        else:
-            cls_ = 'comments-content-table'
-            def sorter(entry):
-                user_id = entry.author.user_id
-                return '{}'.format(str(entry.comment_id).zfill(10000))
-
-
-
-    %>
-    <table class="todo-table ${cls_}" data-total-count="${len(comments)}" data-counter="${counter_num}">
-
-     % for loop_obj, comment_obj in h.looper(reversed(sorted(comments, key=sorter))):
-         <%
-            display = ''
-            _cls = ''
-         %>
-         <% comment_ver_index = comment_obj.get_index_version(getattr(c, 'versions', [])) %>
-         <%
-             prev_comment_ver_index = 0
-             if loop_obj.previous:
-                prev_comment_ver_index = loop_obj.previous.get_index_version(getattr(c, 'versions', []))
-         %>
-         <% hidden_at_ver = comment_obj.outdated_at_version_js(c.at_version_num) %>
-         <% is_from_old_ver = comment_obj.older_than_version_js(c.at_version_num) %>
-         <%
-         if (prev_comment_ver_index > comment_ver_index) and old_comments is False:
-           old_comments = True
-         %>
-          % if todo_comments:
-              % if comment_obj.resolved:
-                  <% _cls = 'resolved-todo' %>
-                  <% display = 'none' %>
-              % endif
-          % else:
-              ## SKIP TODOs we display them in other area
-              % if comment_obj.is_todo:
-                  <% display = 'none' %>
-              % endif
-              ## Skip outdated comments
-              % if comment_obj.outdated:
-                  <% display = 'none' %>
-                  <% _cls = 'hidden-comment' %>
-              % endif
-          % endif
-
-          % if not todo_comments and old_comments:
-          <tr class="old-comments-marker">
-              <td colspan="3"> <code>comments from older versions</code> </td>
-          </tr>
-          ## reset markers so we only show this marker once
-          <% old_comments = None %>
-          % endif
-
-          <tr class="${_cls}" style="display: ${display};">
-              <td class="td-todo-number">
-
-                  <a class="${('todo-resolved' if comment_obj.resolved else '')} permalink"
-                     href="#comment-${comment_obj.comment_id}"
-                     onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${hidden_at_ver})">
-
-                  % if todo_comments:
-                    % if comment_obj.is_inline:
-                      <i class="tooltip icon-code" title="Inline TODO comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
-                    % else:
-                      <i class="tooltip icon-comment" title="General TODO comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
-                    % endif
-                  % else:
-                    % if comment_obj.outdated:
-                      <i class="tooltip icon-comment-toggle" title="Inline Outdated made in v${comment_ver_index}."></i>
-                    % elif comment_obj.is_inline:
-                      <i class="tooltip icon-code" title="Inline comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
-                    % else:
-                      <i class="tooltip icon-comment" title="General comment ${('made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else 'made in this version')}."></i>
-                    % endif
-                  % endif
-
-                  #${comment_obj.comment_id}
-                  </a>
-              </td>
-
-              <td class="td-todo-gravatar">
-                  ${base.gravatar(comment_obj.author.email, 16, user=comment_obj.author, tooltip=True, extra_class=['no-margin'])}
-              </td>
-              <td class="todo-comment-text-wrapper">
-                  <div class="tooltip todo-comment-text timeago" title="${h.format_date(comment_obj.created_on)}" datetime="${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}">
-                    <code>${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}</code>
-                  </div>
-              </td>
-          </tr>
-     % endfor
-
-    </table>
-
-</%def>
-
 
 <%def name="main()">
 ## Container to gather extracted Tickets
@@ -140,6 +35,7 @@
     // TODO: marcink switch this to pyroutes
     AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
+    templateContext.pull_request_data.pull_request_version = '${request.GET.get('version', '')}';
 </script>
 
 <div class="box">
@@ -226,7 +122,7 @@
 
                 ${_('of')} <a href="${h.route_path('repo_summary', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.repo_name}</a>
 
-                <a class="source-details-action" href="#expand-source-details" onclick="return versionController.toggleElement(this, '.source-details')" data-toggle-on='<i class="icon-angle-down">more details</i>' data-toggle-off='<i class="icon-angle-up">less details</i>'>
+                <a class="source-details-action" href="#expand-source-details" onclick="return toggleElement(this, '.source-details')" data-toggle-on='<i class="icon-angle-down">more details</i>' data-toggle-off='<i class="icon-angle-up">less details</i>'>
                     <i class="icon-angle-down">more details</i>
                 </a>
 
@@ -643,101 +539,12 @@
   </div>
 
 
-### NAVBOG RIGHT
-<style>
-
-    .right-sidebar {
-        position: fixed;
-        top: 0px;
-        bottom: 0;
-        right: 0;
-
-        background: #fafafa;
-        z-index: 50;
-    }
-
-    .right-sidebar {
-        border-left: 1px solid #dbdbdb;
-    }
-
-    .right-sidebar.right-sidebar-expanded {
-        width: 320px;
-        overflow: scroll;
-    }
-
-    .right-sidebar.right-sidebar-collapsed {
-        width: 50px;
-        padding: 0;
-        display: block;
-        overflow: hidden;
-    }
-
-    .sidenav {
-        float: right;
-        will-change: min-height;
-        background: #fafafa;
-        width: 100%;
-        padding-top: 50px;
-    }
-
-    .sidebar-toggle {
-        height: 30px;
-        text-align: center;
-        margin: 15px 0px 0 0;
-    }
-    .sidebar-toggle a {
-
-    }
-
-    .sidebar-content {
-        margin-left: 15px;
-        margin-right: 15px;
-    }
-
-    .sidebar-heading {
-        font-size: 1.2em;
-        font-weight: 700;
-        margin-top: 10px;
-    }
-
-    .sidebar-element {
-        margin-top: 20px;
-    }
-    .right-sidebar-collapsed-state {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 0 10px;
-        cursor: pointer;
-        font-size: 1.3em;
-        margin: 0 -15px;
-    }
-
-    .right-sidebar-collapsed-state:hover {
-        background-color: #dbd9da;
-    }
-
-    .old-comments-marker {
-        text-align: center;
-    }
-
-    .old-comments-marker td {
-        padding-top: 15px;
-        border-bottom: 1px solid #dbd9da;
-    }
-
-    #add_reviewer {
-        padding-top: 10px;
-    }
-
-</style>
-
+### NAV SIDEBAR
 <aside class="right-sidebar right-sidebar-expanded" id="pr-nav-sticky" style="display: none">
     <div class="sidenav navbar__inner" >
         ## TOGGLE
         <div class="sidebar-toggle" onclick="toggleSidebar(); return false">
-            <a href="#toggleSidebar">
+            <a href="#toggleSidebar" class="grey-link-action">
 
             </a>
         </div>
@@ -747,8 +554,12 @@
 
             ## RULES SUMMARY/RULES
             <div class="sidebar-element clear-both">
+                <% vote_title = _ungettext(
+                        'Status calculated based on votes from {} reviewer',
+                        'Status calculated based on votes from {} reviewers', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))
+                %>
 
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Reviewers')}">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${vote_title}">
                     <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
                     ${len(c.allowed_reviewers)}
                 </div>
@@ -769,7 +580,7 @@
 
                 ## REVIEWERS
                 <div class="right-sidebar-expanded-state pr-details-title">
-                    <span class="tooltip sidebar-heading" title="${_ungettext('Review status calculated based on {} reviewer vote', 'Review status calculated based on {} reviewers votes', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))}">
+                    <span class="tooltip sidebar-heading" title="${vote_title}">
                         <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
                         ${_('Reviewers')}
                     </span>
@@ -846,7 +657,7 @@
 
                       % if not c.at_version:
                           % if c.resolved_comments:
-                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.resolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
+                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return toggleElement(this, '.resolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
                           % else:
                               <span class="block-right last-item noselect">Show resolved</span>
                           % endif
@@ -863,7 +674,7 @@
                       </table>
                   % else:
                     % if c.unresolved_comments + c.resolved_comments:
-                      ${comments_table(c.unresolved_comments + c.resolved_comments, len(c.unresolved_comments), todo_comments=True)}
+                      ${sidebar.comments_table(c.unresolved_comments + c.resolved_comments, len(c.unresolved_comments), todo_comments=True)}
                     % else:
                         <table>
                             <tr>
@@ -882,6 +693,8 @@
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
                     <i class="icon-comment" style="color: #949494"></i>
                     <span id="comments-count">${len(c.inline_comments_flat+c.comments)}</span>
+                    <span class="display-none" id="general-comments-count">${len(c.comments)}</span>
+                    <span class="display-none" id="inline-comments-count">${len(c.inline_comments_flat)}</span>
                 </div>
 
                 <div class="right-sidebar-expanded-state pr-details-title">
@@ -903,7 +716,7 @@
                   </span>
 
                   % if outdated_comm_count_ver:
-                    <span class="block-right action_button last-item noselect" onclick="return versionController.toggleElement(this, '.hidden-comment');" data-toggle-on="Show outdated" data-toggle-off="Hide outdated">Show outdated</span>
+                    <span class="block-right action_button last-item noselect" onclick="return toggleElement(this, '.hidden-comment');" data-toggle-on="Show outdated" data-toggle-off="Hide outdated">Show outdated</span>
                   % else:
                     <span class="block-right last-item noselect">Show hidden</span>
                   % endif
@@ -912,7 +725,7 @@
 
                 <div class="right-sidebar-expanded-state pr-details-content">
                 % if c.inline_comments_flat + c.comments:
-                    ${comments_table(c.inline_comments_flat + c.comments, len(c.inline_comments_flat+c.comments))}
+                    ${sidebar.comments_table(c.inline_comments_flat + c.comments, len(c.inline_comments_flat+c.comments))}
                 % else:
                     <table>
                         <tr>
@@ -942,7 +755,7 @@
                 <div class="right-sidebar-expanded-state pr-details-content">
                     <table>
 
-                        <tr><td><code>${_('Pull Request Description')}</code></td></tr>
+                        <tr><td><code>${_('In pull request description')}:</code></td></tr>
                         % if c.referenced_desc_issues:
                             % for ticket_dict in c.referenced_desc_issues:
                             <tr>
@@ -961,7 +774,7 @@
                             </tr>
                         % endif
 
-                        <tr><td style="padding-top: 10px"><code>${_('Commit Messages')}</code></td></tr>
+                        <tr><td style="padding-top: 10px"><code>${_('In commit messages')}:</code></td></tr>
                         % if c.referenced_commit_issues:
                             % for ticket_dict in c.referenced_commit_issues:
                             <tr>
@@ -992,451 +805,189 @@
 ## This JS needs to be at the end
 <script type="text/javascript">
 
-      versionController = new VersionController();
-      versionController.init();
+versionController = new VersionController();
+versionController.init();
 
-      reviewersController = new ReviewersController();
-      commitsController = new CommitsController();
+reviewersController = new ReviewersController();
+commitsController = new CommitsController();
 
-      updateController = new UpdatePrController();
+updateController = new UpdatePrController();
 
-/** leak object to top level scope **/
-window.PullRequestPresenceController;
+window.reviewerRulesData = ${c.pull_request_default_reviewers_data_json | n};
+window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
 
 (function () {
     "use strict";
 
-    window.PullRequestPresenceController = function (channel) {
-        var self = this;
-        this.channel = channel;
-        this.users = {};
+    // custom code mirror
+    var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
 
-        this.storeUsers = function (users) {
-            self.users = {}
-            $.each(users, function(index, value) {
-                var userId = value.state.id;
-                self.users[userId] = value.state;
-            })
+    var PRDetails = {
+        editButton: $('#open_edit_pullrequest'),
+        closeButton: $('#close_edit_pullrequest'),
+        deleteButton: $('#delete_pullrequest'),
+        viewFields: $('#pr-desc, #pr-title'),
+        editFields: $('#pr-desc-edit, #pr-title-edit, .pr-save'),
+
+        init: function () {
+            var that = this;
+            this.editButton.on('click', function (e) {
+                that.edit();
+            });
+            this.closeButton.on('click', function (e) {
+                that.view();
+            });
+        },
+
+        edit: function (event) {
+            var cmInstance = $('#pr-description-input').get(0).MarkupForm.cm;
+            this.viewFields.hide();
+            this.editButton.hide();
+            this.deleteButton.hide();
+            this.closeButton.show();
+            this.editFields.show();
+            cmInstance.refresh();
+        },
+
+        view: function (event) {
+            this.editButton.show();
+            this.deleteButton.show();
+            this.editFields.hide();
+            this.closeButton.hide();
+            this.viewFields.show();
         }
-
-        this.render = function () {
-            $.each($('.reviewer_entry'), function(index, value) {
-                var userData = $(value).data();
-                if(self.users[userData.reviewerUserId] !== undefined){
-                    $(value).find('.presence-state').show();
-                } else {
-                    $(value).find('.presence-state').hide();
-                }
-            })
-        };
-
-        this.handlePresence = function (data) {
-
-            if (data.type == 'presence' && data.channel === self.channel) {
-                this.storeUsers(data.users);
-                this.render()
-            }
-        };
-
-        this.handleChannelUpdate = function (data) {
-
-            if (data.channel === this.channel) {
-                this.storeUsers(data.state.users);
-                this.render()
-            }
-
-        };
-
-        /* subscribe our chat to topics that are interesting to it */
-        $.Topic('/connection_controller/channel_update').subscribe(this.handleChannelUpdate.bind(this));
-        $.Topic('/connection_controller/presence').subscribe(this.handlePresence.bind(this));
     };
+
+    PRDetails.init();
+    ReviewersPanel.init(reviewerRulesData, setReviewersData);
+
+    window.showOutdated = function (self) {
+        $('.comment-inline.comment-outdated').show();
+        $('.filediff-outdated').show();
+        $('.showOutdatedComments').hide();
+        $('.hideOutdatedComments').show();
+    };
+
+    window.hideOutdated = function (self) {
+        $('.comment-inline.comment-outdated').hide();
+        $('.filediff-outdated').hide();
+        $('.hideOutdatedComments').hide();
+        $('.showOutdatedComments').show();
+    };
+
+    window.refreshMergeChecks = function () {
+        var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
+        $('.pull-request-merge').css('opacity', 0.3);
+        $('.action-buttons-extra').css('opacity', 0.3);
+
+        $('.pull-request-merge').load(
+                loadUrl, function () {
+                    $('.pull-request-merge').css('opacity', 1);
+
+                    $('.action-buttons-extra').css('opacity', 1);
+                }
+        );
+    };
+
+    window.closePullRequest = function (status) {
+        if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
+            return false;
+        }
+        // inject closing flag
+        $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
+        $(generalCommentForm.statusChange).select2("val", status).trigger('change');
+        $(generalCommentForm.submitForm).submit();
+    };
+
+    //TODO this functionality is now missing
+    $('#show-outdated-comments').on('click', function (e) {
+        var button = $(this);
+        var outdated = $('.comment-outdated');
+
+        if (button.html() === "(Show)") {
+            button.html("(Hide)");
+            outdated.show();
+        } else {
+            button.html("(Show)");
+            outdated.hide();
+        }
+    });
+
+    $('#merge_pull_request_form').submit(function () {
+        if (!$('#merge_pull_request').attr('disabled')) {
+            $('#merge_pull_request').attr('disabled', 'disabled');
+        }
+        return true;
+    });
+
+    $('#edit_pull_request').on('click', function (e) {
+        var title = $('#pr-title-input').val();
+        var description = codeMirrorInstance.getValue();
+        var renderer = $('#pr-renderer-input').val();
+        editPullRequest(
+                "${c.repo_name}", "${c.pull_request.pull_request_id}",
+                title, description, renderer);
+    });
+
+    $('#update_pull_request').on('click', function (e) {
+        $(this).attr('disabled', 'disabled');
+        $(this).addClass('disabled');
+        $(this).html(_gettext('Saving...'));
+        reviewersController.updateReviewers(
+                "${c.repo_name}", "${c.pull_request.pull_request_id}");
+    });
+
+    // fixing issue with caches on firefox
+    $('#update_commits').removeAttr("disabled");
+
+    $('.show-inline-comments').on('click', function (e) {
+        var boxid = $(this).attr('data-comment-id');
+        var button = $(this);
+
+        if (button.hasClass("comments-visible")) {
+            $('#{0} .inline-comments'.format(boxid)).each(function (index) {
+                $(this).hide();
+            });
+            button.removeClass("comments-visible");
+        } else {
+            $('#{0} .inline-comments'.format(boxid)).each(function (index) {
+                $(this).show();
+            });
+            button.addClass("comments-visible");
+        }
+    });
+
+    $('.show-inline-comments').on('change', function (e) {
+        var show = 'none';
+        var target = e.currentTarget;
+        if (target.checked) {
+            show = ''
+        }
+        var boxid = $(target).attr('id_for');
+        var comments = $('#{0} .inline-comments'.format(boxid));
+        var fn_display = function (idx) {
+            $(this).css('display', show);
+        };
+        $(comments).each(fn_display);
+        var btns = $('#{0} .inline-comments-button'.format(boxid));
+        $(btns).each(fn_display);
+    });
+
+    // register submit callback on commentForm form to track TODOs
+    window.commentFormGlobalSubmitSuccessCallback = function () {
+        refreshMergeChecks();
+    };
+
+    ReviewerAutoComplete('#user');
 
 })();
 
+$(document).ready(function () {
 
-      $(function () {
+    var channel = '${c.pr_broadcast_channel}';
+    new ReviewerPresenceController(channel)
 
-          // custom code mirror
-          var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
-
-          var PRDetails = {
-              editButton: $('#open_edit_pullrequest'),
-              closeButton: $('#close_edit_pullrequest'),
-              deleteButton: $('#delete_pullrequest'),
-              viewFields: $('#pr-desc, #pr-title'),
-              editFields: $('#pr-desc-edit, #pr-title-edit, .pr-save'),
-
-              init: function () {
-                  var that = this;
-                  this.editButton.on('click', function (e) {
-                      that.edit();
-                  });
-                  this.closeButton.on('click', function (e) {
-                      that.view();
-                  });
-              },
-
-              edit: function (event) {
-                  this.viewFields.hide();
-                  this.editButton.hide();
-                  this.deleteButton.hide();
-                  this.closeButton.show();
-                  this.editFields.show();
-                  codeMirrorInstance.refresh();
-              },
-
-              view: function (event) {
-                  this.editButton.show();
-                  this.deleteButton.show();
-                  this.editFields.hide();
-                  this.closeButton.hide();
-                  this.viewFields.show();
-              }
-          };
-
-          var ReviewersPanel = {
-              editButton: $('#open_edit_reviewers'),
-              closeButton: $('#close_edit_reviewers'),
-              addButton: $('#add_reviewer'),
-              removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove'),
-              reviewRules: ${c.pull_request_default_reviewers_data_json | n},
-              setReviewers: ${c.pull_request_set_reviewers_data_json | n},
-
-              init: function () {
-                  var self = this;
-                  this.editButton.on('click', function (e) {
-                      self.edit();
-                  });
-                  this.closeButton.on('click', function (e) {
-                      self.close();
-                      self.renderReviewers();
-                  });
-
-                  self.renderReviewers();
-
-              },
-
-              renderReviewers: function () {
-
-                $('#review_members').html('')
-                $.each(this.setReviewers.reviewers, function (key, val) {
-                    var member = val;
-
-                    var entry = renderTemplate('reviewMemberEntry', {
-                        'member': member,
-                        'mandatory': member.mandatory,
-                        'reasons': member.reasons,
-                        'allowed_to_update': member.allowed_to_update,
-                        'review_status': member.review_status,
-                        'review_status_label': member.review_status_label,
-                        'user_group': member.user_group,
-                        'create': false
-                    });
-
-                    $('#review_members').append(entry)
-                });
-                tooltipActivate();
-
-              },
-
-              edit: function (event) {
-                  this.editButton.hide();
-                  this.closeButton.show();
-                  this.addButton.show();
-                  $(this.removeButtons.selector).css('visibility', 'visible');
-                  // review rules
-                  reviewersController.loadReviewRules(this.reviewRules);
-              },
-
-              close: function (event) {
-                  this.editButton.show();
-                  this.closeButton.hide();
-                  this.addButton.hide();
-                  $(this.removeButtons.selector).css('visibility', 'hidden');
-                  // hide review rules
-                  reviewersController.hideReviewRules()
-              }
-          };
-
-          PRDetails.init();
-          ReviewersPanel.init();
-
-          showOutdated = function (self) {
-              $('.comment-inline.comment-outdated').show();
-              $('.filediff-outdated').show();
-              $('.showOutdatedComments').hide();
-              $('.hideOutdatedComments').show();
-          };
-
-          hideOutdated = function (self) {
-              $('.comment-inline.comment-outdated').hide();
-              $('.filediff-outdated').hide();
-              $('.hideOutdatedComments').hide();
-              $('.showOutdatedComments').show();
-          };
-
-          refreshMergeChecks = function () {
-              var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
-              $('.pull-request-merge').css('opacity', 0.3);
-              $('.action-buttons-extra').css('opacity', 0.3);
-
-              $('.pull-request-merge').load(
-                  loadUrl, function () {
-                      $('.pull-request-merge').css('opacity', 1);
-
-                      $('.action-buttons-extra').css('opacity', 1);
-                  }
-              );
-          };
-
-          refreshComments = function () {
-            var params = {
-                'pull_request_id': templateContext.pull_request_data.pull_request_id,
-                'repo_name': templateContext.repo_name,
-                'version': '${request.GET.get('version', '')}',
-            };
-            var data = {"comments[]": ["1"]};
-            var loadUrl = pyroutes.url('pullrequest_comments', params);
-            var $targetElem = $('.comments-content-table');
-            $targetElem.css('opacity', 0.3);
-            $targetElem.load(
-                  loadUrl, data, function (responseText, textStatus, jqXHR) {
-                    if (jqXHR.status !== 200) {
-                        return false;
-                    }
-                    var $counterElem = $('#comments-count');
-                    var newCount = $(responseText).data('counter');
-                    if (newCount !== undefined) {
-                        var callback = function () {
-                            $counterElem.animate({'opacity': 1.00}, 200)
-                            $counterElem.html(newCount);
-                        };
-                        $counterElem.animate({'opacity': 0.15}, 200, callback);
-                    }
-
-
-                    $targetElem.css('opacity', 1);
-                    tooltipActivate();
-                  }
-            );
-          }
-
-          refreshTODOs = function () {
-            var params = {
-                'pull_request_id': templateContext.pull_request_data.pull_request_id,
-                'repo_name': templateContext.repo_name,
-                'version': '${request.GET.get('version', '')}',
-            };
-            var data = {"comments[]": ["1"]};
-            var loadUrl = pyroutes.url('pullrequest_todos', params);
-            var $targetElem = $('.todos-content-table');
-            $targetElem.css('opacity', 0.3);
-            $targetElem.load(
-                  loadUrl, data, function (responseText, textStatus, jqXHR) {
-                    if (jqXHR.status !== 200) {
-                        return false;
-                    }
-                    var $counterElem = $('#todos-count')
-                    var newCount = $(responseText).data('counter');
-                    if (newCount !== undefined) {
-                        var callback = function () {
-                            $counterElem.animate({'opacity': 1.00}, 200)
-                            $counterElem.html(newCount);
-                        };
-                        $counterElem.animate({'opacity': 0.15}, 200, callback);
-                    }
-
-                    $targetElem.css('opacity', 1);
-                    tooltipActivate();
-                  }
-            );
-
-          }
-
-          refreshAllComments = function() {
-              refreshComments();
-              refreshTODOs();
-          }
-
-          closePullRequest = function (status) {
-              if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
-                  return false;
-              }
-              // inject closing flag
-              $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
-              $(generalCommentForm.statusChange).select2("val", status).trigger('change');
-              $(generalCommentForm.submitForm).submit();
-          };
-
-          $('#show-outdated-comments').on('click', function (e) {
-              var button = $(this);
-              var outdated = $('.comment-outdated');
-
-              if (button.html() === "(Show)") {
-                  button.html("(Hide)");
-                  outdated.show();
-              } else {
-                  button.html("(Show)");
-                  outdated.hide();
-              }
-          });
-
-          $('.show-inline-comments').on('change', function (e) {
-              var show = 'none';
-              var target = e.currentTarget;
-              if (target.checked) {
-                  show = ''
-              }
-              var boxid = $(target).attr('id_for');
-              var comments = $('#{0} .inline-comments'.format(boxid));
-              var fn_display = function (idx) {
-                  $(this).css('display', show);
-              };
-              $(comments).each(fn_display);
-              var btns = $('#{0} .inline-comments-button'.format(boxid));
-              $(btns).each(fn_display);
-          });
-
-          $('#merge_pull_request_form').submit(function () {
-              if (!$('#merge_pull_request').attr('disabled')) {
-                  $('#merge_pull_request').attr('disabled', 'disabled');
-              }
-              return true;
-          });
-
-          $('#edit_pull_request').on('click', function (e) {
-              var title = $('#pr-title-input').val();
-              var description = codeMirrorInstance.getValue();
-              var renderer = $('#pr-renderer-input').val();
-              editPullRequest(
-                      "${c.repo_name}", "${c.pull_request.pull_request_id}",
-                      title, description, renderer);
-          });
-
-          $('#update_pull_request').on('click', function (e) {
-              $(this).attr('disabled', 'disabled');
-              $(this).addClass('disabled');
-              $(this).html(_gettext('Saving...'));
-              reviewersController.updateReviewers(
-                      "${c.repo_name}", "${c.pull_request.pull_request_id}");
-          });
-
-
-          // fixing issue with caches on firefox
-          $('#update_commits').removeAttr("disabled");
-
-          $('.show-inline-comments').on('click', function (e) {
-              var boxid = $(this).attr('data-comment-id');
-              var button = $(this);
-
-              if (button.hasClass("comments-visible")) {
-                  $('#{0} .inline-comments'.format(boxid)).each(function (index) {
-                      $(this).hide();
-                  });
-                  button.removeClass("comments-visible");
-              } else {
-                  $('#{0} .inline-comments'.format(boxid)).each(function (index) {
-                      $(this).show();
-                  });
-                  button.addClass("comments-visible");
-              }
-          });
-
-          // register submit callback on commentForm form to track TODOs
-          window.commentFormGlobalSubmitSuccessCallback = function () {
-              refreshMergeChecks();
-          };
-
-          ReviewerAutoComplete('#user');
-
-      })
-
-      $(document).ready(function () {
-
-        var $sideBar = $('.right-sidebar');
-        var marginExpVal = '320'
-        var marginColVal = '50'
-        var marginExpanded = {'margin': '0 {0}px 0 0'.format(marginExpVal)};
-        var marginCollapsed = {'margin': '0 {0}px 0 0'.format(marginColVal)};
-        var marginExpandedHeader = {'margin': '0 -{0}px 0 0'.format(marginExpVal), 'z-index': 10000};
-        var marginCollapsedHeader = {'margin': '0 -{0}px 0 0'.format(marginColVal), 'z-index': 10000};
-
-        var updateStickyHeader = function() {
-          if (window.updateSticky !== undefined) {
-              // potentially our comments change the active window size, so we
-              // notify sticky elements
-              updateSticky()
-          }
-        }
-
-        var expandSidebar = function() {
-            var $sideBar = $('.right-sidebar');
-            $('.outerwrapper').css(marginExpanded);
-            $('.header').css(marginExpandedHeader);
-            $('.sidebar-toggle a').html('<i class="icon-right" style="margin-right: -10px"></i><i class="icon-right"></i>');
-            $('.right-sidebar-collapsed-state').hide();
-            $('.right-sidebar-expanded-state').show();
-
-            $sideBar.addClass('right-sidebar-expanded')
-            $sideBar.removeClass('right-sidebar-collapsed')
-        }
-
-        var collapseSidebar = function() {
-            var $sideBar = $('.right-sidebar');
-            $('.outerwrapper').css(marginCollapsed);
-            $('.header').css(marginCollapsedHeader);
-            $('.sidebar-toggle a').html('<i class="icon-left" style="margin-right: -10px"></i><i class="icon-left"></i>');
-            $('.right-sidebar-collapsed-state').show();
-            $('.right-sidebar-expanded-state').hide();
-
-            $sideBar.removeClass('right-sidebar-expanded')
-            $sideBar.addClass('right-sidebar-collapsed')
-        }
-
-        toggleSidebar = function () {
-            var $sideBar = $('.right-sidebar');
-
-            if ($sideBar.hasClass('right-sidebar-expanded')) {
-                // expanded -> collapsed transition
-                collapseSidebar();
-                var sidebarState = 'collapsed';
-
-            } else {
-                // collapsed -> expanded
-                expandSidebar();
-                var sidebarState = 'expanded';
-            }
-
-            // update our other sticky header in same context
-            updateStickyHeader();
-            storeUserSessionAttr('rc_user_session_attr.sidebarState', sidebarState);
-        }
-
-        var expanded = $sideBar.hasClass('right-sidebar-expanded');
-
-        if (templateContext.session_attrs.sidebarState === 'expanded') {
-            expanded = true
-        } else if (templateContext.session_attrs.sidebarState === 'collapsed') {
-            expanded = false
-        }
-
-        // show sidebar since it's hidden on load
-        $('.right-sidebar').show();
-
-        // init based on set initial class, or if defined user session attrs
-        if (expanded) {
-             expandSidebar();
-             updateStickyHeader();
-
-        } else {
-             collapseSidebar();
-             updateStickyHeader();
-        }
-        var channel = '${c.pr_broadcast_channel}';
-        new PullRequestPresenceController(channel)
-
-    })
-  </script>
+})
+</script>
 
 </%def>

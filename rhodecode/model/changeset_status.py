@@ -354,34 +354,37 @@ class ChangesetStatusModel(BaseModel):
                 Session().add(new_status)
             return new_statuses
 
+    def aggregate_votes_by_user(self, commit_statuses, reviewers_data):
+
+        commit_statuses_map = collections.defaultdict(list)
+        for st in commit_statuses:
+            commit_statuses_map[st.author.username] += [st]
+
+        reviewers = []
+
+        def version(commit_status):
+            return commit_status.version
+
+        for obj in reviewers_data:
+            if not obj.user:
+                continue
+            statuses = commit_statuses_map.get(obj.user.username, None)
+            if statuses:
+                status_groups = itertools.groupby(
+                    sorted(statuses, key=version), version)
+                statuses = [(x, list(y)[0]) for x, y in status_groups]
+
+            reviewers.append((obj, obj.user, obj.reasons, obj.mandatory, statuses))
+
+        return reviewers
+
     def reviewers_statuses(self, pull_request):
         _commit_statuses = self.get_statuses(
             pull_request.source_repo,
             pull_request=pull_request,
             with_revisions=True)
 
-        commit_statuses = collections.defaultdict(list)
-        for st in _commit_statuses:
-            commit_statuses[st.author.username] += [st]
-
-        pull_request_reviewers = []
-
-        def version(commit_status):
-            return commit_status.version
-
-        for obj in pull_request.reviewers:
-            if not obj.user:
-                continue
-            statuses = commit_statuses.get(obj.user.username, None)
-            if statuses:
-                status_groups = itertools.groupby(
-                    sorted(statuses, key=version), version)
-                statuses = [(x, list(y)[0]) for x, y in status_groups]
-
-            pull_request_reviewers.append(
-                (obj, obj.user, obj.reasons, obj.mandatory, statuses))
-
-        return pull_request_reviewers
+        return self.aggregate_votes_by_user(_commit_statuses, pull_request.reviewers)
 
     def calculated_review_status(self, pull_request, reviewers_statuses=None):
         """

@@ -228,6 +228,14 @@ class CommentsModel(BaseModel):
 
         return todos
 
+    def get_commit_inline_comments(self, commit_id):
+        inline_comments = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.line_no != None) \
+            .filter(ChangesetComment.f_path != None) \
+            .filter(ChangesetComment.revision == commit_id)
+        inline_comments = inline_comments.all()
+        return inline_comments
+
     def _log_audit_action(self, action, action_data, auth_user, comment):
         audit_logger.store(
             action=action,

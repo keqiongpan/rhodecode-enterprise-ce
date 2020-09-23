@@ -790,7 +790,7 @@ input {
 
     &.main_filter_input {
         padding: 5px 10px;
-        min-width: 340px;
+
         color: @grey7;
         background: @black;
         min-height: 18px;
@@ -800,11 +800,34 @@ input {
           color: @grey2 !important;
           background: white !important;
         }
+
         &:focus {
           color: @grey2 !important;
           background: white !important;
         }
+
+        min-width: 360px;
+
+        @media screen and (max-width: 1600px) {
+            min-width: 300px;
+        }
+        @media screen and (max-width: 1500px) {
+            min-width: 280px;
+        }
+        @media screen and (max-width: 1400px) {
+            min-width: 260px;
+        }
+        @media screen and (max-width: 1300px) {
+            min-width: 240px;
+        }
+        @media screen and (max-width: 1200px) {
+            min-width: 220px;
+        }
+        @media screen and (max-width: 720px) {
+            min-width: 140px;
+        }
     }
+
 }
 
 
