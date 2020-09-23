@@ -170,7 +170,7 @@ def parse_channels_info(info_result, include_channel_info=None):
         for username in c_info['users']:
             connected_list.append({
                 'user': username,
-                'state': user_state_dict[userinfo['user']]
+                'state': user_state_dict[username]
             })
         channels_info[c_name] = {'users': connected_list,
                                  'history': c_info['history']}
