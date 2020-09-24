@@ -1615,7 +1615,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     # named regex variables
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
-    desc = string.Template(entry['desc']).safe_substitute(**named_vars)
+    desc = string.Template(escape(entry['desc'])).safe_substitute(**named_vars)
     hovercard_url = string.Template(entry.get('hovercard_url', '')).safe_substitute(**named_vars)
 
     def quote_cleaner(input_str):
