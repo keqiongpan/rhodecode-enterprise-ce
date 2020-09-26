@@ -183,7 +183,50 @@ if (show_disabled) {
 
 </script>
 
+
+<script id="ejs_sideBarCommentHovercard" type="text/template" class="ejsTemplate">
+
+<div>
+    <% if (is_todo) { %>
+        <% if (inline) { %>
+            <strong>Inline</strong> TODO on line: <%= line_no %>
+            <% if (version_info) { %>
+                <%= version_info %>
+            <% } %>
+            <br/>
+            File: <code><%- file_name -%></code>
+        <% } else { %>
+            <strong>General</strong> TODO
+            <% if (version_info) { %>
+                <%= version_info %>
+            <% } %>
+        <% } %>
+    <% } else { %>
+        <% if (inline) { %>
+            <strong>Inline</strong> comment on line: <%= line_no %>
+            <% if (version_info) { %>
+                <%= version_info %>
+            <% } %>
+            <br/>
+            File: <code><%- file_name -%></code>
+        <% } else { %>
+            <strong>General</strong> comment
+            <% if (version_info) { %>
+                <%= version_info %>
+            <% } %>
+        <% } %>
+    <% } %>
+    <br/>
+    Created:
+    <time class="timeago" title="<%= created_on %>" datetime="<%= datetime %>"><%= $.timeago(datetime) %></time>
+
 </div>
+
+</script>
+
+##// END OF EJS Templates
+</div>
+
 
 <script>
     // registers the templates into global cache

@@ -296,16 +296,25 @@ var tooltipActivate = function () {
             // we set a variable so the data is only loaded once via Ajax, not every time the tooltip opens
             if ($origin.data('loaded') !== true) {
                 var hovercardUrl = $origin.data('hovercardUrl');
-                var altHovercard =$origin.data('hovercardAlt');
+                var altHovercard = $origin.data('hovercardAlt');
 
                 if (hovercardUrl !== undefined && hovercardUrl !== "") {
-                    if (hovercardUrl.substr(0,12) === 'pyroutes.url'){
+                    var urlLoad = true;
+                    if (hovercardUrl.substr(0, 12) === 'pyroutes.url') {
                         hovercardUrl = eval(hovercardUrl)
+                    } else if (hovercardUrl.substr(0, 11) === 'javascript:') {
+                        var jsFunc = hovercardUrl.substr(11);
+                        urlLoad = false;
+                        loaded = true;
+                        instance.content(eval(jsFunc))
                     }
 
-                    var loaded = loadHoverCard(hovercardUrl, altHovercard, function (data) {
-                        instance.content(data);
-                    })
+                    if (urlLoad) {
+                        var loaded = loadHoverCard(hovercardUrl, altHovercard, function (data) {
+                            instance.content(data);
+                        })
+                    }
+
                 } else {
                     if ($origin.data('hovercardAltHtml')) {
                         var data =  atob($origin.data('hovercardAltHtml'));

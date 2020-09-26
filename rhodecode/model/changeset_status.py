@@ -212,10 +212,10 @@ class ChangesetStatusModel(BaseModel):
         # TODO(marcink): with group voting, how does rejected work,
         # do we ever get rejected state ?
 
-        if approved_votes_count == reviewers_number:
+        if approved_votes_count and (approved_votes_count == reviewers_number):
             return ChangesetStatus.STATUS_APPROVED
 
-        if rejected_votes_count == reviewers_number:
+        if rejected_votes_count and (rejected_votes_count == reviewers_number):
             return ChangesetStatus.STATUS_REJECTED
 
         return ChangesetStatus.STATUS_UNDER_REVIEW

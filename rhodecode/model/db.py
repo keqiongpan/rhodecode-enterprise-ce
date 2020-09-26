@@ -3866,7 +3866,9 @@ class ChangesetComment(Base, BaseModel):
 
     @property
     def is_inline(self):
-        return self.line_no and self.f_path
+        if self.line_no and self.f_path:
+            return True
+        return False
 
     @property
     def last_version(self):

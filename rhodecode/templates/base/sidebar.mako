@@ -84,34 +84,35 @@
 
           <tr class="${_cls}" style="display: ${display};" data-sidebar-comment-id="${comment_obj.comment_id}">
               <td class="td-todo-number">
-
-                  <a class="${('todo-resolved' if comment_obj.resolved else '')} permalink"
-                     href="#comment-${comment_obj.comment_id}"
-                     onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${hidden_at_ver})">
-
                   <%
                     version_info = ''
                     if is_pr:
                         version_info = (' made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else ' made in this version')
                   %>
+                  <script type="text/javascript">
+                      // closure function helper
+                      var sidebarComment${comment_obj.comment_id} = function() {
+                        return renderTemplate('sideBarCommentHovercard', {
+                            version_info: "${version_info}",
+                            file_name: "${comment_obj.f_path}",
+                            line_no: "${comment_obj.line_no}",
+                            outdated: ${h.json.dumps(comment_obj.outdated)},
+                            inline: ${h.json.dumps(comment_obj.is_inline)},
+                            is_todo: ${h.json.dumps(comment_obj.is_todo)},
+                            created_on: "${h.format_date(comment_obj.created_on)}",
+                            datetime: "${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}",
+                        })
+                      }
+                  </script>
 
-                  % if todo_comments:
-                    % if comment_obj.is_inline:
-                      <i class="tooltip icon-code" title="Inline TODO comment${version_info}."></i>
-                    % else:
-                      <i class="tooltip icon-comment" title="General TODO comment${version_info}."></i>
-                    % endif
+                  % if comment_obj.outdated:
+                    <i class="icon-comment-toggle tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
+                  % elif comment_obj.is_inline:
+                    <i class="icon-code tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
                   % else:
-                    % if comment_obj.outdated:
-                      <i class="tooltip icon-comment-toggle" title="Inline Outdated made in v${comment_ver_index}."></i>
-                    % elif comment_obj.is_inline:
-                      <i class="tooltip icon-code" title="Inline comment${version_info}."></i>
-                    % else:
-                      <i class="tooltip icon-comment" title="General comment${version_info}."></i>
-                    % endif
+                    <i class="icon-comment tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
                   % endif
 
-                  </a>
                   ## NEW, since refresh
                   % if existing_ids and comment_obj.comment_id not in existing_ids:
                       <span class="tag">NEW</span>
@@ -122,8 +123,13 @@
                   ${base.gravatar(comment_obj.author.email, 16, user=comment_obj.author, tooltip=True, extra_class=['no-margin'])}
               </td>
               <td class="todo-comment-text-wrapper">
-                  <div class="tooltip todo-comment-text timeago ${('todo-resolved' if comment_obj.resolved else '')} " title="${h.format_date(comment_obj.created_on)}" datetime="${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}">
-                    <code>${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}</code>
+                  <div class="todo-comment-text ${('todo-resolved' if comment_obj.resolved else '')}">
+                      <a class="${('todo-resolved' if comment_obj.resolved else '')} permalink"
+                         href="#comment-${comment_obj.comment_id}"
+                         onclick="return Rhodecode.comments.scrollToComment($('#comment-${comment_obj.comment_id}'), 0, ${hidden_at_ver})">
+
+                         ${h.chop_at_smart(comment_obj.text, '\n', suffix_if_chopped='...')}
+                      </a>
                   </div>
               </td>
           </tr>
