@@ -486,7 +486,6 @@ class RepoCommitsView(RepoAppView):
         return ''
 
     @LoginRequired()
-    @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
