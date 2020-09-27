@@ -3881,6 +3881,16 @@ class ChangesetComment(Base, BaseModel):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)
 
+    @property
+    def review_status(self):
+        if self.status_change:
+            return self.status_change[0].status
+
+    @property
+    def review_status_lbl(self):
+        if self.status_change:
+            return self.status_change[0].status_lbl
+
     def __repr__(self):
         if self.comment_id:
             return '<DB:Comment #%s>' % self.comment_id

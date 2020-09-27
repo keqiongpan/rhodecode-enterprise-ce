@@ -76,9 +76,9 @@
                             status_change_title = 'Status of review for commit {}'.format(h.short_id(comment.commit_id))
                     %>
 
-                    <i class="icon-circle review-status-${comment.status_change[0].status}"></i>
+                    <i class="icon-circle review-status-${comment.review_status}"></i>
                     <div class="changeset-status-lbl tooltip" title="${status_change_title}">
-                         ${comment.status_change[0].status_lbl}
+                         ${comment.review_status_lbl}
                     </div>
                   % else:
                     <div>

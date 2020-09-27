@@ -89,6 +89,7 @@
                     if is_pr:
                         version_info = (' made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else ' made in this version')
                   %>
+
                   <script type="text/javascript">
                       // closure function helper
                       var sidebarComment${comment_obj.comment_id} = function() {
@@ -101,6 +102,7 @@
                             is_todo: ${h.json.dumps(comment_obj.is_todo)},
                             created_on: "${h.format_date(comment_obj.created_on)}",
                             datetime: "${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}",
+                            review_status: "${(comment_obj.review_status or '')}"
                         })
                       }
                   </script>

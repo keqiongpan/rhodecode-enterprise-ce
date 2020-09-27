@@ -145,7 +145,7 @@ class PullRequestCommentEvent(PullRequestEvent):
 
         status = None
         if self.comment.status_change:
-            status = self.comment.status_change[0].status
+            status = self.comment.review_status
 
         data.update({
             'comment': {
@@ -184,7 +184,7 @@ class PullRequestCommentEditEvent(PullRequestEvent):
 
         status = None
         if self.comment.status_change:
-            status = self.comment.status_change[0].status
+            status = self.comment.review_status
 
         data.update({
             'comment': {
