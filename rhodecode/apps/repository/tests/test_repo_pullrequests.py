@@ -150,9 +150,9 @@ class TestPullrequestsView(object):
         response = self.app.post(
             route_path('pullrequest_create', repo_name=source.repo_name),
             [
-                ('source_repo', source.repo_name),
+                ('source_repo', source_repo_name),
                 ('source_ref', source_ref),
-                ('target_repo', target.repo_name),
+                ('target_repo', target_repo_name),
                 ('target_ref',  target_ref),
                 ('common_ancestor', commit_ids['initial-commit']),
                 ('pullrequest_title', 'Title'),
@@ -1110,16 +1110,17 @@ class TestPullrequestsView(object):
 
         # source has ancestor - change - change-2
         backend.pull_heads(source, heads=['change-2'])
+        target_repo_name = target.repo_name
 
         # update PR
         self.app.post(
             route_path('pullrequest_update',
-                       repo_name=target.repo_name, pull_request_id=pull_request_id),
+                       repo_name=target_repo_name, pull_request_id=pull_request_id),
             params={'update_commits': 'true', 'csrf_token': csrf_token})
 
         response = self.app.get(
             route_path('pullrequest_show',
-                       repo_name=target.repo_name,
+                       repo_name=target_repo_name,
                        pull_request_id=pull_request.pull_request_id))
 
         assert response.status_int == 200
@@ -1166,10 +1167,11 @@ class TestPullrequestsView(object):
         # source has ancestor - ancestor-new - change-rebased
         backend.pull_heads(target, heads=['ancestor-new'])
         backend.pull_heads(source, heads=['change-rebased'])
+        target_repo_name = target.repo_name
 
         # update PR
         url = route_path('pullrequest_update',
-                         repo_name=target.repo_name,
+                         repo_name=target_repo_name,
                          pull_request_id=pull_request_id)
         self.app.post(url,
                       params={'update_commits': 'true', 'csrf_token': csrf_token},
@@ -1183,7 +1185,7 @@ class TestPullrequestsView(object):
 
         response = self.app.get(
             route_path('pullrequest_show',
-                       repo_name=target.repo_name,
+                       repo_name=target_repo_name,
                        pull_request_id=pull_request.pull_request_id))
         assert response.status_int == 200
         response.mustcontain('Pull request updated to')
@@ -1232,16 +1234,17 @@ class TestPullrequestsView(object):
         vcsrepo = target.scm_instance()
         vcsrepo.config.clear_section('hooks')
         vcsrepo.run_git_command(['reset', '--soft', 'HEAD~2'])
+        target_repo_name = target.repo_name
 
         # update PR
         url = route_path('pullrequest_update',
-                         repo_name=target.repo_name,
+                         repo_name=target_repo_name,
                          pull_request_id=pull_request_id)
         self.app.post(url,
                       params={'update_commits': 'true', 'csrf_token': csrf_token},
                       status=200)
 
-        response = self.app.get(route_path('pullrequest_new', repo_name=target.repo_name))
+        response = self.app.get(route_path('pullrequest_new', repo_name=target_repo_name))
         assert response.status_int == 200
         response.mustcontain('Pull request updated to')
         response.mustcontain('with 0 added, 0 removed commits.')
@@ -1280,11 +1283,12 @@ class TestPullrequestsView(object):
         # source has ancestor - ancestor-new - change-rebased
         backend.pull_heads(target, heads=['ancestor-new'])
         backend.pull_heads(source, heads=['change-rebased'])
+        target_repo_name = target.repo_name
 
         # update PR
         self.app.post(
             route_path('pullrequest_update',
-                       repo_name=target.repo_name, pull_request_id=pull_request_id),
+                       repo_name=target_repo_name, pull_request_id=pull_request_id),
             params={'update_commits': 'true', 'csrf_token': csrf_token},
             status=200)
 
@@ -1389,6 +1393,8 @@ class TestPullrequestsView(object):
         pull_request = pr_util.create_pull_request(
             commits, target_head='old-feature', source_head='new-feature',
             revisions=['new-feature'], mergeable=True)
+        pr_id = pull_request.pull_request_id
+        target_repo_name = pull_request.target_repo.repo_name
 
         vcs = pr_util.source_repository.scm_instance()
         if backend.alias == 'git':
@@ -1397,8 +1403,8 @@ class TestPullrequestsView(object):
             vcs.strip(pr_util.commit_ids['new-feature'])
 
         url = route_path('pullrequest_update',
-                         repo_name=pull_request.target_repo.repo_name,
-                         pull_request_id=pull_request.pull_request_id)
+                         repo_name=target_repo_name,
+                         pull_request_id=pr_id)
         response = self.app.post(url,
                                  params={'update_commits': 'true',
                                          'csrf_token': csrf_token})
@@ -1409,8 +1415,8 @@ class TestPullrequestsView(object):
         # Make sure that after update, it won't raise 500 errors
         response = self.app.get(route_path(
             'pullrequest_show',
-            repo_name=pr_util.target_repository.repo_name,
-            pull_request_id=pull_request.pull_request_id))
+            repo_name=target_repo_name,
+            pull_request_id=pr_id))
 
         assert response.status_int == 200
         response.assert_response().element_contains(

@@ -98,10 +98,13 @@ ReviewersController = function () {
     var self = this;
     this.$reviewRulesContainer = $('#review_rules');
     this.$rulesList = this.$reviewRulesContainer.find('.pr-reviewer-rules');
+    this.$userRule = $('.pr-user-rule-container');
     this.forbidReviewUsers = undefined;
     this.$reviewMembers = $('#review_members');
     this.currentRequest = null;
     this.diffData = null;
+    this.enabledRules = [];
+
     //dummy handler, we might register our own later
     this.diffDataHandler = function(data){};
 
@@ -116,14 +119,17 @@ ReviewersController = function () {
 
     this.hideReviewRules = function () {
         self.$reviewRulesContainer.hide();
+        $(self.$userRule.selector).hide();
     };
 
     this.showReviewRules = function () {
         self.$reviewRulesContainer.show();
+        $(self.$userRule.selector).show();
     };
 
     this.addRule = function (ruleText) {
         self.showReviewRules();
+        self.enabledRules.push(ruleText);
         return '<div>- {0}</div>'.format(ruleText)
     };
 
@@ -179,6 +185,7 @@ ReviewersController = function () {
                     _gettext('Reviewers picked from source code changes.'))
             )
         }
+
         if (data.rules.forbid_adding_reviewers) {
             $('#add_reviewer_input').remove();
             self.$rulesList.append(
@@ -186,6 +193,7 @@ ReviewersController = function () {
                     _gettext('Adding new reviewers is forbidden.'))
             )
         }
+
         if (data.rules.forbid_author_to_review) {
             self.forbidReviewUsers.push(data.rules_data.pr_author);
             self.$rulesList.append(
@@ -193,6 +201,7 @@ ReviewersController = function () {
                     _gettext('Author is not allowed to be a reviewer.'))
             )
         }
+
         if (data.rules.forbid_commit_author_to_review) {
 
             if (data.rules_data.forbidden_users) {
@@ -206,6 +215,12 @@ ReviewersController = function () {
                 self.addRule(
                     _gettext('Commit Authors are not allowed to be a reviewer.'))
             )
+        }
+
+        // we don't have any rules set, so we inform users about it
+        if (self.enabledRules.length === 0) {
+            self.addRule(
+                _gettext('No review rules set.'))
         }
 
         return self.forbidReviewUsers
@@ -264,8 +279,11 @@ ReviewersController = function () {
                 $('#user').show(); // show user autocomplete after load
 
                 var commitElements = data["diff_info"]['commits'];
+
                 if (commitElements.length === 0) {
-                    prButtonLock(true, _gettext('no commits'), 'all');
+                    var noCommitsMsg = '<span class="alert-text-warning">{0}</span>'.format(
+                        _gettext('There are no commits to merge.'));
+                    prButtonLock(true, noCommitsMsg, 'all');
 
                 } else {
                     // un-lock PR button, so we cannot send PR before it's calculated
@@ -309,7 +327,6 @@ ReviewersController = function () {
     };
 
     this.addReviewMember = function (reviewer_obj, reasons, mandatory) {
-        var members = self.$reviewMembers.get(0);
         var id = reviewer_obj.user_id;
         var username = reviewer_obj.username;
 
@@ -318,10 +335,10 @@ ReviewersController = function () {
 
         // register IDS to check if we don't have this ID already in
         var currentIds = [];
-        var _els = self.$reviewMembers.find('li').toArray();
-        for (el in _els) {
-            currentIds.push(_els[el].id)
-        }
+
+        $.each(self.$reviewMembers.find('.reviewer_entry'), function (index, value) {
+            currentIds.push($(value).data('reviewerUserId'))
+        })
 
         var userAllowedReview = function (userId) {
             var allowed = true;
@@ -339,20 +356,23 @@ ReviewersController = function () {
             alert(_gettext('User `{0}` not allowed to be a reviewer').format(username));
         } else {
             // only add if it's not there
-            var alreadyReviewer = currentIds.indexOf('reviewer_' + id) != -1;
+            var alreadyReviewer = currentIds.indexOf(id) != -1;
 
             if (alreadyReviewer) {
                 alert(_gettext('User `{0}` already in reviewers').format(username));
             } else {
-                members.innerHTML += renderTemplate('reviewMemberEntry', {
+                var reviewerEntry = renderTemplate('reviewMemberEntry', {
                     'member': reviewer_obj,
                     'mandatory': mandatory,
+                    'reasons': reasons,
                     'allowed_to_update': true,
                     'review_status': 'not_reviewed',
                     'review_status_label': _gettext('Not Reviewed'),
-                    'reasons': reasons,
-                    'create': true
-                });
+                    'user_group': reviewer_obj.user_group,
+                    'create': true,
+                    'rule_show': true,
+                })
+                $(self.$reviewMembers.selector).append(reviewerEntry);
                 tooltipActivate();
             }
         }
@@ -476,7 +496,7 @@ var ReviewerAutoComplete = function(inputId) {
 };
 
 
-VersionController = function () {
+window.VersionController = function () {
     var self = this;
     this.$verSource = $('input[name=ver_source]');
     this.$verTarget = $('input[name=ver_target]');
@@ -596,25 +616,10 @@ VersionController = function () {
         return false
     };
 
-    this.toggleElement = function (elem, target) {
-        var $elem = $(elem);
-        var $target = $(target);
-
-        if ($target.is(':visible')) {
-            $target.hide();
-            $elem.html($elem.data('toggleOn'))
-        } else {
-            $target.show();
-            $elem.html($elem.data('toggleOff'))
-        }
-
-        return false
-    }
-
 };
 
 
-UpdatePrController = function () {
+window.UpdatePrController = function () {
     var self = this;
     this.$updateCommits = $('#update_commits');
     this.$updateCommitsSwitcher = $('#update_commits_switcher');
@@ -656,4 +661,230 @@ UpdatePrController = function () {
             templateContext.repo_name,
             templateContext.pull_request_data.pull_request_id, force);
     };
+};
+
+/**
+ * Reviewer display panel
+ */
+window.ReviewersPanel = {
+    editButton: null,
+    closeButton: null,
+    addButton: null,
+    removeButtons: null,
+    reviewRules: null,
+    setReviewers: null,
+
+    setSelectors: function () {
+        var self = this;
+        self.editButton = $('#open_edit_reviewers');
+        self.closeButton =$('#close_edit_reviewers');
+        self.addButton = $('#add_reviewer');
+        self.removeButtons = $('.reviewer_member_remove,.reviewer_member_mandatory_remove');
+    },
+
+    init: function (reviewRules, setReviewers) {
+        var self = this;
+        self.setSelectors();
+
+        this.reviewRules = reviewRules;
+        this.setReviewers = setReviewers;
+
+        this.editButton.on('click', function (e) {
+            self.edit();
+        });
+        this.closeButton.on('click', function (e) {
+            self.close();
+            self.renderReviewers();
+        });
+
+        self.renderReviewers();
+
+    },
+
+    renderReviewers: function () {
+
+        $('#review_members').html('')
+        $.each(this.setReviewers.reviewers, function (key, val) {
+            var member = val;
+
+            var entry = renderTemplate('reviewMemberEntry', {
+                'member': member,
+                'mandatory': member.mandatory,
+                'reasons': member.reasons,
+                'allowed_to_update': member.allowed_to_update,
+                'review_status': member.review_status,
+                'review_status_label': member.review_status_label,
+                'user_group': member.user_group,
+                'create': false
+            });
+
+            $('#review_members').append(entry)
+        });
+        tooltipActivate();
+
+    },
+
+    edit: function (event) {
+        this.editButton.hide();
+        this.closeButton.show();
+        this.addButton.show();
+        $(this.removeButtons.selector).css('visibility', 'visible');
+        // review rules
+        reviewersController.loadReviewRules(this.reviewRules);
+    },
+
+    close: function (event) {
+        this.editButton.show();
+        this.closeButton.hide();
+        this.addButton.hide();
+        $(this.removeButtons.selector).css('visibility', 'hidden');
+        // hide review rules
+        reviewersController.hideReviewRules()
+    }
+};
+
+
+/**
+ * OnLine presence using channelstream
+ */
+window.ReviewerPresenceController = function (channel) {
+    var self = this;
+    this.channel = channel;
+    this.users = {};
+
+    this.storeUsers = function (users) {
+        self.users = {}
+        $.each(users, function (index, value) {
+            var userId = value.state.id;
+            self.users[userId] = value.state;
+        })
+    }
+
+    this.render = function () {
+        $.each($('.reviewer_entry'), function (index, value) {
+            var userData = $(value).data();
+            if (self.users[userData.reviewerUserId] !== undefined) {
+                $(value).find('.presence-state').show();
+            } else {
+                $(value).find('.presence-state').hide();
+            }
+        })
+    };
+
+    this.handlePresence = function (data) {
+        if (data.type == 'presence' && data.channel === self.channel) {
+            this.storeUsers(data.users);
+            this.render()
+        }
+    };
+
+    this.handleChannelUpdate = function (data) {
+        if (data.channel === this.channel) {
+            this.storeUsers(data.state.users);
+            this.render()
+        }
+
+    };
+
+    /* subscribe to the current presence */
+    $.Topic('/connection_controller/presence').subscribe(this.handlePresence.bind(this));
+    /* subscribe to updates e.g connect/disconnect */
+    $.Topic('/connection_controller/channel_update').subscribe(this.handleChannelUpdate.bind(this));
+
+};
+
+window.refreshComments = function (version) {
+    version = version || templateContext.pull_request_data.pull_request_version || '';
+
+    // Pull request case
+    if (templateContext.pull_request_data.pull_request_id !== null) {
+        var params = {
+            'pull_request_id': templateContext.pull_request_data.pull_request_id,
+            'repo_name': templateContext.repo_name,
+            'version': version,
+        };
+        var loadUrl = pyroutes.url('pullrequest_comments', params);
+    } // commit case
+    else {
+        return
+    }
+
+    var currentIDs = []
+    $.each($('.comment'), function (idx, element) {
+        currentIDs.push($(element).data('commentId'));
+    });
+    var data = {"comments[]": currentIDs};
+
+    var $targetElem = $('.comments-content-table');
+    $targetElem.css('opacity', 0.3);
+    $targetElem.load(
+        loadUrl, data, function (responseText, textStatus, jqXHR) {
+            if (jqXHR.status !== 200) {
+                return false;
+            }
+            var $counterElem = $('#comments-count');
+            var newCount = $(responseText).data('counter');
+            if (newCount !== undefined) {
+                var callback = function () {
+                    $counterElem.animate({'opacity': 1.00}, 200)
+                    $counterElem.html(newCount);
+                };
+                $counterElem.animate({'opacity': 0.15}, 200, callback);
+            }
+
+            $targetElem.css('opacity', 1);
+            tooltipActivate();
+        }
+    );
+}
+
+window.refreshTODOs = function (version) {
+    version = version || templateContext.pull_request_data.pull_request_version || '';
+    // Pull request case
+    if (templateContext.pull_request_data.pull_request_id !== null) {
+        var params = {
+            'pull_request_id': templateContext.pull_request_data.pull_request_id,
+            'repo_name': templateContext.repo_name,
+            'version': version,
+        };
+        var loadUrl = pyroutes.url('pullrequest_comments', params);
+    } // commit case
+    else {
+        return
+    }
+
+    var currentIDs = []
+    $.each($('.comment'), function (idx, element) {
+        currentIDs.push($(element).data('commentId'));
+    });
+
+    var data = {"comments[]": currentIDs};
+    var $targetElem = $('.todos-content-table');
+    $targetElem.css('opacity', 0.3);
+    $targetElem.load(
+        loadUrl, data, function (responseText, textStatus, jqXHR) {
+            if (jqXHR.status !== 200) {
+                return false;
+            }
+            var $counterElem = $('#todos-count')
+            var newCount = $(responseText).data('counter');
+            if (newCount !== undefined) {
+                var callback = function () {
+                    $counterElem.animate({'opacity': 1.00}, 200)
+                    $counterElem.html(newCount);
+                };
+                $counterElem.animate({'opacity': 0.15}, 200, callback);
+            }
+
+            $targetElem.css('opacity', 1);
+            tooltipActivate();
+        }
+    );
+}
+
+window.refreshAllComments = function (version) {
+    version = version || templateContext.pull_request_data.pull_request_version || '';
+
+    refreshComments(version);
+    refreshTODOs(version);
 };

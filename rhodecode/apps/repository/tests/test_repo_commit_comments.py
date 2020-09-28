@@ -485,23 +485,10 @@ class TestRepoCommitCommentsView(TestController):
 
 
 def assert_comment_links(response, comments, inline_comments):
-    if comments == 1:
-        comments_text = "%d General" % comments
-    else:
-        comments_text = "%d General" % comments
+    response.mustcontain(
+        '<span class="display-none" id="general-comments-count">{}</span>'.format(comments))
+    response.mustcontain(
+        '<span class="display-none" id="inline-comments-count">{}</span>'.format(inline_comments))
 
-    if inline_comments == 1:
-        inline_comments_text = "%d Inline" % inline_comments
-    else:
-        inline_comments_text = "%d Inline" % inline_comments
 
-    if comments:
-        response.mustcontain('<a href="#comments">%s</a>,' % comments_text)
-    else:
-        response.mustcontain(comments_text)
 
-    if inline_comments:
-        response.mustcontain(
-            'id="inline-comments-counter">%s' % inline_comments_text)
-    else:
-        response.mustcontain(inline_comments_text)

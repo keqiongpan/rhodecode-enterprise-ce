@@ -102,6 +102,11 @@
       <%namespace name="diff_block" file="/changeset/diff_block.mako"/>
 
       %for commit in c.commit_ranges:
+        ## commit range header for each individual diff
+        <h3>
+            <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a>
+        </h3>
+
         ${cbdiffs.render_diffset_menu(c.changes[commit.raw_id])}
         ${cbdiffs.render_diffset(
             diffset=c.changes[commit.raw_id],

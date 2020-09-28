@@ -39,7 +39,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
-from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
@@ -265,6 +265,36 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         return diffset
 
+    def register_comments_vars(self, c, pull_request, versions):
+        comments_model = CommentsModel()
+
+        # GENERAL COMMENTS with versions #
+        q = comments_model._all_general_comments_of_pull_request(pull_request)
+        q = q.order_by(ChangesetComment.comment_id.asc())
+        general_comments = q
+
+        # pick comments we want to render at current version
+        c.comment_versions = comments_model.aggregate_comments(
+            general_comments, versions, c.at_version_num)
+
+        # INLINE COMMENTS with versions  #
+        q = comments_model._all_inline_comments_of_pull_request(pull_request)
+        q = q.order_by(ChangesetComment.comment_id.asc())
+        inline_comments = q
+
+        c.inline_versions = comments_model.aggregate_comments(
+            inline_comments, versions, c.at_version_num, inline=True)
+
+        # Comments inline+general
+        if c.at_version:
+            c.inline_comments_flat = c.inline_versions[c.at_version_num]['display']
+            c.comments = c.comment_versions[c.at_version_num]['display']
+        else:
+            c.inline_comments_flat = c.inline_versions[c.at_version_num]['until']
+            c.comments = c.comment_versions[c.at_version_num]['until']
+
+        return general_comments, inline_comments
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -280,6 +310,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request_id = pull_request.pull_request_id
 
         c.state_progressing = pull_request.is_state_changing()
+        c.pr_broadcast_channel = '/repo${}$/pr/{}'.format(
+            pull_request.target_repo.repo_name, pull_request.pull_request_id)
 
         _new_state = {
             'created': PullRequest.STATE_CREATED,
@@ -300,22 +332,23 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         from_version = self.request.GET.get('from_version') or version
         merge_checks = self.request.GET.get('merge_checks')
         c.fulldiff = str2bool(self.request.GET.get('fulldiff'))
+        force_refresh = str2bool(self.request.GET.get('force_refresh'))
+        c.range_diff_on = self.request.GET.get('range-diff') == "1"
 
         # fetch global flags of ignore ws or context lines
         diff_context = diffs.get_diff_context(self.request)
         hide_whitespace_changes = diffs.get_diff_whitespace_flag(self.request)
-
-        force_refresh = str2bool(self.request.GET.get('force_refresh'))
 
         (pull_request_latest,
          pull_request_at_ver,
          pull_request_display_obj,
          at_version) = PullRequestModel().get_pr_version(
             pull_request_id, version=version)
+
         pr_closed = pull_request_latest.is_closed()
 
         if pr_closed and (version or from_version):
-            # not allow to browse versions
+            # not allow to browse versions for closed PR
             raise HTTPFound(h.route_path(
                 'pullrequest_show', repo_name=self.db_repo_name,
                 pull_request_id=pull_request_id))
@@ -323,13 +356,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         versions = pull_request_display_obj.versions()
         # used to store per-commit range diffs
         c.changes = collections.OrderedDict()
-        c.range_diff_on = self.request.GET.get('range-diff') == "1"
 
         c.at_version = at_version
         c.at_version_num = (at_version
-                            if at_version and at_version != 'latest'
+                            if at_version and at_version != PullRequest.LATEST_VER
                             else None)
-        c.at_version_pos = ChangesetComment.get_index_from_version(
+
+        c.at_version_index = ChangesetComment.get_index_from_version(
             c.at_version_num, versions)
 
         (prev_pull_request_latest,
@@ -340,9 +373,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         c.from_version = prev_at_version
         c.from_version_num = (prev_at_version
-                              if prev_at_version and prev_at_version != 'latest'
+                              if prev_at_version and prev_at_version != PullRequest.LATEST_VER
                               else None)
-        c.from_version_pos = ChangesetComment.get_index_from_version(
+        c.from_version_index = ChangesetComment.get_index_from_version(
             c.from_version_num, versions)
 
         # define if we're in COMPARE mode or VIEW at version mode
@@ -351,16 +384,21 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # pull_requests repo_name we opened it against
         # ie. target_repo must match
         if self.db_repo_name != pull_request_at_ver.target_repo.repo_name:
+            log.warning('Mismatch between the current repo: %s, and target %s',
+                        self.db_repo_name, pull_request_at_ver.target_repo.repo_name)
             raise HTTPNotFound()
 
-        c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(
-            pull_request_at_ver)
+        c.shadow_clone_url = PullRequestModel().get_shadow_clone_url(pull_request_at_ver)
 
         c.pull_request = pull_request_display_obj
         c.renderer = pull_request_at_ver.description_renderer or c.renderer
         c.pull_request_latest = pull_request_latest
 
-        if compare or (at_version and not at_version == 'latest'):
+        # inject latest version
+        latest_ver = PullRequest.get_pr_display_object(pull_request_latest, pull_request_latest)
+        c.versions = versions + [latest_ver]
+
+        if compare or (at_version and not at_version == PullRequest.LATEST_VER):
             c.allowed_to_change_status = False
             c.allowed_to_update = False
             c.allowed_to_merge = False
@@ -389,12 +427,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         'rules' in pull_request_latest.reviewer_data:
             rules = pull_request_latest.reviewer_data['rules'] or {}
             try:
-                c.forbid_adding_reviewers = rules.get(
-                    'forbid_adding_reviewers')
-                c.forbid_author_to_review = rules.get(
-                    'forbid_author_to_review')
-                c.forbid_commit_author_to_review = rules.get(
-                    'forbid_commit_author_to_review')
+                c.forbid_adding_reviewers = rules.get('forbid_adding_reviewers')
+                c.forbid_author_to_review = rules.get('forbid_author_to_review')
+                c.forbid_commit_author_to_review = rules.get('forbid_commit_author_to_review')
             except Exception:
                 pass
 
@@ -419,41 +454,34 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'rhodecode:templates/pullrequests/pullrequest_merge_checks.mako'
             return self._get_template_context(c)
 
-        comments_model = CommentsModel()
+        c.allowed_reviewers = [obj.user_id for obj in pull_request.reviewers if obj.user]
 
         # reviewers and statuses
-        c.pull_request_reviewers = pull_request_at_ver.reviewers_statuses()
-        allowed_reviewers = [x[0].user_id for x in c.pull_request_reviewers]
+        c.pull_request_default_reviewers_data_json = json.dumps(pull_request.reviewer_data)
+        c.pull_request_set_reviewers_data_json = collections.OrderedDict({'reviewers': []})
 
-        # GENERAL COMMENTS with versions #
-        q = comments_model._all_general_comments_of_pull_request(pull_request_latest)
-        q = q.order_by(ChangesetComment.comment_id.asc())
-        general_comments = q
+        for review_obj, member, reasons, mandatory, status in pull_request_at_ver.reviewers_statuses():
+            member_reviewer = h.reviewer_as_json(
+                member, reasons=reasons, mandatory=mandatory,
+                user_group=review_obj.rule_user_group_data()
+            )
 
-        # pick comments we want to render at current version
-        c.comment_versions = comments_model.aggregate_comments(
-            general_comments, versions, c.at_version_num)
-        c.comments = c.comment_versions[c.at_version_num]['until']
+            current_review_status = status[0][1].status if status else ChangesetStatus.STATUS_NOT_REVIEWED
+            member_reviewer['review_status'] = current_review_status
+            member_reviewer['review_status_label'] = h.commit_status_lbl(current_review_status)
+            member_reviewer['allowed_to_update'] = c.allowed_to_update
+            c.pull_request_set_reviewers_data_json['reviewers'].append(member_reviewer)
 
-        # INLINE COMMENTS with versions  #
-        q = comments_model._all_inline_comments_of_pull_request(pull_request_latest)
-        q = q.order_by(ChangesetComment.comment_id.asc())
-        inline_comments = q
+        c.pull_request_set_reviewers_data_json = json.dumps(c.pull_request_set_reviewers_data_json)
 
-        c.inline_versions = comments_model.aggregate_comments(
-            inline_comments, versions, c.at_version_num, inline=True)
+        general_comments, inline_comments = \
+            self.register_comments_vars(c, pull_request_latest, versions)
 
         # TODOs
         c.unresolved_comments = CommentsModel() \
-            .get_pull_request_unresolved_todos(pull_request)
+            .get_pull_request_unresolved_todos(pull_request_latest)
         c.resolved_comments = CommentsModel() \
-            .get_pull_request_resolved_todos(pull_request)
-
-        # inject latest version
-        latest_ver = PullRequest.get_pr_display_object(
-            pull_request_latest, pull_request_latest)
-
-        c.versions = versions + [latest_ver]
+            .get_pull_request_resolved_todos(pull_request_latest)
 
         # if we use version, then do not show later comments
         # than current version
@@ -520,8 +548,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         # empty version means latest, so we keep this to prevent
         # double caching
-        version_normalized = version or 'latest'
-        from_version_normalized = from_version or 'latest'
+        version_normalized = version or PullRequest.LATEST_VER
+        from_version_normalized = from_version or PullRequest.LATEST_VER
 
         cache_path = self.rhodecode_vcs_repo.get_create_shadow_cache_pr_path(target_repo)
         cache_file_path = diff_cache_exist(
@@ -613,7 +641,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                         diff_limit, file_limit, c.fulldiff,
                         hide_whitespace_changes, diff_context,
                         use_ancestor=use_ancestor
-					)
+                    )
 
                     # save cached diff
                     if caching_enabled:
@@ -717,7 +745,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             # current user review statuses for each version
             c.review_versions = {}
-            if self._rhodecode_user.user_id in allowed_reviewers:
+            if self._rhodecode_user.user_id in c.allowed_reviewers:
                 for co in general_comments:
                     if co.author.user_id == self._rhodecode_user.user_id:
                         status = co.status_change
@@ -937,6 +965,90 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_comments', request_method='POST',
+        renderer='string', xhr=True)
+    def pullrequest_comments(self):
+        self.load_default_context()
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+        version = self.request.GET.get('version')
+
+        _render = self.request.get_partial_renderer(
+            'rhodecode:templates/base/sidebar.mako')
+        c = _render.get_call_context()
+
+        (pull_request_latest,
+         pull_request_at_ver,
+         pull_request_display_obj,
+         at_version) = PullRequestModel().get_pr_version(
+            pull_request_id, version=version)
+        versions = pull_request_display_obj.versions()
+        latest_ver = PullRequest.get_pr_display_object(pull_request_latest, pull_request_latest)
+        c.versions = versions + [latest_ver]
+
+        c.at_version = at_version
+        c.at_version_num = (at_version
+                            if at_version and at_version != PullRequest.LATEST_VER
+                            else None)
+
+        self.register_comments_vars(c, pull_request_latest, versions)
+        all_comments = c.inline_comments_flat + c.comments
+
+        existing_ids = filter(
+            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+        return _render('comments_table', all_comments, len(all_comments),
+                       existing_ids=existing_ids)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_todos', request_method='POST',
+        renderer='string', xhr=True)
+    def pullrequest_todos(self):
+        self.load_default_context()
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+        version = self.request.GET.get('version')
+
+        _render = self.request.get_partial_renderer(
+            'rhodecode:templates/base/sidebar.mako')
+        c = _render.get_call_context()
+        (pull_request_latest,
+         pull_request_at_ver,
+         pull_request_display_obj,
+         at_version) = PullRequestModel().get_pr_version(
+            pull_request_id, version=version)
+        versions = pull_request_display_obj.versions()
+        latest_ver = PullRequest.get_pr_display_object(pull_request_latest, pull_request_latest)
+        c.versions = versions + [latest_ver]
+
+        c.at_version = at_version
+        c.at_version_num = (at_version
+                            if at_version and at_version != PullRequest.LATEST_VER
+                            else None)
+
+        c.unresolved_comments = CommentsModel() \
+            .get_pull_request_unresolved_todos(pull_request)
+        c.resolved_comments = CommentsModel() \
+            .get_pull_request_resolved_todos(pull_request)
+
+        all_comments = c.unresolved_comments + c.resolved_comments
+        existing_ids = filter(
+            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+        return _render('comments_table', all_comments, len(c.unresolved_comments),
+                       todo_comments=True, existing_ids=existing_ids)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
     @view_config(
         route_name='pullrequest_create', request_method='POST',
@@ -1098,7 +1210,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self.request.matchdict['pull_request_id'])
         _ = self.request.translate
 
-        self.load_default_context()
+        c = self.load_default_context()
         redirect_url = None
 
         if pull_request.is_closed():
@@ -1109,6 +1221,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     'redirect_url': redirect_url}
 
         is_state_changing = pull_request.is_state_changing()
+        c.pr_broadcast_channel = '/repo${}$/pr/{}'.format(
+            pull_request.target_repo.repo_name, pull_request.pull_request_id)
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
@@ -1132,7 +1246,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     return {'response': True,
                             'redirect_url': redirect_url}
 
-                self._update_commits(pull_request)
+                self._update_commits(c, pull_request)
                 if force_refresh:
                     redirect_url = h.route_path(
                         'pullrequest_show', repo_name=self.db_repo_name,
@@ -1168,7 +1282,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         h.flash(msg, category='success')
         return
 
-    def _update_commits(self, pull_request):
+    def _update_commits(self, c, pull_request):
         _ = self.request.translate
 
         with pull_request.set_state(PullRequest.STATE_UPDATING):
@@ -1196,13 +1310,18 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 change_source=changed)
             h.flash(msg, category='success')
 
-            channel = '/repo${}$/pr/{}'.format(
-                pull_request.target_repo.repo_name, pull_request.pull_request_id)
             message = msg + (
                 ' - <a onclick="window.location.reload()">'
                 '<strong>{}</strong></a>'.format(_('Reload page')))
+
+            message_obj = {
+                'message': message,
+                'level': 'success',
+                'topic': '/notifications'
+            }
+
             channelstream.post_message(
-                channel, message, self._rhodecode_user.username,
+                c.pr_broadcast_channel, message_obj, self._rhodecode_user.username,
                 registry=self.request.registry)
         else:
             msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
@@ -1472,6 +1591,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         }
         if comment:
             c.co = comment
+            c.at_version_num = None
             rendered_comment = render(
                 'rhodecode:templates/changeset/changeset_comment_block.mako',
                 self._get_template_context(c), self.request)

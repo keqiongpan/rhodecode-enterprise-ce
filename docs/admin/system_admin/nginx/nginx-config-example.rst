@@ -147,12 +147,13 @@ Use the following example to configure Nginx as a your web server.
 
         ## Special Cache for file store, make sure you enable this intentionally as
         ## it could bypass upload files permissions
-        # location /_file_store/download {
+        # location /_file_store/download/gravatars {
         #
         #    proxy_cache cache_zone;
         #    # ignore Set-Cookie
         #    proxy_ignore_headers Set-Cookie;
-        #    proxy_ignore_headers Cookie;
+        #    # ignore cache-control
+        #    proxy_ignore_headers Cache-Control;
         #
         #    proxy_cache_key $host$uri$is_args$args;
         #    proxy_cache_methods GET;

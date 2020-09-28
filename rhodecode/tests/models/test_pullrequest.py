@@ -948,8 +948,8 @@ def assert_inline_comments(pull_request, visible=None, outdated=None):
     if visible is not None:
         inline_comments = CommentsModel().get_inline_comments(
             pull_request.target_repo.repo_id, pull_request=pull_request)
-        inline_cnt = CommentsModel().get_inline_comments_count(
-            inline_comments)
+        inline_cnt = len(CommentsModel().get_inline_comments_as_list(
+            inline_comments))
         assert inline_cnt == visible
     if outdated is not None:
         outdated_comments = CommentsModel().get_outdated_comments(

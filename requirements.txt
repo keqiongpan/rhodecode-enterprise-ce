@@ -5,7 +5,7 @@ babel==1.3
 beaker==1.9.1
 bleach==3.1.3
 celery==4.3.0
-channelstream==0.5.2
+channelstream==0.6.14
 click==7.0
 colander==1.7.0
 # our custom configobj
@@ -22,7 +22,7 @@ future==0.14.3
 futures==3.0.2
 infrae.cache==1.0.1
 iso8601==0.1.12
-itsdangerous==0.24
+itsdangerous==1.1.0
 kombu==4.6.6
 lxml==4.2.5
 mako==1.1.0

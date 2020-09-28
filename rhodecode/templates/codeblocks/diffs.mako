@@ -61,6 +61,8 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     diffset_container_id = h.md5(diffset.target_ref)
     collapse_all = len(diffset.files) > collapse_when_files_over
     active_pattern_entries = h.get_active_pattern_entries(getattr(c, 'repo_name', None))
+    from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
+        MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
 %>
 
 %if use_comments:
@@ -159,45 +161,45 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         </div>
         % endif
 
-        ## comments
-        <div class="pull-right">
-            <div class="comments-number" style="padding-left: 10px">
-                % if hasattr(c, 'comments') and hasattr(c, 'inline_cnt'):
-                    <i class="icon-comment" style="color: #949494">COMMENTS:</i>
-                    % if c.comments:
-                        <a href="#comments">${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))}</a>,
-                    % else:
-                        ${_('0 General')}
-                    % endif
-
-                    % if c.inline_cnt:
-                        <a href="#" onclick="return Rhodecode.comments.nextComment();"
-                           id="inline-comments-counter">${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(c.inline_cnt)}
-                        </a>
-                    % else:
-                        ${_('0 Inline')}
-                    % endif
-                % endif
-
-                % if pull_request_menu:
-                    <%
-                    outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
-                    %>
-
-                    % if outdated_comm_count_ver:
-                        <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
-                            (${_("{} Outdated").format(outdated_comm_count_ver)})
-                        </a>
-                        <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
-                        <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
-                    % else:
-                        (${_("{} Outdated").format(outdated_comm_count_ver)})
-                    % endif
-
-                % endif
-
-            </div>
-        </div>
+##         ## comments
+##         <div class="pull-right">
+##             <div class="comments-number" style="padding-left: 10px">
+##                 % if hasattr(c, 'comments') and hasattr(c, 'inline_cnt'):
+##                     <i class="icon-comment" style="color: #949494">COMMENTS:</i>
+##                     % if c.comments:
+##                         <a href="#comments">${_ungettext("{} General", "{} General", len(c.comments)).format(len(c.comments))}</a>,
+##                     % else:
+##                         ${_('0 General')}
+##                     % endif
+##
+##                     % if c.inline_cnt:
+##                         <a href="#" onclick="return Rhodecode.comments.nextComment();"
+##                            id="inline-comments-counter">${_ungettext("{} Inline", "{} Inline", c.inline_cnt).format(c.inline_cnt)}
+##                         </a>
+##                     % else:
+##                         ${_('0 Inline')}
+##                     % endif
+##                 % endif
+##
+##                 % if pull_request_menu:
+##                     <%
+##                     outdated_comm_count_ver = pull_request_menu['outdated_comm_count_ver']
+##                     %>
+##
+##                     % if outdated_comm_count_ver:
+##                         <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                         </a>
+##                         <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+##                         <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
+##                     % else:
+##                         (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                     % endif
+##
+##                 % endif
+##
+##             </div>
+##         </div>
 
     </div>
 
@@ -207,13 +209,6 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                 ${_('The requested changes are too big and content was truncated.')}
                 <a href="${h.current_route_path(request, fulldiff=1)}" onclick="return confirm('${_("Showing a big diff might take some time and resources, continue?")}')">${_('Show full diff')}</a>
             </h2>
-        </div>
-    ## commit range header for each individual diff
-    % elif commit and hasattr(c, 'commit_ranges') and len(c.commit_ranges) > 1:
-        <div class="diffset-heading ${(diffset.limited_diff and 'diffset-heading-warning' or '')}">
-            <div class="clearinner">
-                <a class="tooltip revision" title="${h.tooltip(commit.message)}" href="${h.route_path('repo_commit',repo_name=diffset.repo_name,commit_id=commit.raw_id)}">${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}</a>
-            </div>
         </div>
     % endif
 
@@ -239,6 +234,43 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     <% over_lines_changed_limit = False %>
     %for i, filediff in enumerate(diffset.files):
 
+        %if filediff.source_file_path and filediff.target_file_path:
+            %if filediff.source_file_path != filediff.target_file_path:
+                 ## file was renamed, or copied
+                %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
+                    <%
+                        final_file_name = h.literal(u'{} <i class="icon-angle-left"></i> <del>{}</del>'.format(filediff.target_file_path, filediff.source_file_path))
+                        final_path = filediff.target_file_path
+                    %>
+                %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
+                    <%
+                        final_file_name = h.literal(u'{} <i class="icon-angle-left"></i> {}'.format(filediff.target_file_path, filediff.source_file_path))
+                        final_path = filediff.target_file_path
+                    %>
+                %endif
+            %else:
+                ## file was modified
+                <%
+                    final_file_name = filediff.source_file_path
+                    final_path = final_file_name
+                %>
+            %endif
+        %else:
+            %if filediff.source_file_path:
+                ## file was deleted
+                <%
+                    final_file_name = filediff.source_file_path
+                    final_path =  final_file_name
+                %>
+            %else:
+                ## file was added
+                <%
+                    final_file_name = filediff.target_file_path
+                    final_path = final_file_name
+                %>
+            %endif
+        %endif
+
         <%
         lines_changed = filediff.patch['stats']['added'] + filediff.patch['stats']['deleted']
         over_lines_changed_limit = lines_changed > lines_changed_limit
@@ -258,13 +290,39 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
                 total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not _c.outdated]
             %>
             <div class="filediff-collapse-indicator icon-"></div>
-            <span class="pill-group pull-right" >
-                <span class="pill" op="comments">
 
+            ## Comments/Options PILL
+            <span class="pill-group pull-right">
+                <span class="pill" op="comments">
                     <i class="icon-comment"></i> ${len(total_file_comments)}
                 </span>
+
+                <details class="details-reset details-inline-block">
+                  <summary class="noselect">
+                      <i class="pill icon-options cursor-pointer" op="options"></i>
+                  </summary>
+                  <details-menu class="details-dropdown">
+
+                    <div class="dropdown-item">
+                        <span>${final_path}</span>
+                        <span class="pull-right icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="Copy file path"></span>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                   <div class="dropdown-item">
+                        <% permalink = request.current_route_url(_anchor='a_{}'.format(h.FID(filediff.raw_id, filediff.patch['filename']))) %>
+                        <a href="${permalink}">¶ permalink</a>
+                        <span class="pull-right icon-clipboard clipboard-action" data-clipboard-text="${permalink}" title="Copy permalink"></span>
+                   </div>
+
+
+                  </details-menu>
+                </details>
+
             </span>
-            ${diff_ops(filediff)}
+
+            ${diff_ops(final_file_name, filediff)}
 
         </label>
 
@@ -463,43 +521,15 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 </div>
 </%def>
 
-<%def name="diff_ops(filediff)">
-<%
-from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
-    MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
-%>
+<%def name="diff_ops(file_name, filediff)">
+    <%
+    from rhodecode.lib.diffs import NEW_FILENODE, DEL_FILENODE, \
+        MOD_FILENODE, RENAMED_FILENODE, CHMOD_FILENODE, BIN_FILENODE, COPIED_FILENODE
+    %>
     <span class="pill">
         <i class="icon-file-text"></i>
-        %if filediff.source_file_path and filediff.target_file_path:
-            %if filediff.source_file_path != filediff.target_file_path:
-                 ## file was renamed, or copied
-                %if RENAMED_FILENODE in filediff.patch['stats']['ops']:
-                    ${filediff.target_file_path} ⬅ <del>${filediff.source_file_path}</del>
-                    <% final_path = filediff.target_file_path %>
-                %elif COPIED_FILENODE in filediff.patch['stats']['ops']:
-                    ${filediff.target_file_path} ⬅ ${filediff.source_file_path}
-                    <% final_path = filediff.target_file_path %>
-                %endif
-            %else:
-                ## file was modified
-                ${filediff.source_file_path}
-                <% final_path = filediff.source_file_path %>
-            %endif
-        %else:
-            %if filediff.source_file_path:
-                ## file was deleted
-                ${filediff.source_file_path}
-                <% final_path = filediff.source_file_path %>
-            %else:
-                ## file was added
-                ${filediff.target_file_path}
-                <% final_path = filediff.target_file_path %>
-            %endif
-        %endif
-        <i style="color: #aaa" class="on-hover-icon icon-clipboard clipboard-action" data-clipboard-text="${final_path}" title="${_('Copy file path')}" onclick="return false;"></i>
+        ${file_name}
     </span>
-    ## anchor link
-    <a class="pill filediff-anchor" href="#a_${h.FID(filediff.raw_id, filediff.patch['filename'])}">¶</a>
 
     <span class="pill-group pull-right">
 
@@ -934,7 +964,7 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 </span>
             %endif
             % if commit or pull_request_menu:
-                <span id="diff_nav">Loading diff...:</span>
+                <span class="tooltip" title="Navigate to previous or next change inside files." id="diff_nav">Loading diff...:</span>
                 <span class="cursor-pointer" onclick="scrollToPrevChunk(); return false">
                     <i class="icon-angle-up"></i>
                 </span>

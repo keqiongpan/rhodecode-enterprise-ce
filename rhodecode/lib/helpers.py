@@ -90,7 +90,7 @@ from rhodecode.lib.vcs.conf.settings import ARCHIVE_SPECS
 from rhodecode.lib.index.search_utils import get_matching_line_offsets
 from rhodecode.config.conf import DATE_FORMAT, DATETIME_FORMAT
 from rhodecode.model.changeset_status import ChangesetStatusModel
-from rhodecode.model.db import Permission, User, Repository, UserApiKeys
+from rhodecode.model.db import Permission, User, Repository, UserApiKeys, FileStore
 from rhodecode.model.repo_group import RepoGroupModel
 from rhodecode.model.settings import IssueTrackerSettingsModel
 
@@ -810,8 +810,7 @@ import tzlocal
 local_timezone = tzlocal.get_localzone()
 
 
-def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
-    title = value or format_date(datetime_iso)
+def get_timezone(datetime_iso, time_is_local=False):
     tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
@@ -822,6 +821,12 @@ def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
         timezone = force_timezone or local_timezone
         offset = timezone.localize(datetime_iso).strftime('%z')
         tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
+    return tzinfo
+
+
+def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
+    title = value or format_date(datetime_iso)
+    tzinfo = get_timezone(datetime_iso, time_is_local=time_is_local)
 
     return literal(
         '<time class="timeago {cls}" title="{tt_title}" datetime="{dt}{tzinfo}">{title}</time>'.format(
@@ -1357,20 +1362,76 @@ class InitialsGravatar(object):
         return "data:image/svg+xml;base64,%s" % base64.b64encode(img_data)
 
 
-def initials_gravatar(email_address, first_name, last_name, size=30):
+def initials_gravatar(request, email_address, first_name, last_name, size=30, store_on_disk=False):
+
     svg_type = None
     if email_address == User.DEFAULT_USER_EMAIL:
         svg_type = 'default_user'
+
     klass = InitialsGravatar(email_address, first_name, last_name, size)
-    return klass.generate_svg(svg_type=svg_type)
+
+    if store_on_disk:
+        from rhodecode.apps.file_store import utils as store_utils
+        from rhodecode.apps.file_store.exceptions import FileNotAllowedException, \
+            FileOverSizeException
+        from rhodecode.model.db import Session
+
+        image_key = md5_safe(email_address.lower()
+                             + first_name.lower() + last_name.lower())
+
+        storage = store_utils.get_file_storage(request.registry.settings)
+        filename = '{}.svg'.format(image_key)
+        subdir = 'gravatars'
+        # since final name has a counter, we apply the 0
+        uid = storage.apply_counter(0, store_utils.uid_filename(filename, randomized=False))
+        store_uid = os.path.join(subdir, uid)
+
+        db_entry = FileStore.get_by_store_uid(store_uid)
+        if db_entry:
+            return request.route_path('download_file', fid=store_uid)
+
+        img_data = klass.get_img_data(svg_type=svg_type)
+        img_file = store_utils.bytes_to_file_obj(img_data)
+
+        try:
+            store_uid, metadata = storage.save_file(
+                img_file, filename, directory=subdir,
+                extensions=['.svg'], randomized_name=False)
+        except (FileNotAllowedException, FileOverSizeException):
+            raise
+
+        try:
+            entry = FileStore.create(
+                file_uid=store_uid, filename=metadata["filename"],
+                file_hash=metadata["sha256"], file_size=metadata["size"],
+                file_display_name=filename,
+                file_description=u'user gravatar `{}`'.format(safe_unicode(filename)),
+                hidden=True, check_acl=False, user_id=1
+            )
+            Session().add(entry)
+            Session().commit()
+            log.debug('Stored upload in DB as %s', entry)
+        except Exception:
+            raise
+
+        return request.route_path('download_file', fid=store_uid)
+
+    else:
+        return klass.generate_svg(svg_type=svg_type)
+
+
+def gravatar_external(request, gravatar_url_tmpl, email_address, size=30):
+    return safe_str(gravatar_url_tmpl)\
+        .replace('{email}', email_address) \
+        .replace('{md5email}', md5_safe(email_address.lower())) \
+        .replace('{netloc}', request.host) \
+        .replace('{scheme}', request.scheme) \
+        .replace('{size}', safe_str(size))
 
 
 def gravatar_url(email_address, size=30, request=None):
-    request = get_current_request()
+    request = request or get_current_request()
     _use_gravatar = request.call_context.visual.use_gravatar
-    _gravatar_url = request.call_context.visual.gravatar_url
-
-    _gravatar_url = _gravatar_url or User.DEFAULT_GRAVATAR_URL
 
     email_address = email_address or User.DEFAULT_USER_EMAIL
     if isinstance(email_address, unicode):
@@ -1379,21 +1440,15 @@ def gravatar_url(email_address, size=30, request=None):
 
     # empty email or default user
     if not email_address or email_address == User.DEFAULT_USER_EMAIL:
-        return initials_gravatar(User.DEFAULT_USER_EMAIL, '', '', size=size)
+        return initials_gravatar(request, User.DEFAULT_USER_EMAIL, '', '', size=size)
 
     if _use_gravatar:
-        # TODO: Disuse pyramid thread locals. Think about another solution to
-        # get the host and schema here.
-        request = get_current_request()
-        tmpl = safe_str(_gravatar_url)
-        tmpl = tmpl.replace('{email}', email_address)\
-                   .replace('{md5email}', md5_safe(email_address.lower())) \
-                   .replace('{netloc}', request.host)\
-                   .replace('{scheme}', request.scheme)\
-                   .replace('{size}', safe_str(size))
-        return tmpl
+        gravatar_url_tmpl = request.call_context.visual.gravatar_url \
+                            or User.DEFAULT_GRAVATAR_URL
+        return gravatar_external(request, gravatar_url_tmpl, email_address, size=size)
+
     else:
-        return initials_gravatar(email_address, '', '', size=size)
+        return initials_gravatar(request, email_address, '', '', size=size)
 
 
 def breadcrumb_repo_link(repo):
@@ -1560,7 +1615,7 @@ def _process_url_func(match_obj, repo_name, uid, entry,
     # named regex variables
     named_vars.update(match_obj.groupdict())
     _url = string.Template(entry['url']).safe_substitute(**named_vars)
-    desc = string.Template(entry['desc']).safe_substitute(**named_vars)
+    desc = string.Template(escape(entry['desc'])).safe_substitute(**named_vars)
     hovercard_url = string.Template(entry.get('hovercard_url', '')).safe_substitute(**named_vars)
 
     def quote_cleaner(input_str):
@@ -1600,17 +1655,18 @@ def get_active_pattern_entries(repo_name):
 
 pr_pattern_re = re.compile(r'(?:(?:^!)|(?: !))(\d+)')
 
+allowed_link_formats = [
+    'html', 'rst', 'markdown', 'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
+
 
 def process_patterns(text_string, repo_name, link_format='html', active_entries=None):
 
-    allowed_formats = ['html', 'rst', 'markdown',
-                       'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
-    if link_format not in allowed_formats:
+    if link_format not in allowed_link_formats:
         raise ValueError('Link format can be only one of:{} got {}'.format(
-                         allowed_formats, link_format))
+                         allowed_link_formats, link_format))
 
     if active_entries is None:
-        log.debug('Fetch active patterns for repo: %s', repo_name)
+        log.debug('Fetch active issue tracker patterns for repo: %s', repo_name)
         active_entries = get_active_pattern_entries(repo_name)
 
     issues_data = []
@@ -1668,7 +1724,8 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     return new_text, issues_data
 
 
-def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None):
+def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None,
+                          issues_container=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1690,6 +1747,9 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     # process issue tracker patterns
     new_text, issues = process_patterns(new_text, repository or '',
                                         active_entries=active_pattern_entries)
+
+    if issues_container is not None:
+        issues_container.extend(issues)
 
     return literal(new_text)
 
@@ -1731,7 +1791,7 @@ def renderer_from_filename(filename, exclude=None):
 
 
 def render(source, renderer='rst', mentions=False, relative_urls=None,
-           repo_name=None, active_pattern_entries=None):
+           repo_name=None, active_pattern_entries=None, issues_container=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_urls:
@@ -1748,6 +1808,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues = process_patterns(
                 source, repo_name, link_format='rst',
                 active_entries=active_pattern_entries)
+            if issues_container is not None:
+                issues_container.extend(issues)
 
         return literal(
             '<div class="rst-block">%s</div>' %
@@ -1760,6 +1822,8 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues = process_patterns(
                 source, repo_name, link_format='markdown',
                 active_entries=active_pattern_entries)
+            if issues_container is not None:
+                issues_container.extend(issues)
 
         return literal(
             '<div class="markdown-block">%s</div>' %

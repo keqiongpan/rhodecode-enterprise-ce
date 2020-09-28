@@ -1,6 +1,8 @@
 <%inherit file="/base/base.mako"/>
 <%namespace name="base" file="/base/base.mako"/>
 <%namespace name="dt" file="/data_table/_dt_elements.mako"/>
+<%namespace name="sidebar" file="/base/sidebar.mako"/>
+
 
 <%def name="title()">
     ${_('{} Pull Request !{}').format(c.repo_name, c.pull_request.pull_request_id)}
@@ -21,12 +23,19 @@
     ${self.repo_menu(active='showpullrequest')}
 </%def>
 
+
 <%def name="main()">
+## Container to gather extracted Tickets
+<%
+    c.referenced_commit_issues = []
+    c.referenced_desc_issues = []
+%>
 
 <script type="text/javascript">
     // TODO: marcink switch this to pyroutes
     AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
+    templateContext.pull_request_data.pull_request_version = '${request.GET.get('version', '')}';
 </script>
 
 <div class="box">
@@ -79,7 +88,7 @@
     </div>
 
     <div id="pr-desc" class="input" title="${_('Rendered using {} renderer').format(c.renderer)}">
-        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name)}
+        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name, issues_container=c.referenced_desc_issues)}
     </div>
 
     <div id="pr-desc-edit" class="input textarea" style="display: none;">
@@ -88,29 +97,6 @@
     </div>
 
     <div id="summary" class="fields pr-details-content">
-
-       ## review
-       <div class="field">
-        <div class="label-pr-detail">
-            <label>${_('Review status')}:</label>
-        </div>
-        <div class="input">
-          %if c.pull_request_review_status:
-          <div class="tag status-tag-${c.pull_request_review_status}">
-            <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-            <span class="changeset-status-lbl">
-              %if c.pull_request.is_closed():
-                  ${_('Closed')},
-              %endif
-
-              ${h.commit_status_lbl(c.pull_request_review_status)}
-
-            </span>
-          </div>
-            - ${_ungettext('calculated based on {} reviewer vote', 'calculated based on {} reviewers votes', len(c.pull_request_reviewers)).format(len(c.pull_request_reviewers))}
-          %endif
-        </div>
-       </div>
 
        ## source
        <div class="field">
@@ -136,7 +122,7 @@
 
                 ${_('of')} <a href="${h.route_path('repo_summary', repo_name=c.pull_request.target_repo.repo_name)}">${c.pull_request.target_repo.repo_name}</a>
 
-                <a class="source-details-action" href="#expand-source-details" onclick="return versionController.toggleElement(this, '.source-details')" data-toggle-on='<i class="icon-angle-down">more details</i>' data-toggle-off='<i class="icon-angle-up">less details</i>'>
+                <a class="source-details-action" href="#expand-source-details" onclick="return toggleElement(this, '.source-details')" data-toggle-on='<i class="icon-angle-down">more details</i>' data-toggle-off='<i class="icon-angle-up">less details</i>'>
                     <i class="icon-angle-down">more details</i>
                 </a>
 
@@ -231,7 +217,7 @@
                                 </code>
                            </td>
                            <td>
-                               <input ${('checked="checked"' if c.from_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
+                               <input ${('checked="checked"' if c.from_version_index == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_source" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
                                <input ${('checked="checked"' if c.at_version_num == ver_pr else '')} class="compare-radio-button" type="radio" name="ver_target" value="${ver_pr or 'latest'}" data-ver-pos="${ver_pos}"/>
                            </td>
                            <td>
@@ -280,159 +266,12 @@
 
   </div>
 
-    ## REVIEW RULES
-    <div id="review_rules" style="display: none" class="reviewers-title block-right">
-        <div class="pr-details-title">
-            ${_('Reviewer rules')}
-          %if c.allowed_to_update:
-            <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
-          %endif
-        </div>
-        <div class="pr-reviewer-rules">
-            ## review rules will be appended here, by default reviewers logic
-        </div>
-        <input id="review_data" type="hidden" name="review_data" value="">
-    </div>
-
-    ## REVIEWERS
-    <div class="reviewers-title first-panel block-right">
-      <div class="pr-details-title">
-          ${_('Pull request reviewers')}
-          %if c.allowed_to_update:
-            <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
-          %endif
-      </div>
-    </div>
-    <div id="reviewers" class="block-right pr-details-content reviewers">
-
-        ## members redering block
-        <input type="hidden" name="__start__" value="review_members:sequence">
-        <ul id="review_members" class="group_members">
-
-        % for review_obj, member, reasons, mandatory, status in c.pull_request_reviewers:
-            <script>
-                var member = ${h.json.dumps(h.reviewer_as_json(member, reasons=reasons, mandatory=mandatory, user_group=review_obj.rule_user_group_data()))|n};
-                var status = "${(status[0][1].status if status else 'not_reviewed')}";
-                var status_lbl = "${h.commit_status_lbl(status[0][1].status if status else 'not_reviewed')}";
-                var allowed_to_update = ${h.json.dumps(c.allowed_to_update)};
-
-                var entry = renderTemplate('reviewMemberEntry', {
-                    'member': member,
-                    'mandatory': member.mandatory,
-                    'reasons': member.reasons,
-                    'allowed_to_update': allowed_to_update,
-                    'review_status': status,
-                    'review_status_label': status_lbl,
-                    'user_group': member.user_group,
-                    'create': false
-                });
-                $('#review_members').append(entry)
-            </script>
-
-        % endfor
-
-        </ul>
-
-        <input type="hidden" name="__end__" value="review_members:sequence">
-        ## end members redering block
-
-        %if not c.pull_request.is_closed():
-            <div id="add_reviewer" class="ac" style="display: none;">
-            %if c.allowed_to_update:
-                % if not c.forbid_adding_reviewers:
-                    <div id="add_reviewer_input" class="reviewer_ac">
-                       ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
-                       <div id="reviewers_container"></div>
-                    </div>
-                % endif
-                <div class="pull-right">
-                    <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
-                </div>
-            %endif
-            </div>
-        %endif
-    </div>
-
-    ## TODOs will be listed here
-    <div class="reviewers-title block-right">
-      <div class="pr-details-title">
-          ## Only show unresolved, that is only what matters
-          TODO Comments - ${len(c.unresolved_comments)} / ${(len(c.unresolved_comments) + len(c.resolved_comments))}
-
-          % if not c.at_version:
-              % if c.resolved_comments:
-                  <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return versionController.toggleElement(this, '.unresolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
-              % else:
-                  <span class="block-right last-item noselect">Show resolved</span>
-              % endif
-          % endif
-      </div>
-    </div>
-    <div class="block-right pr-details-content reviewers">
-
-        <table class="todo-table">
-              <%
-                def sorter(entry):
-                    user_id = entry.author.user_id
-                    resolved = '1' if entry.resolved else '0'
-                    if user_id == c.rhodecode_user.user_id:
-                        # own comments first
-                        user_id = 0
-                    return '{}_{}_{}'.format(resolved, user_id, str(entry.comment_id).zfill(100))
-              %>
-
-          % if c.at_version:
-              <tr>
-                <td class="unresolved-todo-text">${_('unresolved TODOs unavailable in this view')}.</td>
-              </tr>
-          % else:
-              % for todo_comment in sorted(c.unresolved_comments + c.resolved_comments, key=sorter):
-                  <% resolved = todo_comment.resolved %>
-                  % if inline:
-                      <% outdated_at_ver = todo_comment.outdated_at_version(getattr(c, 'at_version_num', None)) %>
-                  % else:
-                      <% outdated_at_ver = todo_comment.older_than_version(getattr(c, 'at_version_num', None)) %>
-                  % endif
-
-                  <tr ${('class="unresolved-todo" style="display: none"' if resolved else '') |n}>
-
-                      <td class="td-todo-number">
-                          % if resolved:
-                              <a class="permalink todo-resolved tooltip" title="${_('Resolved by comment #{}').format(todo_comment.resolved.comment_id)}" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                          % else:
-                              <a class="permalink" href="#comment-${todo_comment.comment_id}" onclick="return Rhodecode.comments.scrollToComment($('#comment-${todo_comment.comment_id}'), 0, ${h.json.dumps(outdated_at_ver)})">
-                              <i class="icon-flag-filled"></i> ${todo_comment.comment_id}</a>
-                          % endif
-                      </td>
-                      <td class="td-todo-gravatar">
-                          ${base.gravatar(todo_comment.author.email, 16, user=todo_comment.author, tooltip=True, extra_class=['no-margin'])}
-                      </td>
-                      <td class="todo-comment-text-wrapper">
-                          <div class="todo-comment-text">
-                            <code>${h.chop_at_smart(todo_comment.text, '\n', suffix_if_chopped='...')}</code>
-                          </div>
-                      </td>
-
-                  </tr>
-              % endfor
-
-              % if len(c.unresolved_comments) == 0:
-                  <tr>
-                    <td class="unresolved-todo-text">${_('No unresolved TODOs')}.</td>
-                  </tr>
-              % endif
-
-          % endif
-
-        </table>
-
-    </div>
-  </div>
 
   </div>
 
-  <div class="box">
+</div>
+
+<div class="box">
 
   % if c.state_progressing:
 
@@ -484,9 +323,9 @@
               <div class="compare_view_commits_title">
                   % if not c.compare_mode:
 
-                    % if c.at_version_pos:
+                    % if c.at_version_index:
                         <h4>
-                        ${_('Showing changes at v%d, commenting is disabled.') % c.at_version_pos}
+                        ${_('Showing changes at v{}, commenting is disabled.').format(c.at_version_index)}
                         </h4>
                     % endif
 
@@ -539,10 +378,11 @@
               </div>
 
               % if not c.missing_commits:
+                ## COMPARE RANGE DIFF MODE
                 % if c.compare_mode:
                     % if c.at_version:
                     <h4>
-                        ${_('Commits and changes between v{ver_from} and {ver_to} of this pull request, commenting is disabled').format(ver_from=c.from_version_pos, ver_to=c.at_version_pos if c.at_version_pos else 'latest')}:
+                        ${_('Commits and changes between v{ver_from} and {ver_to} of this pull request, commenting is disabled').format(ver_from=c.from_version_index, ver_to=c.at_version_index if c.at_version_index else 'latest')}:
                     </h4>
 
                     <div class="subtitle-compare">
@@ -597,7 +437,7 @@
                                 </td>
                                 <td class="mid td-description">
                                     <div class="log-container truncate-wrap">
-                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name)}</div>
+                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name, issues_container=c.referenced_commit_issues)}</div>
                                     </div>
                                 </td>
                             </tr>
@@ -608,19 +448,13 @@
 
                     % endif
 
+                ## Regular DIFF
                 % else:
                     <%include file="/compare/compare_commits.mako" />
                 % endif
 
                 <div class="cs_files">
                     <%namespace name="cbdiffs" file="/codeblocks/diffs.mako"/>
-                    % if c.at_version:
-                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['display']) %>
-                        <% c.comments = c.comment_versions[c.at_version_num]['display'] %>
-                    % else:
-                        <% c.inline_cnt = len(c.inline_versions[c.at_version_num]['until']) %>
-                        <% c.comments = c.comment_versions[c.at_version_num]['until'] %>
-                    % endif
 
                     <%
                         pr_menu_data = {
@@ -667,7 +501,7 @@
       ## comments heading with count
       <div class="comments-heading">
         <i class="icon-comment"></i>
-        ${_('Comments')} ${len(c.comments)}
+        ${_('General Comments')} ${len(c.comments)}
       </div>
 
       ## render general comments
@@ -704,218 +538,456 @@
    % endif
   </div>
 
-  <script type="text/javascript">
 
-      versionController = new VersionController();
-      versionController.init();
+### NAV SIDEBAR
+<aside class="right-sidebar right-sidebar-expanded" id="pr-nav-sticky" style="display: none">
+    <div class="sidenav navbar__inner" >
+        ## TOGGLE
+        <div class="sidebar-toggle" onclick="toggleSidebar(); return false">
+            <a href="#toggleSidebar" class="grey-link-action">
 
-      reviewersController = new ReviewersController();
-      commitsController = new CommitsController();
+            </a>
+        </div>
 
-      updateController = new UpdatePrController();
+        ## CONTENT
+        <div class="sidebar-content">
 
-      $(function () {
+            ## RULES SUMMARY/RULES
+            <div class="sidebar-element clear-both">
+                <% vote_title = _ungettext(
+                        'Status calculated based on votes from {} reviewer',
+                        'Status calculated based on votes from {} reviewers', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))
+                %>
 
-          // custom code mirror
-          var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${vote_title}">
+                    <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                    ${len(c.allowed_reviewers)}
+                </div>
 
-          var PRDetails = {
-              editButton: $('#open_edit_pullrequest'),
-              closeButton: $('#close_edit_pullrequest'),
-              deleteButton: $('#delete_pullrequest'),
-              viewFields: $('#pr-desc, #pr-title'),
-              editFields: $('#pr-desc-edit, #pr-title-edit, .pr-save'),
+                ## REVIEW RULES
+                <div id="review_rules" style="display: none" class="">
+                    <div class="right-sidebar-expanded-state pr-details-title">
+                        <span class="sidebar-heading">
+                            ${_('Reviewer rules')}
+                        </span>
 
-              init: function () {
-                  var that = this;
-                  this.editButton.on('click', function (e) {
-                      that.edit();
-                  });
-                  this.closeButton.on('click', function (e) {
-                      that.view();
-                  });
-              },
+                    </div>
+                    <div class="pr-reviewer-rules">
+                        ## review rules will be appended here, by default reviewers logic
+                    </div>
+                    <input id="review_data" type="hidden" name="review_data" value="">
+                </div>
 
-              edit: function (event) {
-                  this.viewFields.hide();
-                  this.editButton.hide();
-                  this.deleteButton.hide();
-                  this.closeButton.show();
-                  this.editFields.show();
-                  codeMirrorInstance.refresh();
-              },
+                ## REVIEWERS
+                <div class="right-sidebar-expanded-state pr-details-title">
+                    <span class="tooltip sidebar-heading" title="${vote_title}">
+                        <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
+                        ${_('Reviewers')}
+                    </span>
+                    %if c.allowed_to_update:
+                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
+                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                    %else:
+                        <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Show rules')}</span>
+                        <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                    %endif
+                </div>
 
-              view: function (event) {
-                  this.editButton.show();
-                  this.deleteButton.show();
-                  this.editFields.hide();
-                  this.closeButton.hide();
-                  this.viewFields.show();
-              }
-          };
+                <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
 
-          var ReviewersPanel = {
-              editButton: $('#open_edit_reviewers'),
-              closeButton: $('#close_edit_reviewers'),
-              addButton: $('#add_reviewer'),
-              removeButtons: $('.reviewer_member_remove,.reviewer_member_mandatory_remove'),
+                    ## members redering block
+                    <input type="hidden" name="__start__" value="review_members:sequence">
 
-              init: function () {
-                  var self = this;
-                  this.editButton.on('click', function (e) {
-                      self.edit();
-                  });
-                  this.closeButton.on('click', function (e) {
-                      self.close();
-                  });
-              },
+                    <table id="review_members" class="group_members">
+                    ## This content is loaded via JS and ReviewersPanel
+                    </table>
 
-              edit: function (event) {
-                  this.editButton.hide();
-                  this.closeButton.show();
-                  this.addButton.show();
-                  this.removeButtons.css('visibility', 'visible');
-                  // review rules
-                  reviewersController.loadReviewRules(
-                      ${c.pull_request.reviewer_data_json | n});
-              },
+                    <input type="hidden" name="__end__" value="review_members:sequence">
+                    ## end members redering block
 
-              close: function (event) {
-                  this.editButton.show();
-                  this.closeButton.hide();
-                  this.addButton.hide();
-                  this.removeButtons.css('visibility', 'hidden');
-                  // hide review rules
-                  reviewersController.hideReviewRules()
-              }
-          };
+                    %if not c.pull_request.is_closed():
+                        <div id="add_reviewer" class="ac" style="display: none;">
+                        %if c.allowed_to_update:
+                            % if not c.forbid_adding_reviewers:
+                                <div id="add_reviewer_input" class="reviewer_ac">
+                                   ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                   <div id="reviewers_container"></div>
+                                </div>
+                            % endif
+                            <div class="pull-right">
+                                <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                            </div>
+                        %endif
+                        </div>
+                    %endif
+                </div>
+            </div>
 
-          PRDetails.init();
-          ReviewersPanel.init();
+##             ## OBSERVERS
+##             <div class="sidebar-element clear-both">
+##                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
+##                     <i class="icon-eye"></i>
+##                     0
+##                 </div>
+##
+##                 <div class="right-sidebar-expanded-state pr-details-title">
+##                   <span class="sidebar-heading">
+##                     <i class="icon-eye"></i>
+##                     ${_('Observers')}
+##                   </span>
+##                 </div>
+##                 <div class="right-sidebar-expanded-state pr-details-content">
+##                     No observers
+##                 </div>
+##             </div>
 
-          showOutdated = function (self) {
-              $('.comment-inline.comment-outdated').show();
-              $('.filediff-outdated').show();
-              $('.showOutdatedComments').hide();
-              $('.hideOutdatedComments').show();
-          };
+            ## TODOs
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="TODOs">
+                  <i class="icon-flag-filled"></i>
+                  <span id="todos-count">${len(c.unresolved_comments)}</span>
+                </div>
 
-          hideOutdated = function (self) {
-              $('.comment-inline.comment-outdated').hide();
-              $('.filediff-outdated').hide();
-              $('.hideOutdatedComments').hide();
-              $('.showOutdatedComments').show();
-          };
+                <div class="right-sidebar-expanded-state pr-details-title">
+                      ## Only show unresolved, that is only what matters
+                      <span class="sidebar-heading noselect" onclick="refreshTODOs(); return false">
+                      <i class="icon-flag-filled"></i>
+                      TODOs
+                      </span>
 
-          refreshMergeChecks = function () {
-              var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
-              $('.pull-request-merge').css('opacity', 0.3);
-              $('.action-buttons-extra').css('opacity', 0.3);
+                      % if not c.at_version:
+                          % if c.resolved_comments:
+                              <span class="block-right action_button last-item noselect" onclick="$('.unresolved-todo-text').toggle(); return toggleElement(this, '.resolved-todo');" data-toggle-on="Show resolved" data-toggle-off="Hide resolved">Show resolved</span>
+                          % else:
+                              <span class="block-right last-item noselect">Show resolved</span>
+                          % endif
+                      % endif
+                  </div>
 
-              $('.pull-request-merge').load(
-                      loadUrl, function () {
-                          $('.pull-request-merge').css('opacity', 1);
+                <div class="right-sidebar-expanded-state pr-details-content">
 
-                          $('.action-buttons-extra').css('opacity', 1);
-                      }
-              );
-          };
+                  % if c.at_version:
+                      <table>
+                          <tr>
+                            <td class="unresolved-todo-text">${_('TODOs unavailable when browsing versions')}.</td>
+                          </tr>
+                      </table>
+                  % else:
+                    % if c.unresolved_comments + c.resolved_comments:
+                      ${sidebar.comments_table(c.unresolved_comments + c.resolved_comments, len(c.unresolved_comments), todo_comments=True)}
+                    % else:
+                        <table>
+                            <tr>
+                                <td>
+                                    ${_('No TODOs yet')}
+                                </td>
+                            </tr>
+                        </table>
+                    % endif
+                  % endif
+                </div>
+            </div>
 
-          closePullRequest = function (status) {
-              if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
-                  return false;
-              }
-              // inject closing flag
-              $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
-              $(generalCommentForm.statusChange).select2("val", status).trigger('change');
-              $(generalCommentForm.submitForm).submit();
-          };
+            ## COMMENTS
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    <span id="comments-count">${len(c.inline_comments_flat+c.comments)}</span>
+                    <span class="display-none" id="general-comments-count">${len(c.comments)}</span>
+                    <span class="display-none" id="inline-comments-count">${len(c.inline_comments_flat)}</span>
+                </div>
 
-          $('#show-outdated-comments').on('click', function (e) {
-              var button = $(this);
-              var outdated = $('.comment-outdated');
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading noselect" onclick="refreshComments(); return false">
+                    <i class="icon-comment" style="color: #949494"></i>
+                    ${_('Comments')}
 
-              if (button.html() === "(Show)") {
-                  button.html("(Hide)");
-                  outdated.show();
-              } else {
-                  button.html("(Show)");
-                  outdated.hide();
-              }
-          });
+##                    % if outdated_comm_count_ver:
+##                         <a href="#" onclick="showOutdated(); Rhodecode.comments.nextOutdatedComment(); return false;">
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                         </a>
+##                         <a href="#" class="showOutdatedComments" onclick="showOutdated(this); return false;"> | ${_('show outdated')}</a>
+##                         <a href="#" class="hideOutdatedComments" style="display: none" onclick="hideOutdated(this); return false;"> | ${_('hide outdated')}</a>
 
-          $('.show-inline-comments').on('change', function (e) {
-              var show = 'none';
-              var target = e.currentTarget;
-              if (target.checked) {
-                  show = ''
-              }
-              var boxid = $(target).attr('id_for');
-              var comments = $('#{0} .inline-comments'.format(boxid));
-              var fn_display = function (idx) {
-                  $(this).css('display', show);
-              };
-              $(comments).each(fn_display);
-              var btns = $('#{0} .inline-comments-button'.format(boxid));
-              $(btns).each(fn_display);
-          });
+##                         % else:
+##                             (${_("{} Outdated").format(outdated_comm_count_ver)})
+##                    % endif
 
-          $('#merge_pull_request_form').submit(function () {
-              if (!$('#merge_pull_request').attr('disabled')) {
-                  $('#merge_pull_request').attr('disabled', 'disabled');
-              }
-              return true;
-          });
+                  </span>
 
-          $('#edit_pull_request').on('click', function (e) {
-              var title = $('#pr-title-input').val();
-              var description = codeMirrorInstance.getValue();
-              var renderer = $('#pr-renderer-input').val();
-              editPullRequest(
-                      "${c.repo_name}", "${c.pull_request.pull_request_id}",
-                      title, description, renderer);
-          });
+                  % if outdated_comm_count_ver:
+                    <span class="block-right action_button last-item noselect" onclick="return toggleElement(this, '.hidden-comment');" data-toggle-on="Show outdated" data-toggle-off="Hide outdated">Show outdated</span>
+                  % else:
+                    <span class="block-right last-item noselect">Show hidden</span>
+                  % endif
 
-          $('#update_pull_request').on('click', function (e) {
-              $(this).attr('disabled', 'disabled');
-              $(this).addClass('disabled');
-              $(this).html(_gettext('Saving...'));
-              reviewersController.updateReviewers(
-                      "${c.repo_name}", "${c.pull_request.pull_request_id}");
-          });
+                </div>
 
+                <div class="right-sidebar-expanded-state pr-details-content">
+                % if c.inline_comments_flat + c.comments:
+                    ${sidebar.comments_table(c.inline_comments_flat + c.comments, len(c.inline_comments_flat+c.comments))}
+                % else:
+                    <table>
+                        <tr>
+                            <td>
+                                ${_('No Comments yet')}
+                            </td>
+                        </tr>
+                    </table>
+                % endif
+                </div>
 
-          // fixing issue with caches on firefox
-          $('#update_commits').removeAttr("disabled");
+            </div>
 
-          $('.show-inline-comments').on('click', function (e) {
-              var boxid = $(this).attr('data-comment-id');
-              var button = $(this);
+            ## Referenced Tickets
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Referenced Tickets')}">
+                    <i class="icon-info-circled"></i>
+                    ${(len(c.referenced_desc_issues) + len(c.referenced_commit_issues))}
+                </div>
 
-              if (button.hasClass("comments-visible")) {
-                  $('#{0} .inline-comments'.format(boxid)).each(function (index) {
-                      $(this).hide();
-                  });
-                  button.removeClass("comments-visible");
-              } else {
-                  $('#{0} .inline-comments'.format(boxid)).each(function (index) {
-                      $(this).show();
-                  });
-                  button.addClass("comments-visible");
-              }
-          });
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading">
+                    <i class="icon-info-circled"></i>
+                    ${_('Referenced Tickets')}
+                  </span>
+                </div>
+                <div class="right-sidebar-expanded-state pr-details-content">
+                    <table>
 
-          // register submit callback on commentForm form to track TODOs
-          window.commentFormGlobalSubmitSuccessCallback = function () {
-              refreshMergeChecks();
-          };
+                        <tr><td><code>${_('In pull request description')}:</code></td></tr>
+                        % if c.referenced_desc_issues:
+                            % for ticket_dict in c.referenced_desc_issues:
+                            <tr>
+                                <td>
+                                    <a href="${ticket_dict.get('url')}">
+                                    ${ticket_dict.get('id')}
+                                    </a>
+                                </td>
+                            </tr>
+                            % endfor
+                        % else:
+                            <tr>
+                                <td>
+                                    ${_('No Ticket data found.')}
+                                </td>
+                            </tr>
+                        % endif
 
-          ReviewerAutoComplete('#user');
+                        <tr><td style="padding-top: 10px"><code>${_('In commit messages')}:</code></td></tr>
+                        % if c.referenced_commit_issues:
+                            % for ticket_dict in c.referenced_commit_issues:
+                            <tr>
+                                <td>
+                                    <a href="${ticket_dict.get('url')}">
+                                    ${ticket_dict.get('id')}
+                                    </a>
+                                </td>
+                            </tr>
+                            % endfor
+                        % else:
+                            <tr>
+                                <td>
+                                    ${_('No Ticket data found.')}
+                                </td>
+                            </tr>
+                        % endif
+                    </table>
 
-      })
+                </div>
+            </div>
 
-  </script>
+        </div>
 
-</div>
+    </div>
+</aside>
+
+## This JS needs to be at the end
+<script type="text/javascript">
+
+versionController = new VersionController();
+versionController.init();
+
+reviewersController = new ReviewersController();
+commitsController = new CommitsController();
+
+updateController = new UpdatePrController();
+
+window.reviewerRulesData = ${c.pull_request_default_reviewers_data_json | n};
+window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
+
+(function () {
+    "use strict";
+
+    // custom code mirror
+    var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
+
+    var PRDetails = {
+        editButton: $('#open_edit_pullrequest'),
+        closeButton: $('#close_edit_pullrequest'),
+        deleteButton: $('#delete_pullrequest'),
+        viewFields: $('#pr-desc, #pr-title'),
+        editFields: $('#pr-desc-edit, #pr-title-edit, .pr-save'),
+
+        init: function () {
+            var that = this;
+            this.editButton.on('click', function (e) {
+                that.edit();
+            });
+            this.closeButton.on('click', function (e) {
+                that.view();
+            });
+        },
+
+        edit: function (event) {
+            var cmInstance = $('#pr-description-input').get(0).MarkupForm.cm;
+            this.viewFields.hide();
+            this.editButton.hide();
+            this.deleteButton.hide();
+            this.closeButton.show();
+            this.editFields.show();
+            cmInstance.refresh();
+        },
+
+        view: function (event) {
+            this.editButton.show();
+            this.deleteButton.show();
+            this.editFields.hide();
+            this.closeButton.hide();
+            this.viewFields.show();
+        }
+    };
+
+    PRDetails.init();
+    ReviewersPanel.init(reviewerRulesData, setReviewersData);
+
+    window.showOutdated = function (self) {
+        $('.comment-inline.comment-outdated').show();
+        $('.filediff-outdated').show();
+        $('.showOutdatedComments').hide();
+        $('.hideOutdatedComments').show();
+    };
+
+    window.hideOutdated = function (self) {
+        $('.comment-inline.comment-outdated').hide();
+        $('.filediff-outdated').hide();
+        $('.hideOutdatedComments').hide();
+        $('.showOutdatedComments').show();
+    };
+
+    window.refreshMergeChecks = function () {
+        var loadUrl = "${request.current_route_path(_query=dict(merge_checks=1))}";
+        $('.pull-request-merge').css('opacity', 0.3);
+        $('.action-buttons-extra').css('opacity', 0.3);
+
+        $('.pull-request-merge').load(
+                loadUrl, function () {
+                    $('.pull-request-merge').css('opacity', 1);
+
+                    $('.action-buttons-extra').css('opacity', 1);
+                }
+        );
+    };
+
+    window.closePullRequest = function (status) {
+        if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
+            return false;
+        }
+        // inject closing flag
+        $('.action-buttons-extra').append('<input type="hidden" class="close-pr-input" id="close_pull_request" value="1">');
+        $(generalCommentForm.statusChange).select2("val", status).trigger('change');
+        $(generalCommentForm.submitForm).submit();
+    };
+
+    //TODO this functionality is now missing
+    $('#show-outdated-comments').on('click', function (e) {
+        var button = $(this);
+        var outdated = $('.comment-outdated');
+
+        if (button.html() === "(Show)") {
+            button.html("(Hide)");
+            outdated.show();
+        } else {
+            button.html("(Show)");
+            outdated.hide();
+        }
+    });
+
+    $('#merge_pull_request_form').submit(function () {
+        if (!$('#merge_pull_request').attr('disabled')) {
+            $('#merge_pull_request').attr('disabled', 'disabled');
+        }
+        return true;
+    });
+
+    $('#edit_pull_request').on('click', function (e) {
+        var title = $('#pr-title-input').val();
+        var description = codeMirrorInstance.getValue();
+        var renderer = $('#pr-renderer-input').val();
+        editPullRequest(
+                "${c.repo_name}", "${c.pull_request.pull_request_id}",
+                title, description, renderer);
+    });
+
+    $('#update_pull_request').on('click', function (e) {
+        $(this).attr('disabled', 'disabled');
+        $(this).addClass('disabled');
+        $(this).html(_gettext('Saving...'));
+        reviewersController.updateReviewers(
+                "${c.repo_name}", "${c.pull_request.pull_request_id}");
+    });
+
+    // fixing issue with caches on firefox
+    $('#update_commits').removeAttr("disabled");
+
+    $('.show-inline-comments').on('click', function (e) {
+        var boxid = $(this).attr('data-comment-id');
+        var button = $(this);
+
+        if (button.hasClass("comments-visible")) {
+            $('#{0} .inline-comments'.format(boxid)).each(function (index) {
+                $(this).hide();
+            });
+            button.removeClass("comments-visible");
+        } else {
+            $('#{0} .inline-comments'.format(boxid)).each(function (index) {
+                $(this).show();
+            });
+            button.addClass("comments-visible");
+        }
+    });
+
+    $('.show-inline-comments').on('change', function (e) {
+        var show = 'none';
+        var target = e.currentTarget;
+        if (target.checked) {
+            show = ''
+        }
+        var boxid = $(target).attr('id_for');
+        var comments = $('#{0} .inline-comments'.format(boxid));
+        var fn_display = function (idx) {
+            $(this).css('display', show);
+        };
+        $(comments).each(fn_display);
+        var btns = $('#{0} .inline-comments-button'.format(boxid));
+        $(btns).each(fn_display);
+    });
+
+    // register submit callback on commentForm form to track TODOs
+    window.commentFormGlobalSubmitSuccessCallback = function () {
+        refreshMergeChecks();
+    };
+
+    ReviewerAutoComplete('#user');
+
+})();
+
+$(document).ready(function () {
+
+    var channel = '${c.pr_broadcast_channel}';
+    new ReviewerPresenceController(channel)
+
+})
+</script>
 
 </%def>

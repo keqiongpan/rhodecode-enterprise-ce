@@ -619,7 +619,12 @@ class ComparePage(AssertResponse):
             self.contains_one_anchor(file_id)
             diffblock = doc.cssselect('[data-f-path="%s"]' % filename)
             assert len(diffblock) == 2
-            assert len(diffblock[0].cssselect('a[href="#%s"]' % file_id)) == 1
+            for lnk in diffblock[0].cssselect('a'):
+                if 'permalink' in lnk.text:
+                    assert '#{}'.format(file_id) in lnk.attrib['href']
+                    break
+            else:
+                pytest.fail('Unable to find permalink')
 
     def contains_change_summary(self, files_changed, inserted, deleted):
         template = (

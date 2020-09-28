@@ -35,6 +35,20 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal ];
     };
   };
+  "apispec" = super.buildPythonPackage {
+    name = "apispec-1.0.0";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."PyYAML"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/67/15/346c04988dd67d36007e28145504c520491930c878b1f484a97b27a8f497/apispec-1.0.0.tar.gz";
+      sha256 = "1712w1anvqrvadjjpvai84vbaygaxabd3zz5lxihdzwzs4gvi9sp";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "appenlight-client" = super.buildPythonPackage {
     name = "appenlight-client-0.6.26";
     doCheck = false;
@@ -236,20 +250,23 @@ self: super: {
     };
   };
   "channelstream" = super.buildPythonPackage {
-    name = "channelstream-0.5.2";
+    name = "channelstream-0.6.14";
     doCheck = false;
     propagatedBuildInputs = [
       self."gevent"
       self."ws4py"
+      self."marshmallow"
+      self."python-dateutil"
       self."pyramid"
       self."pyramid-jinja2"
+      self."pyramid-apispec"
       self."itsdangerous"
       self."requests"
       self."six"
     ];
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/2b/31/29a8e085cf5bf97fa88e7b947adabfc581a18a3463adf77fb6dada34a65f/channelstream-0.5.2.tar.gz";
-      sha256 = "1qbm4xdl5hfkja683x546bncg3rqq8qv79w1m1a1wd48cqqzb6rm";
+      url = "https://files.pythonhosted.org/packages/d4/2d/86d6757ccd06ce673ee224123471da3d45251d061da7c580bfc259bad853/channelstream-0.6.14.tar.gz";
+      sha256 = "0qgy5j3rj6c8cslzidh32glhkrhbbdxjc008y69v8a0y3zyaz2d3";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -862,11 +879,11 @@ self: super: {
     };
   };
   "itsdangerous" = super.buildPythonPackage {
-    name = "itsdangerous-0.24";
+    name = "itsdangerous-1.1.0";
     doCheck = false;
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/dc/b4/a60bcdba945c00f6d608d8975131ab3f25b22f2bcfe1dab221165194b2d4/itsdangerous-0.24.tar.gz";
-      sha256 = "06856q6x675ly542ig0plbqcyab6ksfzijlyf1hzhgg3sgwgrcyb";
+      url = "https://files.pythonhosted.org/packages/68/1a/f27de07a8a304ad5fa817bbe383d1238ac4396da447fa11ed937039fa04b/itsdangerous-1.1.0.tar.gz";
+      sha256 = "068zpbksq5q2z4dckh2k1zbcq43ay74ylqn77rni797j0wyh66rj";
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal ];
@@ -991,6 +1008,17 @@ self: super: {
     };
     meta = {
       license = [ pkgs.lib.licenses.bsdOriginal pkgs.lib.licenses.bsd3 ];
+    };
+  };
+  "marshmallow" = super.buildPythonPackage {
+    name = "marshmallow-2.18.0";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/ad/0b/5799965d1c6d5f608d684e2c0dce8a828e0309a3bfe8327d9418a89f591c/marshmallow-2.18.0.tar.gz";
+      sha256 = "1g0aafpjn7yaxq06yndy8c7rs9n42adxkqq1ayhlr869pr06d3lm";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
     };
   };
   "mistune" = super.buildPythonPackage {
@@ -1522,6 +1550,20 @@ self: super: {
       license = [ { fullName = "Repoze Public License"; } { fullName = "BSD-derived (http://www.repoze.org/LICENSE.txt)"; } ];
     };
   };
+  "pyramid-apispec" = super.buildPythonPackage {
+    name = "pyramid-apispec-0.3.2";
+    doCheck = false;
+    propagatedBuildInputs = [
+      self."apispec"
+    ];
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/2a/30/1dea5d81ea635449572ba60ec3148310d75ae4530c3c695f54b0991bb8c7/pyramid_apispec-0.3.2.tar.gz";
+      sha256 = "0ffrcqp9dkykivhfcq0v9lgy6w0qhwl6x78925vfjmayly9r8da0";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.bsdOriginal ];
+    };
+  };
   "pyramid-mailer" = super.buildPythonPackage {
     name = "pyramid-mailer-0.15.1";
     doCheck = false;
@@ -1763,6 +1805,17 @@ self: super: {
       license = [ pkgs.lib.licenses.bsdOriginal { fullName = "LGPL+BSD"; } { fullName = "GNU Library or Lesser General Public License (LGPL)"; } ];
     };
   };
+  "PyYAML" = super.buildPythonPackage {
+    name = "PyYAML-5.3.1";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/64/c2/b80047c7ac2478f9501676c988a5411ed5572f35d1beff9cae07d321512c/PyYAML-5.3.1.tar.gz";
+      sha256 = "0pb4zvkfxfijkpgd1b86xjsqql97ssf1knbd1v53wkg1qm9cgsmq";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.mit ];
+    };
+  };
   "redis" = super.buildPythonPackage {
     name = "redis-3.4.1";
     doCheck = false;
@@ -1819,7 +1872,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.20.1";
+    name = "rhodecode-enterprise-ce-4.20.0";
     buildInputs = [
       self."pytest"
       self."py"

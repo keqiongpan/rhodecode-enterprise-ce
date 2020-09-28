@@ -345,6 +345,16 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comment/{comment_id}/delete',
         repo_route=True, repo_accepted_types=['hg', 'git'])
 
+    config.add_route(
+        name='pullrequest_comments',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/comments',
+        repo_route=True)
+
+    config.add_route(
+        name='pullrequest_todos',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/todos',
+        repo_route=True)
+
     # Artifacts, (EE feature)
     config.add_route(
         name='repo_artifacts_list',

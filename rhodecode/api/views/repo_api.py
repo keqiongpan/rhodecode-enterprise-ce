@@ -307,8 +307,7 @@ def get_repo_changeset(request, apiuser, repoid, revision,
     """
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        _perms = (
-            'repository.admin', 'repository.write', 'repository.read',)
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     changes_details = Optional.extract(details)
@@ -366,8 +365,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
     """
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        _perms = (
-            'repository.admin', 'repository.write', 'repository.read',)
+        _perms = ('repository.admin', 'repository.write', 'repository.read',)
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     changes_details = Optional.extract(details)
@@ -1021,7 +1019,8 @@ def update_repo(
 
     include_secrets = False
     if not has_superadmin_permission(apiuser):
-        validate_repo_permissions(apiuser, repoid, repo, ('repository.admin',))
+        _perms = ('repository.admin',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
     else:
         include_secrets = True
 
@@ -1208,8 +1207,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
     if not has_superadmin_permission(apiuser):
         # check if we have at least read permission for
         # this repo that we fork !
-        _perms = (
-            'repository.admin', 'repository.write', 'repository.read')
+        _perms = ('repository.admin', 'repository.write', 'repository.read')
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
         # check if the regular user has at least fork permissions as well
@@ -2370,12 +2368,13 @@ def get_repo_settings(request, apiuser, repoid, key=Optional(None)):
         }
     """
 
-    # Restrict access to this api method to admins only.
+    # Restrict access to this api method to super-admins, and repo admins only.
+    repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        raise JSONRPCForbidden()
+        _perms = ('repository.admin',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     try:
-        repo = get_repo_or_error(repoid)
         settings_model = VcsSettingsModel(repo=repo)
         settings = settings_model.get_global_settings()
         settings.update(settings_model.get_repo_settings())
@@ -2414,9 +2413,11 @@ def set_repo_settings(request, apiuser, repoid, settings):
             "result": true
         }
     """
-    # Restrict access to this api method to admins only.
+    # Restrict access to this api method to super-admins, and repo admins only.
+    repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
-        raise JSONRPCForbidden()
+        _perms = ('repository.admin',)
+        validate_repo_permissions(apiuser, repoid, repo, _perms)
 
     if type(settings) is not dict:
         raise JSONRPCError('Settings have to be a JSON Object.')

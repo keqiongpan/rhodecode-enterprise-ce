@@ -18,6 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import io
+import math
 import re
 import os
 import datetime
@@ -192,6 +193,72 @@ def write_metadata_if_needed(event):
 
     try:
         write()
+    except Exception:
+        pass
+
+
+def write_usage_data(event):
+    import rhodecode
+    from rhodecode.lib import system_info
+    from rhodecode.lib import ext_json
+
+    settings = event.app.registry.settings
+    instance_tag = settings.get('metadata.write_usage_tag')
+    if not settings.get('metadata.write_usage'):
+        return
+
+    def get_update_age(dest_file):
+        now = datetime.datetime.utcnow()
+
+        with open(dest_file, 'rb') as f:
+            data = ext_json.json.loads(f.read())
+            if 'created_on' in data:
+                update_date = parse(data['created_on'])
+                diff = now - update_date
+                return math.ceil(diff.total_seconds() / 60.0)
+
+        return 0
+
+    utc_date = datetime.datetime.utcnow()
+    hour_quarter = int(math.ceil((utc_date.hour + utc_date.minute/60.0) / 6.))
+    fname = '.rc_usage_{date.year}{date.month:02d}{date.day:02d}_{hour}.json'.format(
+        date=utc_date, hour=hour_quarter)
+    ini_loc = os.path.dirname(rhodecode.CONFIG.get('__file__'))
+
+    usage_dir = os.path.join(ini_loc, '.rcusage')
+    if not os.path.isdir(usage_dir):
+        os.makedirs(usage_dir)
+    usage_metadata_destination = os.path.join(usage_dir, fname)
+
+    try:
+        age_in_min = get_update_age(usage_metadata_destination)
+    except Exception:
+        age_in_min = 0
+
+    # write every 6th hour
+    if age_in_min and age_in_min < 60 * 6:
+        log.debug('Usage file created %s minutes ago, skipping (threashold: %s)...',
+                  age_in_min, 60 * 6)
+        return
+
+    def write(dest_file):
+        configuration = system_info.SysInfo(system_info.rhodecode_config)()['value']
+        license_token = configuration['config']['license_token']
+
+        metadata = dict(
+            desc='Usage data',
+            instance_tag=instance_tag,
+            license_token=license_token,
+            created_on=datetime.datetime.utcnow().isoformat(),
+            usage=system_info.SysInfo(system_info.usage_info)()['value'],
+        )
+
+        with open(dest_file, 'wb') as f:
+            f.write(ext_json.json.dumps(metadata, indent=2, sort_keys=True))
+
+    try:
+        log.debug('Writing usage file at: %s', usage_metadata_destination)
+        write(usage_metadata_destination)
     except Exception:
         pass
 

@@ -131,6 +131,11 @@ function setRCMouseBindings(repoName, repoLandingRev) {
             window.location = pyroutes.url(
                 'edit_repo_perms', {'repo_name': repoName});
         });
+        Mousetrap.bind(['t s'], function(e) {
+            if (window.toggleSidebar !== undefined) {
+                window.toggleSidebar();
+            }
+        });
     }
 }
 

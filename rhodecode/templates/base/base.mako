@@ -38,10 +38,12 @@
       <div class="main">
           ${next.main()}
       </div>
+
   </div>
   <!-- END CONTENT -->
 
 </div>
+
 <!-- FOOTER -->
 <div id="footer">
    <div id="footer-inner" class="title wrapper">
@@ -699,9 +701,6 @@
         notice_messages, notice_level = c.rhodecode_user.get_notice_messages()
         notice_display = 'none' if len(notice_messages) == 0 else ''
     %>
-<style>
-
-</style>
 
     <ul id="quick" class="main_nav navigation horizontal-list">
        ## notice box for important system messages
@@ -1200,6 +1199,7 @@
                          ('g p', 'Goto pull requests page'),
                          ('g o', 'Goto repository settings'),
                          ('g O', 'Goto repository access permissions settings'),
+                         ('t s', 'Toggle sidebar on some pages'),
                      ]
                   %>
                   %for key, desc in elems:
@@ -1219,3 +1219,36 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+
+
+<script type="text/javascript">
+    (function () {
+        "use sctrict";
+
+        var $sideBar = $('.right-sidebar');
+        var expanded = $sideBar.hasClass('right-sidebar-expanded');
+        var sidebarState = templateContext.session_attrs.sidebarState;
+        var sidebarEnabled = $('aside.right-sidebar').get(0);
+
+        if (sidebarState === 'expanded') {
+            expanded = true
+        } else if (sidebarState === 'collapsed') {
+            expanded = false
+        }
+        if (sidebarEnabled) {
+            // show sidebar since it's hidden on load
+            $('.right-sidebar').show();
+
+            // init based on set initial class, or if defined user session attrs
+            if (expanded) {
+                window.expandSidebar();
+                window.updateStickyHeader();
+
+            } else {
+                window.collapseSidebar();
+                window.updateStickyHeader();
+            }
+        }
+    })()
+
+</script>

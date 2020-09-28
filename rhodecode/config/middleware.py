@@ -53,7 +53,7 @@ from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.lib.exc_tracking import store_exception
 from rhodecode.subscribers import (
     scan_repositories_if_enabled, write_js_routes_if_enabled,
-    write_metadata_if_needed, inject_app_settings)
+    write_metadata_if_needed, write_usage_data, inject_app_settings)
 
 
 log = logging.getLogger(__name__)
@@ -315,6 +315,8 @@ def includeme(config):
         config.add_subscriber(scan_repositories_if_enabled,
                               pyramid.events.ApplicationCreated)
         config.add_subscriber(write_metadata_if_needed,
+                              pyramid.events.ApplicationCreated)
+        config.add_subscriber(write_usage_data,
                               pyramid.events.ApplicationCreated)
         config.add_subscriber(write_js_routes_if_enabled,
                               pyramid.events.ApplicationCreated)

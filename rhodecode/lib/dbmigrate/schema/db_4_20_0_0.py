@@ -3810,10 +3810,6 @@ class ChangesetComment(Base, BaseModel):
         return self.display_state == self.COMMENT_OUTDATED
 
     @property
-    def outdated_js(self):
-        return json.dumps(self.display_state == self.COMMENT_OUTDATED)
-
-    @property
     def immutable(self):
         return self.immutable_state == self.OP_IMMUTABLE
 
@@ -3821,35 +3817,16 @@ class ChangesetComment(Base, BaseModel):
         """
         Checks if comment is outdated for given pull request version
         """
-        def version_check():
-            return self.pull_request_version_id and self.pull_request_version_id != version
-
-        if self.is_inline:
-            return self.outdated and version_check()
-        else:
-            # general comments don't have .outdated set, also latest don't have a version
-            return version_check()
-
-    def outdated_at_version_js(self, version):
-        """
-        Checks if comment is outdated for given pull request version
-        """
-        return json.dumps(self.outdated_at_version(version))
+        return self.outdated and self.pull_request_version_id != version
 
     def older_than_version(self, version):
         """
         Checks if comment is made from previous version than given
         """
         if version is None:
-            return self.pull_request_version != version
+            return self.pull_request_version_id is not None
 
-        return self.pull_request_version < version
-
-    def older_than_version_js(self, version):
-        """
-        Checks if comment is made from previous version than given
-        """
-        return json.dumps(self.older_than_version(version))
+        return self.pull_request_version_id < version
 
     @property
     def commit_id(self):
@@ -3866,9 +3843,7 @@ class ChangesetComment(Base, BaseModel):
 
     @property
     def is_inline(self):
-        if self.line_no and self.f_path:
-            return True
-        return False
+        return self.line_no and self.f_path
 
     @property
     def last_version(self):
@@ -3880,16 +3855,6 @@ class ChangesetComment(Base, BaseModel):
     def get_index_version(self, versions):
         return self.get_index_from_version(
             self.pull_request_version_id, versions)
-
-    @property
-    def review_status(self):
-        if self.status_change:
-            return self.status_change[0].status
-
-    @property
-    def review_status_lbl(self):
-        if self.status_change:
-            return self.status_change[0].status_lbl
 
     def __repr__(self):
         if self.comment_id:
@@ -4358,7 +4323,6 @@ class PullRequest(Base, _PullRequestBase):
     __table_args__ = (
         base_table_args,
     )
-    LATEST_VER = 'latest'
 
     pull_request_id = Column(
         'pull_request_id', Integer(), nullable=False, primary_key=True)
@@ -4416,10 +4380,6 @@ class PullRequest(Base, _PullRequestBase):
             @property
             def pull_request_version_id(self):
                 return getattr(pull_request_obj, 'pull_request_version_id', None)
-
-            @property
-            def pull_request_last_version(self):
-                return pull_request_obj.pull_request_last_version
 
         attrs = StrictAttributeDict(pull_request_obj.get_api_data(with_merge_state=False))
 
@@ -4485,10 +4445,6 @@ class PullRequest(Base, _PullRequestBase):
         """
         return self.versions.count() + 1
 
-    @property
-    def pull_request_last_version(self):
-        return self.versions_count
-
 
 class PullRequestVersion(Base, _PullRequestBase):
     __tablename__ = 'pull_request_versions'
@@ -4536,8 +4492,6 @@ class PullRequestReviewers(Base, BaseModel):
     __table_args__ = (
         base_table_args,
     )
-    ROLE_REVIEWER = u'reviewer'
-    ROLE_OBSERVER = u'observer'
 
     @hybrid_property
     def reasons(self):
@@ -4565,8 +4519,6 @@ class PullRequestReviewers(Base, BaseModel):
             JsonType('list', dialect_map=dict(mysql=UnicodeText(16384)))))
 
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
-    role = Column('role', Unicode(255), nullable=True, default=ROLE_REVIEWER)
-
     user = relationship('User')
     pull_request = relationship('PullRequest')
 
@@ -5490,11 +5442,8 @@ class FileStore(Base, BaseModel):
     repo_group = relationship('RepoGroup', lazy='joined')
 
     @classmethod
-    def get_by_store_uid(cls, file_store_uid, safe=False):
-        if safe:
-            return FileStore.query().filter(FileStore.file_uid == file_store_uid).first()
-        else:
-            return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
+    def get_by_store_uid(cls, file_store_uid):
+        return FileStore.query().filter(FileStore.file_uid == file_store_uid).scalar()
 
     @classmethod
     def create(cls, file_uid, filename, file_hash, file_size, file_display_name='',

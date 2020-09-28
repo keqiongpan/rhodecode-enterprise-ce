@@ -64,7 +64,7 @@ class FileStoreView(BaseAppView):
                       file_uid, store_path)
             raise HTTPNotFound()
 
-        db_obj = FileStore().query().filter(FileStore.file_uid == file_uid).scalar()
+        db_obj = FileStore.get_by_store_uid(file_uid, safe=True)
         if not db_obj:
             raise HTTPNotFound()
 

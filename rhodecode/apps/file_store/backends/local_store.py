@@ -20,6 +20,7 @@
 
 import os
 import time
+import errno
 import shutil
 import hashlib
 
@@ -32,7 +33,22 @@ from rhodecode.apps.file_store.exceptions import (
 METADATA_VER = 'v1'
 
 
+def safe_make_dirs(dir_path):
+    if not os.path.exists(dir_path):
+        try:
+            os.makedirs(dir_path)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+            return
+
+
 class LocalFileStorage(object):
+
+    @classmethod
+    def apply_counter(cls, counter, filename):
+        name_counted = '%d-%s' % (counter, filename)
+        return name_counted
 
     @classmethod
     def resolve_name(cls, name, directory):
@@ -47,17 +63,16 @@ class LocalFileStorage(object):
 
         counter = 0
         while True:
-            name = '%d-%s' % (counter, name)
+            name_counted = cls.apply_counter(counter, name)
 
             # sub_store prefix to optimize disk usage, e.g some_path/ab/final_file
-            sub_store = cls._sub_store_from_filename(name)
+            sub_store = cls._sub_store_from_filename(name_counted)
             sub_store_path = os.path.join(directory, sub_store)
-            if not os.path.exists(sub_store_path):
-                os.makedirs(sub_store_path)
+            safe_make_dirs(sub_store_path)
 
-            path = os.path.join(sub_store_path, name)
+            path = os.path.join(sub_store_path, name_counted)
             if not os.path.exists(path):
-                return name, path
+                return name_counted, path
             counter += 1
 
     @classmethod
@@ -102,8 +117,13 @@ class LocalFileStorage(object):
 
         :param filename: base name of file
         """
-        sub_store = self._sub_store_from_filename(filename)
-        return os.path.join(self.base_path, sub_store, filename)
+        prefix_dir = ''
+        if '/' in filename:
+            prefix_dir, filename = filename.split('/')
+            sub_store = self._sub_store_from_filename(filename)
+        else:
+            sub_store = self._sub_store_from_filename(filename)
+        return os.path.join(self.base_path, prefix_dir, sub_store, filename)
 
     def delete(self, filename):
         """
@@ -123,7 +143,7 @@ class LocalFileStorage(object):
         Checks if file exists. Resolves filename's absolute
         path based on base_path.
 
-        :param filename: base name of file
+        :param filename: file_uid name of file, e.g 0-f62b2b2d-9708-4079-a071-ec3f958448d4.svg
         """
         return os.path.exists(self.store_path(filename))
 
@@ -158,7 +178,7 @@ class LocalFileStorage(object):
         return ext in [normalize_ext(x) for x in extensions]
 
     def save_file(self, file_obj, filename, directory=None, extensions=None,
-                  extra_metadata=None, max_filesize=None, **kwargs):
+                  extra_metadata=None, max_filesize=None, randomized_name=True, **kwargs):
         """
         Saves a file object to the uploads location.
         Returns the resolved filename, i.e. the directory +
@@ -169,6 +189,7 @@ class LocalFileStorage(object):
         :param directory: relative path of sub-directory
         :param extensions: iterable of allowed extensions, if not default
         :param max_filesize: maximum size of file that should be allowed
+        :param randomized_name: generate random generated UID or fixed based on the filename
         :param extra_metadata: extra JSON metadata to store next to the file with .meta suffix
 
         """
@@ -183,13 +204,12 @@ class LocalFileStorage(object):
         else:
             dest_directory = self.base_path
 
-        if not os.path.exists(dest_directory):
-            os.makedirs(dest_directory)
+        safe_make_dirs(dest_directory)
 
-        filename = utils.uid_filename(filename)
+        uid_filename = utils.uid_filename(filename, randomized=randomized_name)
 
         # resolve also produces special sub-dir for file optimized store
-        filename, path = self.resolve_name(filename, dest_directory)
+        filename, path = self.resolve_name(uid_filename, dest_directory)
         stored_file_dir = os.path.dirname(path)
 
         file_obj.seek(0)
@@ -210,12 +230,13 @@ class LocalFileStorage(object):
 
         file_hash = self.calculate_path_hash(path)
 
-        metadata.update(
-            {"filename": filename,
+        metadata.update({
+            "filename": filename,
              "size": size,
              "time": time.time(),
              "sha256": file_hash,
-             "meta_ver": METADATA_VER})
+             "meta_ver": METADATA_VER
+        })
 
         filename_meta = filename + '.meta'
         with open(os.path.join(stored_file_dir, filename_meta), "wb") as dest_meta:

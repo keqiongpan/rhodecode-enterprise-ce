@@ -1600,7 +1600,7 @@ class PullRequestModel(BaseModel):
                 'source_ref': pull_request.source_ref_parts,
             }
             if pull_request.last_merge_metadata:
-                metadata.update(pull_request.last_merge_metadata)
+                metadata.update(pull_request.last_merge_metadata_parsed)
 
             if not possible and target_ref.type == 'branch':
                 # NOTE(marcink): case for mercurial multiple heads on branch

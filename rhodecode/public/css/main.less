@@ -83,6 +83,11 @@ body {
 	}
 }
 
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+}
+
 .action-link{
 	margin-left: @padding;
 	padding-left: @padding;
@@ -482,10 +487,15 @@ ul.auth_plugins {
     text-align: left;
     overflow: hidden;
     white-space: pre-line;
+    padding-top: 5px
 }
 
-.pr-details-title {
-    height: 16px
+#add_reviewer {
+    padding-top: 10px;
+}
+
+#add_reviewer_input {
+    padding-top: 10px
 }
 
 .pr-details-title-author-pref {
@@ -1173,9 +1183,12 @@ label {
     a {
       color: @grey5
     }
-    @media screen and (max-width: 1200px) {
+
+    // 1024px or smaller
+    @media screen and (max-width: 1180px) {
       display: none;
     }
+
 }
 
 img {
@@ -1492,26 +1505,17 @@ table.integrations {
 
 // Pull Requests
 .summary-details {
-    width: 72%;
+    width: 100%;
 }
 .pr-summary {
     border-bottom: @border-thickness solid @grey5;
     margin-bottom: @space;
 }
 
-.reviewers-title {
-  width: 25%;
-  min-width: 200px;
-
-  &.first-panel {
-    margin-top: 34px;
-  }
-}
-
 .reviewers {
-    width: 25%;
-    min-width: 200px;
+  width: 98%;
 }
+
 .reviewers ul li {
     position: relative;
     width: 100%;
@@ -1523,18 +1527,14 @@ table.integrations {
   min-height: 55px;
 }
 
-.reviewers_member {
-    width: 100%;
-    overflow: auto;
-}
 .reviewer_reason {
     padding-left: 20px;
     line-height: 1.5em;
 }
 .reviewer_status {
     display: inline-block;
-    width: 25px;
-    min-width: 25px;
+    width: 20px;
+    min-width: 20px;
     height: 1.2em;
     line-height: 1em;
 }
@@ -1557,25 +1557,20 @@ table.integrations {
 }
 
 .reviewer_member_mandatory {
-    position: absolute;
-    left: 15px;
-    top: 8px;
     width: 16px;
     font-size: 11px;
     margin: 0;
     padding: 0;
     color: black;
+    opacity: 0.4;
 }
 
 .reviewer_member_mandatory_remove,
 .reviewer_member_remove {
-    position: absolute;
-    right: 0;
-    top: 0;
     width: 16px;
-    margin-bottom: 10px;
     padding: 0;
     color: black;
+    cursor: pointer;
 }
 
 .reviewer_member_mandatory_remove {
@@ -1593,6 +1588,9 @@ table.integrations {
     cursor: pointer;
 }
 .pr-details-title {
+    height: 20px;
+    line-height: 20px;
+
     padding-bottom: 8px;
     border-bottom: @border-thickness solid @grey5;
 
@@ -1617,7 +1615,7 @@ table.integrations {
   text-decoration: line-through;
 }
 
-.todo-table {
+.todo-table, .comments-table {
   width: 100%;
 
   td {
@@ -1627,7 +1625,8 @@ table.integrations {
   .td-todo-number {
     text-align: left;
     white-space: nowrap;
-    width: 15%;
+    width: 1%;
+    padding-right: 2px;
   }
 
   .td-todo-gravatar {
@@ -1651,10 +1650,13 @@ table.integrations {
   text-overflow: ellipsis;
 }
 
+table.group_members {
+  width: 100%
+}
+
 .group_members {
     margin-top: 0;
     padding: 0;
-    list-style: outside none none;
 
     img {
         height: @gravatar-size;
@@ -1698,7 +1700,7 @@ table.integrations {
 }
 
 .reviewer_ac .ac-input {
-    width: 92%;
+    width: 100%;
     margin-bottom: 1em;
 }
 
@@ -2772,7 +2774,7 @@ table.rctable td.td-search-results div {
 }
 
 #help_kb .modal-content{
-	max-width: 750px;
+	max-width: 800px;
 	margin: 10% auto;
 
 	table{
@@ -3069,4 +3071,141 @@ form.markup-form {
 
 .pr-hovercard-title {
   padding-top: 5px;
+}
+
+.action-divider {
+  opacity: 0.5;
+}
+
+.details-inline-block {
+  display: inline-block;
+  position: relative;
+}
+
+.details-inline-block summary {
+  list-style: none;
+}
+
+details:not([open]) > :not(summary) {
+  display: none !important;
+}
+
+.details-reset > summary {
+  list-style: none;
+}
+
+.details-reset > summary::-webkit-details-marker {
+  display: none;
+}
+
+.details-dropdown {
+  position: absolute;
+  top: 100%;
+  width: 185px;
+  list-style: none;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid @grey5;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, .2);
+  left: -150px;
+  text-align: left;
+  z-index: 90;
+}
+
+.dropdown-divider {
+  display: block;
+  height: 0;
+  margin: 8px 0;
+  border-top: 1px solid @grey5;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 4px 8px 4px 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.right-sidebar {
+  position: fixed;
+  top: 0px;
+  bottom: 0;
+  right: 0;
+
+  background: #fafafa;
+  z-index: 50;
+}
+
+.right-sidebar {
+  border-left: 1px solid @grey5;
+}
+
+.right-sidebar.right-sidebar-expanded {
+  width: 300px;
+  overflow: scroll;
+}
+
+.right-sidebar.right-sidebar-collapsed {
+  width: 40px;
+  padding: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.sidenav {
+  float: right;
+  will-change: min-height;
+  background: #fafafa;
+  width: 100%;
+}
+
+.sidebar-toggle {
+  height: 30px;
+  text-align: center;
+  margin: 15px 0px 0 0;
+}
+
+.sidebar-toggle a {
+
+}
+
+.sidebar-content {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+.sidebar-heading {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.sidebar-element {
+  margin-top: 20px;
+}
+
+.right-sidebar-collapsed-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: 1.3em;
+  margin: 0 -15px;
+}
+
+.right-sidebar-collapsed-state:hover {
+  background-color: @grey5;
+}
+
+.old-comments-marker {
+  text-align: left;
+}
+
+.old-comments-marker td {
+  padding-top: 15px;
+  border-bottom: 1px solid @grey5;
 }
