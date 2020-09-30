@@ -121,7 +121,7 @@ def test_extract_issues(backend, text_string, pattern, expected):
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_settings', get_settings_mock):
-        text, issues = helpers.process_patterns(text_string, repo.repo_name)
+        text, issues, errors = helpers.process_patterns(text_string, repo.repo_name)
 
     expected = copy.deepcopy(expected)
     for item in expected:
@@ -159,7 +159,7 @@ def test_process_patterns_repo(backend, text_string, pattern, expected_text, lin
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_settings', get_settings_mock):
-        processed_text, issues = helpers.process_patterns(
+        processed_text, issues, error = helpers.process_patterns(
             text_string, repo.repo_name, link_format)
 
     assert processed_text == expected_text.format(repo=repo.repo_name)
@@ -186,7 +186,7 @@ def test_process_patterns_no_repo(text_string, pattern, expected_text):
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_global_settings', get_settings_mock):
-        processed_text, issues = helpers.process_patterns(
+        processed_text, issues, errors = helpers.process_patterns(
             text_string, '')
 
     assert processed_text == expected_text
@@ -211,7 +211,7 @@ def test_process_patterns_non_existent_repo_name(backend):
 
     with mock.patch.object(IssueTrackerSettingsModel,
                            'get_global_settings', get_settings_mock):
-        processed_text, issues = helpers.process_patterns(
+        processed_text, issues, errors = helpers.process_patterns(
             text_string, 'do-not-exist')
 
     assert processed_text == expected_text

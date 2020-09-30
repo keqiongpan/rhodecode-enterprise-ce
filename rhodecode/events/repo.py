@@ -113,7 +113,7 @@ def _commits_as_dict(event, commit_ids, repos):
                 cs_data['permalink_url'] = RepoModel().get_commit_url(
                     repo, cs_data['raw_id'], request=event.request,
                     permalink=True)
-                urlified_message, issues_data = process_patterns(
+                urlified_message, issues_data, errors = process_patterns(
                     cs_data['message'], repo.repo_name)
                 cs_data['issues'] = issues_data
                 cs_data['message_html'] = urlify_commit_message(

@@ -474,9 +474,18 @@ class AdminSettingsView(BaseAppView):
         route_name='admin_settings_issuetracker_test', request_method='POST',
         renderer='string', xhr=True)
     def settings_issuetracker_test(self):
-        return h.urlify_commit_message(
+        error_container = []
+
+        urlified_commit = h.urlify_commit_message(
             self.request.POST.get('test_text', ''),
-            'repo_group/test_repo1')
+            'repo_group/test_repo1', error_container=error_container)
+        if error_container:
+            def converter(inp):
+                return h.html_escape(unicode(inp))
+
+            return 'ERRORS: ' + '\n'.join(map(converter, error_container))
+
+        return urlified_commit
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
