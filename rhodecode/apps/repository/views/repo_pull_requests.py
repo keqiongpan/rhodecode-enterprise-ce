@@ -105,8 +105,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         data = []
         comments_model = CommentsModel()
         for pr in pull_requests:
-            comments = comments_model.get_all_comments(
-                self.db_repo.repo_id, pull_request=pr)
+            comments_count = comments_model.get_all_comments(
+                self.db_repo.repo_id, pull_request=pr, count_only=True)
 
             data.append({
                 'name': _render('pullrequest_name',
@@ -127,8 +127,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'author': _render('pullrequest_author',
                                   pr.author.full_contact, ),
                 'author_raw': pr.author.full_name,
-                'comments': _render('pullrequest_comments', len(comments)),
-                'comments_raw': len(comments),
+                'comments': _render('pullrequest_comments', comments_count),
+                'comments_raw': comments_count,
                 'closed': pr.is_closed(),
             })
 

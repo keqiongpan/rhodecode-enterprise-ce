@@ -541,17 +541,20 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def get_all_comments(self, repo_id, revision=None, pull_request=None):
+    def get_all_comments(self, repo_id, revision=None, pull_request=None, count_only=False):
         q = ChangesetComment.query()\
                 .filter(ChangesetComment.repo_id == repo_id)
         if revision:
             q = q.filter(ChangesetComment.revision == revision)
         elif pull_request:
             pull_request = self.__get_pull_request(pull_request)
-            q = q.filter(ChangesetComment.pull_request == pull_request)
+            q = q.filter(ChangesetComment.pull_request_id == pull_request.pull_request_id)
         else:
             raise Exception('Please specify commit or pull_request')
         q = q.order_by(ChangesetComment.created_on)
+        if count_only:
+            return q.count()
+
         return q.all()
 
     def get_url(self, comment, request=None, permalink=False, anchor=None):
