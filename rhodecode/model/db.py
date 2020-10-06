@@ -3773,12 +3773,12 @@ class ChangesetComment(Base, BaseModel):
     resolved_comment = relationship('ChangesetComment', remote_side=comment_id, back_populates='resolved_by')
     resolved_by = relationship('ChangesetComment', back_populates='resolved_comment')
 
-    author = relationship('User', lazy='joined')
+    author = relationship('User', lazy='select')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='joined')
-    pull_request = relationship('PullRequest', lazy='joined')
-    pull_request_version = relationship('PullRequestVersion')
-    history = relationship('ChangesetCommentHistory', cascade='all, delete-orphan', lazy='joined', order_by='ChangesetCommentHistory.version')
+    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='select')
+    pull_request = relationship('PullRequest', lazy='select')
+    pull_request_version = relationship('PullRequestVersion', lazy='select')
+    history = relationship('ChangesetCommentHistory', cascade='all, delete-orphan', lazy='select', order_by='ChangesetCommentHistory.version')
 
     @classmethod
     def get_users(cls, revision=None, pull_request_id=None):
@@ -3983,10 +3983,10 @@ class ChangesetStatus(Base, BaseModel):
     version = Column('version', Integer(), nullable=False, default=0)
     pull_request_id = Column("pull_request_id", Integer(), ForeignKey('pull_requests.pull_request_id'), nullable=True)
 
-    author = relationship('User', lazy='joined')
-    repo = relationship('Repository')
-    comment = relationship('ChangesetComment', lazy='joined')
-    pull_request = relationship('PullRequest', lazy='joined')
+    author = relationship('User', lazy='select')
+    repo = relationship('Repository', lazy='select')
+    comment = relationship('ChangesetComment', lazy='select')
+    pull_request = relationship('PullRequest', lazy='select')
 
     def __unicode__(self):
         return u"<%s('%s[v%s]:%s')>" % (
