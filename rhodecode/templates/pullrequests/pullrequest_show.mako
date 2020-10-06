@@ -853,8 +853,8 @@ window.setObserversData = ${c.pull_request_set_observers_data_json | n};
     var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
 
     PRDetails.init();
-    ReviewersPanel.init(reviewerRulesData, setReviewersData);
-    ObserversPanel.init(reviewerRulesData, setObserversData);
+    ReviewersPanel.init(reviewersController, reviewerRulesData, setReviewersData);
+    ObserversPanel.init(reviewersController, reviewerRulesData, setObserversData);
 
     window.showOutdated = function (self) {
         $('.comment-inline.comment-outdated').show();

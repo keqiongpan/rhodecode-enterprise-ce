@@ -806,6 +806,7 @@ window.ReviewersPanel = {
     removeButtons: null,
     reviewRules: null,
     setReviewers: null,
+    controller: null,
 
     setSelectors: function () {
         var self = this;
@@ -815,17 +816,18 @@ window.ReviewersPanel = {
         self.removeButtons = $('.reviewer_member_remove,.reviewer_member_mandatory_remove');
     },
 
-    init: function (reviewRules, setReviewers) {
+    init: function (controller, reviewRules, setReviewers) {
         var self = this;
         self.setSelectors();
 
-        this.reviewRules = reviewRules;
-        this.setReviewers = setReviewers;
+        self.controller = controller;
+        self.reviewRules = reviewRules;
+        self.setReviewers = setReviewers;
 
-        this.editButton.on('click', function (e) {
+        self.editButton.on('click', function (e) {
             self.edit();
         });
-        this.closeButton.on('click', function (e) {
+        self.closeButton.on('click', function (e) {
             self.close();
             self.renderReviewers();
         });
@@ -835,20 +837,22 @@ window.ReviewersPanel = {
     },
 
     renderReviewers: function () {
-        if (this.setReviewers.reviewers === undefined) {
+        var self = this;
+
+        if (self.setReviewers.reviewers === undefined) {
             return
         }
-        if (this.setReviewers.reviewers.length === 0) {
-            reviewersController.emptyReviewersTable('<tr id="reviewer-empty-msg"><td colspan="6">No reviewers</td></tr>');
+        if (self.setReviewers.reviewers.length === 0) {
+            self.controller.emptyReviewersTable('<tr id="reviewer-empty-msg"><td colspan="6">No reviewers</td></tr>');
             return
         }
 
-        reviewersController.emptyReviewersTable();
+        self.controller.emptyReviewersTable();
 
-        $.each(this.setReviewers.reviewers, function (key, val) {
+        $.each(self.setReviewers.reviewers, function (key, val) {
 
             var member = val;
-            if (member.role === reviewersController.ROLE_REVIEWER) {
+            if (member.role === self.controller.ROLE_REVIEWER) {
                 var entry = renderTemplate('reviewMemberEntry', {
                     'member': member,
                     'mandatory': member.mandatory,
@@ -861,7 +865,7 @@ window.ReviewersPanel = {
                     'create': false
                 });
 
-                $(reviewersController.$reviewMembers.selector).append(entry)
+                $(self.controller.$reviewMembers.selector).append(entry)
             }
         });
 
@@ -869,21 +873,23 @@ window.ReviewersPanel = {
     },
 
     edit: function (event) {
-        this.editButton.hide();
-        this.closeButton.show();
-        this.addButton.show();
-        $(this.removeButtons.selector).css('visibility', 'visible');
+        var self = this;
+        self.editButton.hide();
+        self.closeButton.show();
+        self.addButton.show();
+        $(self.removeButtons.selector).css('visibility', 'visible');
         // review rules
-        reviewersController.loadReviewRules(this.reviewRules);
+        self.controller.loadReviewRules(this.reviewRules);
     },
 
     close: function (event) {
+        var self = this;
         this.editButton.show();
         this.closeButton.hide();
         this.addButton.hide();
         $(this.removeButtons.selector).css('visibility', 'hidden');
         // hide review rules
-        reviewersController.hideReviewRules();
+        self.controller.hideReviewRules();
     }
 };
 
@@ -897,6 +903,7 @@ window.ObserversPanel = {
     removeButtons: null,
     reviewRules: null,
     setReviewers: null,
+    controller: null,
 
     setSelectors: function () {
         var self = this;
@@ -906,17 +913,18 @@ window.ObserversPanel = {
         self.removeButtons = $('.observer_member_remove,.observer_member_mandatory_remove');
     },
 
-    init: function (reviewRules, setReviewers) {
+    init: function (controller, reviewRules, setReviewers) {
         var self = this;
         self.setSelectors();
 
-        this.reviewRules = reviewRules;
-        this.setReviewers = setReviewers;
+        self.controller = controller;
+        self.reviewRules = reviewRules;
+        self.setReviewers = setReviewers;
 
-        this.editButton.on('click', function (e) {
+        self.editButton.on('click', function (e) {
             self.edit();
         });
-        this.closeButton.on('click', function (e) {
+        self.closeButton.on('click', function (e) {
             self.close();
             self.renderObservers();
         });
@@ -926,19 +934,20 @@ window.ObserversPanel = {
     },
 
     renderObservers: function () {
-        if (this.setReviewers.observers === undefined) {
+        var self = this;
+        if (self.setReviewers.observers === undefined) {
             return
         }
-        if (this.setReviewers.observers.length === 0) {
-            reviewersController.emptyObserversTable('<tr id="observer-empty-msg"><td colspan="6">No observers</td></tr>');
+        if (self.setReviewers.observers.length === 0) {
+            self.controller.emptyObserversTable('<tr id="observer-empty-msg"><td colspan="6">No observers</td></tr>');
             return
         }
 
-        reviewersController.emptyObserversTable();
+        self.controller.emptyObserversTable();
 
-        $.each(this.setReviewers.observers, function (key, val) {
+        $.each(self.setReviewers.observers, function (key, val) {
             var member = val;
-            if (member.role === reviewersController.ROLE_OBSERVER) {
+            if (member.role === self.controller.ROLE_OBSERVER) {
                 var entry = renderTemplate('reviewMemberEntry', {
                     'member': member,
                     'mandatory': member.mandatory,
@@ -951,7 +960,7 @@ window.ObserversPanel = {
                     'create': false
                 });
 
-                $(reviewersController.$observerMembers.selector).append(entry)
+                $(self.controller.$observerMembers.selector).append(entry)
             }
         });
 

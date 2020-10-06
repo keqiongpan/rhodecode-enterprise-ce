@@ -420,7 +420,8 @@
             e.preventDefault();
         });
 
-        ReviewersPanel.init(null, setReviewersData);
+        reviewersController = new ReviewersController();
+        ReviewersPanel.init(reviewersController, null, setReviewersData);
 
         var channel = '${c.commit_broadcast_channel}';
         new ReviewerPresenceController(channel)
