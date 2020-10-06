@@ -977,6 +977,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         }
         return data
 
+    def _get_existing_ids(self, post_data):
+        return filter(lambda e: e, map(safe_int, aslist(post_data.get('comments'), ',')))
+
     @LoginRequired()
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
@@ -1013,9 +1016,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         self.register_comments_vars(c, pull_request_latest, versions)
         all_comments = c.inline_comments_flat + c.comments
 
-        existing_ids = filter(
-            lambda e: e, map(safe_int, aslist(self.request.POST.get('comments'))))
-
+        existing_ids = self._get_existing_ids(self.request.POST)
         return _render('comments_table', all_comments, len(all_comments),
                        existing_ids=existing_ids)
 
@@ -1057,8 +1058,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             .get_pull_request_resolved_todos(pull_request)
 
         all_comments = c.unresolved_comments + c.resolved_comments
-        existing_ids = filter(
-            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+        existing_ids = self._get_existing_ids(self.request.POST)
         return _render('comments_table', all_comments, len(c.unresolved_comments),
                        todo_comments=True, existing_ids=existing_ids)
 
