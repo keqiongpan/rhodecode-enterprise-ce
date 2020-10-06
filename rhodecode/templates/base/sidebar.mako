@@ -89,9 +89,9 @@
                     if is_pr:
                         version_info = (' made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else ' made in this version')
                   %>
-                  ## NEW, since refresh
+                  ## new comments, since refresh
                   % if existing_ids and comment_obj.comment_id not in existing_ids:
-                      <div class="tooltip" style="position: absolute; left: 8px" title="New comment">
+                      <div class="tooltip" style="position: absolute; left: 8px; color: #682668" title="New comment">
                           !
                       </div>
                   % endif
