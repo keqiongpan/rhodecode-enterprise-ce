@@ -154,9 +154,10 @@ def get_diff_info(
 
     commits = []
     if get_commit_authors:
+        log.debug('Obtaining commit authors from set of commits')
         commits = target_scm.compare(
             target_ref, source_ref, source_scm, merge=True,
-            pre_load=["author"])
+            pre_load=["author", "date", "message", "branch", "parents"])
 
         for commit in commits:
             user = User.get_from_cs_author(commit.author)
@@ -165,6 +166,7 @@ def get_diff_info(
 
     # lines
     if get_authors:
+        log.debug('Calculating authors of changed files')
         target_commit = source_repo.get_commit(ancestor_id)
 
         for fname, lines in changed_lines.items():
@@ -189,6 +191,8 @@ def get_diff_info(
                         user_counts[user.user_id] = user_counts.get(user.user_id, 0) + 1
                     author_counts[author] = author_counts.get(author, 0) + 1
                     email_counts[email] = email_counts.get(email, 0) + 1
+
+    log.debug('Default reviewers processing finished')
 
     return {
         'commits': commits,
