@@ -31,7 +31,7 @@ from rhodecode.apps._base import RepoAppView
 from rhodecode.apps.file_store import utils as store_utils
 from rhodecode.apps.file_store.exceptions import FileNotAllowedException, FileOverSizeException
 
-from rhodecode.lib import diffs, codeblocks
+from rhodecode.lib import diffs, codeblocks, channelstream
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, NotAnonymous, CSRFRequired)
 from rhodecode.lib.ext_json import json
@@ -210,10 +210,7 @@ class RepoCommitsView(RepoAppView):
 
             # NOTE(marcink): this uses the same voting logic as in pull-requests
             c.commit_review_status = ChangesetStatusModel().calculate_status(review_statuses)
-            c.commit_broadcast_channel = u'/repo${}$/commit/{}'.format(
-                c.repo_name,
-                commit.raw_id
-            )
+            c.commit_broadcast_channel = channelstream.comment_channel(c.repo_name, commit_obj=commit)
 
         diff = None
         # Iterate over ranges (default commit view is always one commit)
@@ -417,6 +414,7 @@ class RepoCommitsView(RepoAppView):
                 resolves_comment_id=resolves_comment_id,
                 auth_user=self._rhodecode_user
             )
+            is_inline = bool(comment.f_path and comment.line_no)
 
             # get status if set !
             if status:
@@ -463,6 +461,16 @@ class RepoCommitsView(RepoAppView):
 
             data.update(comment.get_dict())
             data.update({'rendered_text': rendered_comment})
+
+            comment_broadcast_channel = channelstream.comment_channel(
+                self.db_repo_name, commit_obj=commit)
+
+            comment_data = data
+            comment_type = 'inline' if is_inline else 'general'
+            channelstream.comment_channelstream_push(
+                self.request, comment_broadcast_channel, self._rhodecode_user,
+                _('posted a new {} comment').format(comment_type),
+                comment_data=comment_data)
 
         return data
 

@@ -26,6 +26,7 @@ from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
     validate_repo_permissions, resolve_ref_or_error, validate_set_owner_permissions)
+from rhodecode.lib import channelstream
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
@@ -502,16 +503,19 @@ def comment_pull_request(
         },
         error :  null
     """
+    _ = request.translate
+
     pull_request = get_pull_request_or_error(pullrequestid)
     if Optional.extract(repoid):
         repo = get_repo_or_error(repoid)
     else:
         repo = pull_request.target_repo
 
+    db_repo_name = repo.repo_name
     auth_user = apiuser
     if not isinstance(userid, Optional):
         is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
-            user=apiuser, repo_name=repo.repo_name)
+            user=apiuser, repo_name=db_repo_name)
         if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
@@ -596,6 +600,7 @@ def comment_pull_request(
         extra_recipients=extra_recipients,
         send_email=send_email
     )
+    is_inline = bool(comment.f_path and comment.line_no)
 
     if allowed_to_change_status and status:
         old_calculated_status = pull_request.calculated_review_status()
@@ -628,6 +633,17 @@ def comment_pull_request(
         'comment_id': comment.comment_id if comment else None,
         'status': {'given': status, 'was_changed': status_change},
     }
+
+    comment_broadcast_channel = channelstream.comment_channel(
+        db_repo_name, pull_request_obj=pull_request)
+
+    comment_data = data
+    comment_type = 'inline' if is_inline else 'general'
+    channelstream.comment_channelstream_push(
+        request, comment_broadcast_channel, apiuser,
+        _('posted a new {} comment').format(comment_type),
+        comment_data=comment_data)
+
     return data
 
 
@@ -881,6 +897,8 @@ def update_pull_request(
     description = Optional.extract(description)
     description_renderer = Optional.extract(description_renderer)
 
+    # Update title/description
+    title_changed = False
     if title or description:
         PullRequestModel().edit(
             pull_request,
@@ -889,8 +907,12 @@ def update_pull_request(
             description_renderer or pull_request.description_renderer,
             apiuser)
         Session().commit()
+        title_changed = True
 
     commit_changes = {"added": [], "common": [], "removed": []}
+
+    # Update commits
+    commits_changed = False
     if str2bool(Optional.extract(update_commits)):
 
         if pull_request.pull_request_state != PullRequest.STATE_CREATED:
@@ -906,7 +928,10 @@ def update_pull_request(
                     pull_request, db_user)
                 commit_changes = update_response.changes or commit_changes
             Session().commit()
+            commits_changed = True
 
+    # Update reviewers
+    reviewers_changed = False
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:
         old_calculated_status = pull_request.calculated_review_status()
@@ -925,6 +950,16 @@ def update_pull_request(
             PullRequestModel().trigger_pull_request_hook(
                 pull_request, apiuser, 'review_status_change',
                 data={'status': calculated_status})
+        reviewers_changed = True
+
+    observers_changed = False
+
+    # push changed to channelstream
+    if commits_changed or reviewers_changed or observers_changed:
+        pr_broadcast_channel = channelstream.pr_channel(pull_request)
+        msg = 'Pull request was updated.'
+        channelstream.pr_update_channelstream_push(
+            request, pr_broadcast_channel, apiuser, msg)
 
     data = {
         'msg': 'Updated pull request `{}`'.format(

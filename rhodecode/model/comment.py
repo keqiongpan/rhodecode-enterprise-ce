@@ -462,54 +462,10 @@ class CommentsModel(BaseModel):
         else:
             action = 'repo.commit.comment.create'
 
-        comment_id = comment.comment_id
         comment_data = comment.get_api_data()
 
         self._log_audit_action(
             action, {'data': comment_data}, auth_user, comment)
-
-        channel = None
-        if commit_obj:
-            repo_name = repo.repo_name
-            channel = u'/repo${}$/commit/{}'.format(
-                repo_name,
-                commit_obj.raw_id
-            )
-        elif pull_request_obj:
-            repo_name = pr_target_repo.repo_name
-            channel = u'/repo${}$/pr/{}'.format(
-                repo_name,
-                pull_request_obj.pull_request_id
-            )
-
-        if channel:
-            username = user.username
-            message = '<strong>{}</strong> {} #{}, {}'
-            message = message.format(
-                username,
-                _('posted a new comment'),
-                comment_id,
-                _('Refresh the page to see new comments.'))
-
-            message_obj = {
-                'message': message,
-                'level': 'success',
-                'topic': '/notifications'
-            }
-
-            channelstream.post_message(
-                channel, message_obj, user.username,
-                registry=get_current_registry())
-
-            message_obj = {
-                'message': None,
-                'user': username,
-                'comment_id': comment_id,
-                'topic': '/comment'
-            }
-            channelstream.post_message(
-                channel, message_obj, user.username,
-                registry=get_current_registry())
 
         return comment
 

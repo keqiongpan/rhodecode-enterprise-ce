@@ -29,7 +29,7 @@ from rhodecode.api.utils import (
     get_user_group_or_error, get_user_or_error, validate_repo_permissions,
     get_perm_or_error, parse_args, get_origin, build_commit_data,
     validate_set_owner_permissions)
-from rhodecode.lib import audit_logger, rc_cache
+from rhodecode.lib import audit_logger, rc_cache, channelstream
 from rhodecode.lib import repo_maintenance
 from rhodecode.lib.auth import (
     HasPermissionAnyApi, HasUserGroupPermissionAnyApi,
@@ -1597,10 +1597,13 @@ def comment_commit(
         }
 
     """
+    _ = request.translate
+
     repo = get_repo_or_error(repoid)
     if not has_superadmin_permission(apiuser):
         _perms = ('repository.read', 'repository.write', 'repository.admin')
         validate_repo_permissions(apiuser, repoid, repo, _perms)
+    db_repo_name = repo.repo_name
 
     try:
         commit = repo.scm_instance().get_commit(commit_id=commit_id)
@@ -1650,6 +1653,8 @@ def comment_commit(
             extra_recipients=extra_recipients,
             send_email=send_email
         )
+        is_inline = bool(comment.f_path and comment.line_no)
+
         if status:
             # also do a status change
             try:
@@ -1669,6 +1674,17 @@ def comment_commit(
             data={'comment': comment, 'commit': commit})
 
         Session().commit()
+
+        comment_broadcast_channel = channelstream.comment_channel(
+            db_repo_name, commit_obj=commit)
+
+        comment_data = {'comment': comment, 'comment_id': comment.comment_id}
+        comment_type = 'inline' if is_inline else 'general'
+        channelstream.comment_channelstream_push(
+            request, comment_broadcast_channel, apiuser,
+            _('posted a new {} comment').format(comment_type),
+            comment_data=comment_data)
+
         return {
             'msg': (
                 'Commented on commit `%s` for repository `%s`' % (

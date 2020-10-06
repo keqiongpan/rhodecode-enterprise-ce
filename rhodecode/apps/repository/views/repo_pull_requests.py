@@ -311,8 +311,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         pull_request_id = pull_request.pull_request_id
 
         c.state_progressing = pull_request.is_state_changing()
-        c.pr_broadcast_channel = '/repo${}$/pr/{}'.format(
-            pull_request.target_repo.repo_name, pull_request.pull_request_id)
+        c.pr_broadcast_channel = channelstream.pr_channel(pull_request)
 
         _new_state = {
             'created': PullRequest.STATE_CREATED,
@@ -1238,8 +1237,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     'redirect_url': redirect_url}
 
         is_state_changing = pull_request.is_state_changing()
-        c.pr_broadcast_channel = '/repo${}$/pr/{}'.format(
-            pull_request.target_repo.repo_name, pull_request.pull_request_id)
+        c.pr_broadcast_channel = channelstream.pr_channel(pull_request)
 
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
@@ -1339,7 +1337,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 count_removed=len(resp.changes.removed),
                 change_source=changed)
             h.flash(msg, category='success')
-            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
+            channelstream.pr_update_channelstream_push(
+                self.request, c.pr_broadcast_channel, self._rhodecode_user, msg)
         else:
             msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
             warning_reasons = [
@@ -1371,7 +1370,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             msg = _('Pull request reviewers updated.')
             h.flash(msg, category='success')
-            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
+            channelstream.pr_update_channelstream_push(
+                self.request, c.pr_broadcast_channel, self._rhodecode_user, msg)
 
             # trigger status changed if change in reviewers changes the status
             calculated_status = pull_request.calculated_review_status()
@@ -1394,7 +1394,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             Session().commit()
             msg = _('Pull request observers updated.')
             h.flash(msg, category='success')
-            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
+            channelstream.pr_update_channelstream_push(
+                self.request, c.pr_broadcast_channel, self._rhodecode_user, msg)
 
     @LoginRequired()
     @NotAnonymous()
@@ -1588,6 +1589,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 resolves_comment_id=resolves_comment_id,
                 auth_user=self._rhodecode_user
             )
+            is_inline = bool(comment.f_path and comment.line_no)
 
             if allowed_to_change_status:
                 # calculate old status before we change it
@@ -1635,6 +1637,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             data.update(comment.get_dict())
             data.update({'rendered_text': rendered_comment})
+
+            comment_broadcast_channel = channelstream.comment_channel(
+                self.db_repo_name, pull_request_obj=pull_request)
+
+            comment_data = data
+            comment_type = 'inline' if is_inline else 'general'
+            channelstream.comment_channelstream_push(
+                self.request, comment_broadcast_channel, self._rhodecode_user,
+                _('posted a new {} comment').format(comment_type),
+                comment_data=comment_data)
 
         return data
 
