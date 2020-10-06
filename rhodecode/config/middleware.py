@@ -341,6 +341,10 @@ def includeme(config):
         name='json_ext',
         factory='rhodecode.lib.ext_json_renderer.pyramid_ext_json')
 
+    config.add_renderer(
+        name='string_html',
+        factory='rhodecode.lib.string_renderer.html')
+
     # include RhodeCode plugins
     includes = aslist(settings.get('rhodecode.includes', []))
     for inc in includes:

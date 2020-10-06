@@ -704,7 +704,7 @@ def create_pull_request(
             user = get_user_or_error(reviewer_object['username'])
             reviewer_object['user_id'] = user.user_id
 
-    get_default_reviewers_data, validate_default_reviewers = \
+    get_default_reviewers_data, validate_default_reviewers, validate_observers = \
         PullRequestModel().get_reviewer_functions()
 
     # recalculate reviewers logic, to make sure we can validate this
@@ -865,14 +865,13 @@ def update_pull_request(
             user = get_user_or_error(reviewer_object['username'])
             reviewer_object['user_id'] = user.user_id
 
-        get_default_reviewers_data, get_validated_reviewers = \
+        get_default_reviewers_data, get_validated_reviewers, validate_observers = \
             PullRequestModel().get_reviewer_functions()
 
         # re-use stored rules
         reviewer_rules = pull_request.reviewer_data
         try:
-            reviewers = get_validated_reviewers(
-                reviewer_objects, reviewer_rules)
+            reviewers = get_validated_reviewers(reviewer_objects, reviewer_rules)
         except ValueError as e:
             raise JSONRPCError('Reviewers Validation: {}'.format(e))
     else:

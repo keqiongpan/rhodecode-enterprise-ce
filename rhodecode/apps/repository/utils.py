@@ -21,11 +21,13 @@
 from rhodecode.lib import helpers as h
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.pull_request import get_diff_info
+from rhodecode.model.db import PullRequestReviewers
+# V3 - Reviewers, with default rules data
+# v4 - Added observers metadata
+REVIEWER_API_VERSION = 'V4'
 
-REVIEWER_API_VERSION = 'V3'
 
-
-def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group=None):
+def reviewer_as_json(user, reasons=None, role=None, mandatory=False, rules=None, user_group=None):
     """
     Returns json struct of a reviewer for frontend
 
@@ -33,11 +35,15 @@ def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group
     :param reasons: list of strings of why they are reviewers
     :param mandatory: bool, to set user as mandatory
     """
+    role = role or PullRequestReviewers.ROLE_REVIEWER
+    if role not in PullRequestReviewers.ROLES:
+        raise ValueError('role is not one of %s', PullRequestReviewers.ROLES)
 
     return {
         'user_id': user.user_id,
         'reasons': reasons or [],
         'rules': rules or [],
+        'role': role,
         'mandatory': mandatory,
         'user_group': user_group,
         'username': user.username,
@@ -48,8 +54,7 @@ def reviewer_as_json(user, reasons=None, mandatory=False, rules=None, user_group
     }
 
 
-def get_default_reviewers_data(
-        current_user, source_repo, source_commit, target_repo, target_commit):
+def get_default_reviewers_data(current_user, source_repo, source_commit, target_repo, target_commit):
     """
     Return json for default reviewers of a repository
     """
@@ -59,7 +64,7 @@ def get_default_reviewers_data(
 
     reasons = ['Default reviewer', 'Repository owner']
     json_reviewers = [reviewer_as_json(
-        user=target_repo.user, reasons=reasons, mandatory=False, rules=None)]
+        user=target_repo.user, reasons=reasons, mandatory=False, rules=None, role=None)]
 
     return {
         'api_ver': REVIEWER_API_VERSION,  # define version for later possible schema upgrade
@@ -73,15 +78,18 @@ def get_default_reviewers_data(
 def validate_default_reviewers(review_members, reviewer_rules):
     """
     Function to validate submitted reviewers against the saved rules
-
     """
     reviewers = []
     reviewer_by_id = {}
     for r in review_members:
         reviewer_user_id = safe_int(r['user_id'])
-        entry = (reviewer_user_id, r['reasons'], r['mandatory'], r['rules'])
+        entry = (reviewer_user_id, r['reasons'], r['mandatory'], r['role'], r['rules'])
 
         reviewer_by_id[reviewer_user_id] = entry
         reviewers.append(entry)
 
     return reviewers
+
+
+def validate_observers(observer_members):
+    return {}

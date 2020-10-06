@@ -57,15 +57,18 @@ var ajaxGET = function (url, success, failure) {
     return request;
 };
 
-var ajaxPOST = function (url, postData, success, failure) {
-    var sUrl = url;
-    var postData = toQueryString(postData);
-    var request = $.ajax({
+var ajaxPOST = function (url, postData, success, failure, options) {
+
+    var ajaxSettings = $.extend({
         type: 'POST',
-        url: sUrl,
-        data: postData,
+        url: url,
+        data: toQueryString(postData),
         headers: {'X-PARTIAL-XHR': true}
-        })
+    }, options);
+
+    var request = $.ajax(
+        ajaxSettings
+        )
         .done(function (data) {
             success(data);
         })
@@ -126,7 +129,8 @@ function formatErrorMessage(jqXHR, textStatus, errorThrown, prefix) {
     } else if (errorThrown === 'abort') {
         return (prefix + 'Ajax request aborted.');
     } else {
-        return (prefix + 'Uncaught Error.\n' + jqXHR.responseText);
+        var errInfo = 'Uncaught Error. code: {0}\n'.format(jqXHR.status)
+        return (prefix + errInfo + jqXHR.responseText);
     }
 }
 

@@ -1104,6 +1104,10 @@ def bool2icon(value, show_at_false=True):
             return HTML.tag('i', class_="icon-false", title='False')
         return HTML.tag('i')
 
+
+def b64(inp):
+    return base64.b64encode(inp)
+
 #==============================================================================
 # PERMS
 #==============================================================================

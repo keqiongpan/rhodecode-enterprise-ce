@@ -25,7 +25,7 @@ import collections
 
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    ChangesetStatus, ChangesetComment, PullRequest, Session)
+    ChangesetStatus, ChangesetComment, PullRequest, PullRequestReviewers, Session)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError
 from rhodecode.lib.markup_renderer import (
     DEFAULT_COMMENTS_RENDERER, RstTemplateRenderer)
@@ -383,15 +383,14 @@ class ChangesetStatusModel(BaseModel):
             pull_request.source_repo,
             pull_request=pull_request,
             with_revisions=True)
+        reviewers = pull_request.get_pull_request_reviewers(
+            role=PullRequestReviewers.ROLE_REVIEWER)
+        return self.aggregate_votes_by_user(_commit_statuses, reviewers)
 
-        return self.aggregate_votes_by_user(_commit_statuses, pull_request.reviewers)
-
-    def calculated_review_status(self, pull_request, reviewers_statuses=None):
+    def calculated_review_status(self, pull_request):
         """
         calculate pull request status based on reviewers, it should be a list
         of two element lists.
-
-        :param reviewers_statuses:
         """
-        reviewers = reviewers_statuses or self.reviewers_statuses(pull_request)
+        reviewers = self.reviewers_statuses(pull_request)
         return self.calculate_status(reviewers)

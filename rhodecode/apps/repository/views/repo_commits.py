@@ -193,7 +193,7 @@ class RepoCommitsView(RepoAppView):
 
             for review_obj, member, reasons, mandatory, status in review_statuses:
                 member_reviewer = h.reviewer_as_json(
-                    member, reasons=reasons, mandatory=mandatory,
+                    member, reasons=reasons, mandatory=mandatory, role=None,
                     user_group=None
                 )
 

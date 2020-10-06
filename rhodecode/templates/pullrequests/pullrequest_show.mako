@@ -556,12 +556,12 @@
             <div class="sidebar-element clear-both">
                 <% vote_title = _ungettext(
                         'Status calculated based on votes from {} reviewer',
-                        'Status calculated based on votes from {} reviewers', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))
+                        'Status calculated based on votes from {} reviewers', c.reviewers_count).format(c.reviewers_count)
                 %>
 
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${vote_title}">
                     <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
-                    ${len(c.allowed_reviewers)}
+                    ${c.reviewers_count}
                 </div>
 
                 ## REVIEW RULES
@@ -609,13 +609,13 @@
                         <div id="add_reviewer" class="ac" style="display: none;">
                         %if c.allowed_to_update:
                             % if not c.forbid_adding_reviewers:
-                                <div id="add_reviewer_input" class="reviewer_ac">
-                                   ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                <div id="add_reviewer_input" class="reviewer_ac" style="width: 240px">
+                                   <input class="ac-input" id="user" name="user" placeholder="${_('Add reviewer or reviewer group')}" type="text" autocomplete="off">
                                    <div id="reviewers_container"></div>
                                 </div>
                             % endif
-                            <div class="pull-right">
-                                <button id="update_pull_request" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                            <div class="pull-right" style="margin-bottom: 15px">
+                                <button data-role="reviewer" id="update_reviewers" class="btn btn-small no-margin">${_('Save Changes')}</button>
                             </div>
                         %endif
                         </div>
@@ -623,23 +623,52 @@
                 </div>
             </div>
 
-##             ## OBSERVERS
-##             <div class="sidebar-element clear-both">
-##                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
-##                     <i class="icon-eye"></i>
-##                     0
-##                 </div>
-##
-##                 <div class="right-sidebar-expanded-state pr-details-title">
-##                   <span class="sidebar-heading">
-##                     <i class="icon-eye"></i>
-##                     ${_('Observers')}
-##                   </span>
-##                 </div>
-##                 <div class="right-sidebar-expanded-state pr-details-content">
-##                     No observers
-##                 </div>
-##             </div>
+            ## OBSERVERS
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
+                    <i class="icon-circle-thin"></i>
+                    ${c.observers_count}
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading">
+                    <i class="icon-circle-thin"></i>
+                    ${_('Observers')}
+                  </span>
+                  %if c.allowed_to_update:
+                      <span id="open_edit_observers" class="block-right action_button last-item">${_('Edit')}</span>
+                      <span id="close_edit_observers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
+                  %endif
+                </div>
+
+                <div id="observers" class="right-sidebar-expanded-state pr-details-content reviewers">
+                    ## members redering block
+                    <input type="hidden" name="__start__" value="observer_members:sequence">
+
+                    <table id="observer_members" class="group_members">
+                    ## This content is loaded via JS and ReviewersPanel
+                    </table>
+
+                    <input type="hidden" name="__end__" value="observer_members:sequence">
+                    ## end members redering block
+
+                    %if not c.pull_request.is_closed():
+                        <div id="add_observer" class="ac" style="display: none;">
+                        %if c.allowed_to_update:
+                            % if not c.forbid_adding_reviewers or 1:
+                                <div id="add_reviewer_input" class="reviewer_ac" style="width: 240px" >
+                                   <input class="ac-input" id="observer" name="observer" placeholder="${_('Add observer or observer group')}" type="text" autocomplete="off">
+                                   <div id="observers_container"></div>
+                                </div>
+                            % endif
+                            <div class="pull-right" style="margin-bottom: 15px">
+                                <button data-role="observer" id="update_observers" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                            </div>
+                        %endif
+                        </div>
+                    %endif
+                </div>
+            </div>
 
             ## TODOs
             <div class="sidebar-element clear-both">
@@ -815,6 +844,7 @@ updateController = new UpdatePrController();
 
 window.reviewerRulesData = ${c.pull_request_default_reviewers_data_json | n};
 window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
+window.setObserversData = ${c.pull_request_set_observers_data_json | n};
 
 (function () {
     "use strict";
@@ -822,44 +852,9 @@ window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
     // custom code mirror
     var codeMirrorInstance = $('#pr-description-input').get(0).MarkupForm.cm;
 
-    var PRDetails = {
-        editButton: $('#open_edit_pullrequest'),
-        closeButton: $('#close_edit_pullrequest'),
-        deleteButton: $('#delete_pullrequest'),
-        viewFields: $('#pr-desc, #pr-title'),
-        editFields: $('#pr-desc-edit, #pr-title-edit, .pr-save'),
-
-        init: function () {
-            var that = this;
-            this.editButton.on('click', function (e) {
-                that.edit();
-            });
-            this.closeButton.on('click', function (e) {
-                that.view();
-            });
-        },
-
-        edit: function (event) {
-            var cmInstance = $('#pr-description-input').get(0).MarkupForm.cm;
-            this.viewFields.hide();
-            this.editButton.hide();
-            this.deleteButton.hide();
-            this.closeButton.show();
-            this.editFields.show();
-            cmInstance.refresh();
-        },
-
-        view: function (event) {
-            this.editButton.show();
-            this.deleteButton.show();
-            this.editFields.hide();
-            this.closeButton.hide();
-            this.viewFields.show();
-        }
-    };
-
     PRDetails.init();
     ReviewersPanel.init(reviewerRulesData, setReviewersData);
+    ObserversPanel.init(reviewerRulesData, setObserversData);
 
     window.showOutdated = function (self) {
         $('.comment-inline.comment-outdated').show();
@@ -929,12 +924,17 @@ window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
                 title, description, renderer);
     });
 
-    $('#update_pull_request').on('click', function (e) {
-        $(this).attr('disabled', 'disabled');
-        $(this).addClass('disabled');
-        $(this).html(_gettext('Saving...'));
+    var $updateButtons = $('#update_reviewers,#update_observers');
+    $updateButtons.on('click', function (e) {
+        var role = $(this).data('role');
+        $updateButtons.attr('disabled', 'disabled');
+        $updateButtons.addClass('disabled');
+        $updateButtons.html(_gettext('Saving...'));
         reviewersController.updateReviewers(
-                "${c.repo_name}", "${c.pull_request.pull_request_id}");
+                templateContext.repo_name,
+                templateContext.pull_request_data.pull_request_id,
+                role
+        );
     });
 
     // fixing issue with caches on firefox
@@ -978,7 +978,8 @@ window.setReviewersData = ${c.pull_request_set_reviewers_data_json | n};
         refreshMergeChecks();
     };
 
-    ReviewerAutoComplete('#user');
+    ReviewerAutoComplete('#user', reviewersController);
+    ObserverAutoComplete('#observer', reviewersController);
 
 })();
 

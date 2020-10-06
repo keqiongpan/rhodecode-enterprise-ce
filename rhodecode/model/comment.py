@@ -436,9 +436,8 @@ class CommentsModel(BaseModel):
                 'thread_ids': [pr_url, pr_comment_url],
             })
 
-        recipients += [self._get_user(u) for u in (extra_recipients or [])]
-
         if send_email:
+            recipients += [self._get_user(u) for u in (extra_recipients or [])]
             # pre-generate the subject for notification itself
             (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)

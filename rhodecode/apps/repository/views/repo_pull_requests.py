@@ -39,14 +39,15 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
-from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist
 from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    func, or_, PullRequest, ChangesetComment, ChangesetStatus, Repository)
+    func, or_, PullRequest, ChangesetComment, ChangesetStatus, Repository,
+    PullRequestReviewers)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
@@ -455,14 +456,18 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             return self._get_template_context(c)
 
         c.allowed_reviewers = [obj.user_id for obj in pull_request.reviewers if obj.user]
+        c.reviewers_count = pull_request.reviewers_count
+        c.observers_count = pull_request.observers_count
 
         # reviewers and statuses
         c.pull_request_default_reviewers_data_json = json.dumps(pull_request.reviewer_data)
         c.pull_request_set_reviewers_data_json = collections.OrderedDict({'reviewers': []})
+        c.pull_request_set_observers_data_json = collections.OrderedDict({'observers': []})
 
         for review_obj, member, reasons, mandatory, status in pull_request_at_ver.reviewers_statuses():
             member_reviewer = h.reviewer_as_json(
                 member, reasons=reasons, mandatory=mandatory,
+                role=review_obj.role,
                 user_group=review_obj.rule_user_group_data()
             )
 
@@ -473,6 +478,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             c.pull_request_set_reviewers_data_json['reviewers'].append(member_reviewer)
 
         c.pull_request_set_reviewers_data_json = json.dumps(c.pull_request_set_reviewers_data_json)
+
+        for observer_obj, member in pull_request_at_ver.observers():
+            member_observer = h.reviewer_as_json(
+                member, reasons=[], mandatory=False,
+                role=observer_obj.role,
+                user_group=observer_obj.rule_user_group_data()
+            )
+            member_observer['allowed_to_update'] = c.allowed_to_update
+            c.pull_request_set_observers_data_json['observers'].append(member_observer)
+
+        c.pull_request_set_observers_data_json = json.dumps(c.pull_request_set_observers_data_json)
 
         general_comments, inline_comments = \
             self.register_comments_vars(c, pull_request_latest, versions)
@@ -967,7 +983,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
         route_name='pullrequest_comments', request_method='POST',
-        renderer='string', xhr=True)
+        renderer='string_html', xhr=True)
     def pullrequest_comments(self):
         self.load_default_context()
 
@@ -998,7 +1014,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         all_comments = c.inline_comments_flat + c.comments
 
         existing_ids = filter(
-            lambda e: e, map(safe_int, self.request.POST.getall('comments[]')))
+            lambda e: e, map(safe_int, aslist(self.request.POST.get('comments'))))
+
         return _render('comments_table', all_comments, len(all_comments),
                        existing_ids=existing_ids)
 
@@ -1008,7 +1025,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         'repository.read', 'repository.write', 'repository.admin')
     @view_config(
         route_name='pullrequest_todos', request_method='POST',
-        renderer='string', xhr=True)
+        renderer='string_html', xhr=True)
     def pullrequest_todos(self):
         self.load_default_context()
 
@@ -1138,7 +1155,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         target_ref_type, target_ref_name, __ = _form['target_ref'].split(':')
         target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
 
-        get_default_reviewers_data, validate_default_reviewers = \
+        get_default_reviewers_data, validate_default_reviewers, validate_observers = \
             PullRequestModel().get_reviewer_functions()
 
         # recalculate reviewers logic, to make sure we can validate this
@@ -1146,9 +1163,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             self._rhodecode_db_user, source_db_repo,
             source_commit, target_db_repo, target_commit)
 
-        given_reviewers = _form['review_members']
-        reviewers = validate_default_reviewers(
-            given_reviewers, reviewer_rules)
+        reviewers = validate_default_reviewers(_form['review_members'], reviewer_rules)
+        observers = validate_observers(_form['observer_members'], reviewer_rules)
 
         pullrequest_title = _form['pullrequest_title']
         title_source_ref = source_ref.split(':', 2)[1]
@@ -1172,6 +1188,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 revisions=commit_ids,
                 common_ancestor_id=common_ancestor_id,
                 reviewers=reviewers,
+                observers=observers,
                 title=pullrequest_title,
                 description=description,
                 description_renderer=description_renderer,
@@ -1227,14 +1244,23 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # only owner or admin can update it
         allowed_to_update = PullRequestModel().check_user_update(
             pull_request, self._rhodecode_user)
+
         if allowed_to_update:
             controls = peppercorn.parse(self.request.POST.items())
             force_refresh = str2bool(self.request.POST.get('force_refresh'))
 
             if 'review_members' in controls:
                 self._update_reviewers(
+                    c,
                     pull_request, controls['review_members'],
-                    pull_request.reviewer_data)
+                    pull_request.reviewer_data,
+                    PullRequestReviewers.ROLE_REVIEWER)
+            elif 'observer_members' in controls:
+                self._update_reviewers(
+                    c,
+                    pull_request, controls['observer_members'],
+                    pull_request.reviewer_data,
+                    PullRequestReviewers.ROLE_OBSERVER)
             elif str2bool(self.request.POST.get('update_commits', 'false')):
                 if is_state_changing:
                     log.debug('commits update: forbidden because pull request is in state %s',
@@ -1255,6 +1281,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             elif str2bool(self.request.POST.get('edit_pull_request', 'false')):
                 self._edit_pull_request(pull_request)
             else:
+                log.error('Unhandled update data.')
                 raise HTTPBadRequest()
 
             return {'response': True,
@@ -1262,6 +1289,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         raise HTTPForbidden()
 
     def _edit_pull_request(self, pull_request):
+        """
+        Edit title and description
+        """
         _ = self.request.translate
 
         try:
@@ -1302,27 +1332,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             msg = _(u'Pull request updated to "{source_commit_id}" with '
                     u'{count_added} added, {count_removed} removed commits. '
-                    u'Source of changes: {change_source}')
+                    u'Source of changes: {change_source}.')
             msg = msg.format(
                 source_commit_id=pull_request.source_ref_parts.commit_id,
                 count_added=len(resp.changes.added),
                 count_removed=len(resp.changes.removed),
                 change_source=changed)
             h.flash(msg, category='success')
-
-            message = msg + (
-                ' - <a onclick="window.location.reload()">'
-                '<strong>{}</strong></a>'.format(_('Reload page')))
-
-            message_obj = {
-                'message': message,
-                'level': 'success',
-                'topic': '/notifications'
-            }
-
-            channelstream.post_message(
-                c.pr_broadcast_channel, message_obj, self._rhodecode_user.username,
-                registry=self.request.registry)
+            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
         else:
             msg = PullRequestModel.UPDATE_STATUS_MESSAGES[resp.reason]
             warning_reasons = [
@@ -1331,6 +1348,53 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             ]
             category = 'warning' if resp.reason in warning_reasons else 'error'
             h.flash(msg, category=category)
+
+    def _update_reviewers(self, c, pull_request, review_members, reviewer_rules, role):
+        _ = self.request.translate
+
+        get_default_reviewers_data, validate_default_reviewers, validate_observers = \
+            PullRequestModel().get_reviewer_functions()
+
+        if role == PullRequestReviewers.ROLE_REVIEWER:
+            try:
+                reviewers = validate_default_reviewers(review_members, reviewer_rules)
+            except ValueError as e:
+                log.error('Reviewers Validation: {}'.format(e))
+                h.flash(e, category='error')
+                return
+
+            old_calculated_status = pull_request.calculated_review_status()
+            PullRequestModel().update_reviewers(
+                pull_request, reviewers, self._rhodecode_user)
+
+            Session().commit()
+
+            msg = _('Pull request reviewers updated.')
+            h.flash(msg, category='success')
+            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
+
+            # trigger status changed if change in reviewers changes the status
+            calculated_status = pull_request.calculated_review_status()
+            if old_calculated_status != calculated_status:
+                PullRequestModel().trigger_pull_request_hook(
+                    pull_request, self._rhodecode_user, 'review_status_change',
+                    data={'status': calculated_status})
+
+        elif role == PullRequestReviewers.ROLE_OBSERVER:
+            try:
+                observers = validate_observers(review_members, reviewer_rules)
+            except ValueError as e:
+                log.error('Observers Validation: {}'.format(e))
+                h.flash(e, category='error')
+                return
+
+            PullRequestModel().update_observers(
+                pull_request, observers, self._rhodecode_user)
+
+            Session().commit()
+            msg = _('Pull request observers updated.')
+            h.flash(msg, category='success')
+            self._pr_update_channelstream_push(c.pr_broadcast_channel, msg)
 
     @LoginRequired()
     @NotAnonymous()
@@ -1408,32 +1472,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             msg = merge_resp.merge_status_message
             h.flash(msg, category='error')
 
-    def _update_reviewers(self, pull_request, review_members, reviewer_rules):
-        _ = self.request.translate
-
-        get_default_reviewers_data, validate_default_reviewers = \
-            PullRequestModel().get_reviewer_functions()
-
-        try:
-            reviewers = validate_default_reviewers(review_members, reviewer_rules)
-        except ValueError as e:
-            log.error('Reviewers Validation: {}'.format(e))
-            h.flash(e, category='error')
-            return
-
-        old_calculated_status = pull_request.calculated_review_status()
-        PullRequestModel().update_reviewers(
-            pull_request, reviewers, self._rhodecode_user)
-        h.flash(_('Pull request reviewers updated.'), category='success')
-        Session().commit()
-
-        # trigger status changed if change in reviewers changes the status
-        calculated_status = pull_request.calculated_review_status()
-        if old_calculated_status != calculated_status:
-            PullRequestModel().trigger_pull_request_hook(
-                pull_request, self._rhodecode_user, 'review_status_change',
-                data={'status': calculated_status})
-
     @LoginRequired()
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
@@ -1488,8 +1526,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         allowed_to_comment = PullRequestModel().check_user_comment(
             pull_request, self._rhodecode_user)
         if not allowed_to_comment:
-            log.debug(
-                'comment: forbidden because pull request is from forbidden repo')
+            log.debug('comment: forbidden because pull request is from forbidden repo')
             raise HTTPForbidden()
 
         c = self.load_default_context()
