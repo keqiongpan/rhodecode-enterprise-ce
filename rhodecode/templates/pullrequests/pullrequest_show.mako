@@ -786,7 +786,7 @@
 
                         <tr><td><code>${_('In pull request description')}:</code></td></tr>
                         % if c.referenced_desc_issues:
-                            % for ticket_dict in c.referenced_desc_issues:
+                            % for ticket_dict in sorted(c.referenced_desc_issues):
                             <tr>
                                 <td>
                                     <a href="${ticket_dict.get('url')}">
@@ -805,7 +805,7 @@
 
                         <tr><td style="padding-top: 10px"><code>${_('In commit messages')}:</code></td></tr>
                         % if c.referenced_commit_issues:
-                            % for ticket_dict in c.referenced_commit_issues:
+                            % for ticket_dict in sorted(c.referenced_commit_issues):
                             <tr>
                                 <td>
                                     <a href="${ticket_dict.get('url')}">
