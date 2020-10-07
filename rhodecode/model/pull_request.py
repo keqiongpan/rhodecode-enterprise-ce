@@ -710,7 +710,7 @@ class PullRequestModel(BaseModel):
             MergeCheck.validate(
                 pull_request, auth_user=auth_user, translator=translator)
 
-        self.notify_reviewers(pull_request, reviewer_ids)
+        self.notify_reviewers(pull_request, reviewer_ids, created_by_user)
         self.trigger_pull_request_hook(pull_request, created_by_user, 'create')
 
         creation_data = pull_request.get_api_data(with_merge_state=False)

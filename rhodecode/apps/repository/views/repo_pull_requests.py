@@ -40,7 +40,7 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
 from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist
-from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason
+from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason, Reference
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -1150,8 +1150,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         ancestor = source_scm.get_common_ancestor(
             source_commit.raw_id, target_commit.raw_id, target_scm)
 
+        source_ref_type, source_ref_name, source_commit_id = _form['target_ref'].split(':')
+        target_ref_type, target_ref_name, target_commit_id = _form['source_ref'].split(':')
         # recalculate target ref based on ancestor
-        target_ref_type, target_ref_name, __ = _form['target_ref'].split(':')
         target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
 
         get_default_reviewers_data, validate_default_reviewers, validate_observers = \
@@ -1159,8 +1160,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         # recalculate reviewers logic, to make sure we can validate this
         reviewer_rules = get_default_reviewers_data(
-            self._rhodecode_db_user, source_db_repo,
-            source_commit, target_db_repo, target_commit)
+            self._rhodecode_db_user,
+            source_db_repo,
+            Reference(source_ref_type, source_ref_name, source_commit_id),
+            target_db_repo,
+            Reference(target_ref_type, target_ref_name, target_commit_id),
+            include_diff_info=False)
 
         reviewers = validate_default_reviewers(_form['review_members'], reviewer_rules)
         observers = validate_observers(_form['observer_members'], reviewer_rules)

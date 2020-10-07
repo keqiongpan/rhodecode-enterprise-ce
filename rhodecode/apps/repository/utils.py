@@ -18,7 +18,7 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-from rhodecode.lib import helpers as h
+from rhodecode.lib import helpers as h, rc_cache
 from rhodecode.lib.utils2 import safe_int
 from rhodecode.model.pull_request import get_diff_info
 from rhodecode.model.db import PullRequestReviewers
@@ -54,20 +54,36 @@ def reviewer_as_json(user, reasons=None, role=None, mandatory=False, rules=None,
     }
 
 
-def get_default_reviewers_data(current_user, source_repo, source_commit, target_repo, target_commit):
+def to_reviewers(e):
+    if isinstance(e, (tuple, list)):
+        return map(reviewer_as_json, e)
+    else:
+        return reviewer_as_json(e)
+
+
+def get_default_reviewers_data(current_user, source_repo, source_ref, target_repo, target_ref,
+                               include_diff_info=True):
     """
     Return json for default reviewers of a repository
     """
 
-    diff_info = get_diff_info(
-        source_repo, source_commit.raw_id, target_repo, target_commit.raw_id)
+    diff_info = {}
+    if include_diff_info:
+        diff_info = get_diff_info(
+            source_repo, source_ref.commit_id, target_repo, target_ref.commit_id)
 
     reasons = ['Default reviewer', 'Repository owner']
     json_reviewers = [reviewer_as_json(
         user=target_repo.user, reasons=reasons, mandatory=False, rules=None, role=None)]
 
+    compute_key = rc_cache.utils.compute_key_from_params(
+        current_user.user_id, source_repo.repo_id, source_ref.type, source_ref.name,
+        source_ref.commit_id, target_repo.repo_id, target_ref.type, target_ref.name,
+        target_ref.commit_id)
+
     return {
         'api_ver': REVIEWER_API_VERSION,  # define version for later possible schema upgrade
+        'compute_key': compute_key,
         'diff_info': diff_info,
         'reviewers': json_reviewers,
         'rules': {},

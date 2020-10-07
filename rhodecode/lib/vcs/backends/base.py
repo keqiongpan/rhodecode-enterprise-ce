@@ -57,7 +57,20 @@ FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
 EMPTY_COMMIT_ID = '0' * 40
 
-Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
+_Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
+
+
+class Reference(_Reference):
+
+    @property
+    def branch(self):
+        if self.type == 'branch':
+            return self.name
+
+    @property
+    def bookmark(self):
+        if self.type == 'book':
+            return self.name
 
 
 class MergeFailureReason(object):

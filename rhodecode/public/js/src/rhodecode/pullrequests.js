@@ -313,9 +313,13 @@ window.ReviewersController = function () {
             {
                 'repo_name': templateContext.repo_name,
                 'source_repo': sourceRepo,
+                'source_ref_type': sourceRef[0],
+                'source_ref_name': sourceRef[1],
                 'source_ref': sourceRef[2],
                 'target_repo': targetRepo,
-                'target_ref': targetRef[2]
+                'target_ref': targetRef[2],
+                'target_ref_type': sourceRef[0],
+                'target_ref_name': sourceRef[1]
             });
 
         self.currentRequest = $.ajax({
