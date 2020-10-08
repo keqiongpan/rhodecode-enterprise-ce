@@ -99,7 +99,7 @@
             <div id="graph_content" class="graph_full_width">
 
               <div class="table">
-                <table id="changesets" class="rctable">
+                <table id="changesets" class="rctable table-bordered">
                     <tr>
                       ## checkbox
                       <th colspan="4">

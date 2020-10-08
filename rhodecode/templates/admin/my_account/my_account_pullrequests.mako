@@ -33,7 +33,7 @@
         <h3 class="panel-title">${_('Pull Requests You Participate In')}</h3>
     </div>
     <div class="panel-body panel-body-min-height">
-        <table id="pull_request_list_table" class="display"></table>
+        <table id="pull_request_list_table" class="rctable table-bordered"></table>
     </div>
 </div>
 

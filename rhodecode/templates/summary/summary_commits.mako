@@ -1,11 +1,11 @@
 ## -*- coding: utf-8 -*-
 <%namespace name="base" file="/base/base.mako"/>
 %if c.repo_commits:
-<table class="rctable repo_summary table_disp">
+<table class="rctable table-bordered">
     <tr>
 
         <th class="status"></th>
-        <th>${_('Commit')}</th>
+        <th></th>
         <th>${_('Commit message')}</th>
         <th>${_('Age')}</th>
         <th>${_('Author')}</th>

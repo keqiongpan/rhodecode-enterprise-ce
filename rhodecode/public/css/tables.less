@@ -4,6 +4,25 @@
 // see style guide documentation for guidelines.
 
 // TABLES
+table.rctable.table-bordered {
+    border: 1px solid #eaeaea;
+    border-radius: 2px;
+    border-collapse: inherit;
+    border-bottom: 0;
+
+    th {
+        background: @grey7;
+        border-bottom: 0;
+    }
+
+    td {
+        border-color: #eaeaea;
+    }
+
+    td.td-status {
+        padding: 0 0 0 10px;
+    }
+}
 
 .rctable,
 table.rctable,
@@ -306,11 +325,13 @@ table.dataTable {
         }
     }
 }
+
 .rctable.audit-log {
     td {
                 vertical-align: top;
     }
 }
+
 
 // TRUNCATING
 // TODO: lisaq: should this possibly be moved out of tables.less?
@@ -426,15 +447,6 @@ table.keyboard-mappings {
     }
 }
 
-// Pull Request List Table
-#pull_request_list_table.dataTable {
-
-    //TODO: lisa: This needs to be removed once the description is adjusted
-    //            for using an expand_commit button (see issue 765)
-     td {
-         vertical-align: middle;
-     }
-}
 
 // Settings (no border)
 table.rctable.dl-settings {
@@ -484,9 +496,6 @@ table.trending_language_tbl {
 
 // Changesets
 #changesets.rctable {
-    th {
-        padding: 0 1em 0.65em 0;
-    }
 
     // td must be fixed height for graph
     td {

@@ -10,7 +10,7 @@
         default_landing_ref = c.commit.raw_id
 %>
 <div id="file-tree-wrapper" class="browser-body ${('full-load' if c.full_load else '')}">
-    <table class="code-browser rctable repo_summary">
+    <table class="code-browser rctable table-bordered">
         <thead>
             <tr>
                 <th>${_('Name')}</th>

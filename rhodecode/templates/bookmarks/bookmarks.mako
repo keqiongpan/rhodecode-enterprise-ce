@@ -30,11 +30,21 @@
           </ul>
         %endif
         %if c.has_references:
-            <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
-            <span id="obj_count">0</span> ${_('bookmarks')}
+            <div class="grid-quick-filter">
+                <ul class="grid-filter-box">
+                    <li class="grid-filter-box-icon">
+                        <i class="icon-search"></i>
+                    </li>
+                    <li class="grid-filter-box-input">
+                        <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+                    </li>
+                </ul>
+            </div>
+            <div id="obj_count">0</div>
         %endif
       </div>
-      <table id="obj_list_table" class="display"></table>
+
+      <table id="obj_list_table" class="rctable table-bordered"></table>
     </div>
 
 
@@ -43,7 +53,9 @@ $(document).ready(function() {
 
     var get_datatable_count = function(){
       var api = $('#obj_list_table').dataTable().api();
-      $('#obj_count').text(api.page.info().recordsDisplay);
+      var total = api.page.info().recordsDisplay
+      var _text = _ngettext('{0} bookmark', '{0} bookmarks', total).format(total);
+      $('#obj_count').text(_text);
     };
 
     // object list
