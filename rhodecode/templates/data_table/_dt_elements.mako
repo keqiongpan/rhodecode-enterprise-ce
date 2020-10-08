@@ -379,22 +379,22 @@ ${h.style_metatag(tag_type, tag)|n,trim}
 </%def>
 
 <%def name="pullrequest_name(pull_request_id, state, is_wip, target_repo_name, short=False)">
+    <code>
     <a href="${h.route_path('pullrequest_show',repo_name=target_repo_name,pull_request_id=pull_request_id)}">
-
       % if short:
         !${pull_request_id}
       % else:
         ${_('Pull request !{}').format(pull_request_id)}
       % endif
-
-      % if state not in ['created']:
-          <span class="tag tag-merge-state-${state} tooltip" title="Pull request state is changing">${state}</span>
-      % endif
-
-      % if is_wip:
-          <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
-      % endif
     </a>
+    </code>
+    % if state not in ['created']:
+        <span class="tag tag-merge-state-${state} tooltip" title="Pull request state is changing">${state}</span>
+    % endif
+
+    % if is_wip:
+        <span class="tag tooltip" title="${_('Work in progress')}">wip</span>
+    % endif
 </%def>
 
 <%def name="pullrequest_updated_on(updated_on)">

@@ -111,7 +111,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             data.append({
                 'name': _render('pullrequest_name',
                                 pr.pull_request_id, pr.pull_request_state,
-                                pr.work_in_progress, pr.target_repo.repo_name),
+                                pr.work_in_progress, pr.target_repo.repo_name,
+                                short=True),
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
