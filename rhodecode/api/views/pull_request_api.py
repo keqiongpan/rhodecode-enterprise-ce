@@ -725,8 +725,12 @@ def create_pull_request(
 
     # recalculate reviewers logic, to make sure we can validate this
     default_reviewers_data = get_default_reviewers_data(
-        owner, source_db_repo,
-        source_commit, target_db_repo, target_commit)
+        owner,
+        source_repo,
+        Reference(source_type, source_name, source_commit_id),
+        target_repo,
+        Reference(target_type, target_name, target_commit_id)
+    )
 
     # now MERGE our given with the calculated
     reviewer_objects = default_reviewers_data['reviewers'] + reviewer_objects

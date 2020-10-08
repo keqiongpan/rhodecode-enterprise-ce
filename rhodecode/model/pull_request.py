@@ -155,12 +155,21 @@ def get_diff_info(
     commits = []
     if get_commit_authors:
         log.debug('Obtaining commit authors from set of commits')
-        commits = target_scm.compare(
+        _compare_data = target_scm.compare(
             target_ref, source_ref, source_scm, merge=True,
-            pre_load=["author", "date", "message", "branch", "parents"])
+            pre_load=["author", "date", "message"]
+        )
 
-        for commit in commits:
-            user = User.get_from_cs_author(commit.author)
+        for commit in _compare_data:
+            # NOTE(marcink): we serialize here, so we don't produce more vcsserver calls on data returned
+            # at this function which is later called via JSON serialization
+            serialized_commit = dict(
+                author=commit.author,
+                date=commit.date,
+                message=commit.message,
+            )
+            commits.append(serialized_commit)
+            user = User.get_from_cs_author(serialized_commit['author'])
             if user and user not in commit_authors:
                 commit_authors.append(user)
 
@@ -170,12 +179,27 @@ def get_diff_info(
         target_commit = source_repo.get_commit(ancestor_id)
 
         for fname, lines in changed_lines.items():
+
             try:
-                node = target_commit.get_node(fname)
+                node = target_commit.get_node(fname, pre_load=["is_binary"])
             except Exception:
+                log.exception("Failed to load node with path %s", fname)
                 continue
 
             if not isinstance(node, FileNode):
+                continue
+
+            # NOTE(marcink): for binary node we don't do annotation, just use last author
+            if node.is_binary:
+                author = node.last_commit.author
+                email = node.last_commit.author_email
+
+                user = User.get_from_cs_author(author)
+                if user:
+                    user_counts[user.user_id] = user_counts.get(user.user_id, 0) + 1
+                author_counts[author] = author_counts.get(author, 0) + 1
+                email_counts[email] = email_counts.get(email, 0) + 1
+
                 continue
 
             for annotation in node.annotate:

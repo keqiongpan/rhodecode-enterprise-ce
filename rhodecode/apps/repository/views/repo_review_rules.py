@@ -72,9 +72,11 @@ class RepoReviewRulesView(RepoAppView):
         target_type = request.GET['target_ref_type']
         target_name = request.GET['target_ref_name']
 
-        source_ref = Reference(source_type, source_name, source_commit_id)
-        target_ref = Reference(target_type, target_name, target_commit_id)
-
         review_data = get_default_reviewers_data(
-            current_user, source_repo, source_ref, target_repo, target_ref)
+            current_user,
+            source_repo,
+            Reference(source_type, source_name, source_commit_id),
+            target_repo,
+            Reference(target_type, target_name, target_commit_id)
+        )
         return review_data
