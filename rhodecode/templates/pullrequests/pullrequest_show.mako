@@ -624,6 +624,7 @@
             </div>
 
             ## OBSERVERS
+            % if c.rhodecode_edition_id == 'EE':
             <div class="sidebar-element clear-both">
                 <% vote_title = _ungettext(
                         '{} observer without voting right.',
@@ -674,6 +675,7 @@
                     %endif
                 </div>
             </div>
+            % endif
 
             ## TODOs
             <div class="sidebar-element clear-both">

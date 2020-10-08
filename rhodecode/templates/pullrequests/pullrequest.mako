@@ -177,7 +177,7 @@
                                         <span class="calculate-reviewers">
                                             <h4>${_('loading...')}</h4>
                                         </span>
-
+                                        % if c.rhodecode_edition_id == 'EE':
                                         <div id="observers" class="pr-details-content observers">
                                             ## members goes here, filled via JS based on initial selection !
                                             <input type="hidden" name="__start__" value="observer_members:sequence">
@@ -193,7 +193,12 @@
                                                 </div>
                                             </div>
                                         </div>
-
+                                        % else:
+                                            <h4>${_('This feature is available in RhodeCode EE edition only. Contact {sales_email} to obtain a trial license.').format(sales_email='<a href="mailto:sales@rhodecode.com">sales@rhodecode.com</a>')|n}</h4>
+                                            <p>
+                                                Pull request observers allows adding users who don't need to leave mandatory votes, but need to be aware about certain changes.
+                                            </p>
+                                        % endif
                                     </div>
 
                                 </div>

@@ -107,5 +107,5 @@ def validate_default_reviewers(review_members, reviewer_rules):
     return reviewers
 
 
-def validate_observers(observer_members):
+def validate_observers(observer_members, reviewer_rules):
     return {}

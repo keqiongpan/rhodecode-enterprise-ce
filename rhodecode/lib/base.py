@@ -293,6 +293,7 @@ def attach_context_attributes(context, request, user_id=None, is_api=None):
     context.rc_config = rc_config
     context.rhodecode_version = rhodecode.__version__
     context.rhodecode_edition = config.get('rhodecode.edition')
+    context.rhodecode_edition_id = config.get('rhodecode.edition_id')
     # unique secret + version does not leak the version but keep consistency
     context.rhodecode_version_hash = calculate_version_hash(config)
 

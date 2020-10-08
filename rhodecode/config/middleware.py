@@ -412,6 +412,7 @@ def sanitize_settings_and_apply_defaults(global_config, settings):
     """
 
     settings.setdefault('rhodecode.edition', 'Community Edition')
+    settings.setdefault('rhodecode.edition_id', 'CE')
 
     if 'mako.default_filters' not in settings:
         # set custom default filters if we don't have it defined
