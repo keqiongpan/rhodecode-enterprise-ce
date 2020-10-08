@@ -170,7 +170,6 @@ class RepoCommitsView(RepoAppView):
                     )
                     reviewers_duplicates.add(_user_id)
 
-            c.allowed_reviewers = reviewers
             c.reviewers_count = len(reviewers)
             c.observers_count = 0
 

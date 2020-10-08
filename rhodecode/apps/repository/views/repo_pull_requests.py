@@ -455,7 +455,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'rhodecode:templates/pullrequests/pullrequest_merge_checks.mako'
             return self._get_template_context(c)
 
-        c.allowed_reviewers = [obj.user_id for obj in pull_request.reviewers if obj.user]
         c.reviewers_count = pull_request.reviewers_count
         c.observers_count = pull_request.observers_count
 
@@ -761,7 +760,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             # current user review statuses for each version
             c.review_versions = {}
-            if self._rhodecode_user.user_id in c.allowed_reviewers:
+            is_reviewer = PullRequestModel().is_user_reviewer(
+                pull_request, self._rhodecode_user)
+            if is_reviewer:
                 for co in general_comments:
                     if co.author.user_id == self._rhodecode_user.user_id:
                         status = co.status_change

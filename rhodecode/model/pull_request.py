@@ -288,10 +288,16 @@ class PullRequestModel(BaseModel):
         _perms = ('repository.admin',)
         return self._check_perms(_perms, pull_request, user) or owner
 
+    def is_user_reviewer(self, pull_request, user):
+        return user.user_id in [
+            x.user_id for x in
+            pull_request.get_pull_request_reviewers(PullRequestReviewers.ROLE_REVIEWER)
+            if x.user
+        ]
+
     def check_user_change_status(self, pull_request, user, api=False):
-        reviewer = user.user_id in [x.user_id for x in
-                                    pull_request.reviewers]
-        return self.check_user_update(pull_request, user, api) or reviewer
+        return self.check_user_update(pull_request, user, api) \
+               or self.is_user_reviewer(pull_request, user)
 
     def check_user_comment(self, pull_request, user):
         owner = user.user_id == pull_request.user_id
