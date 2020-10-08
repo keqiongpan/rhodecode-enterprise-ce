@@ -625,13 +625,18 @@
 
             ## OBSERVERS
             <div class="sidebar-element clear-both">
-                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Observers')}">
+                <% vote_title = _ungettext(
+                        '{} observer without voting right.',
+                        '{} observers without voting right.', c.observers_count).format(c.observers_count)
+                %>
+
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${vote_title}">
                     <i class="icon-circle-thin"></i>
                     ${c.observers_count}
                 </div>
 
                 <div class="right-sidebar-expanded-state pr-details-title">
-                  <span class="sidebar-heading">
+                  <span class="tooltip sidebar-heading" title="${vote_title}">
                     <i class="icon-circle-thin"></i>
                     ${_('Observers')}
                   </span>
