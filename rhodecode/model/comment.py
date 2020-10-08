@@ -399,7 +399,7 @@ class CommentsModel(BaseModel):
             recipients += [pull_request_obj.author]
 
             # add the reviewers to notification
-            recipients += [x.user for x in pull_request_obj.reviewers]
+            recipients += [x.user for x in pull_request_obj.get_pull_request_reviewers()]
 
             pr_target_repo = pull_request_obj.target_repo
             pr_source_repo = pull_request_obj.source_repo

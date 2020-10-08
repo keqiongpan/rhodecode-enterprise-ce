@@ -1526,7 +1526,7 @@ class PullRequestModel(BaseModel):
                      commit_changes, file_changes):
 
         updating_user_id = updating_user.user_id
-        reviewers = set([x.user.user_id for x in pull_request.reviewers])
+        reviewers = set([x.user.user_id for x in pull_request.get_pull_request_reviewers()])
         # NOTE(marcink): send notification to all other users except to
         # person who updated the PR
         recipients = reviewers.difference(set([updating_user_id]))
