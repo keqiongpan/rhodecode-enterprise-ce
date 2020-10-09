@@ -303,7 +303,7 @@
 
        var originalOption = data.element;
        return prefix + escapeMarkup(data.text);
-   };formatSelection:
+   };
 
    // custom code mirror
    var codeMirrorInstance = $('#pullrequest_desc').get(0).MarkupForm.cm;
@@ -362,8 +362,10 @@
        var msg = '<input id="common_ancestor" type="hidden" name="common_ancestor" value="{0}">'.format(commonAncestorId);
        msg += '<input type="hidden" name="__start__" value="revisions:sequence">'
 
+
        $.each(commitElements, function(idx, value) {
-           msg += '<input type="hidden" name="revisions" value="{0}">'.format(value["raw_id"]);
+           var commit_id = value["commit_id"]
+           msg += '<input type="hidden" name="revisions" value="{0}">'.format(commit_id);
        });
 
        msg += '<input type="hidden" name="__end__" value="revisions:sequence">'

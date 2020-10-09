@@ -167,6 +167,8 @@ def get_diff_info(
                 author=commit.author,
                 date=commit.date,
                 message=commit.message,
+                commit_id=commit.raw_id,
+                raw_id=commit.raw_id
             )
             commits.append(serialized_commit)
             user = User.get_from_cs_author(serialized_commit['author'])
