@@ -320,7 +320,7 @@ class TestCreatePullRequestApi(object):
         id_, params = build_data(
             self.apikey_regular, 'create_pull_request', **data)
         response = api_call(self.app, params)
-        expected_message = 'no commits found'
+        expected_message = 'no commits found for merge between specified references'
         assert_error(id_, expected_message, given=response.body)
 
     @pytest.mark.backends("git", "hg")

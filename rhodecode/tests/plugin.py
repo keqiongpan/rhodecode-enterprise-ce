@@ -43,8 +43,8 @@ from rhodecode.lib.utils2 import AttributeDict
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    PullRequest, Repository, RhodeCodeSetting, ChangesetStatus, RepoGroup,
-    UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
+    PullRequest, PullRequestReviewers, Repository, RhodeCodeSetting, ChangesetStatus,
+    RepoGroup, UserGroup, RepoRhodeCodeUi, RepoRhodeCodeSetting, RhodeCodeUi)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.repo import RepoModel
@@ -968,7 +968,7 @@ class PRTestUtility(object):
     def create_pull_request(
             self, commits=None, target_head=None, source_head=None,
             revisions=None, approved=False, author=None, mergeable=False,
-            enable_notifications=True, name_suffix=u'', reviewers=None,
+            enable_notifications=True, name_suffix=u'', reviewers=None, observers=None,
             title=u"Test", description=u"Description"):
         self.set_mergeable(mergeable)
         if not enable_notifications:
@@ -1005,6 +1005,7 @@ class PRTestUtility(object):
                 'target_ref': self._default_branch_reference(target_head),
                 'revisions': [self.commit_ids[r] for r in revisions],
                 'reviewers': reviewers or self._get_reviewers(),
+                'observers': observers or self._get_observers(),
                 'title': title,
                 'description': description,
             }
@@ -1037,9 +1038,15 @@ class PRTestUtility(object):
         return reference
 
     def _get_reviewers(self):
+        role = PullRequestReviewers.ROLE_REVIEWER
         return [
-            (TEST_USER_REGULAR_LOGIN, ['default1'], False, []),
-            (TEST_USER_REGULAR2_LOGIN, ['default2'], False, []),
+            (TEST_USER_REGULAR_LOGIN, ['default1'], False, role, []),
+            (TEST_USER_REGULAR2_LOGIN, ['default2'], False, role, []),
+        ]
+
+    def _get_observers(self):
+        return [
+
         ]
 
     def update_source_repository(self, head=None):

@@ -21,12 +21,17 @@
 import colander
 from rhodecode.model.validation_schema import validators, preparers, types
 
+DEFAULT_ROLE = 'reviewer'
+VALID_ROLES = ['reviewer', 'observer']
+
 
 class ReviewerSchema(colander.MappingSchema):
     username = colander.SchemaNode(types.StrOrIntType())
     reasons = colander.SchemaNode(colander.List(), missing=['no reason specified'])
     mandatory = colander.SchemaNode(colander.Boolean(), missing=False)
     rules = colander.SchemaNode(colander.List(), missing=[])
+    role = colander.SchemaNode(colander.String(), missing=DEFAULT_ROLE,
+                               validator=colander.OneOf(VALID_ROLES))
 
 
 class ReviewerListSchema(colander.SequenceSchema):

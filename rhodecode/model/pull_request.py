@@ -1342,7 +1342,7 @@ class PullRequestModel(BaseModel):
                 'repo.pull_request.reviewer.delete', {'old_data': user_data},
                 user, pull_request)
 
-        self.notify_reviewers(pull_request, ids_to_add, user.get_instance())
+        self.notify_reviewers(pull_request, ids_to_add, user)
         return ids_to_add, ids_to_remove
 
     def update_observers(self, pull_request, observer_data, user):
@@ -1425,7 +1425,7 @@ class PullRequestModel(BaseModel):
                 'repo.pull_request.observer.delete', {'old_data': user_data},
                 user, pull_request)
 
-        self.notify_observers(pull_request, ids_to_add, user.get_instance())
+        self.notify_observers(pull_request, ids_to_add, user)
         return ids_to_add, ids_to_remove
 
     def get_url(self, pull_request, request=None, permalink=False):

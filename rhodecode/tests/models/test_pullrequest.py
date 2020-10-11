@@ -122,7 +122,7 @@ class TestPullRequestModel(object):
 
     def test_get_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False, [])],
+            pull_request, [(pull_request.author, ['author'], False, 'reviewer', [])],
             pull_request.author)
         Session().commit()
 
@@ -133,7 +133,7 @@ class TestPullRequestModel(object):
 
     def test_count_awaiting_my_review(self, pull_request):
         PullRequestModel().update_reviewers(
-            pull_request, [(pull_request.author, ['author'], False, [])],
+            pull_request, [(pull_request.author, ['author'], False, 'reviewer', [])],
             pull_request.author)
         Session().commit()
 

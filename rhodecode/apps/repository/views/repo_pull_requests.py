@@ -40,7 +40,8 @@ from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
 from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist
-from rhodecode.lib.vcs.backends.base import EmptyCommit, UpdateFailureReason, Reference
+from rhodecode.lib.vcs.backends.base import (
+    EmptyCommit, UpdateFailureReason, unicode_to_reference)
 from rhodecode.lib.vcs.exceptions import (
     CommitDoesNotExistError, RepositoryRequirementError, EmptyRepositoryError)
 from rhodecode.model.changeset_status import ChangesetStatusModel
@@ -1146,16 +1147,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         source_scm = source_db_repo.scm_instance()
         target_scm = target_db_repo.scm_instance()
 
-        source_commit = source_scm.get_commit(source_ref.split(':')[-1])
-        target_commit = target_scm.get_commit(target_ref.split(':')[-1])
+        source_ref_obj = unicode_to_reference(source_ref)
+        target_ref_obj = unicode_to_reference(target_ref)
+
+        source_commit = source_scm.get_commit(source_ref_obj.commit_id)
+        target_commit = target_scm.get_commit(target_ref_obj.commit_id)
 
         ancestor = source_scm.get_common_ancestor(
             source_commit.raw_id, target_commit.raw_id, target_scm)
 
-        source_ref_type, source_ref_name, source_commit_id = _form['target_ref'].split(':')
-        target_ref_type, target_ref_name, target_commit_id = _form['source_ref'].split(':')
         # recalculate target ref based on ancestor
-        target_ref = ':'.join((target_ref_type, target_ref_name, ancestor))
+        target_ref = ':'.join((target_ref_obj.type, target_ref_obj.name, ancestor))
 
         get_default_reviewers_data, validate_default_reviewers, validate_observers = \
             PullRequestModel().get_reviewer_functions()
@@ -1164,16 +1166,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         reviewer_rules = get_default_reviewers_data(
             self._rhodecode_db_user,
             source_db_repo,
-            Reference(source_ref_type, source_ref_name, source_commit_id),
+            source_ref_obj,
             target_db_repo,
-            Reference(target_ref_type, target_ref_name, target_commit_id),
+            target_ref_obj,
             include_diff_info=False)
 
         reviewers = validate_default_reviewers(_form['review_members'], reviewer_rules)
         observers = validate_observers(_form['observer_members'], reviewer_rules)
 
         pullrequest_title = _form['pullrequest_title']
-        title_source_ref = source_ref.split(':', 2)[1]
+        title_source_ref = source_ref_obj.name
         if not pullrequest_title:
             pullrequest_title = PullRequestModel().generate_pullrequest_title(
                 source=source_repo,
@@ -1371,7 +1373,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
             old_calculated_status = pull_request.calculated_review_status()
             PullRequestModel().update_reviewers(
-                pull_request, reviewers, self._rhodecode_user)
+                pull_request, reviewers, self._rhodecode_db_user)
 
             Session().commit()
 
@@ -1396,7 +1398,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 return
 
             PullRequestModel().update_observers(
-                pull_request, observers, self._rhodecode_user)
+                pull_request, observers, self._rhodecode_db_user)
 
             Session().commit()
             msg = _('Pull request observers updated.')
@@ -1563,6 +1565,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 pull_request, self._rhodecode_user, self.db_repo, message=text,
                 auth_user=self._rhodecode_user)
             Session().flush()
+            is_inline = comment.is_inline
 
             PullRequestModel().trigger_pull_request_hook(
                 pull_request, self._rhodecode_user, 'comment',
@@ -1596,7 +1599,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 resolves_comment_id=resolves_comment_id,
                 auth_user=self._rhodecode_user
             )
-            is_inline = bool(comment.f_path and comment.line_no)
+            is_inline = comment.is_inline
 
             if allowed_to_change_status:
                 # calculate old status before we change it

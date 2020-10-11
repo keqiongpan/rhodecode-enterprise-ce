@@ -1653,7 +1653,7 @@ def comment_commit(
             extra_recipients=extra_recipients,
             send_email=send_email
         )
-        is_inline = bool(comment.f_path and comment.line_no)
+        is_inline = comment.is_inline
 
         if status:
             # also do a status change

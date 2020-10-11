@@ -413,7 +413,7 @@ class RepoCommitsView(RepoAppView):
                 resolves_comment_id=resolves_comment_id,
                 auth_user=self._rhodecode_user
             )
-            is_inline = bool(comment.f_path and comment.line_no)
+            is_inline = comment.is_inline
 
             # get status if set !
             if status:

@@ -56,7 +56,8 @@ from webhelpers2.text import remove_formatting
 
 from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance, VCSError
-from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
+from rhodecode.lib.vcs.backends.base import (
+    EmptyCommit, Reference, unicode_to_reference, reference_to_unicode)
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
@@ -4248,26 +4249,11 @@ class _PullRequestBase(BaseModel):
 
     @staticmethod
     def unicode_to_reference(raw):
-        """
-        Convert a unicode (or string) to a reference object.
-        If unicode evaluates to False it returns None.
-        """
-        if raw:
-            refs = raw.split(':')
-            return Reference(*refs)
-        else:
-            return None
+        return unicode_to_reference(raw)
 
     @staticmethod
     def reference_to_unicode(ref):
-        """
-        Convert a reference object to unicode.
-        If reference is None it returns None.
-        """
-        if ref:
-            return u':'.join(ref)
-        else:
-            return None
+        return reference_to_unicode(ref)
 
     def get_api_data(self, with_merge_state=True):
         from rhodecode.model.pull_request import PullRequestModel
@@ -4543,6 +4529,9 @@ class PullRequestVersion(Base, _PullRequestBase):
     @property
     def reviewers(self):
         return self.pull_request.reviewers
+    @property
+    def reviewers(self):
+        return self.pull_request.reviewers
 
     @property
     def versions(self):
@@ -4561,7 +4550,7 @@ class PullRequestVersion(Base, _PullRequestBase):
     def reviewers_statuses(self):
         return self.pull_request.reviewers_statuses()
 
-    def observer(self):
+    def observers(self):
         return self.pull_request.observers()
 
 

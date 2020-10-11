@@ -29,6 +29,7 @@ from rhodecode.api.tests.utils import (
 
 @pytest.mark.usefixtures("testuser_api", "app")
 class TestGetPullRequest(object):
+
     @pytest.mark.backends("git", "hg")
     def test_api_get_pull_requests(self, pr_util):
         pull_request = pr_util.create_pull_request()
@@ -40,6 +41,7 @@ class TestGetPullRequest(object):
             target_ref=pull_request.target_ref,
             revisions=pull_request.revisions,
             reviewers=(),
+            observers=(),
             title=pull_request.title,
             description=pull_request.description,
         )

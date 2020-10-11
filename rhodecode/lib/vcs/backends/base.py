@@ -73,6 +73,29 @@ class Reference(_Reference):
             return self.name
 
 
+def unicode_to_reference(raw):
+    """
+    Convert a unicode (or string) to a reference object.
+    If unicode evaluates to False it returns None.
+    """
+    if raw:
+        refs = raw.split(':')
+        return Reference(*refs)
+    else:
+        return None
+
+
+def reference_to_unicode(ref):
+    """
+    Convert a reference object to unicode.
+    If reference is None it returns None.
+    """
+    if ref:
+        return u':'.join(ref)
+    else:
+        return None
+
+
 class MergeFailureReason(object):
     """
     Enumeration with all the reasons why the server side merge could fail.
