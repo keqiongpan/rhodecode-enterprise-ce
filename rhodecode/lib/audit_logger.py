@@ -88,6 +88,9 @@ ACTIONS_V1 = {
     'repo.pull_request.reviewer.add': '',
     'repo.pull_request.reviewer.delete': '',
 
+    'repo.pull_request.observer.add': '',
+    'repo.pull_request.observer.delete': '',
+
     'repo.commit.strip': {'commit_id': ''},
     'repo.commit.comment.create': {'data': {}},
     'repo.commit.comment.delete': {'data': {}},

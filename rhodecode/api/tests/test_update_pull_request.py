@@ -51,6 +51,7 @@ class TestUpdatePullRequest(object):
             "pull_request": response.json['result']['pull_request'],
             "updated_commits": {"added": [], "common": [], "removed": []},
             "updated_reviewers": {"added": [], "removed": []},
+            "updated_observers": {"added": [], "removed": []},
         }
 
         response_json = response.json['result']
@@ -111,6 +112,7 @@ class TestUpdatePullRequest(object):
                                 "total": total_commits,
                                 "removed": []},
             "updated_reviewers": {"added": [], "removed": []},
+            "updated_observers": {"added": [], "removed": []},
         }
 
         assert_ok(id_, expected, response.body)
@@ -122,7 +124,7 @@ class TestUpdatePullRequest(object):
         b = user_util.create_user()
         c = user_util.create_user()
         new_reviewers = [
-            {'username': b.username,'reasons': ['updated via API'],
+            {'username': b.username, 'reasons': ['updated via API'],
              'mandatory':False},
             {'username': c.username, 'reasons': ['updated via API'],
              'mandatory':False},
@@ -132,7 +134,7 @@ class TestUpdatePullRequest(object):
         removed = [a.username]
 
         pull_request = pr_util.create_pull_request(
-            reviewers=[(a.username, ['added via API'], False, [])])
+            reviewers=[(a.username, ['added via API'], False, 'reviewer', [])])
 
         id_, params = build_data(
             self.apikey, 'update_pull_request',
@@ -146,6 +148,7 @@ class TestUpdatePullRequest(object):
             "pull_request": response.json['result']['pull_request'],
             "updated_commits": {"added": [], "common": [], "removed": []},
             "updated_reviewers": {"added": added, "removed": removed},
+            "updated_observers": {"added": [], "removed": []},
         }
 
         assert_ok(id_, expected, response.body)

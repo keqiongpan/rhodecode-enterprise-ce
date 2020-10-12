@@ -61,7 +61,7 @@
     </div>
 
     <div class="main-content-full-width">
-        <table id="pull_request_list_table" class="display"></table>
+        <table id="pull_request_list_table" class="rctable table-bordered"></table>
     </div>
 
 </div>

@@ -89,36 +89,41 @@
                     if is_pr:
                         version_info = (' made in older version (v{})'.format(comment_ver_index) if is_from_old_ver == 'true' else ' made in this version')
                   %>
-
-                  <script type="text/javascript">
-                      // closure function helper
-                      var sidebarComment${comment_obj.comment_id} = function() {
-                        return renderTemplate('sideBarCommentHovercard', {
-                            version_info: "${version_info}",
-                            file_name: "${comment_obj.f_path}",
-                            line_no: "${comment_obj.line_no}",
-                            outdated: ${h.json.dumps(comment_obj.outdated)},
-                            inline: ${h.json.dumps(comment_obj.is_inline)},
-                            is_todo: ${h.json.dumps(comment_obj.is_todo)},
-                            created_on: "${h.format_date(comment_obj.created_on)}",
-                            datetime: "${comment_obj.created_on}${h.get_timezone(comment_obj.created_on, time_is_local=True)}",
-                            review_status: "${(comment_obj.review_status or '')}"
-                        })
-                      }
-                  </script>
-
-                  % if comment_obj.outdated:
-                    <i class="icon-comment-toggle tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
-                  % elif comment_obj.is_inline:
-                    <i class="icon-code tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
-                  % else:
-                    <i class="icon-comment tooltip-hovercard" data-hovercard-url="javascript:sidebarComment${comment_obj.comment_id}()"></i>
-                  % endif
-
-                  ## NEW, since refresh
+                  ## new comments, since refresh
                   % if existing_ids and comment_obj.comment_id not in existing_ids:
-                      <span class="tag">NEW</span>
+                      <div class="tooltip" style="position: absolute; left: 8px; color: #682668" title="New comment">
+                          !
+                      </div>
                   % endif
+
+                  <%
+                      data = h.json.dumps({
+                            'comment_id': comment_obj.comment_id,
+                            'version_info': version_info,
+                            'file_name': comment_obj.f_path,
+                            'line_no': comment_obj.line_no,
+                            'outdated': comment_obj.outdated,
+                            'inline': comment_obj.is_inline,
+                            'is_todo': comment_obj.is_todo,
+                            'created_on': h.format_date(comment_obj.created_on),
+                            'datetime': '{}{}'.format(comment_obj.created_on, h.get_timezone(comment_obj.created_on, time_is_local=True)),
+                            'review_status': (comment_obj.review_status or '')
+                      })
+
+                      if comment_obj.outdated:
+                          icon = 'icon-comment-toggle'
+                      elif comment_obj.is_inline:
+                          icon = 'icon-code'
+                      else:
+                          icon = 'icon-comment'
+                  %>
+
+                  <i id="commentHovercard${comment_obj.comment_id}"
+                     class="${icon} tooltip-hovercard"
+                     data-hovercard-url="javascript:sidebarComment(${comment_obj.comment_id})"
+                     data-comment-json-b64='${h.b64(data)}'>
+                  </i>
+
               </td>
 
               <td class="td-todo-gravatar">

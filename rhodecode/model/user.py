@@ -42,7 +42,7 @@ from rhodecode.lib.exceptions import (
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    _hash_key, true, false, or_, joinedload, User, UserToPerm,
+    _hash_key, func, true, false, or_, joinedload, User, UserToPerm,
     UserEmailMap, UserIpMap, UserLog)
 from rhodecode.model.meta import Session
 from rhodecode.model.auth_token import AuthTokenModel
@@ -96,7 +96,11 @@ class UserModel(BaseModel):
                     User.username.ilike(ilike_expression)
                 )
             )
+            # sort by len to have top most matches first
+            query = query.order_by(func.length(User.username))\
+                .order_by(User.username)
             query = query.limit(limit)
+
         users = query.all()
 
         _users = [

@@ -32,7 +32,7 @@ from rhodecode.lib.auth import (
     HasRepoGroupPermissionAny, AuthUser)
 from rhodecode.lib.codeblocks import filenode_as_lines_tokens
 from rhodecode.lib.index import searcher_from_config
-from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int
+from rhodecode.lib.utils2 import safe_unicode, str2bool, safe_int, safe_str
 from rhodecode.lib.vcs.nodes import FileNode
 from rhodecode.model.db import (
     func, true, or_, case, cast, in_filter_generator, String, Session,
@@ -331,7 +331,8 @@ class HomeView(BaseAppView, DataGridAppView):
             {
                 'id': obj.pull_request_id,
                 'value': org_query,
-                'value_display': 'pull request: `!{} - {}`'.format(obj.pull_request_id, obj.title[:50]),
+                'value_display': 'pull request: `!{} - {}`'.format(
+                    obj.pull_request_id, safe_str(obj.title[:50])),
                 'type': 'pull_request',
                 'url': h.route_path('pull_requests_global', pull_request_id=obj.pull_request_id)
             }

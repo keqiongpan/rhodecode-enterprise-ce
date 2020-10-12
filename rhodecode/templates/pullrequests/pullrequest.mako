@@ -112,7 +112,7 @@
                         ## REVIEWERS
                         <div class="field">
                             <div class="label label-textarea">
-                                <label for="pullrequest_reviewers">${_('Reviewers')}:</label>
+                                <label for="pullrequest_reviewers">${_('Reviewers / Observers')}:</label>
                             </div>
                             <div class="content">
                                 ## REVIEW RULES
@@ -125,29 +125,84 @@
                                     </div>
                                 </div>
 
-                                ## REVIEWERS
+                                ## REVIEWERS / OBSERVERS
                                 <div class="reviewers-title">
-                                    <div class="pr-details-title">
-                                        ${_('Pull request reviewers')}
-                                        <span class="calculate-reviewers"> - ${_('loading...')}</span>
-                                    </div>
-                                </div>
-                                <div id="reviewers" class="pr-details-content reviewers">
-                                    ## members goes here, filled via JS based on initial selection !
-                                    <input type="hidden" name="__start__" value="review_members:sequence">
-                                    <table id="review_members" class="group_members">
-                                    ## This content is loaded via JS and ReviewersPanel
-                                    </table>
-                                    <input type="hidden" name="__end__" value="review_members:sequence">
 
-                                    <div id="add_reviewer_input" class='ac'>
-                                        <div class="reviewer_ac">
-                                            ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
-                                            <div id="reviewers_container"></div>
+                                    <ul class="nav-links clearfix">
+
+                                        ## TAB1 MANDATORY REVIEWERS
+                                        <li class="active">
+                                            <a id="reviewers-btn" href="#showReviewers" tabindex="-1">
+                                                Reviewers
+                                                <span id="reviewers-cnt" data-count="0" class="menulink-counter">0</span>
+                                            </a>
+                                        </li>
+
+                                        ## TAB2 OBSERVERS
+                                        <li class="">
+                                            <a id="observers-btn" href="#showObservers" tabindex="-1">
+                                                Observers
+                                                <span id="observers-cnt"  data-count="0" class="menulink-counter">0</span>
+                                            </a>
+                                        </li>
+
+                                    </ul>
+
+                                    ## TAB1 MANDATORY REVIEWERS
+                                    <div id="reviewers-container">
+                                        <span class="calculate-reviewers">
+                                            <h4>${_('loading...')}</h4>
+                                        </span>
+
+                                        <div id="reviewers" class="pr-details-content reviewers">
+                                            ## members goes here, filled via JS based on initial selection !
+                                            <input type="hidden" name="__start__" value="review_members:sequence">
+                                            <table id="review_members" class="group_members">
+                                            ## This content is loaded via JS and ReviewersPanel, an sets reviewer_entry class on each element
+                                            </table>
+                                            <input type="hidden" name="__end__" value="review_members:sequence">
+
+                                            <div id="add_reviewer_input" class='ac'>
+                                                <div class="reviewer_ac">
+                                                    ${h.text('user', class_='ac-input', placeholder=_('Add reviewer or reviewer group'))}
+                                                    <div id="reviewers_container"></div>
+                                                </div>
+                                            </div>
+
                                         </div>
                                     </div>
 
+                                    ## TAB2 OBSERVERS
+                                    <div id="observers-container" style="display: none">
+                                        <span class="calculate-reviewers">
+                                            <h4>${_('loading...')}</h4>
+                                        </span>
+                                        % if c.rhodecode_edition_id == 'EE':
+                                        <div id="observers" class="pr-details-content observers">
+                                            ## members goes here, filled via JS based on initial selection !
+                                            <input type="hidden" name="__start__" value="observer_members:sequence">
+                                            <table id="observer_members" class="group_members">
+                                            ## This content is loaded via JS and ReviewersPanel, an sets reviewer_entry class on each element
+                                            </table>
+                                            <input type="hidden" name="__end__" value="observer_members:sequence">
+
+                                            <div id="add_observer_input" class='ac'>
+                                                <div class="observer_ac">
+                                                    ${h.text('observer', class_='ac-input', placeholder=_('Add observer or observer group'))}
+                                                    <div id="observers_container"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        % else:
+                                            <h4>${_('This feature is available in RhodeCode EE edition only. Contact {sales_email} to obtain a trial license.').format(sales_email='<a href="mailto:sales@rhodecode.com">sales@rhodecode.com</a>')|n}</h4>
+                                            <p>
+                                                Pull request observers allows adding users who don't need to leave mandatory votes, but need to be aware about certain changes.
+                                            </p>
+                                        % endif
+                                    </div>
+
                                 </div>
+
                             </div>
                         </div>
 
@@ -248,12 +303,19 @@
 
        var originalOption = data.element;
        return prefix + escapeMarkup(data.text);
-   };formatSelection:
+   };
 
    // custom code mirror
    var codeMirrorInstance = $('#pullrequest_desc').get(0).MarkupForm.cm;
 
    var diffDataHandler = function(data) {
+       if (data['error'] !== undefined) {
+           var noCommitsMsg = '<span class="alert-text-error">{0}</span>'.format(data['error']);
+           prButtonLock(true, noCommitsMsg, 'compare');
+           //make both panels equal
+           $('.target-panel').height($('.source-panel').height())
+           return false
+       }
 
        var commitElements = data['commits'];
        var files = data['files'];
@@ -307,8 +369,10 @@
        var msg = '<input id="common_ancestor" type="hidden" name="common_ancestor" value="{0}">'.format(commonAncestorId);
        msg += '<input type="hidden" name="__start__" value="revisions:sequence">'
 
+
        $.each(commitElements, function(idx, value) {
-           msg += '<input type="hidden" name="revisions" value="{0}">'.format(value["raw_id"]);
+           var commit_id = value["commit_id"]
+           msg += '<input type="hidden" name="revisions" value="{0}">'.format(commit_id);
        });
 
        msg += '<input type="hidden" name="__end__" value="revisions:sequence">'
@@ -338,8 +402,8 @@
        }
 
        //make both panels equal
-       $('.target-panel').height($('.source-panel').height())
-
+       $('.target-panel').height($('.source-panel').height());
+       return true
    };
 
    reviewersController = new ReviewersController();
@@ -465,8 +529,7 @@
          queryTargetRefs(initialData, query)
        },
        initSelection: initRefSelection()
-     }
-   );
+   });
 
    var sourceRepoSelect2 = Select2Box($sourceRepo, {
      query: function(query) {}
@@ -521,12 +584,12 @@
 
    });
 
-    $pullRequestForm.on('submit', function(e){
-        // Flush changes into textarea
-        codeMirrorInstance.save();
-        prButtonLock(true, null, 'all');
-        $pullRequestSubmit.val(_gettext('Please wait creating pull request...'));
-    });
+   $pullRequestForm.on('submit', function(e){
+       // Flush changes into textarea
+       codeMirrorInstance.save();
+       prButtonLock(true, null, 'all');
+       $pullRequestSubmit.val(_gettext('Please wait creating pull request...'));
+   });
 
    prButtonLock(true, "${_('Please select source and target')}", 'all');
 
@@ -543,12 +606,44 @@
    $sourceRef.select2('val', '${c.default_source_ref}');
 
 
-   // default reviewers
+   // default reviewers / observers
    reviewersController.loadDefaultReviewers(
        sourceRepo(), sourceRef(), targetRepo(), targetRef());
    % endif
 
-   ReviewerAutoComplete('#user');
+   ReviewerAutoComplete('#user', reviewersController);
+   ObserverAutoComplete('#observer', reviewersController);
+
+   // TODO, move this to another handler
+
+   var $reviewersBtn = $('#reviewers-btn');
+   var $reviewersContainer = $('#reviewers-container');
+
+   var $observersBtn = $('#observers-btn')
+   var $observersContainer = $('#observers-container');
+
+   $reviewersBtn.on('click', function (e) {
+
+       $observersContainer.hide();
+       $reviewersContainer.show();
+
+       $observersBtn.parent().removeClass('active');
+       $reviewersBtn.parent().addClass('active');
+       e.preventDefault();
+
+   })
+
+   $observersBtn.on('click', function (e) {
+
+       $reviewersContainer.hide();
+       $observersContainer.show();
+
+       $reviewersBtn.parent().removeClass('active');
+       $observersBtn.parent().addClass('active');
+       e.preventDefault();
+
+   })
+
  });
 </script>
 

@@ -785,15 +785,15 @@
 
 - Prefix query to allow special search:
 
-   user:admin, to search for usernames, always global
+   <strong>user:</strong>admin, to search for usernames, always global
 
-   user_group:devops, to search for user groups, always global
+   <strong>user_group:</strong>devops, to search for user groups, always global
 
-   pr:303, to search for pull request number, title, or description, always global
+   <strong>pr:</strong>303, to search for pull request number, title, or description, always global
 
-   commit:efced4, to search for commits, scoped to repositories or groups
+   <strong>commit:</strong>efced4, to search for commits, scoped to repositories or groups
 
-   file:models.py, to search for file paths, scoped to repositories or groups
+   <strong>file:</strong>models.py, to search for file paths, scoped to repositories or groups
 
 % if c.template_context['search_context']['repo_id']:
    For advanced full text search visit: <a href="${h.route_path('search_repo',repo_name=c.template_context['search_context']['repo_name'])}">repository search</a>

@@ -25,6 +25,7 @@ from pyramid.view import view_config
 from rhodecode.apps._base import RepoAppView
 from rhodecode.apps.repository.utils import get_default_reviewers_data
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
+from rhodecode.lib.vcs.backends.base import Reference
 from rhodecode.model.db import Repository
 
 log = logging.getLogger(__name__)
@@ -61,13 +62,28 @@ class RepoReviewRulesView(RepoAppView):
         target_repo_name = request.GET.get('target_repo', source_repo_name)
         target_repo = Repository.get_by_repo_name(target_repo_name)
 
-        source_ref = request.GET['source_ref']
-        target_ref = request.GET['target_ref']
-        source_commit = source_repo.get_commit(source_ref)
-        target_commit = target_repo.get_commit(target_ref)
-
         current_user = request.user.get_instance()
-        review_data = get_default_reviewers_data(
-            current_user, source_repo, source_commit, target_repo, target_commit)
+
+        source_commit_id = request.GET['source_ref']
+        source_type = request.GET['source_ref_type']
+        source_name = request.GET['source_ref_name']
+
+        target_commit_id = request.GET['target_ref']
+        target_type = request.GET['target_ref_type']
+        target_name = request.GET['target_ref_name']
+
+        try:
+            review_data = get_default_reviewers_data(
+                current_user,
+                source_repo,
+                Reference(source_type, source_name, source_commit_id),
+                target_repo,
+                Reference(target_type, target_name, target_commit_id)
+            )
+        except ValueError:
+            # No common ancestor
+            msg = "No Common ancestor found between target and source reference"
+            log.exception(msg)
+            return {'diff_info': {'error': msg}}
 
         return review_data

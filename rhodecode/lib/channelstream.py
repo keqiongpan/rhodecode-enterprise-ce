@@ -225,14 +225,26 @@ def write_history(config, message):
 
 def get_connection_validators(registry):
     validators = []
-    for k, config in registry.rhodecode_plugins.iteritems():
+    for k, config in registry.rhodecode_plugins.items():
         validator = config.get('channelstream', {}).get('connect_validator')
         if validator:
             validators.append(validator)
     return validators
 
 
+def get_channelstream_config(registry=None):
+    if not registry:
+        registry = get_current_registry()
+
+    rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
+    channelstream_config = rhodecode_plugins.get('channelstream', {})
+    return channelstream_config
+
+
 def post_message(channel, message, username, registry=None):
+    channelstream_config = get_channelstream_config(registry)
+    if not channelstream_config.get('enabled'):
+        return
 
     message_obj = message
     if isinstance(message, basestring):
@@ -242,26 +254,118 @@ def post_message(channel, message, username, registry=None):
             'topic': '/notifications'
         }
 
-    if not registry:
-        registry = get_current_registry()
-
     log.debug('Channelstream: sending notification to channel %s', channel)
-    rhodecode_plugins = getattr(registry, 'rhodecode_plugins', {})
-    channelstream_config = rhodecode_plugins.get('channelstream', {})
-    if channelstream_config.get('enabled'):
-        payload = {
-            'type': 'message',
-            'timestamp': datetime.datetime.utcnow(),
-            'user': 'system',
-            'exclude_users': [username],
-            'channel': channel,
-            'message': message_obj
-        }
+    payload = {
+        'type': 'message',
+        'timestamp': datetime.datetime.utcnow(),
+        'user': 'system',
+        'exclude_users': [username],
+        'channel': channel,
+        'message': message_obj
+    }
 
-        try:
-            return channelstream_request(
-                channelstream_config, [payload], '/message',
-                raise_exc=False)
-        except ChannelstreamException:
-            log.exception('Failed to send channelstream data')
-            raise
+    try:
+        return channelstream_request(
+            channelstream_config, [payload], '/message',
+            raise_exc=False)
+    except ChannelstreamException:
+        log.exception('Failed to send channelstream data')
+        raise
+
+
+def _reload_link(label):
+    return (
+        '<a onclick="window.location.reload()">'
+        '<strong>{}</strong>'
+        '</a>'.format(label)
+    )
+
+
+def pr_channel(pull_request):
+    repo_name = pull_request.target_repo.repo_name
+    pull_request_id = pull_request.pull_request_id
+    channel = '/repo${}$/pr/{}'.format(repo_name, pull_request_id)
+    log.debug('Getting pull-request channelstream broadcast channel: %s', channel)
+    return channel
+
+
+def comment_channel(repo_name, commit_obj=None, pull_request_obj=None):
+    channel = None
+    if commit_obj:
+        channel = u'/repo${}$/commit/{}'.format(
+            repo_name, commit_obj.raw_id
+        )
+    elif pull_request_obj:
+        channel = u'/repo${}$/pr/{}'.format(
+            repo_name, pull_request_obj.pull_request_id
+        )
+    log.debug('Getting comment channelstream broadcast channel: %s', channel)
+
+    return channel
+
+
+def pr_update_channelstream_push(request, pr_broadcast_channel, user, msg, **kwargs):
+    """
+    Channel push on pull request update
+    """
+    if not pr_broadcast_channel:
+        return
+
+    _ = request.translate
+
+    message = '{} {}'.format(
+        msg,
+        _reload_link(_(' Reload page to load changes')))
+
+    message_obj = {
+        'message': message,
+        'level': 'success',
+        'topic': '/notifications'
+    }
+
+    post_message(
+        pr_broadcast_channel, message_obj, user.username,
+        registry=request.registry)
+
+
+def comment_channelstream_push(request, comment_broadcast_channel, user, msg, **kwargs):
+    """
+    Channelstream push on comment action, on commit, or pull-request
+    """
+    if not comment_broadcast_channel:
+        return
+
+    _ = request.translate
+
+    comment_data = kwargs.pop('comment_data', {})
+    user_data = kwargs.pop('user_data', {})
+    comment_id = comment_data.get('comment_id')
+
+    message = '<strong>{}</strong> {} #{}, {}'.format(
+        user.username,
+        msg,
+        comment_id,
+        _reload_link(_('Reload page to see new comments')),
+    )
+
+    message_obj = {
+        'message': message,
+        'level': 'success',
+        'topic': '/notifications'
+    }
+
+    post_message(
+        comment_broadcast_channel, message_obj, user.username,
+        registry=request.registry)
+
+    message_obj = {
+        'message': None,
+        'user': user.username,
+        'comment_id': comment_id,
+        'comment_data': comment_data,
+        'user_data': user_data,
+        'topic': '/comment'
+    }
+    post_message(
+        comment_broadcast_channel, message_obj, user.username,
+        registry=request.registry)

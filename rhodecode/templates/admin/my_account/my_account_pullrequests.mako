@@ -33,7 +33,7 @@
         <h3 class="panel-title">${_('Pull Requests You Participate In')}</h3>
     </div>
     <div class="panel-body panel-body-min-height">
-        <table id="pull_request_list_table" class="display"></table>
+        <table id="pull_request_list_table" class="rctable table-bordered"></table>
     </div>
 </div>
 
@@ -58,14 +58,8 @@
 
             dom: 'rtp',
             pageLength: ${c.visual.dashboard_items},
-            order: [[2, "desc"]],
+            order: [[1, "desc"]],
             columns: [
-                {
-                    data: {
-                        "_": "target_repo",
-                        "sort": "target_repo"
-                    }, title: "${_('Target Repo')}", className: "td-targetrepo", orderable: false
-                },
                 {
                     data: {
                         "_": "status",
@@ -101,7 +95,13 @@
                         "_": "updated_on",
                         "sort": "updated_on_raw"
                     }, title: "${_('Last Update')}", className: "td-time"
-                }
+                },
+                {
+                    data: {
+                        "_": "target_repo",
+                        "sort": "target_repo"
+                    }, title: "${_('Target Repo')}", className: "td-targetrepo", orderable: false
+                },
             ],
             language: {
                 paginate: DEFAULT_GRID_PAGINATION,

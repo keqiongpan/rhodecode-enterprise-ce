@@ -56,7 +56,8 @@ from webhelpers2.text import remove_formatting
 
 from rhodecode.translation import _
 from rhodecode.lib.vcs import get_vcs_instance, VCSError
-from rhodecode.lib.vcs.backends.base import EmptyCommit, Reference
+from rhodecode.lib.vcs.backends.base import (
+    EmptyCommit, Reference, unicode_to_reference, reference_to_unicode)
 from rhodecode.lib.utils2 import (
     str2bool, safe_str, get_commit_safe, safe_unicode, sha1_safe,
     time_to_datetime, aslist, Optional, safe_int, get_clone_url, AttributeDict,
@@ -3773,12 +3774,12 @@ class ChangesetComment(Base, BaseModel):
     resolved_comment = relationship('ChangesetComment', remote_side=comment_id, back_populates='resolved_by')
     resolved_by = relationship('ChangesetComment', back_populates='resolved_comment')
 
-    author = relationship('User', lazy='joined')
+    author = relationship('User', lazy='select')
     repo = relationship('Repository')
-    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='joined')
-    pull_request = relationship('PullRequest', lazy='joined')
-    pull_request_version = relationship('PullRequestVersion')
-    history = relationship('ChangesetCommentHistory', cascade='all, delete-orphan', lazy='joined', order_by='ChangesetCommentHistory.version')
+    status_change = relationship('ChangesetStatus', cascade="all, delete-orphan", lazy='select')
+    pull_request = relationship('PullRequest', lazy='select')
+    pull_request_version = relationship('PullRequestVersion', lazy='select')
+    history = relationship('ChangesetCommentHistory', cascade='all, delete-orphan', lazy='select', order_by='ChangesetCommentHistory.version')
 
     @classmethod
     def get_users(cls, revision=None, pull_request_id=None):
@@ -3983,10 +3984,10 @@ class ChangesetStatus(Base, BaseModel):
     version = Column('version', Integer(), nullable=False, default=0)
     pull_request_id = Column("pull_request_id", Integer(), ForeignKey('pull_requests.pull_request_id'), nullable=True)
 
-    author = relationship('User', lazy='joined')
-    repo = relationship('Repository')
-    comment = relationship('ChangesetComment', lazy='joined')
-    pull_request = relationship('PullRequest', lazy='joined')
+    author = relationship('User', lazy='select')
+    repo = relationship('Repository', lazy='select')
+    comment = relationship('ChangesetComment', lazy='select')
+    pull_request = relationship('PullRequest', lazy='select')
 
     def __unicode__(self):
         return u"<%s('%s[v%s]:%s')>" % (
@@ -4248,26 +4249,11 @@ class _PullRequestBase(BaseModel):
 
     @staticmethod
     def unicode_to_reference(raw):
-        """
-        Convert a unicode (or string) to a reference object.
-        If unicode evaluates to False it returns None.
-        """
-        if raw:
-            refs = raw.split(':')
-            return Reference(*refs)
-        else:
-            return None
+        return unicode_to_reference(raw)
 
     @staticmethod
     def reference_to_unicode(ref):
-        """
-        Convert a reference object to unicode.
-        If reference is None it returns None.
-        """
-        if ref:
-            return u':'.join(ref)
-        else:
-            return None
+        return reference_to_unicode(ref)
 
     def get_api_data(self, with_merge_state=True):
         from rhodecode.model.pull_request import PullRequestModel
@@ -4465,6 +4451,37 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().reviewers_statuses(self)
 
+    def get_pull_request_reviewers(self, role=None):
+        qry = PullRequestReviewers.query()\
+            .filter(PullRequestReviewers.pull_request_id == self.pull_request_id)
+        if role:
+            qry = qry.filter(PullRequestReviewers.role == role)
+
+        return qry.all()
+
+    @property
+    def reviewers_count(self):
+        qry = PullRequestReviewers.query()\
+            .filter(PullRequestReviewers.pull_request_id == self.pull_request_id)\
+            .filter(PullRequestReviewers.role == PullRequestReviewers.ROLE_REVIEWER)
+        return qry.count()
+
+    @property
+    def observers_count(self):
+        qry = PullRequestReviewers.query()\
+            .filter(PullRequestReviewers.pull_request_id == self.pull_request_id)\
+            .filter(PullRequestReviewers.role == PullRequestReviewers.ROLE_OBSERVER)
+        return qry.count()
+
+    def observers(self):
+        qry = PullRequestReviewers.query()\
+            .filter(PullRequestReviewers.pull_request_id == self.pull_request_id)\
+            .filter(PullRequestReviewers.role == PullRequestReviewers.ROLE_OBSERVER)\
+            .all()
+
+        for entry in qry:
+            yield entry, entry.user
+
     @property
     def workspace_id(self):
         from rhodecode.model.pull_request import PullRequestModel
@@ -4512,6 +4529,9 @@ class PullRequestVersion(Base, _PullRequestBase):
     @property
     def reviewers(self):
         return self.pull_request.reviewers
+    @property
+    def reviewers(self):
+        return self.pull_request.reviewers
 
     @property
     def versions(self):
@@ -4530,6 +4550,9 @@ class PullRequestVersion(Base, _PullRequestBase):
     def reviewers_statuses(self):
         return self.pull_request.reviewers_statuses()
 
+    def observers(self):
+        return self.pull_request.observers()
+
 
 class PullRequestReviewers(Base, BaseModel):
     __tablename__ = 'pull_request_reviewers'
@@ -4538,6 +4561,7 @@ class PullRequestReviewers(Base, BaseModel):
     )
     ROLE_REVIEWER = u'reviewer'
     ROLE_OBSERVER = u'observer'
+    ROLES = [ROLE_REVIEWER, ROLE_OBSERVER]
 
     @hybrid_property
     def reasons(self):
@@ -4588,6 +4612,15 @@ class PullRequestReviewers(Base, BaseModel):
                 user_group_data['vote_rule'] = self.rule_data['vote_rule']
 
             return user_group_data
+
+    @classmethod
+    def get_pull_request_reviewers(cls, pull_request_id, role=None):
+        qry = PullRequestReviewers.query()\
+            .filter(PullRequestReviewers.pull_request_id == pull_request_id)
+        if role:
+            qry = qry.filter(PullRequestReviewers.role == role)
+
+        return qry.all()
 
     def __unicode__(self):
         return u"<%s('id:%s')>" % (self.__class__.__name__,
@@ -4954,16 +4987,21 @@ class RepoReviewRuleUser(Base, BaseModel):
     __table_args__ = (
         base_table_args
     )
+    ROLE_REVIEWER = u'reviewer'
+    ROLE_OBSERVER = u'observer'
+    ROLES = [ROLE_REVIEWER, ROLE_OBSERVER]
 
     repo_review_rule_user_id = Column('repo_review_rule_user_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
     user_id = Column("user_id", Integer(), ForeignKey('users.user_id'), nullable=False)
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
+    role = Column('role', Unicode(255), nullable=True, default=ROLE_REVIEWER)
     user = relationship('User')
 
     def rule_data(self):
         return {
-            'mandatory': self.mandatory
+            'mandatory': self.mandatory,
+            'role': self.role,
         }
 
 
@@ -4974,17 +5012,22 @@ class RepoReviewRuleUserGroup(Base, BaseModel):
     )
 
     VOTE_RULE_ALL = -1
+    ROLE_REVIEWER = u'reviewer'
+    ROLE_OBSERVER = u'observer'
+    ROLES = [ROLE_REVIEWER, ROLE_OBSERVER]
 
     repo_review_rule_users_group_id = Column('repo_review_rule_users_group_id', Integer(), primary_key=True)
     repo_review_rule_id = Column("repo_review_rule_id", Integer(), ForeignKey('repo_review_rules.repo_review_rule_id'))
-    users_group_id = Column("users_group_id", Integer(),ForeignKey('users_groups.users_group_id'), nullable=False)
+    users_group_id = Column("users_group_id", Integer(), ForeignKey('users_groups.users_group_id'), nullable=False)
     mandatory = Column("mandatory", Boolean(), nullable=False, default=False)
+    role = Column('role', Unicode(255), nullable=True, default=ROLE_REVIEWER)
     vote_rule = Column("vote_rule", Integer(), nullable=True, default=VOTE_RULE_ALL)
     users_group = relationship('UserGroup')
 
     def rule_data(self):
         return {
             'mandatory': self.mandatory,
+            'role': self.role,
             'vote_rule': self.vote_rule
         }
 

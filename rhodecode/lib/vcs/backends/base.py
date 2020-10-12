@@ -57,7 +57,43 @@ FILEMODE_DEFAULT = 0o100644
 FILEMODE_EXECUTABLE = 0o100755
 EMPTY_COMMIT_ID = '0' * 40
 
-Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
+_Reference = collections.namedtuple('Reference', ('type', 'name', 'commit_id'))
+
+
+class Reference(_Reference):
+
+    @property
+    def branch(self):
+        if self.type == 'branch':
+            return self.name
+
+    @property
+    def bookmark(self):
+        if self.type == 'book':
+            return self.name
+
+
+def unicode_to_reference(raw):
+    """
+    Convert a unicode (or string) to a reference object.
+    If unicode evaluates to False it returns None.
+    """
+    if raw:
+        refs = raw.split(':')
+        return Reference(*refs)
+    else:
+        return None
+
+
+def reference_to_unicode(ref):
+    """
+    Convert a reference object to unicode.
+    If reference is None it returns None.
+    """
+    if ref:
+        return u':'.join(ref)
+    else:
+        return None
 
 
 class MergeFailureReason(object):

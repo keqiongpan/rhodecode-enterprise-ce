@@ -187,12 +187,12 @@
             <div class="sidebar-element clear-both">
                 <% vote_title = _ungettext(
                         'Status calculated based on votes from {} reviewer',
-                        'Status calculated based on votes from {} reviewers', len(c.allowed_reviewers)).format(len(c.allowed_reviewers))
+                        'Status calculated based on votes from {} reviewers', c.reviewers_count).format(c.reviewers_count)
                 %>
 
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${vote_title}">
                     <i class="icon-circle review-status-${c.commit_review_status}"></i>
-                    ${len(c.allowed_reviewers)}
+                    ${c.reviewers_count}
                 </div>
             </div>
 
@@ -420,7 +420,8 @@
             e.preventDefault();
         });
 
-        ReviewersPanel.init(null, setReviewersData);
+        reviewersController = new ReviewersController();
+        ReviewersPanel.init(reviewersController, null, setReviewersData);
 
         var channel = '${c.commit_broadcast_channel}';
         new ReviewerPresenceController(channel)

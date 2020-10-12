@@ -75,8 +75,8 @@ var CommitsController = function () {
             height: height,
             x_step: x_step,
             y_step: 42,
-            dotRadius: 3.5,
-            lineWidth: 2.5
+            dotRadius: 3.8,
+            lineWidth: 2.8
         };
 
         var prevCommitsData = this.$graphCanvas.data('commits') || [];
@@ -98,11 +98,12 @@ var CommitsController = function () {
 
         this.setLabelText(edgeData);
 
-        var padding = 90;
+        // main padding from top, aligns the first dot graph
+        var padding = 100;
         if (prev_link) {
             padding += 34;
-
         }
+
         $('#graph_nodes').css({'padding-top': padding});
 
         $.each($('.message.truncate'), function(idx, value) {

@@ -341,6 +341,10 @@ def includeme(config):
         name='json_ext',
         factory='rhodecode.lib.ext_json_renderer.pyramid_ext_json')
 
+    config.add_renderer(
+        name='string_html',
+        factory='rhodecode.lib.string_renderer.html')
+
     # include RhodeCode plugins
     includes = aslist(settings.get('rhodecode.includes', []))
     for inc in includes:
@@ -408,6 +412,7 @@ def sanitize_settings_and_apply_defaults(global_config, settings):
     """
 
     settings.setdefault('rhodecode.edition', 'Community Edition')
+    settings.setdefault('rhodecode.edition_id', 'CE')
 
     if 'mako.default_filters' not in settings:
         # set custom default filters if we don't have it defined

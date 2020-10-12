@@ -16,8 +16,8 @@ examples = [
     ),
 
     (
-    'Redmine',
-    '(^#|\s#)(?P<issue_id>\d+)',
+    'Tickets with #123 (Redmine etc)',
+    '(?<![a-zA-Z0-9_/]{1,10}-?)(#)(?P<issue_id>\d+)',
     'https://myissueserver.com/${repo}/issue/${issue_id}',
     ''
     ),
@@ -38,14 +38,15 @@ examples = [
 
     (
     'JIRA - All tickets',
-    '(^|\s\w+-\d+)',
-    'https://myjira.com/browse/${id}',
+    # official JIRA ticket pattern
+    '(?<![a-zA-Z0-9_/#]-?)(?P<issue_id>[A-Z]{1,6}-(?:[1-9][0-9]{0,7}))',
+    'https://myjira.com/browse/${issue_id}',
     ''
     ),
 
     (
-    'JIRA - Project (JRA)',
-    '(?:(^|\s)(?P<issue_id>(?:JRA-|JRA-)(?:\d+)))',
+    'JIRA - Single project (JRA-XXXXXXXX)',
+    '(?<![a-zA-Z0-9_/#]-?)(?P<issue_id>JRA-(?:[1-9][0-9]{0,7}))',
     'https://myjira.com/${issue_id}',
     ''
     ),
@@ -275,13 +276,19 @@ examples = [
                 <div class='textarea-full'>
                     <textarea id="test_pattern_data" rows="12">
 This is an example text for testing issue tracker patterns.
-This commit fixes ticket #451 and ticket #910.
-Following tickets will get mentioned:
+This commit fixes ticket #451 and ticket #910, reference for JRA-401.
+The following tickets will get mentioned:
 #123
-#456
-JRA-123
-JRA-456
-Open a pull request !101 to contribute !
+#456 and PROJ-101
+JRA-123 and #123
+PROJ-456
+
+[my artifact](http://something.com/JRA-1234-build.zip)
+
+- #1001
+- JRA-998
+
+Open a pull request !101 to contribute!
 Added tag v1.3.0 for commit 0f3b629be725
 
 Add a test pattern here and hit preview to see the link.

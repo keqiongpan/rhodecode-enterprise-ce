@@ -399,7 +399,7 @@ class CommentsModel(BaseModel):
             recipients += [pull_request_obj.author]
 
             # add the reviewers to notification
-            recipients += [x.user for x in pull_request_obj.reviewers]
+            recipients += [x.user for x in pull_request_obj.get_pull_request_reviewers()]
 
             pr_target_repo = pull_request_obj.target_repo
             pr_source_repo = pull_request_obj.source_repo
@@ -436,9 +436,8 @@ class CommentsModel(BaseModel):
                 'thread_ids': [pr_url, pr_comment_url],
             })
 
-        recipients += [self._get_user(u) for u in (extra_recipients or [])]
-
         if send_email:
+            recipients += [self._get_user(u) for u in (extra_recipients or [])]
             # pre-generate the subject for notification itself
             (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
                 notification_type, **kwargs)
@@ -463,54 +462,10 @@ class CommentsModel(BaseModel):
         else:
             action = 'repo.commit.comment.create'
 
-        comment_id = comment.comment_id
         comment_data = comment.get_api_data()
 
         self._log_audit_action(
             action, {'data': comment_data}, auth_user, comment)
-
-        channel = None
-        if commit_obj:
-            repo_name = repo.repo_name
-            channel = u'/repo${}$/commit/{}'.format(
-                repo_name,
-                commit_obj.raw_id
-            )
-        elif pull_request_obj:
-            repo_name = pr_target_repo.repo_name
-            channel = u'/repo${}$/pr/{}'.format(
-                repo_name,
-                pull_request_obj.pull_request_id
-            )
-
-        if channel:
-            username = user.username
-            message = '<strong>{}</strong> {} #{}, {}'
-            message = message.format(
-                username,
-                _('posted a new comment'),
-                comment_id,
-                _('Refresh the page to see new comments.'))
-
-            message_obj = {
-                'message': message,
-                'level': 'success',
-                'topic': '/notifications'
-            }
-
-            channelstream.post_message(
-                channel, message_obj, user.username,
-                registry=get_current_registry())
-
-            message_obj = {
-                'message': None,
-                'user': username,
-                'comment_id': comment_id,
-                'topic': '/comment'
-            }
-            channelstream.post_message(
-                channel, message_obj, user.username,
-                registry=get_current_registry())
 
         return comment
 
@@ -586,17 +541,20 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def get_all_comments(self, repo_id, revision=None, pull_request=None):
+    def get_all_comments(self, repo_id, revision=None, pull_request=None, count_only=False):
         q = ChangesetComment.query()\
                 .filter(ChangesetComment.repo_id == repo_id)
         if revision:
             q = q.filter(ChangesetComment.revision == revision)
         elif pull_request:
             pull_request = self.__get_pull_request(pull_request)
-            q = q.filter(ChangesetComment.pull_request == pull_request)
+            q = q.filter(ChangesetComment.pull_request_id == pull_request.pull_request_id)
         else:
             raise Exception('Please specify commit or pull_request')
         q = q.order_by(ChangesetComment.created_on)
+        if count_only:
+            return q.count()
+
         return q.all()
 
     def get_url(self, comment, request=None, permalink=False, anchor=None):

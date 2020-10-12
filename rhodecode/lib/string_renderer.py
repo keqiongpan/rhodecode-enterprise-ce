@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2016-2020 RhodeCode GmbH
+# Copyright (C) 2010-2020 RhodeCode GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License, version 3
@@ -18,23 +18,18 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-import colander
-from rhodecode.model.validation_schema import validators, preparers, types
 
-DEFAULT_ROLE = 'reviewer'
-VALID_ROLES = ['reviewer', 'observer']
+def html(info):
+    """
+    Custom string as html content_type renderer for pyramid
+    """
+    def _render(value, system):
+        request = system.get('request')
+        if request is not None:
+            response = request.response
+            ct = response.content_type
+            if ct == response.default_content_type:
+                response.content_type = 'text/html'
+        return value
 
-
-class ReviewerSchema(colander.MappingSchema):
-    username = colander.SchemaNode(types.StrOrIntType())
-    reasons = colander.SchemaNode(colander.List(), missing=['no reason specified'])
-    mandatory = colander.SchemaNode(colander.Boolean(), missing=False)
-    rules = colander.SchemaNode(colander.List(), missing=[])
-    role = colander.SchemaNode(colander.String(), missing=DEFAULT_ROLE,
-                               validator=colander.OneOf(VALID_ROLES))
-
-
-class ReviewerListSchema(colander.SequenceSchema):
-    reviewers = ReviewerSchema()
-
-
+    return _render

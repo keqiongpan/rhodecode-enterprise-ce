@@ -26,12 +26,15 @@ from rhodecode.api.utils import (
     has_superadmin_permission, Optional, OAttr, get_repo_or_error,
     get_pull_request_or_error, get_commit_or_error, get_user_or_error,
     validate_repo_permissions, resolve_ref_or_error, validate_set_owner_permissions)
+from rhodecode.lib import channelstream
 from rhodecode.lib.auth import (HasRepoPermissionAnyApi)
 from rhodecode.lib.base import vcs_operation_context
 from rhodecode.lib.utils2 import str2bool
+from rhodecode.lib.vcs.backends.base import unicode_to_reference
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
-from rhodecode.model.db import Session, ChangesetStatus, ChangesetComment, PullRequest
+from rhodecode.model.db import (
+    Session, ChangesetStatus, ChangesetComment, PullRequest, PullRequestReviewers)
 from rhodecode.model.pull_request import PullRequestModel, MergeCheck
 from rhodecode.model.settings import SettingsModel
 from rhodecode.model.validation_schema import Invalid
@@ -502,16 +505,19 @@ def comment_pull_request(
         },
         error :  null
     """
+    _ = request.translate
+
     pull_request = get_pull_request_or_error(pullrequestid)
     if Optional.extract(repoid):
         repo = get_repo_or_error(repoid)
     else:
         repo = pull_request.target_repo
 
+    db_repo_name = repo.repo_name
     auth_user = apiuser
     if not isinstance(userid, Optional):
         is_repo_admin = HasRepoPermissionAnyApi('repository.admin')(
-            user=apiuser, repo_name=repo.repo_name)
+            user=apiuser, repo_name=db_repo_name)
         if has_superadmin_permission(apiuser) or is_repo_admin:
             apiuser = get_user_or_error(userid)
             auth_user = apiuser.AuthUser()
@@ -596,6 +602,7 @@ def comment_pull_request(
         extra_recipients=extra_recipients,
         send_email=send_email
     )
+    is_inline = comment.is_inline
 
     if allowed_to_change_status and status:
         old_calculated_status = pull_request.calculated_review_status()
@@ -628,14 +635,39 @@ def comment_pull_request(
         'comment_id': comment.comment_id if comment else None,
         'status': {'given': status, 'was_changed': status_change},
     }
+
+    comment_broadcast_channel = channelstream.comment_channel(
+        db_repo_name, pull_request_obj=pull_request)
+
+    comment_data = data
+    comment_type = 'inline' if is_inline else 'general'
+    channelstream.comment_channelstream_push(
+        request, comment_broadcast_channel, apiuser,
+        _('posted a new {} comment').format(comment_type),
+        comment_data=comment_data)
+
     return data
+
+def _reviewers_validation(obj_list):
+    schema = ReviewerListSchema()
+    try:
+        reviewer_objects = schema.deserialize(obj_list)
+    except Invalid as err:
+        raise JSONRPCValidationError(colander_exc=err)
+
+    # validate users
+    for reviewer_object in reviewer_objects:
+        user = get_user_or_error(reviewer_object['username'])
+        reviewer_object['user_id'] = user.user_id
+    return reviewer_objects
 
 
 @jsonrpc_method()
 def create_pull_request(
         request, apiuser, source_repo, target_repo, source_ref, target_ref,
         owner=Optional(OAttr('apiuser')), title=Optional(''), description=Optional(''),
-        description_renderer=Optional(''), reviewers=Optional(None)):
+        description_renderer=Optional(''),
+        reviewers=Optional(None), observers=Optional(None)):
     """
     Creates a new pull request.
 
@@ -673,6 +705,13 @@ def create_pull_request(
         Accepts username strings or objects of the format:
 
             [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+    :param observers: Set the new pull request observers list.
+        Reviewer defined by review rules will be added automatically to the
+        defined list. This feature is only available in RhodeCode EE
+    :type observers: Optional(list)
+        Accepts username strings or objects of the format:
+
+            [{'username': 'nick', 'reasons': ['original author']}]
     """
 
     source_db_repo = get_repo_or_error(source_repo)
@@ -686,34 +725,39 @@ def create_pull_request(
     full_source_ref = resolve_ref_or_error(source_ref, source_db_repo)
     full_target_ref = resolve_ref_or_error(target_ref, target_db_repo)
 
-    source_commit = get_commit_or_error(full_source_ref, source_db_repo)
-    target_commit = get_commit_or_error(full_target_ref, target_db_repo)
+    get_commit_or_error(full_source_ref, source_db_repo)
+    get_commit_or_error(full_target_ref, target_db_repo)
 
     reviewer_objects = Optional.extract(reviewers) or []
+    observer_objects = Optional.extract(observers) or []
 
     # serialize and validate passed in given reviewers
     if reviewer_objects:
-        schema = ReviewerListSchema()
-        try:
-            reviewer_objects = schema.deserialize(reviewer_objects)
-        except Invalid as err:
-            raise JSONRPCValidationError(colander_exc=err)
+        reviewer_objects = _reviewers_validation(reviewer_objects)
 
-        # validate users
-        for reviewer_object in reviewer_objects:
-            user = get_user_or_error(reviewer_object['username'])
-            reviewer_object['user_id'] = user.user_id
+    if observer_objects:
+        observer_objects = _reviewers_validation(reviewer_objects)
 
-    get_default_reviewers_data, validate_default_reviewers = \
+    get_default_reviewers_data, validate_default_reviewers, validate_observers = \
         PullRequestModel().get_reviewer_functions()
+
+    source_ref_obj = unicode_to_reference(full_source_ref)
+    target_ref_obj = unicode_to_reference(full_target_ref)
 
     # recalculate reviewers logic, to make sure we can validate this
     default_reviewers_data = get_default_reviewers_data(
-        owner, source_db_repo,
-        source_commit, target_db_repo, target_commit)
+        owner,
+        source_db_repo,
+        source_ref_obj,
+        target_db_repo,
+        target_ref_obj,
+    )
 
-    # now MERGE our given with the calculated
-    reviewer_objects = default_reviewers_data['reviewers'] + reviewer_objects
+    # now MERGE our given with the calculated from the default rules
+    just_reviewers = [
+        x for x in default_reviewers_data['reviewers']
+        if x['role'] == PullRequestReviewers.ROLE_REVIEWER]
+    reviewer_objects = just_reviewers + reviewer_objects
 
     try:
         reviewers = validate_default_reviewers(
@@ -721,9 +765,21 @@ def create_pull_request(
     except ValueError as e:
         raise JSONRPCError('Reviewers Validation: {}'.format(e))
 
+    # now MERGE our given with the calculated from the default rules
+    just_observers = [
+        x for x in default_reviewers_data['reviewers']
+        if x['role'] == PullRequestReviewers.ROLE_OBSERVER]
+    observer_objects = just_observers + observer_objects
+
+    try:
+        observers = validate_observers(
+            observer_objects, default_reviewers_data)
+    except ValueError as e:
+        raise JSONRPCError('Observer Validation: {}'.format(e))
+
     title = Optional.extract(title)
     if not title:
-        title_source_ref = source_ref.split(':', 2)[1]
+        title_source_ref = source_ref_obj.name
         title = PullRequestModel().generate_pullrequest_title(
             source=source_repo,
             source_ref=title_source_ref,
@@ -732,20 +788,17 @@ def create_pull_request(
 
     diff_info = default_reviewers_data['diff_info']
     common_ancestor_id = diff_info['ancestor']
-    commits = diff_info['commits']
+    # NOTE(marcink): reversed is consistent with how we open it in the WEB interface
+    commits = [commit['commit_id'] for commit in reversed(diff_info['commits'])]
 
     if not common_ancestor_id:
-        raise JSONRPCError('no common ancestor found')
+        raise JSONRPCError('no common ancestor found between specified references')
 
     if not commits:
-        raise JSONRPCError('no commits found')
-
-    # NOTE(marcink): reversed is consistent with how we open it in the WEB interface
-    revisions = [commit.raw_id for commit in reversed(commits)]
+        raise JSONRPCError('no commits found for merge between specified references')
 
     # recalculate target ref based on ancestor
-    target_ref_type, target_ref_name, __ = full_target_ref.split(':')
-    full_target_ref = ':'.join((target_ref_type, target_ref_name, common_ancestor_id))
+    full_target_ref = ':'.join((target_ref_obj.type, target_ref_obj.name, common_ancestor_id))
 
     # fetch renderer, if set fallback to plain in case of PR
     rc_config = SettingsModel().get_all_settings()
@@ -760,8 +813,9 @@ def create_pull_request(
         target_repo=target_repo,
         target_ref=full_target_ref,
         common_ancestor_id=common_ancestor_id,
-        revisions=revisions,
+        revisions=commits,
         reviewers=reviewers,
+        observers=observers,
         title=title,
         description=description,
         description_renderer=description_renderer,
@@ -781,7 +835,7 @@ def create_pull_request(
 def update_pull_request(
         request, apiuser, pullrequestid, repoid=Optional(None),
         title=Optional(''), description=Optional(''), description_renderer=Optional(''),
-        reviewers=Optional(None), update_commits=Optional(None)):
+        reviewers=Optional(None), observers=Optional(None), update_commits=Optional(None)):
     """
     Updates a pull request.
 
@@ -803,7 +857,11 @@ def update_pull_request(
         Accepts username strings or objects of the format:
 
             [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+    :param observers: Update pull request observers list with new value.
+    :type observers: Optional(list)
+        Accepts username strings or objects of the format:
 
+            [{'username': 'nick', 'reasons': ['should be aware about this PR']}]
     :param update_commits: Trigger update of commits for this pull request
     :type: update_commits: Optional(bool)
 
@@ -816,6 +874,12 @@ def update_pull_request(
             "msg": "Updated pull request `63`",
             "pull_request": <pull_request_object>,
             "updated_reviewers": {
+              "added": [
+                "username"
+              ],
+              "removed": []
+            },
+            "updated_observers": {
               "added": [
                 "username"
               ],
@@ -852,36 +916,14 @@ def update_pull_request(
                 pullrequestid,))
 
     reviewer_objects = Optional.extract(reviewers) or []
-
-    if reviewer_objects:
-        schema = ReviewerListSchema()
-        try:
-            reviewer_objects = schema.deserialize(reviewer_objects)
-        except Invalid as err:
-            raise JSONRPCValidationError(colander_exc=err)
-
-        # validate users
-        for reviewer_object in reviewer_objects:
-            user = get_user_or_error(reviewer_object['username'])
-            reviewer_object['user_id'] = user.user_id
-
-        get_default_reviewers_data, get_validated_reviewers = \
-            PullRequestModel().get_reviewer_functions()
-
-        # re-use stored rules
-        reviewer_rules = pull_request.reviewer_data
-        try:
-            reviewers = get_validated_reviewers(
-                reviewer_objects, reviewer_rules)
-        except ValueError as e:
-            raise JSONRPCError('Reviewers Validation: {}'.format(e))
-    else:
-        reviewers = []
+    observer_objects = Optional.extract(observers) or []
 
     title = Optional.extract(title)
     description = Optional.extract(description)
     description_renderer = Optional.extract(description_renderer)
 
+    # Update title/description
+    title_changed = False
     if title or description:
         PullRequestModel().edit(
             pull_request,
@@ -890,8 +932,12 @@ def update_pull_request(
             description_renderer or pull_request.description_renderer,
             apiuser)
         Session().commit()
+        title_changed = True
 
     commit_changes = {"added": [], "common": [], "removed": []}
+
+    # Update commits
+    commits_changed = False
     if str2bool(Optional.extract(update_commits)):
 
         if pull_request.pull_request_state != PullRequest.STATE_CREATED:
@@ -907,12 +953,44 @@ def update_pull_request(
                     pull_request, db_user)
                 commit_changes = update_response.changes or commit_changes
             Session().commit()
+            commits_changed = True
 
+    # Update reviewers
+    # serialize and validate passed in given reviewers
+    if reviewer_objects:
+        reviewer_objects = _reviewers_validation(reviewer_objects)
+
+    if observer_objects:
+        observer_objects = _reviewers_validation(reviewer_objects)
+
+    # re-use stored rules
+    default_reviewers_data = pull_request.reviewer_data
+
+    __, validate_default_reviewers, validate_observers = \
+        PullRequestModel().get_reviewer_functions()
+
+    if reviewer_objects:
+        try:
+            reviewers = validate_default_reviewers(reviewer_objects, default_reviewers_data)
+        except ValueError as e:
+            raise JSONRPCError('Reviewers Validation: {}'.format(e))
+    else:
+        reviewers = []
+
+    if observer_objects:
+        try:
+            observers = validate_default_reviewers(reviewer_objects, default_reviewers_data)
+        except ValueError as e:
+            raise JSONRPCError('Observer Validation: {}'.format(e))
+    else:
+        observers = []
+
+    reviewers_changed = False
     reviewers_changes = {"added": [], "removed": []}
     if reviewers:
         old_calculated_status = pull_request.calculated_review_status()
         added_reviewers, removed_reviewers = \
-            PullRequestModel().update_reviewers(pull_request, reviewers, apiuser)
+            PullRequestModel().update_reviewers(pull_request, reviewers, apiuser.get_instance())
 
         reviewers_changes['added'] = sorted(
             [get_user_or_error(n).username for n in added_reviewers])
@@ -926,13 +1004,35 @@ def update_pull_request(
             PullRequestModel().trigger_pull_request_hook(
                 pull_request, apiuser, 'review_status_change',
                 data={'status': calculated_status})
+        reviewers_changed = True
+
+    observers_changed = False
+    observers_changes = {"added": [], "removed": []}
+    if observers:
+        added_observers, removed_observers = \
+            PullRequestModel().update_observers(pull_request, observers, apiuser.get_instance())
+
+        observers_changes['added'] = sorted(
+            [get_user_or_error(n).username for n in added_observers])
+        observers_changes['removed'] = sorted(
+            [get_user_or_error(n).username for n in removed_observers])
+        Session().commit()
+
+        reviewers_changed = True
+
+    # push changed to channelstream
+    if commits_changed or reviewers_changed or observers_changed:
+        pr_broadcast_channel = channelstream.pr_channel(pull_request)
+        msg = 'Pull request was updated.'
+        channelstream.pr_update_channelstream_push(
+            request, pr_broadcast_channel, apiuser, msg)
 
     data = {
-        'msg': 'Updated pull request `{}`'.format(
-            pull_request.pull_request_id),
+        'msg': 'Updated pull request `{}`'.format(pull_request.pull_request_id),
         'pull_request': pull_request.get_api_data(),
         'updated_commits': commit_changes,
-        'updated_reviewers': reviewers_changes
+        'updated_reviewers': reviewers_changes,
+        'updated_observers': observers_changes,
     }
 
     return data

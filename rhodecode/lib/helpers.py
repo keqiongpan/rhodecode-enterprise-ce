@@ -38,6 +38,7 @@ import re
 import time
 import string
 import hashlib
+import regex
 from collections import OrderedDict
 
 import pygments
@@ -1103,6 +1104,10 @@ def bool2icon(value, show_at_false=True):
             return HTML.tag('i', class_="icon-false", title='False')
         return HTML.tag('i')
 
+
+def b64(inp):
+    return base64.b64encode(inp)
+
 #==============================================================================
 # PERMS
 #==============================================================================
@@ -1653,7 +1658,7 @@ def get_active_pattern_entries(repo_name):
     return active_entries
 
 
-pr_pattern_re = re.compile(r'(?:(?:^!)|(?: !))(\d+)')
+pr_pattern_re = regex.compile(r'(?:(?:^!)|(?: !))(\d+)')
 
 allowed_link_formats = [
     'html', 'rst', 'markdown', 'html+hovercard', 'rst+hovercard', 'markdown+hovercard']
@@ -1670,6 +1675,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
         active_entries = get_active_pattern_entries(repo_name)
 
     issues_data = []
+    errors = []
     new_text = text_string
 
     log.debug('Got %s entries to process', len(active_entries))
@@ -1687,9 +1693,11 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
             pattern = entry['pat_compiled']
         else:
             try:
-                pattern = re.compile(r'%s' % entry['pat'])
-            except re.error:
-                log.exception('issue tracker pattern: `%s` failed to compile', entry['pat'])
+                pattern = regex.compile(r'%s' % entry['pat'])
+            except regex.error as e:
+                regex_err = ValueError('{}:{}'.format(entry['pat'], e))
+                log.exception('issue tracker pattern: `%s` failed to compile', regex_err)
+                errors.append(regex_err)
                 continue
 
         data_func = partial(
@@ -1721,11 +1729,11 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     new_text = pr_pattern_re.sub(pr_url_func, new_text)
     log.debug('processed !pr pattern')
 
-    return new_text, issues_data
+    return new_text, issues_data, errors
 
 
 def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None,
-                          issues_container=None):
+                          issues_container=None, error_container=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1745,11 +1753,14 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
         new_text = urlify_commits(new_text, repository)
 
     # process issue tracker patterns
-    new_text, issues = process_patterns(new_text, repository or '',
-                                        active_entries=active_pattern_entries)
+    new_text, issues, errors = process_patterns(
+        new_text, repository or '', active_entries=active_pattern_entries)
 
     if issues_container is not None:
         issues_container.extend(issues)
+
+    if error_container is not None:
+        error_container.extend(errors)
 
     return literal(new_text)
 
@@ -1805,7 +1816,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
     elif renderer == 'rst':
         if repo_name:
             # process patterns on comments if we pass in repo name
-            source, issues = process_patterns(
+            source, issues, errors = process_patterns(
                 source, repo_name, link_format='rst',
                 active_entries=active_pattern_entries)
             if issues_container is not None:
@@ -1819,7 +1830,7 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
     elif renderer == 'markdown':
         if repo_name:
             # process patterns on comments if we pass in repo name
-            source, issues = process_patterns(
+            source, issues, errors = process_patterns(
                 source, repo_name, link_format='markdown',
                 active_entries=active_pattern_entries)
             if issues_container is not None:

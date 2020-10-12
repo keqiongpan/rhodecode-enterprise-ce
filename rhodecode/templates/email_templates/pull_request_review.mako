@@ -11,7 +11,10 @@ data = {
     'pr_title': pull_request.title,
 }
 
-subject_template = email_pr_review_subject_template or _('{user} requested a pull request review. !{pr_id}: "{pr_title}"')
+if user_role == 'observer':
+    subject_template = email_pr_review_subject_template or _('{user} added you as observer to pull request. !{pr_id}: "{pr_title}"')
+else:
+    subject_template = email_pr_review_subject_template or _('{user} requested a pull request review. !{pr_id}: "{pr_title}"')
 %>
 
 ${subject_template.format(**data) |n}
@@ -34,6 +37,7 @@ data = {
     'source_repo_url': pull_request_source_repo_url,
     'target_repo_url': pull_request_target_repo_url,
 }
+
 %>
 
 * ${_('Pull Request link')}: ${pull_request_url}
@@ -51,7 +55,7 @@ ${pull_request.description | trim}
 
 % for commit_id, message in pull_request_commits:
     - ${h.short_id(commit_id)}
-      ${h.chop_at_smart(message, '\n', suffix_if_chopped='...')}
+    ${h.chop_at_smart(message.lstrip(), '\n', suffix_if_chopped='...')}
 
 % endfor
 
@@ -78,19 +82,23 @@ data = {
 <table style="text-align:left;vertical-align:middle;width: 100%">
     <tr>
     <td style="width:100%;border-bottom:1px solid #dbd9da;">
-
         <div style="margin: 0; font-weight: bold">
+            % if user_role == 'observer':
+            <div class="clear-both" class="clear-both" style="margin-bottom: 4px">
+                <span style="color:#7E7F7F">@${h.person(user.username)}</span>
+                ${_('added you as observer to')}
+                <a href="${pull_request_url}" style="${base.link_css()}">pull request</a>.
+            </div>
+            % else:
             <div class="clear-both" class="clear-both" style="margin-bottom: 4px">
                 <span style="color:#7E7F7F">@${h.person(user.username)}</span>
                 ${_('requested a')}
-                <a href="${pull_request_url}" style="${base.link_css()}">
-                ${_('pull request review.').format(**data) }
-                </a>
+                <a href="${pull_request_url}" style="${base.link_css()}">pull request</a> review.
             </div>
+            % endif
             <div style="margin-top: 10px"></div>
             ${_('Pull request')} <code>!${data['pr_id']}: ${data['pr_title']}</code>
         </div>
-
     </td>
     </tr>
 

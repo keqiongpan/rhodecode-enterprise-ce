@@ -601,6 +601,14 @@ def PullRequestForm(localizer, repo_id):
         reasons = All()
         rules = All(v.UniqueList(localizer, convert=int)())
         mandatory = v.StringBoolean()
+        role = v.String(if_missing='reviewer')
+
+    class ObserverForm(formencode.Schema):
+        user_id = v.Int(not_empty=True)
+        reasons = All()
+        rules = All(v.UniqueList(localizer, convert=int)())
+        mandatory = v.StringBoolean()
+        role = v.String(if_missing='observer')
 
     class _PullRequestForm(formencode.Schema):
         allow_extra_fields = True
@@ -614,6 +622,7 @@ def PullRequestForm(localizer, repo_id):
         revisions = All(#v.NotReviewedRevisions(localizer, repo_id)(),
                         v.UniqueList(localizer)(not_empty=True))
         review_members = formencode.ForEach(ReviewerForm())
+        observer_members = formencode.ForEach(ObserverForm())
         pullrequest_title = v.UnicodeString(strip=True, required=True, min=1, max=255)
         pullrequest_desc = v.UnicodeString(strip=True, required=False)
         description_renderer = v.UnicodeString(strip=True, required=False)

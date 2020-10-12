@@ -523,7 +523,9 @@ class TestPullrequestsView(object):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id
         PullRequestModel().update_reviewers(
-            pull_request_id, [(1, ['reason'], False, []), (2, ['reason2'], False, [])],
+            pull_request_id, [
+                (1, ['reason'], False, 'reviewer', []),
+                (2, ['reason2'], False, 'reviewer', [])],
             pull_request.author)
         author = pull_request.user_id
         repo = pull_request.target_repo.repo_id
@@ -906,12 +908,13 @@ class TestPullrequestsView(object):
 
         # Change reviewers and check that a notification was made
         PullRequestModel().update_reviewers(
-            pull_request.pull_request_id, [(1, [], False, [])],
+            pull_request.pull_request_id, [
+                (1, [], False, 'reviewer', [])
+            ],
             pull_request.author)
         assert len(notifications.all()) == 2
 
-    def test_create_pull_request_stores_ancestor_commit_id(self, backend,
-                                                           csrf_token):
+    def test_create_pull_request_stores_ancestor_commit_id(self, backend, csrf_token):
         commits = [
             {'message': 'ancestor',
              'added': [FileNode('file_A', content='content_of_ancestor')]},

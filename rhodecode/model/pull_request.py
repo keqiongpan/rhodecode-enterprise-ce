@@ -154,26 +154,54 @@ def get_diff_info(
 
     commits = []
     if get_commit_authors:
-        commits = target_scm.compare(
+        log.debug('Obtaining commit authors from set of commits')
+        _compare_data = target_scm.compare(
             target_ref, source_ref, source_scm, merge=True,
-            pre_load=["author"])
+            pre_load=["author", "date", "message"]
+        )
 
-        for commit in commits:
-            user = User.get_from_cs_author(commit.author)
+        for commit in _compare_data:
+            # NOTE(marcink): we serialize here, so we don't produce more vcsserver calls on data returned
+            # at this function which is later called via JSON serialization
+            serialized_commit = dict(
+                author=commit.author,
+                date=commit.date,
+                message=commit.message,
+                commit_id=commit.raw_id,
+                raw_id=commit.raw_id
+            )
+            commits.append(serialized_commit)
+            user = User.get_from_cs_author(serialized_commit['author'])
             if user and user not in commit_authors:
                 commit_authors.append(user)
 
     # lines
     if get_authors:
+        log.debug('Calculating authors of changed files')
         target_commit = source_repo.get_commit(ancestor_id)
 
         for fname, lines in changed_lines.items():
+
             try:
-                node = target_commit.get_node(fname)
+                node = target_commit.get_node(fname, pre_load=["is_binary"])
             except Exception:
+                log.exception("Failed to load node with path %s", fname)
                 continue
 
             if not isinstance(node, FileNode):
+                continue
+
+            # NOTE(marcink): for binary node we don't do annotation, just use last author
+            if node.is_binary:
+                author = node.last_commit.author
+                email = node.last_commit.author_email
+
+                user = User.get_from_cs_author(author)
+                if user:
+                    user_counts[user.user_id] = user_counts.get(user.user_id, 0) + 1
+                author_counts[author] = author_counts.get(author, 0) + 1
+                email_counts[email] = email_counts.get(email, 0) + 1
+
                 continue
 
             for annotation in node.annotate:
@@ -189,6 +217,8 @@ def get_diff_info(
                         user_counts[user.user_id] = user_counts.get(user.user_id, 0) + 1
                     author_counts[author] = author_counts.get(author, 0) + 1
                     email_counts[email] = email_counts.get(email, 0) + 1
+
+    log.debug('Default reviewers processing finished')
 
     return {
         'commits': commits,
@@ -260,10 +290,16 @@ class PullRequestModel(BaseModel):
         _perms = ('repository.admin',)
         return self._check_perms(_perms, pull_request, user) or owner
 
+    def is_user_reviewer(self, pull_request, user):
+        return user.user_id in [
+            x.user_id for x in
+            pull_request.get_pull_request_reviewers(PullRequestReviewers.ROLE_REVIEWER)
+            if x.user
+        ]
+
     def check_user_change_status(self, pull_request, user, api=False):
-        reviewer = user.user_id in [x.user_id for x in
-                                    pull_request.reviewers]
-        return self.check_user_update(pull_request, user, api) or reviewer
+        return self.check_user_update(pull_request, user, api) \
+               or self.is_user_reviewer(pull_request, user)
 
     def check_user_comment(self, pull_request, user):
         owner = user.user_id == pull_request.user_id
@@ -575,7 +611,7 @@ class PullRequestModel(BaseModel):
                pull_request_display_obj, at_version
 
     def create(self, created_by, source_repo, source_ref, target_repo,
-               target_ref, revisions, reviewers, title, description=None,
+               target_ref, revisions, reviewers, observers, title, description=None,
                common_ancestor_id=None,
                description_renderer=None,
                reviewer_data=None, translator=None, auth_user=None):
@@ -606,7 +642,7 @@ class PullRequestModel(BaseModel):
         reviewer_ids = set()
         # members / reviewers
         for reviewer_object in reviewers:
-            user_id, reasons, mandatory, rules = reviewer_object
+            user_id, reasons, mandatory, role, rules = reviewer_object
             user = self._get_user(user_id)
 
             # skip duplicates
@@ -620,6 +656,7 @@ class PullRequestModel(BaseModel):
             reviewer.pull_request = pull_request
             reviewer.reasons = reasons
             reviewer.mandatory = mandatory
+            reviewer.role = role
 
             # NOTE(marcink): pick only first rule for now
             rule_id = list(rules)[0] if rules else None
@@ -653,6 +690,33 @@ class PullRequestModel(BaseModel):
             Session().add(reviewer)
             Session().flush()
 
+        for observer_object in observers:
+            user_id, reasons, mandatory, role, rules = observer_object
+            user = self._get_user(user_id)
+
+            # skip duplicates from reviewers
+            if user.user_id in reviewer_ids:
+                continue
+
+            #reviewer_ids.add(user.user_id)
+
+            observer = PullRequestReviewers()
+            observer.user = user
+            observer.pull_request = pull_request
+            observer.reasons = reasons
+            observer.mandatory = mandatory
+            observer.role = role
+
+            # NOTE(marcink): pick only first rule for now
+            rule_id = list(rules)[0] if rules else None
+            rule = RepoReviewRule.get(rule_id) if rule_id else None
+            if rule:
+                # TODO(marcink): do we need this for observers ??
+                pass
+
+            Session().add(observer)
+            Session().flush()
+
         # Set approval status to "Under Review" for all commits which are
         # part of this pull request.
         ChangesetStatusModel().set_status(
@@ -678,7 +742,7 @@ class PullRequestModel(BaseModel):
             MergeCheck.validate(
                 pull_request, auth_user=auth_user, translator=translator)
 
-        self.notify_reviewers(pull_request, reviewer_ids)
+        self.notify_reviewers(pull_request, reviewer_ids, created_by_user)
         self.trigger_pull_request_hook(pull_request, created_by_user, 'create')
 
         creation_data = pull_request.get_api_data(with_merge_state=False)
@@ -1204,23 +1268,25 @@ class PullRequestModel(BaseModel):
 
         :param pull_request: the pr to update
         :param reviewer_data: list of tuples
-            [(user, ['reason1', 'reason2'], mandatory_flag, [rules])]
+            [(user, ['reason1', 'reason2'], mandatory_flag, role, [rules])]
+        :param user: current use who triggers this action
         """
+
         pull_request = self.__get_pull_request(pull_request)
         if pull_request.is_closed():
             raise ValueError('This pull request is closed')
 
         reviewers = {}
-        for user_id, reasons, mandatory, rules in reviewer_data:
+        for user_id, reasons, mandatory, role, rules in reviewer_data:
             if isinstance(user_id, (int, compat.string_types)):
                 user_id = self._get_user(user_id).user_id
             reviewers[user_id] = {
-                'reasons': reasons, 'mandatory': mandatory}
+                'reasons': reasons, 'mandatory': mandatory, 'role': role}
 
         reviewers_ids = set(reviewers.keys())
-        current_reviewers = PullRequestReviewers.query()\
-            .filter(PullRequestReviewers.pull_request ==
-                    pull_request).all()
+        current_reviewers = PullRequestReviewers.get_pull_request_reviewers(
+            pull_request.pull_request_id, role=PullRequestReviewers.ROLE_REVIEWER)
+
         current_reviewers_ids = set([x.user.user_id for x in current_reviewers])
 
         ids_to_add = reviewers_ids.difference(current_reviewers_ids)
@@ -1241,16 +1307,19 @@ class PullRequestModel(BaseModel):
             reviewer.reasons = reviewers[uid]['reasons']
             # NOTE(marcink): mandatory shouldn't be changed now
             # reviewer.mandatory = reviewers[uid]['reasons']
+            # NOTE(marcink): role should be hardcoded, so we won't edit it.
+            reviewer.role = PullRequestReviewers.ROLE_REVIEWER
             Session().add(reviewer)
             added_audit_reviewers.append(reviewer.get_dict())
 
         for uid in ids_to_remove:
             changed = True
-            # NOTE(marcink): we fetch "ALL" reviewers using .all(). This is an edge case
-            # that prevents and fixes cases that we added the same reviewer twice.
+            # NOTE(marcink): we fetch "ALL" reviewers objects using .all().
+            # This is an edge case that handles previous state of having the same reviewer twice.
             # this CAN happen due to the lack of DB checks
             reviewers = PullRequestReviewers.query()\
                 .filter(PullRequestReviewers.user_id == uid,
+                        PullRequestReviewers.role == PullRequestReviewers.ROLE_REVIEWER,
                         PullRequestReviewers.pull_request == pull_request)\
                 .all()
 
@@ -1273,7 +1342,90 @@ class PullRequestModel(BaseModel):
                 'repo.pull_request.reviewer.delete', {'old_data': user_data},
                 user, pull_request)
 
-        self.notify_reviewers(pull_request, ids_to_add)
+        self.notify_reviewers(pull_request, ids_to_add, user)
+        return ids_to_add, ids_to_remove
+
+    def update_observers(self, pull_request, observer_data, user):
+        """
+        Update the observers in the pull request
+
+        :param pull_request: the pr to update
+        :param observer_data: list of tuples
+            [(user, ['reason1', 'reason2'], mandatory_flag, role, [rules])]
+        :param user: current use who triggers this action
+        """
+        pull_request = self.__get_pull_request(pull_request)
+        if pull_request.is_closed():
+            raise ValueError('This pull request is closed')
+
+        observers = {}
+        for user_id, reasons, mandatory, role, rules in observer_data:
+            if isinstance(user_id, (int, compat.string_types)):
+                user_id = self._get_user(user_id).user_id
+            observers[user_id] = {
+                'reasons': reasons, 'observers': mandatory, 'role': role}
+
+        observers_ids = set(observers.keys())
+        current_observers = PullRequestReviewers.get_pull_request_reviewers(
+            pull_request.pull_request_id, role=PullRequestReviewers.ROLE_OBSERVER)
+
+        current_observers_ids = set([x.user.user_id for x in current_observers])
+
+        ids_to_add = observers_ids.difference(current_observers_ids)
+        ids_to_remove = current_observers_ids.difference(observers_ids)
+
+        log.debug("Adding %s observer", ids_to_add)
+        log.debug("Removing %s observer", ids_to_remove)
+        changed = False
+        added_audit_observers = []
+        removed_audit_observers = []
+
+        for uid in ids_to_add:
+            changed = True
+            _usr = self._get_user(uid)
+            observer = PullRequestReviewers()
+            observer.user = _usr
+            observer.pull_request = pull_request
+            observer.reasons = observers[uid]['reasons']
+            # NOTE(marcink): mandatory shouldn't be changed now
+            # observer.mandatory = observer[uid]['reasons']
+
+            # NOTE(marcink): role should be hardcoded, so we won't edit it.
+            observer.role = PullRequestReviewers.ROLE_OBSERVER
+            Session().add(observer)
+            added_audit_observers.append(observer.get_dict())
+
+        for uid in ids_to_remove:
+            changed = True
+            # NOTE(marcink): we fetch "ALL" reviewers objects using .all().
+            # This is an edge case that handles previous state of having the same reviewer twice.
+            # this CAN happen due to the lack of DB checks
+            observers = PullRequestReviewers.query()\
+                .filter(PullRequestReviewers.user_id == uid,
+                        PullRequestReviewers.role == PullRequestReviewers.ROLE_OBSERVER,
+                        PullRequestReviewers.pull_request == pull_request)\
+                .all()
+
+            for obj in observers:
+                added_audit_observers.append(obj.get_dict())
+                Session().delete(obj)
+
+        if changed:
+            Session().expire_all()
+            pull_request.updated_on = datetime.datetime.now()
+            Session().add(pull_request)
+
+        # finally store audit logs
+        for user_data in added_audit_observers:
+            self._log_audit_action(
+                'repo.pull_request.observer.add', {'data': user_data},
+                user, pull_request)
+        for user_data in removed_audit_observers:
+            self._log_audit_action(
+                'repo.pull_request.observer.delete', {'old_data': user_data},
+                user, pull_request)
+
+        self.notify_observers(pull_request, ids_to_add, user)
         return ids_to_add, ids_to_remove
 
     def get_url(self, pull_request, request=None, permalink=False):
@@ -1301,16 +1453,16 @@ class PullRequestModel(BaseModel):
             pr_url = urllib.unquote(self.get_url(pull_request, request=request))
             return safe_unicode('{pr_url}/repository'.format(pr_url=pr_url))
 
-    def notify_reviewers(self, pull_request, reviewers_ids):
-        # notification to reviewers
-        if not reviewers_ids:
+    def _notify_reviewers(self, pull_request, user_ids, role, user):
+        # notification to reviewers/observers
+        if not user_ids:
             return
 
-        log.debug('Notify following reviewers about pull-request %s', reviewers_ids)
+        log.debug('Notify following %s users about pull-request %s', role, user_ids)
 
         pull_request_obj = pull_request
         # get the current participants of this pull request
-        recipients = reviewers_ids
+        recipients = user_ids
         notification_type = EmailNotificationModel.TYPE_PULL_REQUEST
 
         pr_source_repo = pull_request_obj.source_repo
@@ -1332,8 +1484,10 @@ class PullRequestModel(BaseModel):
             (x.raw_id, x.message)
             for x in map(pr_source_repo.get_commit, pull_request.revisions)]
 
+        current_rhodecode_user = user
         kwargs = {
-            'user': pull_request.author,
+            'user': current_rhodecode_user,
+            'pull_request_author': pull_request.author,
             'pull_request': pull_request_obj,
             'pull_request_commits': pull_request_commits,
 
@@ -1345,6 +1499,7 @@ class PullRequestModel(BaseModel):
 
             'pull_request_url': pr_url,
             'thread_ids': [pr_url],
+            'user_role': role
         }
 
         # pre-generate the subject for notification itself
@@ -1353,7 +1508,7 @@ class PullRequestModel(BaseModel):
 
         # create notification objects, and emails
         NotificationModel().create(
-            created_by=pull_request.author,
+            created_by=current_rhodecode_user,
             notification_subject=subject,
             notification_body=body_plaintext,
             notification_type=notification_type,
@@ -1361,11 +1516,19 @@ class PullRequestModel(BaseModel):
             email_kwargs=kwargs,
         )
 
+    def notify_reviewers(self, pull_request, reviewers_ids, user):
+        return self._notify_reviewers(pull_request, reviewers_ids,
+                                      PullRequestReviewers.ROLE_REVIEWER, user)
+
+    def notify_observers(self, pull_request, observers_ids, user):
+        return self._notify_reviewers(pull_request, observers_ids,
+                                      PullRequestReviewers.ROLE_OBSERVER, user)
+
     def notify_users(self, pull_request, updating_user, ancestor_commit_id,
                      commit_changes, file_changes):
 
         updating_user_id = updating_user.user_id
-        reviewers = set([x.user.user_id for x in pull_request.reviewers])
+        reviewers = set([x.user.user_id for x in pull_request.get_pull_request_reviewers()])
         # NOTE(marcink): send notification to all other users except to
         # person who updated the PR
         recipients = reviewers.difference(set([updating_user_id]))
@@ -1874,11 +2037,13 @@ class PullRequestModel(BaseModel):
         try:
             from rc_reviewers.utils import get_default_reviewers_data
             from rc_reviewers.utils import validate_default_reviewers
+            from rc_reviewers.utils import validate_observers
         except ImportError:
             from rhodecode.apps.repository.utils import get_default_reviewers_data
             from rhodecode.apps.repository.utils import validate_default_reviewers
+            from rhodecode.apps.repository.utils import validate_observers
 
-        return get_default_reviewers_data, validate_default_reviewers
+        return get_default_reviewers_data, validate_default_reviewers, validate_observers
 
 
 class MergeCheck(object):

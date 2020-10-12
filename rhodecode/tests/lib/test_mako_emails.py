@@ -23,7 +23,7 @@ import collections
 
 from rhodecode.lib.partial_renderer import PyramidPartialRenderer
 from rhodecode.lib.utils2 import AttributeDict
-from rhodecode.model.db import User
+from rhodecode.model.db import User, PullRequestReviewers
 from rhodecode.model.notification import EmailNotificationModel
 
 
@@ -52,7 +52,8 @@ def test_render_email(app, http_host_only_stub):
     assert 'Email Body' in body
 
 
-def test_render_pr_email(app, user_admin):
+@pytest.mark.parametrize('role', PullRequestReviewers.ROLES)
+def test_render_pr_email(app, user_admin, role):
     ref = collections.namedtuple(
         'Ref', 'name, type')('fxies123', 'book')
 
@@ -75,13 +76,17 @@ def test_render_pr_email(app, user_admin):
         'pull_request_source_repo_url': 'x',
 
         'pull_request_url': 'http://localhost/pr1',
+        'user_role': role,
     }
 
     subject, body, body_plaintext = EmailNotificationModel().render_email(
         EmailNotificationModel.TYPE_PULL_REQUEST, **kwargs)
 
     # subject
-    assert subject == '@test_admin (RhodeCode Admin) requested a pull request review. !200: "Example Pull Request"'
+    if role == PullRequestReviewers.ROLE_REVIEWER:
+        assert subject == '@test_admin (RhodeCode Admin) requested a pull request review. !200: "Example Pull Request"'
+    elif role == PullRequestReviewers.ROLE_OBSERVER:
+        assert subject == '@test_admin (RhodeCode Admin) added you as observer to pull request. !200: "Example Pull Request"'
 
 
 def test_render_pr_update_email(app, user_admin):

@@ -734,8 +734,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
         comments_model = CommentsModel()
         for pr in pull_requests:
             repo_id = pr.target_repo_id
-            comments = comments_model.get_all_comments(
-                repo_id, pull_request=pr)
+            comments_count = comments_model.get_all_comments(
+                repo_id, pull_request=pr, count_only=True)
             owned = pr.user_id == self._rhodecode_user.user_id
 
             data.append({
@@ -760,8 +760,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 'author': _render('pullrequest_author',
                                   pr.author.full_contact, ),
                 'author_raw': pr.author.full_name,
-                'comments': _render('pullrequest_comments', len(comments)),
-                'comments_raw': len(comments),
+                'comments': _render('pullrequest_comments', comments_count),
+                'comments_raw': comments_count,
                 'closed': pr.is_closed(),
                 'owned': owned
             })

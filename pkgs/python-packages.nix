@@ -1816,6 +1816,17 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "regex" = super.buildPythonPackage {
+    name = "regex-2020.9.27";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/93/8c/17f45cdfb39b13d4b5f909e4b4c2917abcbdef9c0036919a0399769148cf/regex-2020.9.27.tar.gz";
+      sha256 = "179ngfzwbsjvn5vhyzdahvmg0f7acahkwwy9bpjy1pv08bm2mwx6";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
+    };
+  };
   "redis" = super.buildPythonPackage {
     name = "redis-3.4.1";
     doCheck = false;
@@ -1872,7 +1883,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.20.0";
+    name = "rhodecode-enterprise-ce-4.22.0";
     buildInputs = [
       self."pytest"
       self."py"
@@ -1946,6 +1957,7 @@ self: super: {
       self."tzlocal"
       self."pyzmq"
       self."py-gfm"
+      self."regex"
       self."redis"
       self."repoze.lru"
       self."requests"
