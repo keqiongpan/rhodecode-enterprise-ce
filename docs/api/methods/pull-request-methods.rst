@@ -90,7 +90,7 @@ comment_pull_request
 create_pull_request 
 -------------------
 
-.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, owner=<Optional:<OptionalAttr:apiuser>>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>)
+.. py:function:: create_pull_request(apiuser, source_repo, target_repo, source_ref, target_ref, owner=<Optional:<OptionalAttr:apiuser>>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>, observers=<Optional:None>)
 
    Creates a new pull request.
 
@@ -128,6 +128,13 @@ create_pull_request
        Accepts username strings or objects of the format:
 
            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+   :param observers: Set the new pull request observers list.
+       Reviewer defined by review rules will be added automatically to the
+       defined list. This feature is only available in RhodeCode EE
+   :type observers: Optional(list)
+       Accepts username strings or objects of the format:
+
+           [{'username': 'nick', 'reasons': ['original author']}]
 
 
 get_pull_request 
@@ -392,7 +399,7 @@ merge_pull_request
 update_pull_request 
 -------------------
 
-.. py:function:: update_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>, update_commits=<Optional:None>)
+.. py:function:: update_pull_request(apiuser, pullrequestid, repoid=<Optional:None>, title=<Optional:''>, description=<Optional:''>, description_renderer=<Optional:''>, reviewers=<Optional:None>, observers=<Optional:None>, update_commits=<Optional:None>)
 
    Updates a pull request.
 
@@ -414,7 +421,11 @@ update_pull_request
        Accepts username strings or objects of the format:
 
            [{'username': 'nick', 'reasons': ['original author'], 'mandatory': <bool>}]
+   :param observers: Update pull request observers list with new value.
+   :type observers: Optional(list)
+       Accepts username strings or objects of the format:
 
+           [{'username': 'nick', 'reasons': ['should be aware about this PR']}]
    :param update_commits: Trigger update of commits for this pull request
    :type: update_commits: Optional(bool)
 
@@ -427,6 +438,12 @@ update_pull_request
            "msg": "Updated pull request `63`",
            "pull_request": <pull_request_object>,
            "updated_reviewers": {
+             "added": [
+               "username"
+             ],
+             "removed": []
+           },
+           "updated_observers": {
              "added": [
                "username"
              ],
