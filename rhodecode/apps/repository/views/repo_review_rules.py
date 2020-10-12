@@ -72,11 +72,18 @@ class RepoReviewRulesView(RepoAppView):
         target_type = request.GET['target_ref_type']
         target_name = request.GET['target_ref_name']
 
-        review_data = get_default_reviewers_data(
-            current_user,
-            source_repo,
-            Reference(source_type, source_name, source_commit_id),
-            target_repo,
-            Reference(target_type, target_name, target_commit_id)
-        )
+        try:
+            review_data = get_default_reviewers_data(
+                current_user,
+                source_repo,
+                Reference(source_type, source_name, source_commit_id),
+                target_repo,
+                Reference(target_type, target_name, target_commit_id)
+            )
+        except ValueError:
+            # No common ancestor
+            msg = "No Common ancestor found between target and source reference"
+            log.exception(msg)
+            return {'diff_info': {'error': msg}}
+
         return review_data

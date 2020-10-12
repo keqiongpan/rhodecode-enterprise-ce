@@ -309,6 +309,13 @@
    var codeMirrorInstance = $('#pullrequest_desc').get(0).MarkupForm.cm;
 
    var diffDataHandler = function(data) {
+       if (data['error'] !== undefined) {
+           var noCommitsMsg = '<span class="alert-text-error">{0}</span>'.format(data['error']);
+           prButtonLock(true, noCommitsMsg, 'compare');
+           //make both panels equal
+           $('.target-panel').height($('.source-panel').height())
+           return false
+       }
 
        var commitElements = data['commits'];
        var files = data['files'];
@@ -395,7 +402,8 @@
        }
 
        //make both panels equal
-       $('.target-panel').height($('.source-panel').height())
+       $('.target-panel').height($('.source-panel').height());
+       return true
    };
 
    reviewersController = new ReviewersController();

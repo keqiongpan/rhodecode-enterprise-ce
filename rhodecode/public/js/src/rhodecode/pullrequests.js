@@ -332,7 +332,10 @@ window.ReviewersController = function () {
 
                 // review rules
                 self.loadReviewRules(data);
-                self.handleDiffData(data["diff_info"]);
+                var diffHandled = self.handleDiffData(data["diff_info"]);
+                if (diffHandled === false) {
+                    return
+                }
 
                 for (var i = 0; i < data.reviewers.length; i++) {
                     var reviewer = data.reviewers[i];
@@ -473,7 +476,7 @@ window.ReviewersController = function () {
     };
 
     this.handleDiffData = function (data) {
-        self.diffDataHandler(data)
+        return self.diffDataHandler(data)
     }
 };
 
