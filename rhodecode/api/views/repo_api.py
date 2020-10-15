@@ -317,17 +317,18 @@ def get_repo_changeset(request, apiuser, repoid, revision,
             'ret_type must be one of %s' % (
                 ','.join(_changes_details_types)))
 
+    vcs_repo = repo.scm_instance()
     pre_load = ['author', 'branch', 'date', 'message', 'parents',
                 'status', '_commit', '_file_paths']
 
     try:
-        cs = repo.get_commit(commit_id=revision, pre_load=pre_load)
+        commit = repo.get_commit(commit_id=revision, pre_load=pre_load)
     except TypeError as e:
         raise JSONRPCError(safe_str(e))
-    _cs_json = cs.__json__()
-    _cs_json['diff'] = build_commit_data(cs, changes_details)
+    _cs_json = commit.__json__()
+    _cs_json['diff'] = build_commit_data(vcs_repo, commit, changes_details)
     if changes_details == 'full':
-        _cs_json['refs'] = cs._get_refs()
+        _cs_json['refs'] = commit._get_refs()
     return _cs_json
 
 
@@ -398,7 +399,7 @@ def get_repo_changesets(request, apiuser, repoid, start_rev, limit,
         if cnt >= limit != -1:
             break
         _cs_json = commit.__json__()
-        _cs_json['diff'] = build_commit_data(commit, changes_details)
+        _cs_json['diff'] = build_commit_data(vcs_repo, commit, changes_details)
         if changes_details == 'full':
             _cs_json['refs'] = {
                 'branches': [commit.branch],
