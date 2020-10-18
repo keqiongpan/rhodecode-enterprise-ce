@@ -213,7 +213,6 @@ div.markdown-block pre {
 div.markdown-block img {
   border-style: none;
   background-color: #fff;
-  padding-right: 20px;
   max-width: 100%;
 }
 
@@ -272,6 +271,13 @@ div.markdown-block #ws {
     .border-radius(@border-radius);
     border: @border-thickness solid @grey5;
     background-color: @grey6;
+}
+
+div.markdown-block p {
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding: 0;
+    line-height: unset;
 }
 
 div.markdown-block code,
