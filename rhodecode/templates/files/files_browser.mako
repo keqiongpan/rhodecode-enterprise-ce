@@ -51,7 +51,7 @@
                         ${_('Download full tree ZIP')}
                     </a>
                   % else:
-                    <a href="${h.route_path('repo_archivefile',repo_name=c.repo_name, fname='{}.zip'.format(c.commit.raw_id), _query={'at_path':c.f_path})}">
+                    <a href="${h.route_path('repo_archivefile',repo_name=c.repo_name, fname='{}.zip'.format(c.commit.raw_id), _query={'at_path':c.f_path, 'with_hash': '1'})}">
                         ${_('Download this tree ZIP')}
                     </a>
                   % endif
