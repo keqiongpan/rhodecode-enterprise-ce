@@ -198,7 +198,7 @@
                             </a>
 
                             <div class="btn-action-switcher-container left-align">
-                                <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
+                                <ul class="btn-action-switcher" role="menu" style="min-width: 200px; width: max-content">
                                     % for a_type, content_type, extension in h.ARCHIVE_SPECS:
                                     % if extension not in ['.zip']:
                                     <li>

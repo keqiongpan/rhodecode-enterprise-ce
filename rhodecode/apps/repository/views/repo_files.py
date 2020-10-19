@@ -402,8 +402,8 @@ class RepoFilesView(RepoAppView):
         archive_dir_name = response_archive_name[:-len(ext)]
 
         use_cached_archive = False
-        archive_cache_enabled = CONFIG.get(
-            'archive_cache_dir') and not self.request.GET.get('no_cache')
+        archive_cache_dir = CONFIG.get('archive_cache_dir')
+        archive_cache_enabled = archive_cache_dir and not self.request.GET.get('no_cache')
         cached_archive_path = None
 
         if archive_cache_enabled:
@@ -421,13 +421,13 @@ class RepoFilesView(RepoAppView):
 
         # generate new archive, as previous was not found in the cache
         if not use_cached_archive:
-
-            fd, archive = tempfile.mkstemp()
+            _dir = os.path.abspath(archive_cache_dir) if archive_cache_dir else None
+            fd, archive = tempfile.mkstemp(dir=_dir)
             log.debug('Creating new temp archive in %s', archive)
             try:
                 commit.archive_repo(archive, archive_dir_name=archive_dir_name,
                                     kind=fileformat, subrepos=subrepos,
-                                    archive_at_path=at_path, with_hash=with_hash)
+                                    archive_at_path=at_path)
             except ImproperArchiveTypeError:
                 return _('Unknown archive type')
             if archive_cache_enabled:

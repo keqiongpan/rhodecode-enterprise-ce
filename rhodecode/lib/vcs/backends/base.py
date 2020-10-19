@@ -915,8 +915,9 @@ class BaseCommit(object):
             list of parent commits
 
     """
-
+    repository = None
     branch = None
+
     """
     Depending on the backend this should be set to the branch name of the
     commit. Backends not supporting branches on commits should leave this
@@ -1193,7 +1194,7 @@ class BaseCommit(object):
 
     def archive_repo(self, archive_dest_path, kind='tgz', subrepos=None,
                      archive_dir_name=None, write_metadata=False, mtime=None,
-                     archive_at_path='/', with_hash=True):
+                     archive_at_path='/'):
         """
         Creates an archive containing the contents of the repository.
 
@@ -1216,29 +1217,12 @@ class BaseCommit(object):
                 (kind, allowed_kinds))
 
         archive_dir_name = self._validate_archive_prefix(archive_dir_name)
-
         mtime = mtime is not None or time.mktime(self.date.timetuple())
+        commit_id = self.raw_id
 
-        file_info = []
-        cur_rev = self.repository.get_commit(commit_id=self.raw_id)
-        for _r, _d, files in cur_rev.walk(archive_at_path):
-            for f in files:
-                f_path = os.path.join(archive_dir_name, f.path)
-                file_info.append(
-                    (f_path, f.mode, f.is_link(), f.raw_bytes))
-
-        if write_metadata:
-            metadata = [
-                ('repo_name', self.repository.name),
-                ('commit_id', self.raw_id),
-                ('mtime', mtime),
-                ('branch', self.branch),
-                ('tags', ','.join(self.tags)),
-            ]
-            meta = ["%s:%s" % (f_name, value) for f_name, value in metadata]
-            file_info.append(('.archival.txt', 0o644, False, '\n'.join(meta)))
-
-        connection.Hg.archive_repo(archive_dest_path, mtime, file_info, kind)
+        return self.repository._remote.archive_repo(
+            archive_dest_path, kind, mtime, archive_at_path,
+            archive_dir_name, commit_id)
 
     def _validate_archive_prefix(self, archive_dir_name):
         if archive_dir_name is None:
