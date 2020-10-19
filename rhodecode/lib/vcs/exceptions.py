@@ -214,16 +214,19 @@ def map_vcs_exceptions(func):
             # to translate them to the proper exception class in the vcs
             # client layer.
             kind = getattr(e, '_vcs_kind', None)
+            exc_name = getattr(e, '_vcs_server_org_exc_name', None)
 
             if kind:
                 if any(e.args):
-                    args = e.args
+                    args = [a for a in e.args]
+                    args[0] = '{}:'.format(exc_name)  # prefix first arg with org exc name
                 else:
-                    args = [__traceback_info__ or 'unhandledException']
+                    args = [__traceback_info__ or '{}: UnhandledException'.format(exc_name)]
                 if debug or __traceback_info__ and kind not in ['unhandled', 'lookup']:
                     # for other than unhandled errors also log the traceback
                     # can be useful for debugging
                     log.error(__traceback_info__)
+
                 raise _EXCEPTION_MAP[kind](*args)
             else:
                 raise
