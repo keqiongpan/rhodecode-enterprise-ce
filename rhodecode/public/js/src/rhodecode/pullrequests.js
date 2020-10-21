@@ -1139,7 +1139,7 @@ window.refreshTODOs = function (version) {
             'repo_name': templateContext.repo_name,
             'version': version,
         };
-        var loadUrl = pyroutes.url('pullrequest_comments', params);
+        var loadUrl = pyroutes.url('pullrequest_todos', params);
     } // commit case
     else {
         return
