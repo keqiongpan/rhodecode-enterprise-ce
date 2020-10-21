@@ -31,7 +31,11 @@
          <%
             display = ''
             _cls = ''
+            ## Extra precaution to not show drafts in the sidebar for todo/comments
+            if comment_obj.draft:
+                continue
          %>
+
 
          <%
              comment_ver_index = comment_obj.get_index_version(getattr(c, 'versions', []))

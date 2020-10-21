@@ -47,7 +47,7 @@ from rhodecode.lib.vcs.exceptions import (
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    func, or_, PullRequest, ChangesetComment, ChangesetStatus, Repository,
+    func, false, or_, PullRequest, ChangesetComment, ChangesetStatus, Repository,
     PullRequestReviewers)
 from rhodecode.model.forms import PullRequestForm
 from rhodecode.model.meta import Session
@@ -268,12 +268,14 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         return diffset
 
-    def register_comments_vars(self, c, pull_request, versions):
+    def register_comments_vars(self, c, pull_request, versions, include_drafts=True):
         comments_model = CommentsModel()
 
         # GENERAL COMMENTS with versions #
         q = comments_model._all_general_comments_of_pull_request(pull_request)
         q = q.order_by(ChangesetComment.comment_id.asc())
+        if not include_drafts:
+            q = q.filter(ChangesetComment.draft == false())
         general_comments = q
 
         # pick comments we want to render at current version
@@ -283,6 +285,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         # INLINE COMMENTS with versions  #
         q = comments_model._all_inline_comments_of_pull_request(pull_request)
         q = q.order_by(ChangesetComment.comment_id.asc())
+        if not include_drafts:
+            q = q.filter(ChangesetComment.draft == false())
         inline_comments = q
 
         c.inline_versions = comments_model.aggregate_comments(
@@ -1015,7 +1019,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                             if at_version and at_version != PullRequest.LATEST_VER
                             else None)
 
-        self.register_comments_vars(c, pull_request_latest, versions)
+        self.register_comments_vars(c, pull_request_latest, versions, include_drafts=False)
         all_comments = c.inline_comments_flat + c.comments
 
         existing_ids = self._get_existing_ids(self.request.POST)
@@ -1055,9 +1059,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                             else None)
 
         c.unresolved_comments = CommentsModel() \
-            .get_pull_request_unresolved_todos(pull_request)
+            .get_pull_request_unresolved_todos(pull_request, include_drafts=False)
         c.resolved_comments = CommentsModel() \
-            .get_pull_request_resolved_todos(pull_request)
+            .get_pull_request_resolved_todos(pull_request, include_drafts=False)
 
         all_comments = c.unresolved_comments + c.resolved_comments
         existing_ids = self._get_existing_ids(self.request.POST)
@@ -1544,6 +1548,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         status = self.request.POST.get('changeset_status', None)
         text = self.request.POST.get('text')
         comment_type = self.request.POST.get('comment_type')
+        is_draft = str2bool(self.request.POST.get('draft'))
         resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
         close_pull_request = self.request.POST.get('close_pull_request')
 
@@ -1574,9 +1579,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         else:
             # regular comment case, could be inline, or one with status.
             # for that one we check also permissions
-
+            # Additionally ENSURE if somehow draft is sent we're then unable to change status
             allowed_to_change_status = PullRequestModel().check_user_change_status(
-                pull_request, self._rhodecode_user)
+                pull_request, self._rhodecode_user) and not is_draft
 
             if status and allowed_to_change_status:
                 message = (_('Status change %(transition_icon)s %(status)s')
@@ -1596,8 +1601,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 status_change_type=(status
                                     if status and allowed_to_change_status else None),
                 comment_type=comment_type,
+                is_draft=is_draft,
                 resolves_comment_id=resolves_comment_id,
-                auth_user=self._rhodecode_user
+                auth_user=self._rhodecode_user,
+                send_email=not is_draft,  # skip notification for draft comments
             )
             is_inline = comment.is_inline
 
@@ -1638,6 +1645,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             'target_id': h.safeid(h.safe_unicode(
                 self.request.POST.get('f_path'))),
         }
+
         if comment:
             c.co = comment
             c.at_version_num = None
@@ -1648,15 +1656,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             data.update(comment.get_dict())
             data.update({'rendered_text': rendered_comment})
 
-            comment_broadcast_channel = channelstream.comment_channel(
-                self.db_repo_name, pull_request_obj=pull_request)
+            # skip channelstream for draft comments
+            if not is_draft:
+                comment_broadcast_channel = channelstream.comment_channel(
+                    self.db_repo_name, pull_request_obj=pull_request)
 
-            comment_data = data
-            comment_type = 'inline' if is_inline else 'general'
-            channelstream.comment_channelstream_push(
-                self.request, comment_broadcast_channel, self._rhodecode_user,
-                _('posted a new {} comment').format(comment_type),
-                comment_data=comment_data)
+                comment_data = data
+                comment_type = 'inline' if is_inline else 'general'
+                channelstream.comment_channelstream_push(
+                    self.request, comment_broadcast_channel, self._rhodecode_user,
+                    _('posted a new {} comment').format(comment_type),
+                    comment_data=comment_data)
 
         return data
 

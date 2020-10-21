@@ -3767,6 +3767,7 @@ class ChangesetComment(Base, BaseModel):
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
     immutable_state = Column('immutable_state', Unicode(128), nullable=True, default=OP_CHANGEABLE)
+    draft = Column('draft', Boolean(), nullable=True, default=False)
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)

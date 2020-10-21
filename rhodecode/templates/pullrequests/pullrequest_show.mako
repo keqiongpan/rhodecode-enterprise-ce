@@ -980,9 +980,11 @@ window.setObserversData = ${c.pull_request_set_observers_data_json | n};
         $(btns).each(fn_display);
     });
 
-    // register submit callback on commentForm form to track TODOs
-    window.commentFormGlobalSubmitSuccessCallback = function () {
-        refreshMergeChecks();
+    // register submit callback on commentForm form to track TODOs, and refresh mergeChecks conditions
+    window.commentFormGlobalSubmitSuccessCallback = function (comment) {
+        if (!comment.draft) {
+            refreshMergeChecks();
+        }
     };
 
     ReviewerAutoComplete('#user', reviewersController);
@@ -994,6 +996,12 @@ $(document).ready(function () {
 
     var channel = '${c.pr_broadcast_channel}';
     new ReviewerPresenceController(channel)
+
+
+    window.finalizeDrafts = function(commentIds) {
+        alert('okok !' + commentIds)
+
+    }
 
 })
 </script>

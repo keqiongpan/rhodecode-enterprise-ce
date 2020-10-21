@@ -124,16 +124,20 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.statusChange = this.withLineNo('#change_status');
 
         this.submitForm = formElement;
-        this.submitButton = $(this.submitForm).find('input[type="submit"]');
+
+        this.submitButton = $(this.submitForm).find('.submit-comment-action');
         this.submitButtonText = this.submitButton.val();
 
+        this.submitDraftButton = $(this.submitForm).find('.submit-draft-action');
+        this.submitDraftButtonText = this.submitDraftButton.val();
 
         this.previewUrl = pyroutes.url('repo_commit_comment_preview',
             {'repo_name': templateContext.repo_name,
              'commit_id': templateContext.commit_data.commit_id});
 
         if (edit){
-            this.submitButtonText = _gettext('Updated Comment');
+            this.submitDraftButton.hide();
+            this.submitButtonText = _gettext('Update Comment');
             $(this.commentType).prop('disabled', true);
             $(this.commentType).addClass('disabled');
             var editInfo =
@@ -215,9 +219,16 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         this.getCommentStatus = function() {
           return $(this.submitForm).find(this.statusChange).val();
         };
+
         this.getCommentType = function() {
           return $(this.submitForm).find(this.commentType).val();
         };
+
+        this.getDraftState = function () {
+            var submitterElem = $(this.submitForm).find('input[type="submit"].submitter');
+            var data = $(submitterElem).data('isDraft');
+            return data
+        }
 
         this.getResolvesId = function() {
             return $(this.submitForm).find(this.resolvesId).val() || null;
@@ -233,7 +244,9 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         };
 
         this.isAllowedToSubmit = function() {
-          return !$(this.submitButton).prop('disabled');
+            var commentDisabled = $(this.submitButton).prop('disabled');
+            var draftDisabled = $(this.submitDraftButton).prop('disabled');
+            return !commentDisabled && !draftDisabled;
         };
 
         this.initStatusChangeSelector = function(){
@@ -259,11 +272,13 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                 dropdownAutoWidth: true,
                 minimumResultsForSearch: -1
             });
+
             $(this.submitForm).find(this.statusChange).on('change', function() {
                 var status = self.getCommentStatus();
 
                 if (status && !self.isInline()) {
                     $(self.submitButton).prop('disabled', false);
+                    $(self.submitDraftButton).prop('disabled', false);
                 }
 
                 var placeholderText = _gettext('Comment text will be set automatically based on currently selected status ({0}) ...').format(status);
@@ -295,10 +310,10 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             $(this.statusChange).select2('readonly', false);
         };
 
-        this.globalSubmitSuccessCallback = function(){
+        this.globalSubmitSuccessCallback = function(comment){
             // default behaviour is to call GLOBAL hook, if it's registered.
             if (window.commentFormGlobalSubmitSuccessCallback !== undefined){
-                commentFormGlobalSubmitSuccessCallback();
+                commentFormGlobalSubmitSuccessCallback(comment);
             }
         };
 
@@ -321,6 +336,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             var text = self.cm.getValue();
             var status = self.getCommentStatus();
             var commentType = self.getCommentType();
+            var isDraft = self.getDraftState();
             var resolvesCommentId = self.getResolvesId();
             var closePullRequest = self.getClosePr();
 
@@ -365,7 +381,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                 }
 
                 // run global callback on submit
-                self.globalSubmitSuccessCallback();
+                self.globalSubmitSuccessCallback({draft: isDraft, comment_id: comment_id});
 
             };
             var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
@@ -409,10 +425,20 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             }
 
             $(this.submitButton).prop('disabled', submitState);
+            $(this.submitDraftButton).prop('disabled', submitState);
+
             if (submitEvent) {
-              $(this.submitButton).val(_gettext('Submitting...'));
+              var isDraft = self.getDraftState();
+
+              if (isDraft) {
+                $(this.submitDraftButton).val(_gettext('Saving Draft...'));
+              }  else {
+                $(this.submitButton).val(_gettext('Submitting...'));
+              }
+
             } else {
               $(this.submitButton).val(this.submitButtonText);
+              $(this.submitDraftButton).val(this.submitDraftButtonText);
             }
 
         };
@@ -488,6 +514,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
             if (!allowedToSubmit){
                return false;
             }
+
             self.handleFormSubmit();
         });
 
@@ -659,7 +686,8 @@ var CommentsController = function() {
       var $node = $(node);
       var $td = $node.closest('td');
       var $comment = $node.closest('.comment');
-      var comment_id = $comment.attr('data-comment-id');
+      var comment_id = $($comment).data('commentId');
+      var isDraft = $($comment).data('commentDraft');
       var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
       var postData = {
         'csrf_token': CSRF_TOKEN
@@ -677,7 +705,7 @@ var CommentsController = function() {
             updateSticky()
         }
 
-        if (window.refreshAllComments !== undefined) {
+        if (window.refreshAllComments !== undefined && !isDraft) {
           // if we have this handler, run it, and refresh all comments boxes
           refreshAllComments()
         }
@@ -712,6 +740,25 @@ var CommentsController = function() {
     }).then(function(result) {
       if (result.value) {
         self._deleteComment(node);
+      }
+    })
+  };
+
+  this._finalizeDrafts = function(commentIds) {
+    window.finalizeDrafts(commentIds)
+  }
+
+  this.finalizeDrafts = function(commentIds) {
+
+    SwalNoAnimation.fire({
+      title: _ngettext('Submit {0} draft comment', 'Submit {0} draft comments', commentIds.length).format(commentIds.length),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: _gettext('Yes, finalize drafts'),
+
+    }).then(function(result) {
+      if (result.value) {
+        self._finalizeDrafts(commentIds);
       }
     })
   };
@@ -916,7 +963,8 @@ var CommentsController = function() {
   this.editComment = function(node) {
       var $node = $(node);
       var $comment = $(node).closest('.comment');
-      var comment_id = $comment.attr('data-comment-id');
+      var comment_id = $($comment).data('commentId');
+      var isDraft = $($comment).data('commentDraft');
       var $form = null
 
       var $comments = $node.closest('div.inline-comments');
@@ -1002,6 +1050,7 @@ var CommentsController = function() {
                   'f_path': f_path,
                   'line': lineno,
                   'comment_type': commentType,
+                  'draft': isDraft,
                   'version': version,
                   'csrf_token': CSRF_TOKEN
               };
@@ -1084,7 +1133,7 @@ var CommentsController = function() {
                   $comments.find('.cb-comment-add-button').before(html);
 
                  //  run global callback on submit
-                  commentForm.globalSubmitSuccessCallback();
+                  commentForm.globalSubmitSuccessCallback({draft: isDraft, comment_id: comment_id});
 
                 } catch (e) {
                   console.error(e);
@@ -1101,7 +1150,7 @@ var CommentsController = function() {
                     updateSticky()
                 }
 
-                if (window.refreshAllComments !== undefined) {
+                if (window.refreshAllComments !== undefined && !isDraft) {
                       // if we have this handler, run it, and refresh all comments boxes
                       refreshAllComments()
                 }
@@ -1178,6 +1227,7 @@ var CommentsController = function() {
             var text = commentForm.cm.getValue();
             var commentType = commentForm.getCommentType();
             var resolvesCommentId = commentForm.getResolvesId();
+            var isDraft = commentForm.getDraftState();
 
             if (text === "") {
               return;
@@ -1201,6 +1251,7 @@ var CommentsController = function() {
                 'f_path': f_path,
                 'line': lineno,
                 'comment_type': commentType,
+                'draft': isDraft,
                 'csrf_token': CSRF_TOKEN
             };
             if (resolvesCommentId){
@@ -1222,7 +1273,7 @@ var CommentsController = function() {
                 }
 
                 // run global callback on submit
-                commentForm.globalSubmitSuccessCallback();
+                commentForm.globalSubmitSuccessCallback({draft: isDraft, comment_id: comment_id});
 
               } catch (e) {
                 console.error(e);
@@ -1239,7 +1290,7 @@ var CommentsController = function() {
                   updateSticky()
               }
 
-              if (window.refreshAllComments !== undefined) {
+              if (window.refreshAllComments !== undefined && !isDraft) {
                   // if we have this handler, run it, and refresh all comments boxes
                   refreshAllComments()
               }

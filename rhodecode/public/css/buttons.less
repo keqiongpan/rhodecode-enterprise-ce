@@ -162,7 +162,6 @@ input[type="button"] {
     }
 }
 
-.btn-warning,
 .btn-danger,
 .revoke_perm,
 .btn-x,
@@ -193,6 +192,36 @@ input[type="button"] {
     &:disabled {
         background-color: white;
         color: @alert2;
+    }
+}
+
+.btn-warning {
+    .border ( @border-thickness, @alert3 );
+    background-color: white;
+    color: @alert3;
+
+    a {
+        color: @alert3;
+    }
+
+    &:hover,
+    &.active {
+        .border ( @border-thickness, @alert3 );
+        color: white;
+        background-color: @alert3;
+
+        a {
+            color: white;
+        }
+    }
+
+    i {
+        display:none;
+    }
+
+    &:disabled {
+        background-color: white;
+        color: @alert3;
     }
 }
 
@@ -399,6 +428,37 @@ input[type="button"] {
         border: none;
     }
 }
+
+
+input[type="submit"].btn-warning {
+    &:extend(.btn-warning);
+
+    &:focus {
+        outline: 0;
+    }
+
+    &:hover {
+        &:extend(.btn-warning:hover);
+    }
+
+    &.btn-link {
+        &:extend(.btn-link);
+        color: @alert3;
+
+        &:disabled {
+            color: @alert3;
+            background-color: transparent;
+        }
+    }
+
+    &:disabled {
+        .border ( @border-thickness-buttons, @alert3 );
+        background-color: white;
+        color: @alert3;
+        opacity: 0.5;
+    }
+}
+
 
 
 // TODO: johbo: Form button tweaks, check if we can use the classes instead

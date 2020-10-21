@@ -3,20 +3,25 @@
 ## <%namespace name="comment" file="/changeset/changeset_file_comment.mako"/>
 ## ${comment.comment_block(comment)}
 ##
+<%namespace name="base" file="/base/base.mako"/>
 
 <%!
     from rhodecode.lib import html_filters
 %>
 
-<%namespace name="base" file="/base/base.mako"/>
+
 <%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
 
     <%
-        from rhodecode.model.comment import CommentsModel
-        comment_model = CommentsModel()
+      from rhodecode.model.comment import CommentsModel
+      comment_model = CommentsModel()
+
+      comment_ver = comment.get_index_version(getattr(c, 'versions', []))
+      latest_ver = len(getattr(c, 'versions', []))
+      visible_for_user = True
+      if comment.draft:
+        visible_for_user = comment.user_id == c.rhodecode_user.user_id
     %>
-  <% comment_ver = comment.get_index_version(getattr(c, 'versions', [])) %>
-  <% latest_ver = len(getattr(c, 'versions', [])) %>
 
   % if inline:
       <% outdated_at_ver = comment.outdated_at_version(c.at_version_num) %>
@@ -24,6 +29,7 @@
       <% outdated_at_ver = comment.older_than_version(c.at_version_num) %>
   % endif
 
+  % if visible_for_user:
   <div class="comment
              ${'comment-inline' if inline else 'comment-general'}
              ${'comment-outdated' if outdated_at_ver else 'comment-current'}"
@@ -31,6 +37,7 @@
        line="${comment.line_no}"
        data-comment-id="${comment.comment_id}"
        data-comment-type="${comment.comment_type}"
+       data-comment-draft=${h.json.dumps(comment.draft)}
        data-comment-renderer="${comment.renderer}"
        data-comment-text="${comment.text | html_filters.base64,n}"
        data-comment-line-no="${comment.line_no}"
@@ -39,6 +46,9 @@
 
       <div class="meta">
           <div class="comment-type-label">
+               % if comment.draft:
+                 <div class="tooltip comment-draft" title="${_('Draft comments are only visible to the author until submitted')}.">DRAFT</div>
+               % endif
               <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
 
               ## TODO COMMENT
@@ -90,7 +100,7 @@
 
               </div>
           </div>
-
+          ## NOTE 0 and .. => because we disable it for now until UI ready
           % if 0 and comment.status_change:
           <div class="pull-left">
               <span  class="tag authortag tooltip" title="${_('Status from pull request.')}">
@@ -100,10 +110,12 @@
               </span>
           </div>
           % endif
-
+          ## Since only author can see drafts, we don't show it
+          % if not comment.draft:
           <div class="author ${'author-inline' if inline else 'author-general'}">
               ${base.gravatar_with_user(comment.author.email, 16, tooltip=True)}
           </div>
+          % endif
 
           <div class="date">
               ${h.age_component(comment.modified_at, time_is_local=True)}
@@ -215,6 +227,11 @@
                        <div class="dropdown-item">
                         <a onclick="return Rhodecode.comments.deleteComment(this);" class="btn btn-link btn-sm btn-danger delete-comment">${_('Delete')}</a>
                        </div>
+                       % if comment.draft:
+                       <div class="dropdown-item">
+                        <a onclick="return Rhodecode.comments.finalizeDrafts([${comment.comment_id}]);" class="btn btn-link btn-sm finalize-draft-comment">${_('Submit draft')}</a>
+                       </div>
+                       % endif
                    %else:
                       <div class="dropdown-divider"></div>
                       <div class="dropdown-item">
@@ -252,6 +269,7 @@
       </div>
 
   </div>
+  % endif
 </%def>
 
 ## generate main comments
@@ -311,6 +329,7 @@
                 var text = self.cm.getValue();
                 var status = self.getCommentStatus();
                 var commentType = self.getCommentType();
+                var isDraft = self.getDraftState();
 
                 if (text === "" && !status) {
                     return;
@@ -337,6 +356,7 @@
                     'text': text,
                     'changeset_status': status,
                     'comment_type': commentType,
+                    'draft': isDraft,
                     'commit_ids': commitIds,
                     'csrf_token': CSRF_TOKEN
                 };
@@ -477,14 +497,18 @@
                 <div class="action-buttons-extra"></div>
             % endif
 
-            <input class="btn btn-success comment-button-input" id="save_${lineno_id}" name="save" type="submit" value="${_('Comment')}">
+            <input class="btn btn-success comment-button-input submit-comment-action" id="save_${lineno_id}" name="save" type="submit" value="${_('Add comment')}" data-is-draft=false onclick="$(this).addClass('submitter')">
+
+            % if form_type == 'inline':
+                <input class="btn btn-warning comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
+            % endif
 
             ## inline for has a file, and line-number together with cancel hide button.
             % if form_type == 'inline':
                 <input type="hidden" name="f_path" value="{0}">
                 <input type="hidden" name="line" value="${lineno_id}">
-                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-                ${_('Cancel')}
+                <button type="button" class="tooltip cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);" title="Hide comment box">
+                <i class="icon-cancel-circled2"></i>
                 </button>
             % endif
         </div>

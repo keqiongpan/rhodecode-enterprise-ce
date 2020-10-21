@@ -711,16 +711,19 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             data-line-no="${line.original.lineno}"
             >
 
-            <% line_old_comments = None %>
+            <% line_old_comments, line_old_comments_no_drafts = None, None %>
             %if line.original.get_comment_args:
-                <% line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args) %>
+                <%
+                    line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args)
+                    line_old_comments_no_drafts = [c for c in line_old_comments if not c.draft] if line_old_comments else []
+                    has_outdated = any([x.outdated for x in line_old_comments_no_drafts])
+                %>
             %endif
-            %if line_old_comments:
-                <% has_outdated = any([x.outdated for x in line_old_comments]) %>
+            %if line_old_comments_no_drafts:
                 % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_old_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_old_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_old_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_old_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
         </td>
@@ -752,18 +755,20 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             >
             <div>
 
+            <% line_new_comments, line_new_comments_no_drafts = None, None %>
             %if line.modified.get_comment_args:
-                <% line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args) %>
-            %else:
-                <% line_new_comments = None%>
+                <%
+                    line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args)
+                    line_new_comments_no_drafts = [c for c in line_new_comments if not c.draft] if line_new_comments else []
+                    has_outdated = any([x.outdated for x in line_new_comments_no_drafts])
+                %>
             %endif
-            %if line_new_comments:
 
-                <% has_outdated = any([x.outdated for x in line_new_comments]) %>
+            %if line_new_comments_no_drafts:
                 % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_new_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_new_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_new_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_new_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -814,20 +819,22 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
         <td class="cb-data ${action_class(action)}">
             <div>
 
-            %if comments_args:
-                <% comments = get_comments_for('unified', inline_comments, *comments_args) %>
-            %else:
-                <% comments = None %>
-            %endif
+                <% comments, comments_no_drafts = None, None %>
+                %if comments_args:
+                    <%
+                        comments = get_comments_for('unified', inline_comments, *comments_args)
+                        comments_no_drafts = [c for c in line_new_comments if not c.draft] if line_new_comments else []
+                        has_outdated = any([x.outdated for x in comments_no_drafts])
+                    %>
+                %endif
 
-            % if comments:
-                <% has_outdated = any([x.outdated for x in comments]) %>
-                % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
-                % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % if comments_no_drafts:
+                    % if has_outdated:
+                        <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    % else:
+                        <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    % endif
                 % endif
-            % endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(action)}"
