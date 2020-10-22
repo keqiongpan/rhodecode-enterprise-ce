@@ -110,7 +110,7 @@ def _store_exception(exc_id, exc_type_name, exc_traceback, prefix, send_email=No
 
     mail_server = app.CONFIG.get('smtp_server') or None
     send_email = send_email and mail_server
-    if send_email:
+    if send_email and request:
         try:
             send_exc_email(request, exc_id, exc_type_name)
         except Exception:
