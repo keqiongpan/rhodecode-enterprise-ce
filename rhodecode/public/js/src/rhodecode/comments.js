@@ -364,12 +364,15 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                 postData['close_pull_request'] = true;
             }
 
-            var submitSuccessCallback = function(o) {
+            // submitSuccess for general comments
+            var submitSuccessCallback = function(json_data) {
                 // reload page if we change status for single commit.
                 if (status && self.commitId) {
                     location.reload(true);
                 } else {
-                    $('#injected_page_comments').append(o.rendered_text);
+                    // inject newly created comments, json_data is {<comment_id>: {}}
+                    self.attachGeneralComment(json_data)
+
                     self.resetCommentFormState();
                     timeagoActivate();
                     tooltipActivate();
@@ -565,26 +568,6 @@ var CommentsController = function() {
   var mainComment = '#text';
   var self = this;
 
-  this.cancelComment = function (node) {
-      var $node = $(node);
-      var edit = $(this).attr('edit');
-      if (edit) {
-          var $general_comments = null;
-          var $inline_comments = $node.closest('div.inline-comments');
-          if (!$inline_comments.length) {
-              $general_comments = $('#comments');
-              var $comment = $general_comments.parent().find('div.comment:hidden');
-              // show hidden general comment form
-              $('#cb-comment-general-form-placeholder').show();
-          } else {
-              var $comment = $inline_comments.find('div.comment:hidden');
-          }
-          $comment.show();
-      }
-      $node.closest('.comment-inline-form').remove();
-      return false;
-  };
-
   this.showVersion = function (comment_id, comment_history_id) {
 
        var historyViewUrl = pyroutes.url(
@@ -682,6 +665,35 @@ var CommentsController = function() {
     return self.scrollToComment(node, -1, true);
   };
 
+  this.cancelComment = function (node) {
+      var $node = $(node);
+      var edit = $(this).attr('edit');
+      var $inlineComments = $node.closest('div.inline-comments');
+
+      if (edit) {
+          var $general_comments = null;
+          if (!$inlineComments.length) {
+              $general_comments = $('#comments');
+              var $comment = $general_comments.parent().find('div.comment:hidden');
+              // show hidden general comment form
+              $('#cb-comment-general-form-placeholder').show();
+          } else {
+              var $comment = $inlineComments.find('div.comment:hidden');
+          }
+          $comment.show();
+      }
+      var $replyWrapper = $node.closest('.comment-inline-form').closest('.reply-thread-container-wrapper')
+      $replyWrapper.removeClass('comment-form-active');
+
+      var lastComment = $inlineComments.find('.comment-inline').last();
+      if ($(lastComment).hasClass('comment-outdated')) {
+        $replyWrapper.hide();
+      }
+
+      $node.closest('.comment-inline-form').remove();
+      return false;
+  };
+
   this._deleteComment = function(node) {
       var $node = $(node);
       var $td = $node.closest('td');
@@ -751,7 +763,7 @@ var CommentsController = function() {
   this.finalizeDrafts = function(commentIds) {
 
     SwalNoAnimation.fire({
-      title: _ngettext('Submit {0} draft comment', 'Submit {0} draft comments', commentIds.length).format(commentIds.length),
+      title: _ngettext('Submit {0} draft comment.', 'Submit {0} draft comments.', commentIds.length).format(commentIds.length),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: _gettext('Yes, finalize drafts'),
@@ -764,6 +776,7 @@ var CommentsController = function() {
   };
 
   this.toggleWideMode = function (node) {
+
       if ($('#content').hasClass('wrapper')) {
           $('#content').removeClass("wrapper");
           $('#content').addClass("wide-mode-wrapper");
@@ -778,17 +791,22 @@ var CommentsController = function() {
 
   };
 
-  this.toggleComments = function(node, show) {
+  /**
+   * Turn off/on all comments in file diff
+   */
+  this.toggleDiffComments = function(node) {
+    // Find closes filediff container
     var $filediff = $(node).closest('.filediff');
-    if (show === true) {
-      $filediff.removeClass('hide-comments');
-    } else if (show === false) {
-      $filediff.find('.hide-line-comments').removeClass('hide-line-comments');
-      $filediff.addClass('hide-comments');
-    } else {
-      $filediff.find('.hide-line-comments').removeClass('hide-line-comments');
-      $filediff.toggleClass('hide-comments');
+    if ($(node).hasClass('toggle-on')) {
+        var show = false;
+    } else if ($(node).hasClass('toggle-off')) {
+        var show = true;
     }
+
+    // Toggle each individual comment block, so we can un-toggle single ones
+    $.each($filediff.find('.toggle-comment-action'), function(idx, val) {
+        self.toggleLineComments($(val), show)
+    })
 
     // since we change the height of the diff container that has anchor points for upper
     // sticky header, we need to tell it to re-calculate those
@@ -799,14 +817,33 @@ var CommentsController = function() {
     }
 
     return false;
-  };
+  }
 
-  this.toggleLineComments = function(node) {
-    self.toggleComments(node, true);
-    var $node = $(node);
-    // mark outdated comments as visible before the toggle;
-    $(node.closest('tr')).find('.comment-outdated').show();
-    $node.closest('tr').toggleClass('hide-line-comments');
+  this.toggleLineComments = function(node, show) {
+
+    var trElem = $(node).closest('tr')
+
+    if (show === true) {
+        // mark outdated comments as visible before the toggle;
+        $(trElem).find('.comment-outdated').show();
+        $(trElem).removeClass('hide-line-comments');
+    } else if (show === false) {
+        $(trElem).find('.comment-outdated').hide();
+        $(trElem).addClass('hide-line-comments');
+    } else {
+        // mark outdated comments as visible before the toggle;
+        $(trElem).find('.comment-outdated').show();
+        $(trElem).toggleClass('hide-line-comments');
+    }
+
+    // since we change the height of the diff container that has anchor points for upper
+    // sticky header, we need to tell it to re-calculate those
+    if (window.updateSticky !== undefined) {
+        // potentially our comments change the active window size, so we
+        // notify sticky elements
+        updateSticky()
+    }
+
   };
 
   this.createCommentForm = function(formElement, lineno, placeholderText, initAutocompleteActions, resolvesCommentId, edit, comment_id){
@@ -960,64 +997,58 @@ var CommentsController = function() {
       return commentForm;
   };
 
-  this.editComment = function(node) {
+  this.editComment = function(node, line_no, f_path) {
+      self.edit = true;
       var $node = $(node);
+      var $td = $node.closest('td');
+
       var $comment = $(node).closest('.comment');
       var comment_id = $($comment).data('commentId');
       var isDraft = $($comment).data('commentDraft');
-      var $form = null
+      var $editForm = null
 
       var $comments = $node.closest('div.inline-comments');
       var $general_comments = null;
-      var lineno = null;
 
       if($comments.length){
           // inline comments setup
-          $form = $comments.find('.comment-inline-form');
-          lineno = self.getLineNumber(node)
+          $editForm = $comments.find('.comment-inline-form');
+          line_no = self.getLineNumber(node)
       }
       else{
           // general comments setup
           $comments = $('#comments');
-          $form = $comments.find('.comment-inline-form');
-          lineno = $comment[0].id
+          $editForm = $comments.find('.comment-inline-form');
+          line_no = $comment[0].id
           $('#cb-comment-general-form-placeholder').hide();
       }
 
-      this.edit = true;
+      if ($editForm.length === 0) {
 
-      if (!$form.length) {
-
+          // unhide all comments if they are hidden for a proper REPLY mode
           var $filediff = $node.closest('.filediff');
           $filediff.removeClass('hide-comments');
-          var f_path = $filediff.attr('data-f-path');
 
-          // create a new HTML from template
+          $editForm = self.createNewFormWrapper(f_path, line_no);
+          if(f_path && line_no) {
+            $editForm.addClass('comment-inline-form-edit')
+          }
 
-          var tmpl = $('#cb-comment-inline-form-template').html();
-          tmpl = tmpl.format(escapeHtml(f_path), lineno);
-          $form = $(tmpl);
-          $comment.after($form)
+          $comment.after($editForm)
 
-          var _form = $($form[0]).find('form');
+          var _form = $($editForm[0]).find('form');
           var autocompleteActions = ['as_note',];
           var commentForm = this.createCommentForm(
-              _form, lineno, '', autocompleteActions, resolvesCommentId,
+              _form, line_no, '', autocompleteActions, resolvesCommentId,
               this.edit, comment_id);
           var old_comment_text_binary = $comment.attr('data-comment-text');
           var old_comment_text = b64DecodeUnicode(old_comment_text_binary);
           commentForm.cm.setValue(old_comment_text);
           $comment.hide();
+          tooltipActivate();
 
-           $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
-               form: _form,
-               parent: $comments,
-               lineno: lineno,
-               f_path: f_path}
-           );
-
-           // set a CUSTOM submit handler for inline comments.
-            commentForm.setHandleFormSubmit(function(o) {
+           // set a CUSTOM submit handler for inline comment edit action.
+           commentForm.setHandleFormSubmit(function(o) {
               var text = commentForm.cm.getValue();
               var commentType = commentForm.getCommentType();
 
@@ -1048,7 +1079,7 @@ var CommentsController = function() {
               var postData = {
                   'text': text,
                   'f_path': f_path,
-                  'line': lineno,
+                  'line': line_no,
                   'comment_type': commentType,
                   'draft': isDraft,
                   'version': version,
@@ -1056,7 +1087,7 @@ var CommentsController = function() {
               };
 
               var submitSuccessCallback = function(json_data) {
-                $form.remove();
+                $editForm.remove();
                 $comment.show();
                 var postData = {
                     'text': text,
@@ -1121,8 +1152,7 @@ var CommentsController = function() {
                     'commit_id': templateContext.commit_data.commit_id});
 
                 _submitAjaxPOST(
-                    previewUrl, postData, successRenderCommit,
-                    failRenderCommit
+                    previewUrl, postData, successRenderCommit, failRenderCommit
                 );
 
                 try {
@@ -1178,49 +1208,103 @@ var CommentsController = function() {
             });
       }
 
-      $form.addClass('comment-inline-form-open');
+      $editForm.addClass('comment-inline-form-open');
   };
 
-  this.createComment = function(node, resolutionComment) {
-      var resolvesCommentId = resolutionComment || null;
+  this.attachComment = function(json_data) {
+    var self = this;
+    $.each(json_data, function(idx, val) {
+        var json_data_elem = [val]
+        var isInline = val.comment_f_path && val.comment_lineno
+
+        if (isInline) {
+            self.attachInlineComment(json_data_elem)
+        }  else {
+            self.attachGeneralComment(json_data_elem)
+        }
+    })
+
+  }
+
+  this.attachGeneralComment = function(json_data) {
+    $.each(json_data, function(idx, val) {
+        $('#injected_page_comments').append(val.rendered_text);
+    })
+  }
+
+  this.attachInlineComment = function(json_data) {
+
+    $.each(json_data, function (idx, val) {
+        var line_qry = '*[data-line-no="{0}"]'.format(val.line_no);
+        var html = val.rendered_text;
+        var $inlineComments = $('#' + val.target_id)
+                .find(line_qry)
+                .find('.inline-comments');
+
+        var lastComment = $inlineComments.find('.comment-inline').last();
+
+        if (lastComment.length === 0) {
+            // first comment, we append simply
+            $inlineComments.find('.reply-thread-container-wrapper').before(html);
+        } else {
+            $(lastComment).after(html)
+        }
+
+    })
+
+  };
+
+  this.createNewFormWrapper = function(f_path, line_no) {
+      // create a new reply HTML form from template
+      var tmpl = $('#cb-comment-inline-form-template').html();
+      tmpl = tmpl.format(escapeHtml(f_path), line_no);
+      return $(tmpl);
+  }
+
+  this.createComment = function(node, f_path, line_no, resolutionComment) {
+      self.edit = false;
       var $node = $(node);
       var $td = $node.closest('td');
-      var $form = $td.find('.comment-inline-form');
-      this.edit = false;
+      var resolvesCommentId = resolutionComment || null;
 
-      if (!$form.length) {
+      var $replyForm = $td.find('.comment-inline-form');
 
-          var $filediff = $node.closest('.filediff');
-          $filediff.removeClass('hide-comments');
-          var f_path = $filediff.attr('data-f-path');
-          var lineno = self.getLineNumber(node);
-          // create a new HTML from template
-          var tmpl = $('#cb-comment-inline-form-template').html();
-          tmpl = tmpl.format(escapeHtml(f_path), lineno);
-          $form = $(tmpl);
+      // if form isn't existing, we're generating a new one and injecting it.
+      if ($replyForm.length === 0) {
+
+          // unhide/expand all comments if they are hidden for a proper REPLY mode
+          self.toggleLineComments($node, true);
+
+          $replyForm = self.createNewFormWrapper(f_path, line_no);
 
           var $comments = $td.find('.inline-comments');
-          if (!$comments.length) {
-            $comments = $(
-              $('#cb-comments-inline-container-template').html());
-            $td.append($comments);
+
+          // There aren't any comments, we init the `.inline-comments` with `reply-thread-container` first
+          if ($comments.length===0) {
+            var replBtn = '<button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, \'{0}\', \'{1}\', null)">Reply...</button>'.format(f_path, line_no)
+            var $reply_container = $('#cb-comments-inline-container-template')
+            $reply_container.find('button.cb-comment-add-button').replaceWith(replBtn);
+            $td.append($($reply_container).html());
           }
 
-          $td.find('.cb-comment-add-button').before($form);
+          // default comment button exists, so we prepend the form for leaving initial comment
+          $td.find('.cb-comment-add-button').before($replyForm);
+          // set marker, that we have a open form
+          var $replyWrapper = $td.find('.reply-thread-container-wrapper')
+          $replyWrapper.addClass('comment-form-active');
 
-          var placeholderText = _gettext('Leave a comment on line {0}.').format(lineno);
-          var _form = $($form[0]).find('form');
+          var lastComment = $comments.find('.comment-inline').last();
+          if ($(lastComment).hasClass('comment-outdated')) {
+            $replyWrapper.show();
+          }
+
+          var _form = $($replyForm[0]).find('form');
           var autocompleteActions = ['as_note', 'as_todo'];
           var comment_id=null;
-          var commentForm = this.createCommentForm(
-              _form, lineno, placeholderText, autocompleteActions, resolvesCommentId, this.edit, comment_id);
-
-          $.Topic('/ui/plugins/code/comment_form_built').prepareOrPublish({
-              form: _form,
-              parent: $td[0],
-              lineno: lineno,
-              f_path: f_path}
-          );
+          var placeholderText = _gettext('Leave a comment on file {0} line {1}.').format(f_path, line_no);
+          var commentForm = self.createCommentForm(
+              _form, line_no, placeholderText, autocompleteActions, resolvesCommentId,
+              self.edit, comment_id);
 
           // set a CUSTOM submit handler for inline comments.
           commentForm.setHandleFormSubmit(function(o) {
@@ -1233,12 +1317,13 @@ var CommentsController = function() {
               return;
             }
 
-            if (lineno === undefined) {
-              alert('missing line !');
+            if (line_no === undefined) {
+              alert('Error: unable to fetch line number for this inline comment !');
               return;
             }
+
             if (f_path === undefined) {
-              alert('missing file path !');
+              alert('Error: unable to fetch file path for this inline comment !');
               return;
             }
 
@@ -1249,7 +1334,7 @@ var CommentsController = function() {
             var postData = {
                 'text': text,
                 'f_path': f_path,
-                'line': lineno,
+                'line': line_no,
                 'comment_type': commentType,
                 'draft': isDraft,
                 'csrf_token': CSRF_TOKEN
@@ -1258,31 +1343,31 @@ var CommentsController = function() {
                 postData['resolves_comment_id'] = resolvesCommentId;
             }
 
+            // submitSuccess for inline commits
             var submitSuccessCallback = function(json_data) {
-              $form.remove();
-              try {
-                var html = json_data.rendered_text;
-                var lineno = json_data.line_no;
-                var target_id = json_data.target_id;
 
-                $comments.find('.cb-comment-add-button').before(html);
+                $replyForm.remove();
+                $td.find('.reply-thread-container-wrapper').removeClass('comment-form-active');
 
-                //mark visually which comment was resolved
-                if (resolvesCommentId) {
-                    commentForm.markCommentResolved(resolvesCommentId);
+                try {
+
+                    // inject newly created comments, json_data is {<comment_id>: {}}
+                    self.attachInlineComment(json_data)
+
+                    //mark visually which comment was resolved
+                    if (resolvesCommentId) {
+                        commentForm.markCommentResolved(resolvesCommentId);
+                    }
+
+                    // run global callback on submit
+                    commentForm.globalSubmitSuccessCallback({
+                        draft: isDraft,
+                        comment_id: comment_id
+                    });
+
+                } catch (e) {
+                    console.error(e);
                 }
-
-                // run global callback on submit
-                commentForm.globalSubmitSuccessCallback({draft: isDraft, comment_id: comment_id});
-
-              } catch (e) {
-                console.error(e);
-              }
-
-              // re trigger the linkification of next/prev navigation
-              linkifyComments($('.inline-comment-injected'));
-              timeagoActivate();
-              tooltipActivate();
 
               if (window.updateSticky !== undefined) {
                   // potentially our comments change the active window size, so we
@@ -1297,19 +1382,27 @@ var CommentsController = function() {
 
               commentForm.setActionButtonsDisabled(false);
 
+              // re trigger the linkification of next/prev navigation
+              linkifyComments($('.inline-comment-injected'));
+              timeagoActivate();
+              tooltipActivate();
             };
+
             var submitFailCallback = function(jqXHR, textStatus, errorThrown) {
                 var prefix = "Error while submitting comment.\n"
                 var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
                 ajaxErrorSwal(message);
                 commentForm.resetCommentFormState(text)
             };
+
             commentForm.submitAjaxPOST(
                 commentForm.submitUrl, postData, submitSuccessCallback, submitFailCallback);
           });
       }
 
-      $form.addClass('comment-inline-form-open');
+      // Finally "open" our reply form, since we know there are comments and we have the "attached" old form
+      $replyForm.addClass('comment-inline-form-open');
+      tooltipActivate();
   };
 
   this.createResolutionComment = function(commentId){
@@ -1319,9 +1412,12 @@ var CommentsController = function() {
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
     if (commentData.commentInline) {
-        this.createComment(comment, commentId)
+        var f_path = commentData.fPath;
+        var line_no = commentData.lineNo;
+        //TODO check this if we need to give f_path/line_no
+        this.createComment(comment, f_path, line_no, commentId)
     } else {
-        Rhodecode.comments.createGeneralComment('general', "$placeholder", commentId)
+        this.createGeneralComment('general', "$placeholder", commentId)
     }
 
     return false;
@@ -1347,3 +1443,8 @@ var CommentsController = function() {
   };
 
 };
+
+window.commentHelp = function(renderer) {
+    var funcData = {'renderer': renderer}
+    return renderTemplate('commentHelpHovercard', funcData)
+}

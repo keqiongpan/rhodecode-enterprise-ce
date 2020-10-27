@@ -252,7 +252,7 @@ But please check this code
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
     if (commentData.commentInline) {
-        this.createComment(comment, commentId)
+        this.createComment(comment, f_path, line_no, commentId)
     } else {
         Rhodecode.comments.createGeneralComment('general', "$placeholder", commentId)
     }

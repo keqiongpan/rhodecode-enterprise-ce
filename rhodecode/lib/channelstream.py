@@ -339,13 +339,12 @@ def comment_channelstream_push(request, comment_broadcast_channel, user, msg, **
 
     comment_data = kwargs.pop('comment_data', {})
     user_data = kwargs.pop('user_data', {})
-    comment_id = comment_data.get('comment_id')
+    comment_id = comment_data.keys()[0] if comment_data else ''
 
-    message = '<strong>{}</strong> {} #{}, {}'.format(
+    message = '<strong>{}</strong> {} #{}'.format(
         user.username,
         msg,
         comment_id,
-        _reload_link(_('Reload page to see new comments')),
     )
 
     message_obj = {

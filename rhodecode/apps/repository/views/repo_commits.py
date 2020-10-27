@@ -383,6 +383,9 @@ class RepoCommitsView(RepoAppView):
         text = self.request.POST.get('text')
         comment_type = self.request.POST.get('comment_type')
         resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
+        f_path = self.request.POST.get('f_path')
+        line_no = self.request.POST.get('line')
+        target_elem_id = 'file-{}'.format(h.safeid(h.safe_unicode(f_path)))
 
         if status:
             text = text or (_('Status change %(transition_icon)s %(status)s')
@@ -404,8 +407,8 @@ class RepoCommitsView(RepoAppView):
                 repo=self.db_repo.repo_id,
                 user=self._rhodecode_db_user.user_id,
                 commit_id=current_id,
-                f_path=self.request.POST.get('f_path'),
-                line_no=self.request.POST.get('line'),
+                f_path=f_path,
+                line_no=line_no,
                 status_change=(ChangesetStatus.get_status_lbl(status)
                                if status else None),
                 status_change_type=status,
@@ -447,19 +450,20 @@ class RepoCommitsView(RepoAppView):
         # finalize, commit and redirect
         Session().commit()
 
-        data = {
-            'target_id': h.safeid(h.safe_unicode(
-                self.request.POST.get('f_path'))),
-        }
+        data = {}
         if comment:
+            comment_id = comment.comment_id
+            data[comment_id] = {
+                'target_id': target_elem_id
+            }
             c.co = comment
             c.at_version_num = 0
             rendered_comment = render(
                 'rhodecode:templates/changeset/changeset_comment_block.mako',
                 self._get_template_context(c), self.request)
 
-            data.update(comment.get_dict())
-            data.update({'rendered_text': rendered_comment})
+            data[comment_id].update(comment.get_dict())
+            data[comment_id].update({'rendered_text': rendered_comment})
 
             comment_broadcast_channel = channelstream.comment_channel(
                 self.db_repo_name, commit_obj=commit)

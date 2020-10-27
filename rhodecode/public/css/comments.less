@@ -4,7 +4,7 @@
 
 
 // Comments
-@comment-outdated-opacity: 0.6;
+@comment-outdated-opacity: 1.0;
 
 .comments {
     width: 100%;
@@ -64,32 +64,34 @@ tr.inline-comments div {
 .comment-draft {
     float: left;
     margin-right: 10px;
-    font-weight: 600;
-    color: @alert3;
+    font-weight: 400;
+    color: @color-draft;
+}
+
+.comment-new {
+    float: left;
+    margin-right: 10px;
+    font-weight: 400;
+    color: @color-new;
 }
 
 .comment-label {
     float: left;
 
-    padding: 0.4em 0.4em;
-    margin: 2px 4px 0px 0px;
-    display: inline-block;
+    padding: 0 8px 0 0;
     min-height: 0;
 
     text-align: center;
     font-size: 10px;
-    line-height: .8em;
 
     font-family: @text-italic;
     font-style: italic;
     background: #fff none;
     color: @grey3;
-    border: 1px solid @grey4;
     white-space: nowrap;
 
     text-transform: uppercase;
     min-width: 50px;
-    border-radius: 4px;
 
     &.todo {
         color: @color5;
@@ -277,63 +279,164 @@ tr.inline-comments div {
     .comment-outdated {
         opacity: @comment-outdated-opacity;
     }
+
+    .comment-outdated-label {
+        color: @grey3;
+        padding-right: 4px;
+    }
 }
 
 .inline-comments {
-    border-radius: @border-radius;
+
     .comment {
         margin: 0;
-        border-radius: @border-radius;
     }
+
     .comment-outdated {
         opacity: @comment-outdated-opacity;
     }
 
+    .comment-outdated-label {
+        color: @grey3;
+        padding-right: 4px;
+    }
+
     .comment-inline {
+
+        &:first-child {
+            margin: 4px 4px 0 4px;
+            border-top: 1px solid @grey5;
+            border-bottom: 0 solid @grey5;
+            border-left: 1px solid @grey5;
+            border-right: 1px solid @grey5;
+            .border-radius-top(4px);
+        }
+
+        &:only-child {
+            margin: 4px 4px 0 4px;
+            border-top: 1px solid @grey5;
+            border-bottom: 0 solid @grey5;
+            border-left: 1px solid @grey5;
+            border-right: 1px solid @grey5;
+            .border-radius-top(4px);
+        }
+
         background: white;
         padding: @comment-padding @comment-padding;
-        border: @comment-padding solid @grey6;
+        margin: 0 4px 0 4px;
+        border-top: 0 solid @grey5;
+        border-bottom: 0 solid @grey5;
+        border-left: 1px solid @grey5;
+        border-right: 1px solid @grey5;
 
         .text {
             border: none;
         }
+
         .meta {
             border-bottom: 1px solid @grey6;
             margin: -5px 0px;
             line-height: 24px;
         }
+
     }
     .comment-selected {
         border-left: 6px solid @comment-highlight-color;
     }
+
+    .comment-inline-form-open {
+        display: block !important;
+    }
+
     .comment-inline-form {
-        padding: @comment-padding;
         display: none;
     }
-    .cb-comment-add-button {
-        margin: @comment-padding;
+
+    .comment-inline-form-edit {
+        padding: 0;
+        margin: 0px 4px 2px 4px;
     }
-     /* hide add comment button when form is open */
+
+    .reply-thread-container {
+        display: table;
+        width: 100%;
+        padding: 0px 4px 4px 4px;
+    }
+
+    .reply-thread-container-wrapper {
+        margin: 0 4px 4px 4px;
+        border-top: 0 solid @grey5;
+        border-bottom: 1px solid @grey5;
+        border-left: 1px solid @grey5;
+        border-right: 1px solid @grey5;
+        .border-radius-bottom(4px);
+    }
+
+    .reply-thread-gravatar {
+        display: table-cell;
+        width: 24px;
+        height: 24px;
+        padding-top: 10px;
+        padding-left: 10px;
+        background-color: #eeeeee;
+        vertical-align: top;
+    }
+
+    .reply-thread-reply-button {
+        display: table-cell;
+        width: 100%;
+        height: 33px;
+        padding: 3px 8px;
+        margin-left: 8px;
+        background-color: #eeeeee;
+    }
+
+    .reply-thread-reply-button .cb-comment-add-button {
+        border-radius: 4px;
+        width: 100%;
+        padding: 6px 2px;
+        text-align: left;
+        cursor: text;
+        color: @grey3;
+    }
+    .reply-thread-reply-button .cb-comment-add-button:hover {
+        background-color: white;
+        color: @grey2;
+    }
+
+    .reply-thread-last {
+        display: table-cell;
+        width: 10px;
+    }
+
+    /* Hide reply box when it's a first element,
+    can happen when drafts are saved but not shown to specific user,
+    or there are outdated comments hidden
+    */
+    .reply-thread-container-wrapper:first-child:not(.comment-form-active) {
+         display: none;
+    }
+
+    .reply-thread-container-wrapper.comment-outdated {
+        display: none
+    }
+
+    /* hide add comment button when form is open */
     .comment-inline-form-open ~ .cb-comment-add-button {
         display: none;
     }
-    .comment-inline-form-open {
-        display: block;
-    }
-     /* hide add comment button when form but no comments */
-    .comment-inline-form:first-child + .cb-comment-add-button {
-        display: none;
-    }
-     /* hide add comment button when no comments or form */
-    .cb-comment-add-button:first-child {
-        display: none;
-    }
+
      /* hide add comment button when only comment is being deleted */
     .comment-deleting:first-child + .cb-comment-add-button {
         display: none;
     }
-}
 
+    /* hide add comment button when form but no comments */
+    .comment-inline-form:first-child + .cb-comment-add-button {
+        display: none;
+    }
+
+}
 
 .show-outdated-comments {
     display: inline;
@@ -387,23 +490,40 @@ form.comment-form {
 }
 
 .comment-footer {
-    position: relative;
+    display: table;
     width: 100%;
-    min-height: 42px;
+    height: 42px;
 
-    .status_box,
+    .comment-status-box,
     .cancel-button {
-        float: left;
         display: inline-block;
     }
 
-    .status_box {
+    .comment-status-box {
         margin-left: 10px;
     }
 
     .action-buttons {
-        float: left;
-        display: inline-block;
+        display: table-cell;
+        padding: 5px 0 5px 2px;
+    }
+
+    .toolbar-text {
+        height: 42px;
+        display: table-cell;
+        vertical-align: bottom;
+        font-size: 11px;
+        color: @grey4;
+        text-align: right;
+
+        a {
+            color: @grey4;
+        }
+
+        p {
+            padding: 0;
+            margin: 0;
+        }
     }
 
     .action-buttons-extra {
@@ -434,10 +554,6 @@ form.comment-form {
         margin-right: 0;
     }
 
-    .comment-footer {
-        margin-bottom: 50px;
-        margin-top: 10px;
-    }
 }
 
 
@@ -489,8 +605,8 @@ form.comment-form {
 .injected_diff .comment-inline-form,
 .comment-inline-form {
     background-color: white;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-top: 4px;
+    margin-bottom: 10px;
 }
 
 .inline-form {
@@ -526,9 +642,6 @@ form.comment-form {
     margin: 0px;
 }
 
-.comment-inline-form .comment-footer {
-    margin: 10px 0px 0px 0px;
-}
 
 .hide-inline-form-button {
     margin-left: 5px;
@@ -554,6 +667,7 @@ comment-area-text {
 
 .comment-area-header {
     height: 35px;
+    border-bottom: 1px solid @grey5;
 }
 
 .comment-area-header .nav-links {
@@ -561,6 +675,7 @@ comment-area-text {
     flex-flow: row wrap;
     -webkit-flex-flow: row wrap;
     width: 100%;
+    border: none;
 }
 
 .comment-area-footer {
@@ -627,16 +742,5 @@ comment-area-text {
     line-height: 28px;
     color: #8f8f8f;
     border-bottom: 2px solid transparent;
-}
-
-.toolbar-text {
-    float: right;
-    font-size: 11px;
-    color: @grey4;
-    text-align: right;
-
-    a {
-        color: @grey4;
-    }
 }
 

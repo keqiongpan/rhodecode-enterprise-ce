@@ -10,7 +10,7 @@
 %>
 
 
-<%def name="comment_block(comment, inline=False, active_pattern_entries=None)">
+<%def name="comment_block(comment, inline=False, active_pattern_entries=None, is_new=False)">
 
     <%
       from rhodecode.model.comment import CommentsModel
@@ -40,6 +40,7 @@
        data-comment-draft=${h.json.dumps(comment.draft)}
        data-comment-renderer="${comment.renderer}"
        data-comment-text="${comment.text | html_filters.base64,n}"
+       data-comment-f-path="${comment.f_path}"
        data-comment-line-no="${comment.line_no}"
        data-comment-inline=${h.json.dumps(inline)}
        style="${'display: none;' if outdated_at_ver else ''}">
@@ -47,8 +48,17 @@
       <div class="meta">
           <div class="comment-type-label">
                % if comment.draft:
-                 <div class="tooltip comment-draft" title="${_('Draft comments are only visible to the author until submitted')}.">DRAFT</div>
+               <div class="tooltip comment-draft" title="${_('Draft comments are only visible to the author until submitted')}.">
+                DRAFT
+               </div>
                % endif
+
+              % if is_new:
+              <div class="tooltip comment-new" title="${_('This comment was added while you browsed this page')}.">
+                NEW
+              </div>
+              % endif
+
               <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
 
               ## TODO COMMENT
@@ -176,7 +186,7 @@
             % if inline:
                     <a class="pr-version-inline" href="${request.current_route_path(_query=dict(version=comment.pull_request_version_id), _anchor='comment-{}'.format(comment.comment_id))}">
                     % if outdated_at_ver:
-                        <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}">outdated ${'v{}'.format(comment_ver)}</code>
+                        <strong class="comment-outdated-label">outdated</strong> <code class="tooltip pr-version-num" title="${_('Outdated comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}">${'v{}'.format(comment_ver)}</code>
                         <code class="action-divider">|</code>
                     % elif comment_ver:
                         <code class="tooltip pr-version-num" title="${_('Comment from pull request version v{0}, latest v{1}').format(comment_ver, latest_ver)}">${'v{}'.format(comment_ver)}</code>
@@ -222,12 +232,13 @@
                    %if comment.immutable is False and (c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name) or comment.author.user_id == c.rhodecode_user.user_id):
                        <div class="dropdown-divider"></div>
                        <div class="dropdown-item">
-                        <a onclick="return Rhodecode.comments.editComment(this);" class="btn btn-link btn-sm edit-comment">${_('Edit')}</a>
+                        <a onclick="return Rhodecode.comments.editComment(this, '${comment.line_no}', '${comment.f_path}');" class="btn btn-link btn-sm edit-comment">${_('Edit')}</a>
                        </div>
                        <div class="dropdown-item">
                         <a onclick="return Rhodecode.comments.deleteComment(this);" class="btn btn-link btn-sm btn-danger delete-comment">${_('Delete')}</a>
                        </div>
-                       % if comment.draft:
+                       ## Only available in EE edition
+                       % if comment.draft and c.rhodecode_edition_id == 'EE':
                        <div class="dropdown-item">
                         <a onclick="return Rhodecode.comments.finalizeDrafts([${comment.comment_id}]);" class="btn btn-link btn-sm finalize-draft-comment">${_('Submit draft')}</a>
                        </div>
@@ -391,7 +402,7 @@
 
             <div class="comment-area-write" style="display: block;">
                 <div id="edit-container">
-                    <div style="padding: 40px 0">
+                    <div style="padding: 20px 0px 0px 0;">
                       ${_('You need to be logged in to leave comments.')}
                       <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
                     </div>
@@ -450,7 +461,7 @@
         </div>
 
         <div class="comment-area-write" style="display: block;">
-            <div id="edit-container_${lineno_id}">
+            <div id="edit-container_${lineno_id}" style="margin-top: -1px">
                 <textarea id="text_${lineno_id}" name="text" class="comment-block-ta ac-input"></textarea>
             </div>
             <div id="preview-container_${lineno_id}" class="clearfix" style="display: none;">
@@ -500,40 +511,47 @@
             <input class="btn btn-success comment-button-input submit-comment-action" id="save_${lineno_id}" name="save" type="submit" value="${_('Add comment')}" data-is-draft=false onclick="$(this).addClass('submitter')">
 
             % if form_type == 'inline':
-                <input class="btn btn-warning comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
+                % if c.rhodecode_edition_id == 'EE':
+                    ## Disable the button for CE, the "real" validation is in the backend code anyway
+                    <input class="btn btn-warning comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
+                % else:
+                    <input class="tooltip btn btn-warning comment-button-input submit-draft-action disabled" type="submit" disabled="disabled" value="${_('Add draft')}" onclick="return false;" title="Draft comments only available in EE edition of RhodeCode">
+                % endif
+            % endif
+
+            % if review_statuses:
+            <div class="comment-status-box">
+              <select id="change_status_${lineno_id}" name="changeset_status">
+                  <option></option> ## Placeholder
+                  % for status, lbl in review_statuses:
+                  <option value="${status}" data-status="${status}">${lbl}</option>
+                      %if is_pull_request and change_status and status in ('approved', 'rejected'):
+                          <option value="${status}_closed" data-status="${status}">${lbl} & ${_('Closed')}</option>
+                      %endif
+                  % endfor
+              </select>
+            </div>
             % endif
 
             ## inline for has a file, and line-number together with cancel hide button.
             % if form_type == 'inline':
                 <input type="hidden" name="f_path" value="{0}">
                 <input type="hidden" name="line" value="${lineno_id}">
-                <button type="button" class="tooltip cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);" title="Hide comment box">
+                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
                 <i class="icon-cancel-circled2"></i>
                 </button>
             % endif
         </div>
 
-        % if review_statuses:
-        <div class="status_box">
-          <select id="change_status_${lineno_id}" name="changeset_status">
-              <option></option> ## Placeholder
-              % for status, lbl in review_statuses:
-              <option value="${status}" data-status="${status}">${lbl}</option>
-                  %if is_pull_request and change_status and status in ('approved', 'rejected'):
-                      <option value="${status}_closed" data-status="${status}">${lbl} & ${_('Closed')}</option>
-                  %endif
-              % endfor
-          </select>
-        </div>
-        % endif
-
         <div class="toolbar-text">
             <% renderer_url = '<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper()) %>
-            ${_('Comments parsed using {} syntax.').format(renderer_url)|n} <br/>
-            <span class="tooltip" title="${_('Use @username inside this text to send notification to this RhodeCode user')}">@mention</span>
-            ${_('and')}
-            <span class="tooltip" title="${_('Start typing with / for certain actions to be triggered via text box.')}">`/` autocomplete</span>
-            ${_('actions supported.')}
+            <p>${_('Styling with {} is supported.').format(renderer_url)|n}
+
+            <i class="icon-info-circled tooltip-hovercard"
+               data-hovercard-alt="ALT"
+               data-hovercard-url="javascript:commentHelp('${c.visual.default_renderer.upper()}')"
+               data-comment-json-b64='${h.b64(h.json.dumps({}))}'></i>
+            </p>
         </div>
     </div>
 

@@ -456,7 +456,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
         </div>
 
         <div class="markup-form-area-write" style="display: block;">
-            <div id="edit-container_${form_id}">
+            <div id="edit-container_${form_id}" style="margin-top: -1px">
                 <textarea id="${form_id}" name="${form_id}" class="comment-block-ta ac-input">${form_text if form_text else ''}</textarea>
             </div>
             <div id="preview-container_${form_id}" class="clearfix" style="display: none;">

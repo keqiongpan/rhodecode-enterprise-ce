@@ -983,8 +983,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         }
         return data
 
-    def _get_existing_ids(self, post_data):
-        return filter(lambda e: e, map(safe_int, aslist(post_data.get('comments'), ',')))
+    @classmethod
+    def get_comment_ids(cls, post_data):
+        return filter(lambda e: e > 0, map(safe_int, aslist(post_data.get('comments'), ',')))
 
     @LoginRequired()
     @NotAnonymous()
@@ -1022,7 +1023,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         self.register_comments_vars(c, pull_request_latest, versions, include_drafts=False)
         all_comments = c.inline_comments_flat + c.comments
 
-        existing_ids = self._get_existing_ids(self.request.POST)
+        existing_ids = self.get_comment_ids(self.request.POST)
         return _render('comments_table', all_comments, len(all_comments),
                        existing_ids=existing_ids)
 
@@ -1064,7 +1065,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             .get_pull_request_resolved_todos(pull_request, include_drafts=False)
 
         all_comments = c.unresolved_comments + c.resolved_comments
-        existing_ids = self._get_existing_ids(self.request.POST)
+        existing_ids = self.get_comment_ids(self.request.POST)
         return _render('comments_table', all_comments, len(c.unresolved_comments),
                        todo_comments=True, existing_ids=existing_ids)
 
@@ -1518,6 +1519,150 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     self._rhodecode_user)
         raise HTTPNotFound()
 
+    def _pull_request_comments_create(self, pull_request, comments):
+        _ = self.request.translate
+        data = {}
+        pull_request_id = pull_request.pull_request_id
+        if not comments:
+            return
+
+        all_drafts = len([x for x in comments if str2bool(x['is_draft'])]) == len(comments)
+
+        for entry in comments:
+            c = self.load_default_context()
+            comment_type = entry['comment_type']
+            text = entry['text']
+            status = entry['status']
+            is_draft = str2bool(entry['is_draft'])
+            resolves_comment_id = entry['resolves_comment_id']
+            close_pull_request = entry['close_pull_request']
+            f_path = entry['f_path']
+            line_no = entry['line']
+            target_elem_id = 'file-{}'.format(h.safeid(h.safe_unicode(f_path)))
+
+            # the logic here should work like following, if we submit close
+            # pr comment, use `close_pull_request_with_comment` function
+            # else handle regular comment logic
+
+            if close_pull_request:
+                # only owner or admin or person with write permissions
+                allowed_to_close = PullRequestModel().check_user_update(
+                    pull_request, self._rhodecode_user)
+                if not allowed_to_close:
+                    log.debug('comment: forbidden because not allowed to close '
+                              'pull request %s', pull_request_id)
+                    raise HTTPForbidden()
+
+                # This also triggers `review_status_change`
+                comment, status = PullRequestModel().close_pull_request_with_comment(
+                    pull_request, self._rhodecode_user, self.db_repo, message=text,
+                    auth_user=self._rhodecode_user)
+                Session().flush()
+                is_inline = comment.is_inline
+
+                PullRequestModel().trigger_pull_request_hook(
+                    pull_request, self._rhodecode_user, 'comment',
+                    data={'comment': comment})
+
+            else:
+                # regular comment case, could be inline, or one with status.
+                # for that one we check also permissions
+                # Additionally ENSURE if somehow draft is sent we're then unable to change status
+                allowed_to_change_status = PullRequestModel().check_user_change_status(
+                    pull_request, self._rhodecode_user) and not is_draft
+
+                if status and allowed_to_change_status:
+                    message = (_('Status change %(transition_icon)s %(status)s')
+                               % {'transition_icon': '>',
+                                  'status': ChangesetStatus.get_status_lbl(status)})
+                    text = text or message
+
+                comment = CommentsModel().create(
+                    text=text,
+                    repo=self.db_repo.repo_id,
+                    user=self._rhodecode_user.user_id,
+                    pull_request=pull_request,
+                    f_path=f_path,
+                    line_no=line_no,
+                    status_change=(ChangesetStatus.get_status_lbl(status)
+                                   if status and allowed_to_change_status else None),
+                    status_change_type=(status
+                                        if status and allowed_to_change_status else None),
+                    comment_type=comment_type,
+                    is_draft=is_draft,
+                    resolves_comment_id=resolves_comment_id,
+                    auth_user=self._rhodecode_user,
+                    send_email=not is_draft,  # skip notification for draft comments
+                )
+                is_inline = comment.is_inline
+
+                if allowed_to_change_status:
+                    # calculate old status before we change it
+                    old_calculated_status = pull_request.calculated_review_status()
+
+                    # get status if set !
+                    if status:
+                        ChangesetStatusModel().set_status(
+                            self.db_repo.repo_id,
+                            status,
+                            self._rhodecode_user.user_id,
+                            comment,
+                            pull_request=pull_request
+                        )
+
+                    Session().flush()
+                    # this is somehow required to get access to some relationship
+                    # loaded on comment
+                    Session().refresh(comment)
+
+                    PullRequestModel().trigger_pull_request_hook(
+                        pull_request, self._rhodecode_user, 'comment',
+                        data={'comment': comment})
+
+                    # we now calculate the status of pull request, and based on that
+                    # calculation we set the commits status
+                    calculated_status = pull_request.calculated_review_status()
+                    if old_calculated_status != calculated_status:
+                        PullRequestModel().trigger_pull_request_hook(
+                            pull_request, self._rhodecode_user, 'review_status_change',
+                            data={'status': calculated_status})
+
+            comment_id = comment.comment_id
+            data[comment_id] = {
+                'target_id': target_elem_id
+            }
+            Session().flush()
+
+            c.co = comment
+            c.at_version_num = None
+            c.is_new = True
+            rendered_comment = render(
+                'rhodecode:templates/changeset/changeset_comment_block.mako',
+                self._get_template_context(c), self.request)
+
+            data[comment_id].update(comment.get_dict())
+            data[comment_id].update({'rendered_text': rendered_comment})
+
+        Session().commit()
+
+        # skip channelstream for draft comments
+        if all_drafts:
+            comment_broadcast_channel = channelstream.comment_channel(
+                self.db_repo_name, pull_request_obj=pull_request)
+
+            comment_data = data
+            comment_type = 'inline' if is_inline else 'general'
+            if len(data) == 1:
+                msg = _('posted {} new {} comment').format(len(data), comment_type)
+            else:
+                msg = _('posted {} new {} comments').format(len(data), comment_type)
+
+            channelstream.comment_channelstream_push(
+                self.request, comment_broadcast_channel, self._rhodecode_user, msg,
+                comment_data=comment_data)
+
+        return data
+
     @LoginRequired()
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
@@ -1529,9 +1674,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def pull_request_comment_create(self):
         _ = self.request.translate
 
-        pull_request = PullRequest.get_or_404(
-            self.request.matchdict['pull_request_id'])
-        pull_request_id = pull_request.pull_request_id
+        pull_request = PullRequest.get_or_404(self.request.matchdict['pull_request_id'])
 
         if pull_request.is_closed():
             log.debug('comment: forbidden because pull request is closed')
@@ -1543,130 +1686,17 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             log.debug('comment: forbidden because pull request is from forbidden repo')
             raise HTTPForbidden()
 
-        c = self.load_default_context()
-
-        status = self.request.POST.get('changeset_status', None)
-        text = self.request.POST.get('text')
-        comment_type = self.request.POST.get('comment_type')
-        is_draft = str2bool(self.request.POST.get('draft'))
-        resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
-        close_pull_request = self.request.POST.get('close_pull_request')
-
-        # the logic here should work like following, if we submit close
-        # pr comment, use `close_pull_request_with_comment` function
-        # else handle regular comment logic
-
-        if close_pull_request:
-            # only owner or admin or person with write permissions
-            allowed_to_close = PullRequestModel().check_user_update(
-                pull_request, self._rhodecode_user)
-            if not allowed_to_close:
-                log.debug('comment: forbidden because not allowed to close '
-                          'pull request %s', pull_request_id)
-                raise HTTPForbidden()
-
-            # This also triggers `review_status_change`
-            comment, status = PullRequestModel().close_pull_request_with_comment(
-                pull_request, self._rhodecode_user, self.db_repo, message=text,
-                auth_user=self._rhodecode_user)
-            Session().flush()
-            is_inline = comment.is_inline
-
-            PullRequestModel().trigger_pull_request_hook(
-                pull_request, self._rhodecode_user, 'comment',
-                data={'comment': comment})
-
-        else:
-            # regular comment case, could be inline, or one with status.
-            # for that one we check also permissions
-            # Additionally ENSURE if somehow draft is sent we're then unable to change status
-            allowed_to_change_status = PullRequestModel().check_user_change_status(
-                pull_request, self._rhodecode_user) and not is_draft
-
-            if status and allowed_to_change_status:
-                message = (_('Status change %(transition_icon)s %(status)s')
-                           % {'transition_icon': '>',
-                              'status': ChangesetStatus.get_status_lbl(status)})
-                text = text or message
-
-            comment = CommentsModel().create(
-                text=text,
-                repo=self.db_repo.repo_id,
-                user=self._rhodecode_user.user_id,
-                pull_request=pull_request,
-                f_path=self.request.POST.get('f_path'),
-                line_no=self.request.POST.get('line'),
-                status_change=(ChangesetStatus.get_status_lbl(status)
-                               if status and allowed_to_change_status else None),
-                status_change_type=(status
-                                    if status and allowed_to_change_status else None),
-                comment_type=comment_type,
-                is_draft=is_draft,
-                resolves_comment_id=resolves_comment_id,
-                auth_user=self._rhodecode_user,
-                send_email=not is_draft,  # skip notification for draft comments
-            )
-            is_inline = comment.is_inline
-
-            if allowed_to_change_status:
-                # calculate old status before we change it
-                old_calculated_status = pull_request.calculated_review_status()
-
-                # get status if set !
-                if status:
-                    ChangesetStatusModel().set_status(
-                        self.db_repo.repo_id,
-                        status,
-                        self._rhodecode_user.user_id,
-                        comment,
-                        pull_request=pull_request
-                    )
-
-                Session().flush()
-                # this is somehow required to get access to some relationship
-                # loaded on comment
-                Session().refresh(comment)
-
-                PullRequestModel().trigger_pull_request_hook(
-                    pull_request, self._rhodecode_user, 'comment',
-                    data={'comment': comment})
-
-                # we now calculate the status of pull request, and based on that
-                # calculation we set the commits status
-                calculated_status = pull_request.calculated_review_status()
-                if old_calculated_status != calculated_status:
-                    PullRequestModel().trigger_pull_request_hook(
-                        pull_request, self._rhodecode_user, 'review_status_change',
-                        data={'status': calculated_status})
-
-        Session().commit()
-
-        data = {
-            'target_id': h.safeid(h.safe_unicode(
-                self.request.POST.get('f_path'))),
+        comment_data = {
+            'comment_type': self.request.POST.get('comment_type'),
+            'text': self.request.POST.get('text'),
+            'status': self.request.POST.get('changeset_status', None),
+            'is_draft': self.request.POST.get('draft'),
+            'resolves_comment_id': self.request.POST.get('resolves_comment_id', None),
+            'close_pull_request': self.request.POST.get('close_pull_request'),
+            'f_path': self.request.POST.get('f_path'),
+            'line': self.request.POST.get('line'),
         }
-
-        if comment:
-            c.co = comment
-            c.at_version_num = None
-            rendered_comment = render(
-                'rhodecode:templates/changeset/changeset_comment_block.mako',
-                self._get_template_context(c), self.request)
-
-            data.update(comment.get_dict())
-            data.update({'rendered_text': rendered_comment})
-
-            # skip channelstream for draft comments
-            if not is_draft:
-                comment_broadcast_channel = channelstream.comment_channel(
-                    self.db_repo_name, pull_request_obj=pull_request)
-
-                comment_data = data
-                comment_type = 'inline' if is_inline else 'general'
-                channelstream.comment_channelstream_push(
-                    self.request, comment_broadcast_channel, self._rhodecode_user,
-                    _('posted a new {} comment').format(comment_type),
-                    comment_data=comment_data)
+        data = self._pull_request_comments_create(pull_request, [comment_data])
 
         return data
 

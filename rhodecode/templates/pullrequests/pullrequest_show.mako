@@ -846,6 +846,7 @@ versionController.init();
 
 reviewersController = new ReviewersController();
 commitsController = new CommitsController();
+commentsController = new CommentsController();
 
 updateController = new UpdatePrController();
 
@@ -1002,6 +1003,8 @@ $(document).ready(function () {
         alert('okok !' + commentIds)
 
     }
+    // register globally so inject comment logic can re-use it.
+    window.commentsController = commentsController;
 
 })
 </script>
