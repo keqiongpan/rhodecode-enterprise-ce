@@ -735,8 +735,6 @@ var CommentsController = function() {
       };
       ajaxPOST(url, postData, success, failure);
 
-
-
   }
 
   this.deleteComment = function(node) {
@@ -757,7 +755,32 @@ var CommentsController = function() {
   };
 
   this._finalizeDrafts = function(commentIds) {
-    window.finalizeDrafts(commentIds)
+
+      // remove the drafts so we can lock them before submit.
+    $.each(commentIds, function(idx, val){
+        $('#comment-{0}'.format(val)).remove();
+    })
+
+    var params = {
+        'pull_request_id': templateContext.pull_request_data.pull_request_id,
+        'repo_name': templateContext.repo_name,
+    };
+    var url = pyroutes.url('pullrequest_draft_comments_submit', params)
+    var postData = {'comments': commentIds, 'csrf_token': CSRF_TOKEN};
+
+    var submitSuccessCallback = function(json_data) {
+        self.attachInlineComment(json_data);
+
+        if (window.refreshDraftComments !== undefined) {
+          // if we have this handler, run it, and refresh all comments boxes
+          refreshDraftComments()
+        }
+
+        return false;
+    };
+
+    ajaxPOST(url, postData, submitSuccessCallback)
+
   }
 
   this.finalizeDrafts = function(commentIds) {
@@ -766,7 +789,7 @@ var CommentsController = function() {
       title: _ngettext('Submit {0} draft comment.', 'Submit {0} draft comments.', commentIds.length).format(commentIds.length),
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: _gettext('Yes, finalize drafts'),
+      confirmButtonText: _gettext('Yes'),
 
     }).then(function(result) {
       if (result.value) {

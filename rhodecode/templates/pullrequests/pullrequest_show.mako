@@ -552,6 +552,35 @@
         ## CONTENT
         <div class="sidebar-content">
 
+            ## Drafts
+            % if c.rhodecode_edition_id == 'EE':
+            <div class="sidebar-element clear-both">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Drafts')}">
+                    <i class="icon-comment icon-draft"></i>
+                    <span id="comments-count">${0}</span>
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span class="sidebar-heading noselect">
+                    <i class="icon-comment icon-draft"></i>
+                    ${_('Drafts')}
+                  </span>
+                </div>
+
+                <div id="drafts" class="right-sidebar-expanded-state pr-details-content reviewers">
+                    ## members redering block
+
+
+                    ???
+
+
+                    ## end members redering block
+
+                </div>
+
+            </div>
+            % endif
+
             ## RULES SUMMARY/RULES
             <div class="sidebar-element clear-both">
                 <% vote_title = _ungettext(
@@ -997,12 +1026,6 @@ $(document).ready(function () {
 
     var channel = '${c.pr_broadcast_channel}';
     new ReviewerPresenceController(channel)
-
-
-    window.finalizeDrafts = function(commentIds) {
-        alert('okok !' + commentIds)
-
-    }
     // register globally so inject comment logic can re-use it.
     window.commentsController = commentsController;
 

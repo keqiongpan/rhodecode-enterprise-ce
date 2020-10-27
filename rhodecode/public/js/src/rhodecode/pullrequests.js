@@ -1066,14 +1066,14 @@ window.ReviewerPresenceController = function (channel) {
     this.handlePresence = function (data) {
         if (data.type == 'presence' && data.channel === self.channel) {
             this.storeUsers(data.users);
-            this.render()
+            this.render();
         }
     };
 
     this.handleChannelUpdate = function (data) {
         if (data.channel === this.channel) {
             this.storeUsers(data.state.users);
-            this.render()
+            this.render();
         }
 
     };
@@ -1179,6 +1179,10 @@ window.refreshAllComments = function (version) {
 
     refreshComments(version);
     refreshTODOs(version);
+};
+
+window.refreshDraftComments = function () {
+    alert('TODO: refresh Draft Comments needs implementation')
 };
 
 window.sidebarComment = function (commentId) {

@@ -51,13 +51,11 @@
                <div class="tooltip comment-draft" title="${_('Draft comments are only visible to the author until submitted')}.">
                 DRAFT
                </div>
-               % endif
-
-              % if is_new:
-              <div class="tooltip comment-new" title="${_('This comment was added while you browsed this page')}.">
+               % elif is_new:
+               <div class="tooltip comment-new" title="${_('This comment was added while you browsed this page')}.">
                 NEW
-              </div>
-              % endif
+               </div>
+               % endif
 
               <div class="comment-label ${comment.comment_type or 'note'}" id="comment-label-${comment.comment_id}">
 
@@ -515,7 +513,7 @@
                     ## Disable the button for CE, the "real" validation is in the backend code anyway
                     <input class="btn btn-warning comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
                 % else:
-                    <input class="tooltip btn btn-warning comment-button-input submit-draft-action disabled" type="submit" disabled="disabled" value="${_('Add draft')}" onclick="return false;" title="Draft comments only available in EE edition of RhodeCode">
+                    <input class="btn btn-warning comment-button-input submit-draft-action disabled" disabled="disabled" type="submit"  value="${_('Add draft')}" onclick="return false;" title="Draft comments only available in EE edition of RhodeCode">
                 % endif
             % endif
 
