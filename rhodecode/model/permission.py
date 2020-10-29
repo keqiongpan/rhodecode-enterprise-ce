@@ -578,7 +578,7 @@ class PermissionModel(BaseModel):
         return user_group_write_permissions
 
     def trigger_permission_flush(self, affected_user_ids=None):
-        affected_user_ids or User.get_all_user_ids()
+        affected_user_ids = affected_user_ids or User.get_all_user_ids()
         events.trigger(events.UserPermissionsChange(affected_user_ids))
 
     def flush_user_permission_caches(self, changes, affected_user_ids=None):
