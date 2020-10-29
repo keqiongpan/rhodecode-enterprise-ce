@@ -380,6 +380,7 @@ class RepoCommitsView(RepoAppView):
 
         c = self.load_default_context()
         status = self.request.POST.get('changeset_status', None)
+        is_draft = str2bool(self.request.POST.get('draft'))
         text = self.request.POST.get('text')
         comment_type = self.request.POST.get('comment_type')
         resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
@@ -400,7 +401,8 @@ class RepoCommitsView(RepoAppView):
 
         commit_ids = multi_commit_ids or [commit_id]
 
-        comment = None
+        data = {}
+        # Multiple comments for each passed commit id
         for current_id in filter(None, commit_ids):
             comment = CommentsModel().create(
                 text=text,
@@ -413,8 +415,10 @@ class RepoCommitsView(RepoAppView):
                                if status else None),
                 status_change_type=status,
                 comment_type=comment_type,
+                is_draft=is_draft,
                 resolves_comment_id=resolves_comment_id,
-                auth_user=self._rhodecode_user
+                auth_user=self._rhodecode_user,
+                send_email=not is_draft,  # skip notification for draft comments
             )
             is_inline = comment.is_inline
 
@@ -442,22 +446,20 @@ class RepoCommitsView(RepoAppView):
                         'repo_commit', repo_name=self.db_repo_name,
                         commit_id=current_id))
 
-            commit = self.db_repo.get_commit(current_id)
-            CommentsModel().trigger_commit_comment_hook(
-                self.db_repo, self._rhodecode_user, 'create',
-                data={'comment': comment, 'commit': commit})
+            # skip notifications for drafts
+            if not is_draft:
+                commit = self.db_repo.get_commit(current_id)
+                CommentsModel().trigger_commit_comment_hook(
+                    self.db_repo, self._rhodecode_user, 'create',
+                    data={'comment': comment, 'commit': commit})
 
-        # finalize, commit and redirect
-        Session().commit()
-
-        data = {}
-        if comment:
             comment_id = comment.comment_id
             data[comment_id] = {
                 'target_id': target_elem_id
             }
             c.co = comment
             c.at_version_num = 0
+            c.is_new = True
             rendered_comment = render(
                 'rhodecode:templates/changeset/changeset_comment_block.mako',
                 self._get_template_context(c), self.request)
@@ -465,15 +467,20 @@ class RepoCommitsView(RepoAppView):
             data[comment_id].update(comment.get_dict())
             data[comment_id].update({'rendered_text': rendered_comment})
 
-            comment_broadcast_channel = channelstream.comment_channel(
-                self.db_repo_name, commit_obj=commit)
+            # skip channelstream for draft comments
+            if not is_draft:
+                comment_broadcast_channel = channelstream.comment_channel(
+                    self.db_repo_name, commit_obj=commit)
 
-            comment_data = data
-            comment_type = 'inline' if is_inline else 'general'
-            channelstream.comment_channelstream_push(
-                self.request, comment_broadcast_channel, self._rhodecode_user,
-                _('posted a new {} comment').format(comment_type),
-                comment_data=comment_data)
+                comment_data = data
+                comment_type = 'inline' if is_inline else 'general'
+                channelstream.comment_channelstream_push(
+                    self.request, comment_broadcast_channel, self._rhodecode_user,
+                    _('posted a new {} comment').format(comment_type),
+                    comment_data=comment_data)
+
+        # finalize, commit and redirect
+        Session().commit()
 
         return data
 
