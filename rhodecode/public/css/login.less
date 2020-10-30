@@ -22,13 +22,27 @@
         float: none;
     }
 
-    .header {
+    .header-account {
+        min-height: 49px;
         width: 100%;
-        padding: 0 35px;
+        padding: 0 @header-padding;
         box-sizing: border-box;
+        position: relative;
+        vertical-align: bottom;
+
+        background-color: @grey1;
+        color: @grey5;
 
         .title {
             padding: 0;
+            overflow: visible;
+        }
+
+        &:before,
+        &:after {
+            content: "";
+            clear: both;
+            width: 100%;
         }
     }
 

@@ -10,7 +10,7 @@
 
 <style>body{background-color:#eeeeee;}</style>
 <div class="loginbox">
-    <div class="header">
+    <div class="header-account">
         <div id="header-inner" class="title">
             <div id="logo">
                 <div class="logo-wrapper">
