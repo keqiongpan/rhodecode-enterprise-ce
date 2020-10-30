@@ -107,7 +107,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         comments_model = CommentsModel()
         for pr in pull_requests:
             comments_count = comments_model.get_all_comments(
-                self.db_repo.repo_id, pull_request=pr, count_only=True)
+                self.db_repo.repo_id, pull_request=pr,
+                include_drafts=False, count_only=True)
 
             data.append({
                 'name': _render('pullrequest_name',

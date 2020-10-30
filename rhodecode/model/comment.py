@@ -563,7 +563,8 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def get_all_comments(self, repo_id, revision=None, pull_request=None, count_only=False):
+    def get_all_comments(self, repo_id, revision=None, pull_request=None,
+                         include_drafts=True, count_only=False):
         q = ChangesetComment.query()\
                 .filter(ChangesetComment.repo_id == repo_id)
         if revision:
@@ -573,6 +574,8 @@ class CommentsModel(BaseModel):
             q = q.filter(ChangesetComment.pull_request_id == pull_request.pull_request_id)
         else:
             raise Exception('Please specify commit or pull_request')
+        if not include_drafts:
+            q = q.filter(ChangesetComment.draft == false())
         q = q.order_by(ChangesetComment.created_on)
         if count_only:
             return q.count()

@@ -273,7 +273,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
             <%
                 file_comments = (get_inline_comments(inline_comments, filediff.patch['filename']) or {}).values()
-                total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not _c.outdated]
+                total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not (_c.outdated or _c.draft)]
             %>
             <div class="filediff-collapse-indicator icon-"></div>
 

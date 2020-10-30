@@ -735,7 +735,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
         for pr in pull_requests:
             repo_id = pr.target_repo_id
             comments_count = comments_model.get_all_comments(
-                repo_id, pull_request=pr, count_only=True)
+                repo_id, pull_request=pr, include_drafts=False, count_only=True)
             owned = pr.user_id == self._rhodecode_user.user_id
 
             data.append({
