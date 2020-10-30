@@ -473,10 +473,10 @@ class RepoCommitsView(RepoAppView):
                     self.db_repo_name, commit_obj=commit)
 
                 comment_data = data
-                comment_type = 'inline' if is_inline else 'general'
+                posted_comment_type = 'inline' if is_inline else 'general'
                 channelstream.comment_channelstream_push(
                     self.request, comment_broadcast_channel, self._rhodecode_user,
-                    _('posted a new {} comment').format(comment_type),
+                    _('posted a new {} comment').format(posted_comment_type),
                     comment_data=comment_data)
 
         # finalize, commit and redirect

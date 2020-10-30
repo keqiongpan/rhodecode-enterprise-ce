@@ -325,10 +325,9 @@
         ## inject form here
     </div>
     <script type="text/javascript">
-        var lineNo = 'general';
         var resolvesCommentId = null;
         var generalCommentForm = Rhodecode.comments.createGeneralComment(
-            lineNo, "${placeholder}", resolvesCommentId);
+            'general', "${placeholder}", resolvesCommentId);
 
         // set custom success callback on rangeCommit
         % if is_compare:
@@ -543,13 +542,13 @@
 
         <div class="toolbar-text">
             <% renderer_url = '<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper()) %>
-            <p>${_('Styling with {} is supported.').format(renderer_url)|n}
+            <span>${_('Styling with {} is supported.').format(renderer_url)|n}
 
             <i class="icon-info-circled tooltip-hovercard"
                data-hovercard-alt="ALT"
                data-hovercard-url="javascript:commentHelp('${c.visual.default_renderer.upper()}')"
                data-comment-json-b64='${h.b64(h.json.dumps({}))}'></i>
-            </p>
+            </span>
         </div>
     </div>
 

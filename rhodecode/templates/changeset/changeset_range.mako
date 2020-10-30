@@ -104,8 +104,6 @@
       %for commit in c.commit_ranges:
         ## commit range header for each individual diff
         <h3>
-
-
             <a class="tooltip-hovercard revision" data-hovercard-alt="Commit: ${commit.short_id}" data-hovercard-url="${h.route_path('hovercard_repo_commit', repo_name=c.repo_name, commit_id=commit.raw_id)}" href="${h.route_path('repo_commit',repo_name=c.repo_name,commit_id=commit.raw_id)}">
                 ${('r%s:%s' % (commit.idx,h.short_id(commit.raw_id)))}
             </a>
