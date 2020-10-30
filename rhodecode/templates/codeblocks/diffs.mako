@@ -636,11 +636,12 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         extra_class = ''
         extra_style = ''
 
-        if comments and comments[-1].outdated:
+        if comments and comments[-1].outdated_at_version(c.at_version_num):
             extra_class = ' comment-outdated'
             extra_style = 'display: none;'
 
     %>
+
     <div class="reply-thread-container-wrapper${extra_class}" style="${extra_style}">
         <div class="reply-thread-container${extra_class}">
             <div class="reply-thread-gravatar">
