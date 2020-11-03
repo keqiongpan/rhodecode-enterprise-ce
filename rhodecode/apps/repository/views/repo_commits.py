@@ -77,6 +77,7 @@ class RepoCommitsView(RepoAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.fulldiff = self.request.GET.get('fulldiff')
+        redirect_to_combined = str2bool(self.request.GET.get('redirect_combined'))
 
         # fetch global flags of ignore ws or context lines
         diff_context = get_diff_context(self.request)
@@ -116,6 +117,19 @@ class RepoCommitsView(RepoAppView):
             log.exception("General failure")
             raise HTTPNotFound()
         single_commit = len(c.commit_ranges) == 1
+
+        if redirect_to_combined and not single_commit:
+            source_ref = getattr(c.commit_ranges[0].parents[0]
+                                 if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id')
+            target_ref = c.commit_ranges[-1].raw_id
+            next_url = h.route_path(
+                'repo_compare',
+                repo_name=c.repo_name,
+                source_ref_type='rev',
+                source_ref=source_ref,
+                target_ref_type='rev',
+                target_ref=target_ref)
+            raise HTTPFound(next_url)
 
         c.changes = OrderedDict()
         c.lines_added = 0

@@ -108,7 +108,26 @@
                             <i class="icon-cancel-circled2"></i>
                         </div>
                         <div class="btn btn-sm disabled" disabled="disabled" id="rev_range_more" style="display:none;">${_('Select second commit')}</div>
-                        <a href="#" class="btn btn-success btn-sm" id="rev_range_container" style="display:none;"></a>
+
+                        <div id="rev_range_action" class="btn-group btn-group-actions" style="display:none;">
+                            <a href="#" class="btn btn-success btn-sm" id="rev_range_container" style="display:none;"></a>
+
+                            <a class="btn btn-success btn-sm btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button">
+                                <i class="icon-down"></i>
+                            </a>
+
+                            <div class="btn-action-switcher-container right-align">
+                                <ul class="btn-action-switcher" role="menu" style="min-width: 220px; width: max-content">
+                                    <li>
+                                        ## JS fills the URL
+                                        <a id="rev_range_combined_url" class="btn btn-primary btn-sm" href="">
+                                            ${_('Show combined diff')}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
                       </th>
 
                       ## commit message expand arrow
@@ -147,6 +166,9 @@
             var $commitRangeMore = $('#rev_range_more');
             var $commitRangeContainer = $('#rev_range_container');
             var $commitRangeClear = $('#rev_range_clear');
+            var $commitRangeAction = $('#rev_range_action');
+            var $commitRangeCombinedUrl = $('#rev_range_combined_url');
+            var $compareFork = $('#compare_fork_button');
 
             var checkboxRangeSelector = function(e){
                 var selectedCheckboxes = [];
@@ -169,9 +191,8 @@
                 }
 
                 if (selectedCheckboxes.length > 0) {
-                    $('#compare_fork_button').hide();
+                    $compareFork.hide();
                     var commitStart = $(selectedCheckboxes[selectedCheckboxes.length-1]).data();
-
                     var revStart = commitStart.commitId;
 
                     var commitEnd = $(selectedCheckboxes[0]).data();
@@ -181,7 +202,9 @@
                     var lbl_end = '{0}'.format(commitEnd.commitIdx, commitEnd.shortId);
 
                     var url = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}', 'commit_id': revStart+'...'+revEnd});
-                    var link = _gettext('Show commit range {0} ... {1}').format(lbl_start, lbl_end);
+                    var urlCombined = pyroutes.url('repo_commit', {'repo_name': '${c.repo_name}', 'commit_id': revStart+'...'+revEnd, 'redirect_combined': '1'});
+
+                    var link = _gettext('Show commit range {0}<i class="icon-angle-right"></i>{1}').format(lbl_start, lbl_end);
 
                     if (selectedCheckboxes.length > 1) {
                         $commitRangeClear.show();
@@ -192,9 +215,12 @@
                             .html(link)
                             .show();
 
+                        $commitRangeCombinedUrl.attr('href', urlCombined);
+                        $commitRangeAction.show();
 
                     } else {
                         $commitRangeContainer.hide();
+                        $commitRangeAction.hide();
                         $commitRangeClear.show();
                         $commitRangeMore.show();
                     }
@@ -212,6 +238,7 @@
                     $commitRangeContainer.hide();
                     $commitRangeClear.hide();
                     $commitRangeMore.hide();
+                    $commitRangeAction.hide();
 
                     %if c.branch_name:
                         var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}', 'branch':'${c.branch_name}'});
@@ -220,7 +247,7 @@
                         var _url = pyroutes.url('pullrequest_new', {'repo_name': '${c.repo_name}'});
                         open_new_pull_request.attr('href', _url);
                     %endif
-                    $('#compare_fork_button').show();
+                    $compareFork.show();
                 }
             };
 
