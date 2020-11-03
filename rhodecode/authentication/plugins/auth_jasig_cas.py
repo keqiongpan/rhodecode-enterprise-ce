@@ -89,7 +89,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     def get_settings_schema(self):
         return JasigCasSettingsSchema()
 
-    def get_display_name(self):
+    def get_display_name(self, load_from_settings=False):
         return _('Jasig-CAS')
 
     @hybrid_property

@@ -215,9 +215,10 @@ class RhodeCodeAuthPluginBase(object):
         """
         return self._plugin_id
 
-    def get_display_name(self):
+    def get_display_name(self, load_from_settings=False):
         """
         Returns a translation string for displaying purposes.
+        if load_from_settings is set, plugin settings can override the display name
         """
         raise NotImplementedError('Not implemented in base class')
 

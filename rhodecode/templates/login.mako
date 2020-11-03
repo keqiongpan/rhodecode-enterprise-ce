@@ -32,8 +32,8 @@
             <img class="sign-in-image" src="${h.asset('images/sign-in.png')}" alt="RhodeCode"/>
         </div>
 
-        <%block name="above_login_button" />
         <div id="login" class="right-column">
+            <%block name="above_login_button" />
             <!-- login -->
             <div class="sign-in-title">
                 <h1>${_('Sign In using username/password')}</h1>
