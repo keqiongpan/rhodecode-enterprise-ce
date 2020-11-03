@@ -700,7 +700,16 @@ var CommentsController = function() {
       var $comment = $node.closest('.comment');
       var comment_id = $($comment).data('commentId');
       var isDraft = $($comment).data('commentDraft');
-      var url = AJAX_COMMENT_DELETE_URL.replace('__COMMENT_ID__', comment_id);
+
+      var pullRequestId = templateContext.pull_request_data.pull_request_id;
+      var commitId = templateContext.commit_data.commit_id;
+
+      if (pullRequestId) {
+          var url = pyroutes.url('pullrequest_comment_delete', {"comment_id": comment_id, "repo_name": templateContext.repo_name, "pull_request_id": pullRequestId})
+      } else if (commitId) {
+          var url = pyroutes.url('repo_commit_comment_delete', {"comment_id": comment_id, "repo_name": templateContext.repo_name, "commit_id": commitId})
+      }
+
       var postData = {
         'csrf_token': CSRF_TOKEN
       };
@@ -756,16 +765,20 @@ var CommentsController = function() {
 
   this._finalizeDrafts = function(commentIds) {
 
-      // remove the drafts so we can lock them before submit.
+    var pullRequestId = templateContext.pull_request_data.pull_request_id;
+    var commitId = templateContext.commit_data.commit_id;
+
+    if (pullRequestId) {
+          var url = pyroutes.url('pullrequest_draft_comments_submit', {"repo_name": templateContext.repo_name, "pull_request_id": pullRequestId})
+    } else if (commitId) {
+          var url = pyroutes.url('commit_draft_comments_submit', {"repo_name": templateContext.repo_name, "commit_id": commitId})
+    }
+
+    // remove the drafts so we can lock them before submit.
     $.each(commentIds, function(idx, val){
         $('#comment-{0}'.format(val)).remove();
     })
 
-    var params = {
-        'pull_request_id': templateContext.pull_request_data.pull_request_id,
-        'repo_name': templateContext.repo_name,
-    };
-    var url = pyroutes.url('pullrequest_draft_comments_submit', params)
     var postData = {'comments': commentIds, 'csrf_token': CSRF_TOKEN};
 
     var submitSuccessCallback = function(json_data) {

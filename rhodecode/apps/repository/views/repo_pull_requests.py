@@ -1523,9 +1523,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def _pull_request_comments_create(self, pull_request, comments):
         _ = self.request.translate
         data = {}
-        pull_request_id = pull_request.pull_request_id
         if not comments:
             return
+        pull_request_id = pull_request.pull_request_id
 
         all_drafts = len([x for x in comments if str2bool(x['is_draft'])]) == len(comments)
 
@@ -1616,9 +1616,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     # loaded on comment
                     Session().refresh(comment)
 
-                    PullRequestModel().trigger_pull_request_hook(
-                        pull_request, self._rhodecode_user, 'comment',
-                        data={'comment': comment})
+                    # skip notifications for drafts
+                    if not is_draft:
+                        PullRequestModel().trigger_pull_request_hook(
+                            pull_request, self._rhodecode_user, 'comment',
+                            data={'comment': comment})
 
                     # we now calculate the status of pull request, and based on that
                     # calculation we set the commits status
@@ -1647,16 +1649,16 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         Session().commit()
 
         # skip channelstream for draft comments
-        if all_drafts:
+        if not all_drafts:
             comment_broadcast_channel = channelstream.comment_channel(
                 self.db_repo_name, pull_request_obj=pull_request)
 
             comment_data = data
-            comment_type = 'inline' if is_inline else 'general'
+            posted_comment_type = 'inline' if is_inline else 'general'
             if len(data) == 1:
-                msg = _('posted {} new {} comment').format(len(data), comment_type)
+                msg = _('posted {} new {} comment').format(len(data), posted_comment_type)
             else:
-                msg = _('posted {} new {} comments').format(len(data), comment_type)
+                msg = _('posted {} new {} comments').format(len(data), posted_comment_type)
 
             channelstream.comment_channelstream_push(
                 self.request, comment_broadcast_channel, self._rhodecode_user, msg,
@@ -1782,11 +1784,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             log.debug('comment: forbidden because pull request is closed')
             raise HTTPForbidden()
 
-        if not comment:
-            log.debug('Comment with id:%s not found, skipping', comment_id)
-            # comment already deleted in another call probably
-            return True
-
         if comment.pull_request.is_closed():
             # don't allow deleting comments on closed pull request
             raise HTTPForbidden()
@@ -1837,10 +1834,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 raise HTTPNotFound()
 
             Session().commit()
-
-            PullRequestModel().trigger_pull_request_hook(
-                pull_request, self._rhodecode_user, 'comment_edit',
-                data={'comment': comment})
+            if not comment.draft:
+                PullRequestModel().trigger_pull_request_hook(
+                    pull_request, self._rhodecode_user, 'comment_edit',
+                    data={'comment': comment})
 
             return {
                 'comment_history_id': comment_history.comment_history_id,

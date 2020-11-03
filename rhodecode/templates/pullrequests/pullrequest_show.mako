@@ -32,8 +32,6 @@
 %>
 
 <script type="text/javascript">
-    // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
     templateContext.pull_request_data.pull_request_version = '${request.GET.get('version', '')}';
 </script>

@@ -542,7 +542,7 @@
 
         <div class="toolbar-text">
             <% renderer_url = '<a href="%s">%s</a>' % (h.route_url('%s_help' % c.visual.default_renderer), c.visual.default_renderer.upper()) %>
-            <span>${_('Styling with {} is supported.').format(renderer_url)|n}
+            <span>${_('{} is supported.').format(renderer_url)|n}
 
             <i class="icon-info-circled tooltip-hovercard"
                data-hovercard-alt="ALT"
