@@ -722,7 +722,8 @@ class CommentsModel(BaseModel):
                 path=comment.f_path, diff_line=diff_line)
         except (diffs.LineNotInDiffException,
                 diffs.FileNotInDiffException):
-            comment.display_state = ChangesetComment.COMMENT_OUTDATED
+            if not comment.draft:
+                comment.display_state = ChangesetComment.COMMENT_OUTDATED
             return
 
         if old_context == new_context:
@@ -732,14 +733,15 @@ class CommentsModel(BaseModel):
             new_diff_lines = new_diff_proc.find_context(
                 path=comment.f_path, context=old_context,
                 offset=self.DIFF_CONTEXT_BEFORE)
-            if not new_diff_lines:
+            if not new_diff_lines and not comment.draft:
                 comment.display_state = ChangesetComment.COMMENT_OUTDATED
             else:
                 new_diff_line = self._choose_closest_diff_line(
                     diff_line, new_diff_lines)
                 comment.line_no = _diff_to_comment_line_number(new_diff_line)
         else:
-            comment.display_state = ChangesetComment.COMMENT_OUTDATED
+            if not comment.draft:
+                comment.display_state = ChangesetComment.COMMENT_OUTDATED
 
     def _should_relocate_diff_line(self, diff_line):
         """
