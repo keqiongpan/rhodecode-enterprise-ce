@@ -231,6 +231,10 @@ class ScmModel(BaseModel):
                                           with_wire={"cache": False})
             except OSError:
                 continue
+            except RepositoryError:
+                log.exception('Failed to create a repo')
+                continue
+
         log.debug('found %s paths with repositories', len(repos))
         return repos
 
