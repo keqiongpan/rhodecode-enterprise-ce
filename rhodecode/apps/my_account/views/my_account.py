@@ -702,7 +702,9 @@ class MyAccountView(BaseAppView, DataGridAppView):
                      **valid_data)
             if old_email != valid_data['email']:
                 old = UserEmailMap.query() \
-                    .filter(UserEmailMap.user == c.user).filter(UserEmailMap.email == valid_data['email']).first()
+                    .filter(UserEmailMap.user == c.user)\
+                    .filter(UserEmailMap.email == valid_data['email'])\
+                    .first()
                 old.email = old_email
             h.flash(_('Your account was updated successfully'), category='success')
             Session().commit()
@@ -718,6 +720,7 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def _get_pull_requests_list(self, statuses):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
+
         _render = self.request.get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
 

@@ -74,6 +74,8 @@ $(document).ready(function() {
     $pullRequestListTable.DataTable({
       processing: true,
       serverSide: true,
+      stateSave: true,
+      stateDuration: -1,
       ajax: {
           "url": "${h.route_path('pullrequest_show_all_data', repo_name=c.repo_name)}",
           "data": function (d) {
@@ -114,6 +116,10 @@ $(document).ready(function() {
           if (data['closed']) {
               $(row).addClass('closed');
           }
+      },
+      "stateSaveParams": function (settings, data) {
+          data.search.search = ""; // Don't save search
+          data.start = 0;  // don't save pagination
       }
     });
 
