@@ -397,7 +397,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     % endif
 </%def>
 
-<%def name="pullrequest_updated_on(updated_on)">
+<%def name="pullrequest_updated_on(updated_on, pr_version=None)">
+    % if pr_version:
+    <code>v${pr_version}</code>
+    % endif
     ${h.age_component(h.time_to_utcdatetime(updated_on))}
 </%def>
 
