@@ -36,7 +36,7 @@ from rhodecode.authentication.plugins import auth_rhodecode
 from rhodecode.events import trigger
 from rhodecode.model.db import true, UserNotice
 
-from rhodecode.lib import audit_logger, rc_cache
+from rhodecode.lib import audit_logger, rc_cache, auth
 from rhodecode.lib.exceptions import (
     UserCreationError, UserOwnsReposException, UserOwnsRepoGroupsException,
     UserOwnsUserGroupsException, UserOwnsPullRequestsException,
@@ -295,6 +295,10 @@ class UsersView(UserAppView):
         c.allowed_extern_types = [
             (x.uid, x.get_display_name()) for x in self.get_auth_plugins()
         ]
+        perms = req.registry.settings.get('available_permissions')
+        if not perms:
+            # inject info about available permissions
+            auth.set_available_permissions(req.registry.settings)
 
         c.available_permissions = req.registry.settings['available_permissions']
         PermissionModel().set_global_permission_choices(

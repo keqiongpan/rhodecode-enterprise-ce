@@ -74,7 +74,11 @@ def configure_dogpile_cache(settings):
 
         new_region.configure_from_config(settings, 'rc_cache.{}.'.format(region_name))
         new_region.function_key_generator = backend_key_generator(new_region.actual_backend)
-        log.debug('dogpile: registering a new region %s[%s]', region_name, new_region.__dict__)
+        if log.isEnabledFor(logging.DEBUG):
+            region_args = dict(backend=new_region.actual_backend.__class__,
+                               region_invalidator=new_region.region_invalidator.__class__)
+            log.debug('dogpile: registering a new region `%s` %s', region_name, region_args)
+
         region_meta.dogpile_cache_regions[region_name] = new_region
 
 
