@@ -428,16 +428,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             c.allowed_to_close = c.allowed_to_merge and not pr_closed
 
         c.forbid_adding_reviewers = False
-        c.forbid_author_to_review = False
-        c.forbid_commit_author_to_review = False
 
         if pull_request_latest.reviewer_data and \
                         'rules' in pull_request_latest.reviewer_data:
             rules = pull_request_latest.reviewer_data['rules'] or {}
             try:
                 c.forbid_adding_reviewers = rules.get('forbid_adding_reviewers')
-                c.forbid_author_to_review = rules.get('forbid_author_to_review')
-                c.forbid_commit_author_to_review = rules.get('forbid_commit_author_to_review')
             except Exception:
                 pass
 

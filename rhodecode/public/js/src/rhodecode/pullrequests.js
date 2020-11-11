@@ -182,81 +182,32 @@ window.ReviewersController = function () {
         if (!data || data.rules === undefined || $.isEmptyObject(data.rules)) {
             // default rule, case for older repo that don't have any rules stored
             self.$rulesList.append(
-                self.addRule(
-                    _gettext('All reviewers must vote.'))
+                self.addRule(_gettext('All reviewers must vote.'))
             );
             return self.forbidUsers
         }
 
-        if (data.rules.voting !== undefined) {
-            if (data.rules.voting < 0) {
-                self.$rulesList.append(
-                    self.addRule(
-                        _gettext('All individual reviewers must vote.'))
-                )
-            } else if (data.rules.voting === 1) {
-                self.$rulesList.append(
-                    self.addRule(
-                        _gettext('At least {0} reviewer must vote.').format(data.rules.voting))
-                )
-
-            } else {
-                self.$rulesList.append(
-                    self.addRule(
-                        _gettext('At least {0} reviewers must vote.').format(data.rules.voting))
-                )
-            }
-        }
-
-        if (data.rules.voting_groups !== undefined) {
-            $.each(data.rules.voting_groups, function (index, rule_data) {
-                self.$rulesList.append(
-                    self.addRule(rule_data.text)
-                )
-            });
-        }
-
-        if (data.rules.use_code_authors_for_review) {
-            self.$rulesList.append(
-                self.addRule(
-                    _gettext('Reviewers picked from source code changes.'))
-            )
-        }
-
         if (data.rules.forbid_adding_reviewers) {
             $('#add_reviewer_input').remove();
-            self.$rulesList.append(
-                self.addRule(
-                    _gettext('Adding new reviewers is forbidden.'))
-            )
         }
 
-        if (data.rules.forbid_author_to_review) {
-            self.forbidUsers.push(data.rules_data.pr_author);
-            self.$rulesList.append(
-                self.addRule(
-                    _gettext('Author is not allowed to be a reviewer.'))
-            )
+        if (data.rules_data !== undefined && data.rules_data.forbidden_users !== undefined) {
+            $.each(data.rules_data.forbidden_users, function(idx, val){
+                self.forbidUsers.push(val)
+            })
         }
 
-        if (data.rules.forbid_commit_author_to_review) {
-
-            if (data.rules_data.forbidden_users) {
-                $.each(data.rules_data.forbidden_users, function (index, member_data) {
-                    self.forbidUsers.push(member_data)
-                });
-            }
-
+        if (data.rules_humanized !== undefined && data.rules_humanized.length > 0) {
+            $.each(data.rules_humanized, function(idx, val) {
+                self.$rulesList.append(
+                    self.addRule(val)
+                )
+            })
+        } else {
+            // we don't have any rules set, so we inform users about it
             self.$rulesList.append(
-                self.addRule(
-                    _gettext('Commit Authors are not allowed to be a reviewer.'))
+                self.addRule(_gettext('No additional review rules set.'))
             )
-        }
-
-        // we don't have any rules set, so we inform users about it
-        if (self.enabledRules.length === 0) {
-            self.addRule(
-                _gettext('No review rules set.'))
         }
 
         return self.forbidUsers
