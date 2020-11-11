@@ -425,15 +425,12 @@ class UserModel(BaseModel):
                 'date': datetime.datetime.now()
             }
             notification_type = EmailNotificationModel.TYPE_REGISTRATION
-            # pre-generate the subject for notification itself
-            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
-                notification_type, **kwargs)
 
             # create notification objects, and emails
             NotificationModel().create(
                 created_by=new_user,
-                notification_subject=subject,
-                notification_body=body_plaintext,
+                notification_subject='',  # Filled in based on the notification_type
+                notification_body='',  # Filled in based on the notification_type
                 notification_type=notification_type,
                 recipients=None,  # all admins
                 email_kwargs=kwargs,

@@ -1502,15 +1502,11 @@ class PullRequestModel(BaseModel):
             'user_role': role
         }
 
-        # pre-generate the subject for notification itself
-        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
-            notification_type, **kwargs)
-
         # create notification objects, and emails
         NotificationModel().create(
             created_by=current_rhodecode_user,
-            notification_subject=subject,
-            notification_body=body_plaintext,
+            notification_subject='',  # Filled in based on the notification_type
+            notification_body='',  # Filled in based on the notification_type
             notification_type=notification_type,
             recipients=recipients,
             email_kwargs=kwargs,
@@ -1579,14 +1575,11 @@ class PullRequestModel(BaseModel):
             'thread_ids': [pr_url],
         }
 
-        (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
-            EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE, **email_kwargs)
-
         # create notification objects, and emails
         NotificationModel().create(
             created_by=updating_user,
-            notification_subject=subject,
-            notification_body=body_plaintext,
+            notification_subject='',  # Filled in based on the notification_type
+            notification_body='',  # Filled in based on the notification_type
             notification_type=EmailNotificationModel.TYPE_PULL_REQUEST_UPDATE,
             recipients=recipients,
             email_kwargs=email_kwargs,

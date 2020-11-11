@@ -459,9 +459,6 @@ class CommentsModel(BaseModel):
 
         if send_email:
             recipients += [self._get_user(u) for u in (extra_recipients or [])]
-            # pre-generate the subject for notification itself
-            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
-                notification_type, **kwargs)
 
             mention_recipients = set(
                 self._extract_mentions(text)).difference(recipients)
@@ -469,8 +466,8 @@ class CommentsModel(BaseModel):
             # create notification objects, and emails
             NotificationModel().create(
                 created_by=user,
-                notification_subject=subject,
-                notification_body=body_plaintext,
+                notification_subject='',  # Filled in based on the notification_type
+                notification_body='',  # Filled in based on the notification_type
                 notification_type=notification_type,
                 recipients=recipients,
                 mention_recipients=mention_recipients,
