@@ -2060,6 +2060,8 @@ class MergeCheck(object):
         self.error_details = OrderedDict()
         self.source_commit = AttributeDict()
         self.target_commit = AttributeDict()
+        self.reviewers_count = 0
+        self.observers_count = 0
 
     def __repr__(self):
         return '<MergeCheck(possible:{}, failed:{}, errors:{})>'.format(
@@ -2121,11 +2123,12 @@ class MergeCheck(object):
         # review status, must be always present
         review_status = pull_request.calculated_review_status()
         merge_check.review_status = review_status
+        merge_check.reviewers_count = pull_request.reviewers_count
+        merge_check.observers_count = pull_request.observers_count
 
         status_approved = review_status == ChangesetStatus.STATUS_APPROVED
-        if not status_approved:
+        if not status_approved and merge_check.reviewers_count:
             log.debug("MergeCheck: cannot merge, approval is pending.")
-
             msg = _('Pull request reviewer approval is pending.')
 
             merge_check.push_error('warning', msg, cls.REVIEW_CHECK, review_status)
