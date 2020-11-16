@@ -730,6 +730,10 @@ var CommentsController = function() {
           // if we have this handler, run it, and refresh all comments boxes
           refreshAllComments()
         }
+        else if (window.refreshDraftComments !== undefined && isDraft) {
+          // if we have this handler, run it, and refresh all comments boxes
+          refreshDraftComments();
+        }
         return false;
       };
 
@@ -796,7 +800,7 @@ var CommentsController = function() {
 
   }
 
-  this.finalizeDrafts = function(commentIds) {
+  this.finalizeDrafts = function(commentIds, callback) {
 
     SwalNoAnimation.fire({
       title: _ngettext('Submit {0} draft comment.', 'Submit {0} draft comments.', commentIds.length).format(commentIds.length),
@@ -806,6 +810,9 @@ var CommentsController = function() {
 
     }).then(function(result) {
       if (result.value) {
+        if (callback !== undefined) {
+            callback(result)
+        }
         self._finalizeDrafts(commentIds);
       }
     })
@@ -1220,6 +1227,10 @@ var CommentsController = function() {
                       // if we have this handler, run it, and refresh all comments boxes
                       refreshAllComments()
                 }
+               else if (window.refreshDraftComments !== undefined && isDraft) {
+                  // if we have this handler, run it, and refresh all comments boxes
+                  refreshDraftComments();
+               }
 
                 commentForm.setActionButtonsDisabled(false);
 
@@ -1414,6 +1425,10 @@ var CommentsController = function() {
               if (window.refreshAllComments !== undefined && !isDraft) {
                   // if we have this handler, run it, and refresh all comments boxes
                   refreshAllComments()
+              }
+              else if (window.refreshDraftComments !== undefined && isDraft) {
+                  // if we have this handler, run it, and refresh all comments boxes
+                  refreshDraftComments();
               }
 
               commentForm.setActionButtonsDisabled(false);

@@ -501,6 +501,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         c.resolved_comments = CommentsModel() \
             .get_pull_request_resolved_todos(pull_request_latest)
 
+        # Drafts
+        c.draft_comments = CommentsModel().get_pull_request_drafts(
+            self._rhodecode_db_user.user_id,
+            pull_request_latest)
+
         # if we use version, then do not show later comments
         # than current version
         display_inline_comments = collections.defaultdict(
@@ -1066,6 +1071,48 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         existing_ids = self.get_comment_ids(self.request.POST)
         return _render('comments_table', all_comments, len(c.unresolved_comments),
                        todo_comments=True, existing_ids=existing_ids)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @HasRepoPermissionAnyDecorator(
+        'repository.read', 'repository.write', 'repository.admin')
+    @view_config(
+        route_name='pullrequest_drafts', request_method='POST',
+        renderer='string_html', xhr=True)
+    def pullrequest_drafts(self):
+        self.load_default_context()
+
+        pull_request = PullRequest.get_or_404(
+            self.request.matchdict['pull_request_id'])
+        pull_request_id = pull_request.pull_request_id
+        version = self.request.GET.get('version')
+
+        _render = self.request.get_partial_renderer(
+            'rhodecode:templates/base/sidebar.mako')
+        c = _render.get_call_context()
+
+        (pull_request_latest,
+         pull_request_at_ver,
+         pull_request_display_obj,
+         at_version) = PullRequestModel().get_pr_version(
+            pull_request_id, version=version)
+        versions = pull_request_display_obj.versions()
+        latest_ver = PullRequest.get_pr_display_object(pull_request_latest, pull_request_latest)
+        c.versions = versions + [latest_ver]
+
+        c.at_version = at_version
+        c.at_version_num = (at_version
+                            if at_version and at_version != PullRequest.LATEST_VER
+                            else None)
+
+        c.draft_comments = CommentsModel() \
+            .get_pull_request_drafts(self._rhodecode_db_user.user_id, pull_request)
+
+        all_comments = c.draft_comments
+
+        existing_ids = self.get_comment_ids(self.request.POST)
+        return _render('comments_table', all_comments, len(all_comments),
+                       existing_ids=existing_ids, draft_comments=True)
 
     @LoginRequired()
     @NotAnonymous()

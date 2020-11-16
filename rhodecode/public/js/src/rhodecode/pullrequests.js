@@ -1036,6 +1036,30 @@ window.ReviewerPresenceController = function (channel) {
 
 };
 
+window.refreshCommentsSuccess = function(targetNode, counterNode, extraCallback) {
+    var $targetElem = targetNode;
+    var $counterElem = counterNode;
+
+    return function (data) {
+        var newCount = $(data).data('counter');
+        if (newCount !== undefined) {
+            var callback = function () {
+                $counterElem.animate({'opacity': 1.00}, 200)
+                $counterElem.html(newCount);
+            };
+            $counterElem.animate({'opacity': 0.15}, 200, callback);
+        }
+
+        $targetElem.css('opacity', 1);
+        $targetElem.html(data);
+        tooltipActivate();
+
+        if (extraCallback !== undefined) {
+            extraCallback(data)
+        }
+    }
+}
+
 window.refreshComments = function (version) {
     version = version || templateContext.pull_request_data.pull_request_version || '';
 
@@ -1060,23 +1084,8 @@ window.refreshComments = function (version) {
 
     var $targetElem = $('.comments-content-table');
     $targetElem.css('opacity', 0.3);
-
-    var success = function (data) {
-        var $counterElem = $('#comments-count');
-        var newCount = $(data).data('counter');
-        if (newCount !== undefined) {
-            var callback = function () {
-                $counterElem.animate({'opacity': 1.00}, 200)
-                $counterElem.html(newCount);
-            };
-            $counterElem.animate({'opacity': 0.15}, 200, callback);
-        }
-
-        $targetElem.css('opacity', 1);
-        $targetElem.html(data);
-        tooltipActivate();
-    }
-
+    var $counterElem = $('#comments-count');
+    var success = refreshCommentsSuccess($targetElem, $counterElem);
     ajaxPOST(loadUrl, data, success, null, {})
 
 }
@@ -1104,36 +1113,51 @@ window.refreshTODOs = function (version) {
     var data = {"comments": currentIDs};
     var $targetElem = $('.todos-content-table');
     $targetElem.css('opacity', 0.3);
-
-    var success = function (data) {
-        var $counterElem = $('#todos-count')
-        var newCount = $(data).data('counter');
-        if (newCount !== undefined) {
-            var callback = function () {
-                $counterElem.animate({'opacity': 1.00}, 200)
-                $counterElem.html(newCount);
-            };
-            $counterElem.animate({'opacity': 0.15}, 200, callback);
-        }
-
-        $targetElem.css('opacity', 1);
-        $targetElem.html(data);
-        tooltipActivate();
-    }
+    var $counterElem = $('#todos-count');
+    var success = refreshCommentsSuccess($targetElem, $counterElem);
 
     ajaxPOST(loadUrl, data, success, null, {})
 
 }
+
+window.refreshDraftComments = function () {
+
+    // Pull request case
+    if (templateContext.pull_request_data.pull_request_id !== null) {
+        var params = {
+            'pull_request_id': templateContext.pull_request_data.pull_request_id,
+            'repo_name': templateContext.repo_name,
+        };
+        var loadUrl = pyroutes.url('pullrequest_drafts', params);
+    } // commit case
+    else {
+        return
+    }
+
+    var data = {};
+
+    var $targetElem = $('.drafts-content-table');
+    $targetElem.css('opacity', 0.3);
+    var $counterElem = $('#drafts-count');
+    var extraCallback = function(data) {
+        if ($(data).data('counter') == 0){
+            $('#draftsTable').hide();
+        } else {
+            $('#draftsTable').show();
+        }
+        // uncheck on load the select all checkbox
+        $('[name=select_all_drafts]').prop('checked', 0);
+    }
+    var success = refreshCommentsSuccess($targetElem, $counterElem, extraCallback);
+
+    ajaxPOST(loadUrl, data, success, null, {})
+};
 
 window.refreshAllComments = function (version) {
     version = version || templateContext.pull_request_data.pull_request_version || '';
 
     refreshComments(version);
     refreshTODOs(version);
-};
-
-window.refreshDraftComments = function () {
-    alert('TODO: refresh Draft Comments needs implementation')
 };
 
 window.sidebarComment = function (commentId) {

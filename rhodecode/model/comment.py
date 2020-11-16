@@ -37,7 +37,7 @@ from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str, safe_int
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
-    false,
+    false, true,
     ChangesetComment,
     User,
     Notification,
@@ -200,6 +200,13 @@ class CommentsModel(BaseModel):
         todos = todos.all()
 
         return todos
+
+    def get_pull_request_drafts(self, user_id, pull_request):
+        drafts = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .filter(ChangesetComment.user_id == user_id) \
+            .filter(ChangesetComment.draft == true())
+        return drafts.all()
 
     def get_commit_unresolved_todos(self, commit_id, show_outdated=True, include_drafts=True):
 

@@ -4,7 +4,7 @@
 ##    ${sidebar.comments_table()}
 <%namespace name="base" file="/base/base.mako"/>
 
-<%def name="comments_table(comments, counter_num, todo_comments=False, existing_ids=None, is_pr=True)">
+<%def name="comments_table(comments, counter_num, todo_comments=False, draft_comments=False, existing_ids=None, is_pr=True)">
     <%
         if todo_comments:
             cls_ = 'todos-content-table'
@@ -15,10 +15,13 @@
                     # own comments first
                     user_id = 0
                 return '{}'.format(str(entry.comment_id).zfill(10000))
+        elif draft_comments:
+            cls_ = 'drafts-content-table'
+            def sorter(entry):
+                return '{}'.format(str(entry.comment_id).zfill(10000))
         else:
             cls_ = 'comments-content-table'
             def sorter(entry):
-                user_id = entry.author.user_id
                 return '{}'.format(str(entry.comment_id).zfill(10000))
 
         existing_ids = existing_ids or []
@@ -32,7 +35,7 @@
             display = ''
             _cls = ''
             ## Extra precaution to not show drafts in the sidebar for todo/comments
-            if comment_obj.draft:
+            if comment_obj.draft and not draft_comments:
                 continue
          %>
 
@@ -87,6 +90,11 @@
           % endif
 
           <tr class="${_cls}" style="display: ${display};" data-sidebar-comment-id="${comment_obj.comment_id}">
+              % if draft_comments:
+                <td style="width: 15px;">
+                ${h.checkbox('submit_draft', id=None, value=comment_obj.comment_id)}
+                </td>
+              % endif
               <td class="td-todo-number">
                   <%
                     version_info = ''
