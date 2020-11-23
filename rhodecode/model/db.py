@@ -3767,6 +3767,7 @@ class ChangesetComment(Base, BaseModel):
     renderer = Column('renderer', Unicode(64), nullable=True)
     display_state = Column('display_state',  Unicode(128), nullable=True)
     immutable_state = Column('immutable_state', Unicode(128), nullable=True, default=OP_CHANGEABLE)
+    draft = Column('draft', Boolean(), nullable=True, default=False)
 
     comment_type = Column('comment_type',  Unicode(128), nullable=True, default=COMMENT_TYPE_NOTE)
     resolved_comment_id = Column('resolved_comment_id', Integer(), ForeignKey('changeset_comments.comment_id'), nullable=True)
@@ -5057,8 +5058,14 @@ class RepoReviewRule(Base, BaseModel):
     _file_pattern = Column("file_pattern", UnicodeText().with_variant(UnicodeText(255), 'mysql'), default=u'*')  # glob
 
     use_authors_for_review = Column("use_authors_for_review", Boolean(), nullable=False, default=False)
-    forbid_author_to_review = Column("forbid_author_to_review", Boolean(), nullable=False, default=False)
-    forbid_commit_author_to_review = Column("forbid_commit_author_to_review", Boolean(), nullable=False, default=False)
+
+    # Legacy fields, just for backward compat
+    _forbid_author_to_review = Column("forbid_author_to_review", Boolean(), nullable=False, default=False)
+    _forbid_commit_author_to_review = Column("forbid_commit_author_to_review", Boolean(), nullable=False, default=False)
+
+    pr_author = Column("pr_author", UnicodeText().with_variant(UnicodeText(255), 'mysql'), nullable=True)
+    commit_author = Column("commit_author", UnicodeText().with_variant(UnicodeText(255), 'mysql'), nullable=True)
+
     forbid_adding_reviewers = Column("forbid_adding_reviewers", Boolean(), nullable=False, default=False)
 
     rule_users = relationship('RepoReviewRuleUser')
@@ -5093,6 +5100,22 @@ class RepoReviewRule(Base, BaseModel):
     def file_pattern(self, value):
         self._validate_pattern(value)
         self._file_pattern = value or '*'
+
+    @hybrid_property
+    def forbid_pr_author_to_review(self):
+        return self.pr_author == 'forbid_pr_author'
+
+    @hybrid_property
+    def include_pr_author_to_review(self):
+        return self.pr_author == 'include_pr_author'
+
+    @hybrid_property
+    def forbid_commit_author_to_review(self):
+        return self.commit_author == 'forbid_commit_author'
+
+    @hybrid_property
+    def include_commit_author_to_review(self):
+        return self.commit_author == 'include_commit_author'
 
     def matches(self, source_branch, target_branch, files_changed):
         """

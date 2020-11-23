@@ -7,10 +7,10 @@
         &middot; ${h.branding(c.rhodecode_name)}
     %endif
 </%def>
-
 <style>body{background-color:#eeeeee;}</style>
+
 <div class="loginbox">
-    <div class="header">
+    <div class="header-account">
         <div id="header-inner" class="title">
             <div id="logo">
                 <div class="logo-wrapper">
@@ -28,12 +28,12 @@
     <div class="loginwrapper">
         <rhodecode-toast id="notifications"></rhodecode-toast>
 
-        <div class="left-column">
+        <div class="auth-image-wrapper">
             <img class="sign-in-image" src="${h.asset('images/sign-in.png')}" alt="RhodeCode"/>
         </div>
 
-        <%block name="above_login_button" />
-        <div id="login" class="right-column">
+        <div id="login">
+            <%block name="above_login_button" />
             <!-- login -->
             <div class="sign-in-title">
                 <h1>${_('Sign In using username/password')}</h1>

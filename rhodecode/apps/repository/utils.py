@@ -24,7 +24,8 @@ from rhodecode.model.pull_request import get_diff_info
 from rhodecode.model.db import PullRequestReviewers
 # V3 - Reviewers, with default rules data
 # v4 - Added observers metadata
-REVIEWER_API_VERSION = 'V4'
+# v5 - pr_author/commit_author include/exclude logic
+REVIEWER_API_VERSION = 'V5'
 
 
 def reviewer_as_json(user, reasons=None, role=None, mandatory=False, rules=None, user_group=None):
@@ -88,6 +89,7 @@ def get_default_reviewers_data(current_user, source_repo, source_ref, target_rep
         'reviewers': json_reviewers,
         'rules': {},
         'rules_data': {},
+        'rules_humanized': [],
     }
 
 

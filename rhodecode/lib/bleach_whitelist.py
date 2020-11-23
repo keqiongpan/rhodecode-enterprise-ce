@@ -67,7 +67,7 @@ markdown_tags = [
 
 markdown_attrs = {
     "*": ["class", "style", "align"],
-    "img": ["src", "alt", "title"],
+    "img": ["src", "alt", "title", "width", "height", "hspace", "align"],
     "a": ["href", "alt", "title", "name", "data-hovercard-alt", "data-hovercard-url"],
     "abbr": ["title"],
     "acronym": ["title"],

@@ -397,7 +397,10 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     % endif
 </%def>
 
-<%def name="pullrequest_updated_on(updated_on)">
+<%def name="pullrequest_updated_on(updated_on, pr_version=None)">
+    % if pr_version:
+    <code>v${pr_version}</code>
+    % endif
     ${h.age_component(h.time_to_utcdatetime(updated_on))}
 </%def>
 
@@ -456,7 +459,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
         </div>
 
         <div class="markup-form-area-write" style="display: block;">
-            <div id="edit-container_${form_id}">
+            <div id="edit-container_${form_id}" style="margin-top: -1px">
                 <textarea id="${form_id}" name="${form_id}" class="comment-block-ta ac-input">${form_text if form_text else ''}</textarea>
             </div>
             <div id="preview-container_${form_id}" class="clearfix" style="display: none;">

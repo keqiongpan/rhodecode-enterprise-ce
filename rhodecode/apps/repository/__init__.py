@@ -355,6 +355,11 @@ def includeme(config):
         pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/todos',
         repo_route=True)
 
+    config.add_route(
+        name='pullrequest_drafts',
+        pattern='/{repo_name:.*?[^/]}/pull-request/{pull_request_id:\d+}/drafts',
+        repo_route=True)
+
     # Artifacts, (EE feature)
     config.add_route(
         name='repo_artifacts_list',

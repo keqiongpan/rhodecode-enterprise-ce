@@ -71,13 +71,19 @@ export class RhodecodeApp extends PolymerElement {
         if (elem) {
             elem.handleNotification(data);
         }
-
     }
 
     handleComment(data) {
-        if (data.message.comment_id) {
+
+        if (data.message.comment_data.length !== 0) {
           if (window.refreshAllComments !== undefined) {
               refreshAllComments()
+          }
+          var json_data = data.message.comment_data;
+
+          if (window.commentsController !== undefined) {
+
+            window.commentsController.attachComment(json_data)
           }
         }
     }

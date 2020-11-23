@@ -37,6 +37,7 @@ from rhodecode.lib.exceptions import CommentVersionMismatch
 from rhodecode.lib.utils2 import extract_mentioned_users, safe_str, safe_int
 from rhodecode.model import BaseModel
 from rhodecode.model.db import (
+    false, true,
     ChangesetComment,
     User,
     Notification,
@@ -160,7 +161,7 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def get_pull_request_unresolved_todos(self, pull_request, show_outdated=True):
+    def get_pull_request_unresolved_todos(self, pull_request, show_outdated=True, include_drafts=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.pull_request == pull_request) \
@@ -168,6 +169,9 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.comment_type
                     == ChangesetComment.COMMENT_TYPE_TODO)
 
+        if not include_drafts:
+            todos = todos.filter(ChangesetComment.draft == false())
+
         if not show_outdated:
             todos = todos.filter(
                 coalesce(ChangesetComment.display_state, '') !=
@@ -177,7 +181,7 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def get_pull_request_resolved_todos(self, pull_request, show_outdated=True):
+    def get_pull_request_resolved_todos(self, pull_request, show_outdated=True, include_drafts=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.pull_request == pull_request) \
@@ -185,6 +189,9 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.comment_type
                     == ChangesetComment.COMMENT_TYPE_TODO)
 
+        if not include_drafts:
+            todos = todos.filter(ChangesetComment.draft == false())
+
         if not show_outdated:
             todos = todos.filter(
                 coalesce(ChangesetComment.display_state, '') !=
@@ -194,7 +201,14 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def get_commit_unresolved_todos(self, commit_id, show_outdated=True):
+    def get_pull_request_drafts(self, user_id, pull_request):
+        drafts = Session().query(ChangesetComment) \
+            .filter(ChangesetComment.pull_request == pull_request) \
+            .filter(ChangesetComment.user_id == user_id) \
+            .filter(ChangesetComment.draft == true())
+        return drafts.all()
+
+    def get_commit_unresolved_todos(self, commit_id, show_outdated=True, include_drafts=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.revision == commit_id) \
@@ -202,6 +216,9 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.comment_type
                     == ChangesetComment.COMMENT_TYPE_TODO)
 
+        if not include_drafts:
+            todos = todos.filter(ChangesetComment.draft == false())
+
         if not show_outdated:
             todos = todos.filter(
                 coalesce(ChangesetComment.display_state, '') !=
@@ -211,7 +228,7 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def get_commit_resolved_todos(self, commit_id, show_outdated=True):
+    def get_commit_resolved_todos(self, commit_id, show_outdated=True, include_drafts=True):
 
         todos = Session().query(ChangesetComment) \
             .filter(ChangesetComment.revision == commit_id) \
@@ -219,6 +236,9 @@ class CommentsModel(BaseModel):
             .filter(ChangesetComment.comment_type
                     == ChangesetComment.COMMENT_TYPE_TODO)
 
+        if not include_drafts:
+            todos = todos.filter(ChangesetComment.draft == false())
+
         if not show_outdated:
             todos = todos.filter(
                 coalesce(ChangesetComment.display_state, '') !=
@@ -228,11 +248,15 @@ class CommentsModel(BaseModel):
 
         return todos
 
-    def get_commit_inline_comments(self, commit_id):
+    def get_commit_inline_comments(self, commit_id, include_drafts=True):
         inline_comments = Session().query(ChangesetComment) \
             .filter(ChangesetComment.line_no != None) \
             .filter(ChangesetComment.f_path != None) \
             .filter(ChangesetComment.revision == commit_id)
+
+        if not include_drafts:
+            inline_comments = inline_comments.filter(ChangesetComment.draft == false())
+
         inline_comments = inline_comments.all()
         return inline_comments
 
@@ -245,7 +269,7 @@ class CommentsModel(BaseModel):
 
     def create(self, text, repo, user, commit_id=None, pull_request=None,
                f_path=None, line_no=None, status_change=None,
-               status_change_type=None, comment_type=None,
+               status_change_type=None, comment_type=None, is_draft=False,
                resolves_comment_id=None, closing_pr=False, send_email=True,
                renderer=None, auth_user=None, extra_recipients=None):
         """
@@ -262,6 +286,7 @@ class CommentsModel(BaseModel):
         :param line_no:
         :param status_change: Label for status change
         :param comment_type: Type of comment
+        :param is_draft: is comment a draft only
         :param resolves_comment_id: id of comment which this one will resolve
         :param status_change_type: type of status change
         :param closing_pr:
@@ -288,6 +313,7 @@ class CommentsModel(BaseModel):
         validated_kwargs = schema.deserialize(dict(
             comment_body=text,
             comment_type=comment_type,
+            is_draft=is_draft,
             comment_file=f_path,
             comment_line=line_no,
             renderer_type=renderer,
@@ -296,6 +322,7 @@ class CommentsModel(BaseModel):
             repo=repo.repo_id,
             user=user.user_id,
         ))
+        is_draft = validated_kwargs['is_draft']
 
         comment = ChangesetComment()
         comment.renderer = validated_kwargs['renderer_type']
@@ -303,6 +330,7 @@ class CommentsModel(BaseModel):
         comment.f_path = validated_kwargs['comment_file']
         comment.line_no = validated_kwargs['comment_line']
         comment.comment_type = validated_kwargs['comment_type']
+        comment.draft = is_draft
 
         comment.repo = repo
         comment.author = user
@@ -438,9 +466,6 @@ class CommentsModel(BaseModel):
 
         if send_email:
             recipients += [self._get_user(u) for u in (extra_recipients or [])]
-            # pre-generate the subject for notification itself
-            (subject, _e, body_plaintext) = EmailNotificationModel().render_email(
-                notification_type, **kwargs)
 
             mention_recipients = set(
                 self._extract_mentions(text)).difference(recipients)
@@ -448,8 +473,8 @@ class CommentsModel(BaseModel):
             # create notification objects, and emails
             NotificationModel().create(
                 created_by=user,
-                notification_subject=subject,
-                notification_body=body_plaintext,
+                notification_subject='',  # Filled in based on the notification_type
+                notification_body='',  # Filled in based on the notification_type
                 notification_type=notification_type,
                 recipients=recipients,
                 mention_recipients=mention_recipients,
@@ -462,10 +487,11 @@ class CommentsModel(BaseModel):
         else:
             action = 'repo.commit.comment.create'
 
-        comment_data = comment.get_api_data()
+        if not is_draft:
+            comment_data = comment.get_api_data()
 
-        self._log_audit_action(
-            action, {'data': comment_data}, auth_user, comment)
+            self._log_audit_action(
+                action, {'data': comment_data}, auth_user, comment)
 
         return comment
 
@@ -541,7 +567,8 @@ class CommentsModel(BaseModel):
 
         return comment
 
-    def get_all_comments(self, repo_id, revision=None, pull_request=None, count_only=False):
+    def get_all_comments(self, repo_id, revision=None, pull_request=None,
+                         include_drafts=True, count_only=False):
         q = ChangesetComment.query()\
                 .filter(ChangesetComment.repo_id == repo_id)
         if revision:
@@ -551,6 +578,8 @@ class CommentsModel(BaseModel):
             q = q.filter(ChangesetComment.pull_request_id == pull_request.pull_request_id)
         else:
             raise Exception('Please specify commit or pull_request')
+        if not include_drafts:
+            q = q.filter(ChangesetComment.draft == false())
         q = q.order_by(ChangesetComment.created_on)
         if count_only:
             return q.count()
@@ -697,7 +726,8 @@ class CommentsModel(BaseModel):
                 path=comment.f_path, diff_line=diff_line)
         except (diffs.LineNotInDiffException,
                 diffs.FileNotInDiffException):
-            comment.display_state = ChangesetComment.COMMENT_OUTDATED
+            if not comment.draft:
+                comment.display_state = ChangesetComment.COMMENT_OUTDATED
             return
 
         if old_context == new_context:
@@ -707,14 +737,15 @@ class CommentsModel(BaseModel):
             new_diff_lines = new_diff_proc.find_context(
                 path=comment.f_path, context=old_context,
                 offset=self.DIFF_CONTEXT_BEFORE)
-            if not new_diff_lines:
+            if not new_diff_lines and not comment.draft:
                 comment.display_state = ChangesetComment.COMMENT_OUTDATED
             else:
                 new_diff_line = self._choose_closest_diff_line(
                     diff_line, new_diff_lines)
                 comment.line_no = _diff_to_comment_line_number(new_diff_line)
         else:
-            comment.display_state = ChangesetComment.COMMENT_OUTDATED
+            if not comment.draft:
+                comment.display_state = ChangesetComment.COMMENT_OUTDATED
 
     def _should_relocate_diff_line(self, diff_line):
         """

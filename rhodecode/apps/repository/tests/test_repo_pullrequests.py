@@ -608,23 +608,23 @@ class TestPullrequestsView(object):
             pull_request.source_repo, pull_request=pull_request)
         assert status == ChangesetStatus.STATUS_REJECTED
 
-        comment_id = response.json.get('comment_id', None)
-        test_text = 'test'
-        response = self.app.post(
-            route_path(
-                'pullrequest_comment_edit',
-                repo_name=target_scm_name,
-                pull_request_id=pull_request_id,
-                comment_id=comment_id,
-            ),
-            extra_environ=xhr_header,
-            params={
-                'csrf_token': csrf_token,
-                'text': test_text,
-            },
-            status=403,
-        )
-        assert response.status_int == 403
+        for comment_id in response.json.keys():
+            test_text = 'test'
+            response = self.app.post(
+                route_path(
+                    'pullrequest_comment_edit',
+                    repo_name=target_scm_name,
+                    pull_request_id=pull_request_id,
+                    comment_id=comment_id,
+                ),
+                extra_environ=xhr_header,
+                params={
+                    'csrf_token': csrf_token,
+                    'text': test_text,
+                },
+                status=403,
+            )
+            assert response.status_int == 403
 
     def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
@@ -644,27 +644,27 @@ class TestPullrequestsView(object):
         )
         assert response.json
 
-        comment_id = response.json.get('comment_id', None)
-        assert comment_id
-        test_text = 'test'
-        self.app.post(
-            route_path(
-                'pullrequest_comment_edit',
-                repo_name=target_scm_name,
-                pull_request_id=pull_request.pull_request_id,
-                comment_id=comment_id,
-            ),
-            extra_environ=xhr_header,
-            params={
-                'csrf_token': csrf_token,
-                'text': test_text,
-                'version': '0',
-            },
+        for comment_id in response.json.keys():
+            assert comment_id
+            test_text = 'test'
+            self.app.post(
+                route_path(
+                    'pullrequest_comment_edit',
+                    repo_name=target_scm_name,
+                    pull_request_id=pull_request.pull_request_id,
+                    comment_id=comment_id,
+                ),
+                extra_environ=xhr_header,
+                params={
+                    'csrf_token': csrf_token,
+                    'text': test_text,
+                    'version': '0',
+                },
 
-        )
-        text_form_db = ChangesetComment.query().filter(
-            ChangesetComment.comment_id == comment_id).first().text
-        assert test_text == text_form_db
+            )
+            text_form_db = ChangesetComment.query().filter(
+                ChangesetComment.comment_id == comment_id).first().text
+            assert test_text == text_form_db
 
     def test_comment_and_comment_edit(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
@@ -684,26 +684,25 @@ class TestPullrequestsView(object):
         )
         assert response.json
 
-        comment_id = response.json.get('comment_id', None)
-        assert comment_id
-        test_text = 'init'
-        response = self.app.post(
-            route_path(
-                'pullrequest_comment_edit',
-                repo_name=target_scm_name,
-                pull_request_id=pull_request.pull_request_id,
-                comment_id=comment_id,
-            ),
-            extra_environ=xhr_header,
-            params={
-                'csrf_token': csrf_token,
-                'text': test_text,
-                'version': '0',
-            },
-            status=404,
+        for comment_id in response.json.keys():
+            test_text = 'init'
+            response = self.app.post(
+                route_path(
+                    'pullrequest_comment_edit',
+                    repo_name=target_scm_name,
+                    pull_request_id=pull_request.pull_request_id,
+                    comment_id=comment_id,
+                ),
+                extra_environ=xhr_header,
+                params={
+                    'csrf_token': csrf_token,
+                    'text': test_text,
+                    'version': '0',
+                },
+                status=404,
 
-        )
-        assert response.status_int == 404
+            )
+            assert response.status_int == 404
 
     def test_comment_and_try_edit_already_edited(self, pr_util, csrf_token, xhr_header):
         pull_request = pr_util.create_pull_request()
@@ -722,48 +721,46 @@ class TestPullrequestsView(object):
             extra_environ=xhr_header,
         )
         assert response.json
-        comment_id = response.json.get('comment_id', None)
-        assert comment_id
+        for comment_id in response.json.keys():
+            test_text = 'test'
+            self.app.post(
+                route_path(
+                    'pullrequest_comment_edit',
+                    repo_name=target_scm_name,
+                    pull_request_id=pull_request.pull_request_id,
+                    comment_id=comment_id,
+                ),
+                extra_environ=xhr_header,
+                params={
+                    'csrf_token': csrf_token,
+                    'text': test_text,
+                    'version': '0',
+                },
 
-        test_text = 'test'
-        self.app.post(
-            route_path(
-                'pullrequest_comment_edit',
-                repo_name=target_scm_name,
-                pull_request_id=pull_request.pull_request_id,
-                comment_id=comment_id,
-            ),
-            extra_environ=xhr_header,
-            params={
-                'csrf_token': csrf_token,
-                'text': test_text,
-                'version': '0',
-            },
+            )
+            test_text_v2 = 'test_v2'
+            response = self.app.post(
+                route_path(
+                    'pullrequest_comment_edit',
+                    repo_name=target_scm_name,
+                    pull_request_id=pull_request.pull_request_id,
+                    comment_id=comment_id,
+                ),
+                extra_environ=xhr_header,
+                params={
+                    'csrf_token': csrf_token,
+                    'text': test_text_v2,
+                    'version': '0',
+                },
+                status=409,
+            )
+            assert response.status_int == 409
 
-        )
-        test_text_v2 = 'test_v2'
-        response = self.app.post(
-            route_path(
-                'pullrequest_comment_edit',
-                repo_name=target_scm_name,
-                pull_request_id=pull_request.pull_request_id,
-                comment_id=comment_id,
-            ),
-            extra_environ=xhr_header,
-            params={
-                'csrf_token': csrf_token,
-                'text': test_text_v2,
-                'version': '0',
-            },
-            status=409,
-        )
-        assert response.status_int == 409
+            text_form_db = ChangesetComment.query().filter(
+                ChangesetComment.comment_id == comment_id).first().text
 
-        text_form_db = ChangesetComment.query().filter(
-            ChangesetComment.comment_id == comment_id).first().text
-
-        assert test_text == text_form_db
-        assert test_text_v2 != text_form_db
+            assert test_text == text_form_db
+            assert test_text_v2 != text_form_db
 
     def test_comment_and_comment_edit_permissions_forbidden(
             self, autologin_regular_user, user_regular, user_admin, pr_util,

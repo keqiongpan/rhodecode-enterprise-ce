@@ -77,6 +77,7 @@ class RepoCommitsView(RepoAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.fulldiff = self.request.GET.get('fulldiff')
+        redirect_to_combined = str2bool(self.request.GET.get('redirect_combined'))
 
         # fetch global flags of ignore ws or context lines
         diff_context = get_diff_context(self.request)
@@ -116,6 +117,19 @@ class RepoCommitsView(RepoAppView):
             log.exception("General failure")
             raise HTTPNotFound()
         single_commit = len(c.commit_ranges) == 1
+
+        if redirect_to_combined and not single_commit:
+            source_ref = getattr(c.commit_ranges[0].parents[0]
+                                 if c.commit_ranges[0].parents else h.EmptyCommit(), 'raw_id')
+            target_ref = c.commit_ranges[-1].raw_id
+            next_url = h.route_path(
+                'repo_compare',
+                repo_name=c.repo_name,
+                source_ref_type='rev',
+                source_ref=source_ref,
+                target_ref_type='rev',
+                target_ref=target_ref)
+            raise HTTPFound(next_url)
 
         c.changes = OrderedDict()
         c.lines_added = 0
@@ -366,6 +380,121 @@ class RepoCommitsView(RepoAppView):
         commit_id = self.request.matchdict['commit_id']
         return self._commit(commit_id, method='download')
 
+    def _commit_comments_create(self, commit_id, comments):
+        _ = self.request.translate
+        data = {}
+        if not comments:
+            return
+
+        commit = self.db_repo.get_commit(commit_id)
+
+        all_drafts = len([x for x in comments if str2bool(x['is_draft'])]) == len(comments)
+        for entry in comments:
+            c = self.load_default_context()
+            comment_type = entry['comment_type']
+            text = entry['text']
+            status = entry['status']
+            is_draft = str2bool(entry['is_draft'])
+            resolves_comment_id = entry['resolves_comment_id']
+            f_path = entry['f_path']
+            line_no = entry['line']
+            target_elem_id = 'file-{}'.format(h.safeid(h.safe_unicode(f_path)))
+
+            if status:
+                text = text or (_('Status change %(transition_icon)s %(status)s')
+                                % {'transition_icon': '>',
+                                   'status': ChangesetStatus.get_status_lbl(status)})
+
+            comment = CommentsModel().create(
+                text=text,
+                repo=self.db_repo.repo_id,
+                user=self._rhodecode_db_user.user_id,
+                commit_id=commit_id,
+                f_path=f_path,
+                line_no=line_no,
+                status_change=(ChangesetStatus.get_status_lbl(status)
+                               if status else None),
+                status_change_type=status,
+                comment_type=comment_type,
+                is_draft=is_draft,
+                resolves_comment_id=resolves_comment_id,
+                auth_user=self._rhodecode_user,
+                send_email=not is_draft,  # skip notification for draft comments
+            )
+            is_inline = comment.is_inline
+
+            # get status if set !
+            if status:
+                # `dont_allow_on_closed_pull_request = True` means
+                # if latest status was from pull request and it's closed
+                # disallow changing status !
+
+                try:
+                    ChangesetStatusModel().set_status(
+                        self.db_repo.repo_id,
+                        status,
+                        self._rhodecode_db_user.user_id,
+                        comment,
+                        revision=commit_id,
+                        dont_allow_on_closed_pull_request=True
+                    )
+                except StatusChangeOnClosedPullRequestError:
+                    msg = _('Changing the status of a commit associated with '
+                            'a closed pull request is not allowed')
+                    log.exception(msg)
+                    h.flash(msg, category='warning')
+                    raise HTTPFound(h.route_path(
+                        'repo_commit', repo_name=self.db_repo_name,
+                        commit_id=commit_id))
+
+            Session().flush()
+            # this is somehow required to get access to some relationship
+            # loaded on comment
+            Session().refresh(comment)
+
+            # skip notifications for drafts
+            if not is_draft:
+                CommentsModel().trigger_commit_comment_hook(
+                    self.db_repo, self._rhodecode_user, 'create',
+                    data={'comment': comment, 'commit': commit})
+
+            comment_id = comment.comment_id
+            data[comment_id] = {
+                'target_id': target_elem_id
+            }
+            Session().flush()
+
+            c.co = comment
+            c.at_version_num = 0
+            c.is_new = True
+            rendered_comment = render(
+                'rhodecode:templates/changeset/changeset_comment_block.mako',
+                self._get_template_context(c), self.request)
+
+            data[comment_id].update(comment.get_dict())
+            data[comment_id].update({'rendered_text': rendered_comment})
+
+        # finalize, commit and redirect
+        Session().commit()
+
+        # skip channelstream for draft comments
+        if not all_drafts:
+            comment_broadcast_channel = channelstream.comment_channel(
+                self.db_repo_name, commit_obj=commit)
+
+            comment_data = data
+            posted_comment_type = 'inline' if is_inline else 'general'
+            if len(data) == 1:
+                msg = _('posted {} new {} comment').format(len(data), posted_comment_type)
+            else:
+                msg = _('posted {} new {} comments').format(len(data), posted_comment_type)
+
+            channelstream.comment_channelstream_push(
+                self.request, comment_broadcast_channel, self._rhodecode_user, msg,
+                comment_data=comment_data)
+
+        return data
+
     @LoginRequired()
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
@@ -378,17 +507,6 @@ class RepoCommitsView(RepoAppView):
         _ = self.request.translate
         commit_id = self.request.matchdict['commit_id']
 
-        c = self.load_default_context()
-        status = self.request.POST.get('changeset_status', None)
-        text = self.request.POST.get('text')
-        comment_type = self.request.POST.get('comment_type')
-        resolves_comment_id = self.request.POST.get('resolves_comment_id', None)
-
-        if status:
-            text = text or (_('Status change %(transition_icon)s %(status)s')
-                            % {'transition_icon': '>',
-                               'status': ChangesetStatus.get_status_lbl(status)})
-
         multi_commit_ids = []
         for _commit_id in self.request.POST.get('commit_ids', '').split(','):
             if _commit_id not in ['', None, EmptyCommit.raw_id]:
@@ -397,81 +515,23 @@ class RepoCommitsView(RepoAppView):
 
         commit_ids = multi_commit_ids or [commit_id]
 
-        comment = None
+        data = []
+        # Multiple comments for each passed commit id
         for current_id in filter(None, commit_ids):
-            comment = CommentsModel().create(
-                text=text,
-                repo=self.db_repo.repo_id,
-                user=self._rhodecode_db_user.user_id,
-                commit_id=current_id,
-                f_path=self.request.POST.get('f_path'),
-                line_no=self.request.POST.get('line'),
-                status_change=(ChangesetStatus.get_status_lbl(status)
-                               if status else None),
-                status_change_type=status,
-                comment_type=comment_type,
-                resolves_comment_id=resolves_comment_id,
-                auth_user=self._rhodecode_user
-            )
-            is_inline = comment.is_inline
+            comment_data = {
+                'comment_type': self.request.POST.get('comment_type'),
+                'text': self.request.POST.get('text'),
+                'status': self.request.POST.get('changeset_status', None),
+                'is_draft': self.request.POST.get('draft'),
+                'resolves_comment_id': self.request.POST.get('resolves_comment_id', None),
+                'close_pull_request': self.request.POST.get('close_pull_request'),
+                'f_path': self.request.POST.get('f_path'),
+                'line': self.request.POST.get('line'),
+            }
+            comment = self._commit_comments_create(commit_id=current_id, comments=[comment_data])
+            data.append(comment)
 
-            # get status if set !
-            if status:
-                # if latest status was from pull request and it's closed
-                # disallow changing status !
-                # dont_allow_on_closed_pull_request = True !
-
-                try:
-                    ChangesetStatusModel().set_status(
-                        self.db_repo.repo_id,
-                        status,
-                        self._rhodecode_db_user.user_id,
-                        comment,
-                        revision=current_id,
-                        dont_allow_on_closed_pull_request=True
-                    )
-                except StatusChangeOnClosedPullRequestError:
-                    msg = _('Changing the status of a commit associated with '
-                            'a closed pull request is not allowed')
-                    log.exception(msg)
-                    h.flash(msg, category='warning')
-                    raise HTTPFound(h.route_path(
-                        'repo_commit', repo_name=self.db_repo_name,
-                        commit_id=current_id))
-
-            commit = self.db_repo.get_commit(current_id)
-            CommentsModel().trigger_commit_comment_hook(
-                self.db_repo, self._rhodecode_user, 'create',
-                data={'comment': comment, 'commit': commit})
-
-        # finalize, commit and redirect
-        Session().commit()
-
-        data = {
-            'target_id': h.safeid(h.safe_unicode(
-                self.request.POST.get('f_path'))),
-        }
-        if comment:
-            c.co = comment
-            c.at_version_num = 0
-            rendered_comment = render(
-                'rhodecode:templates/changeset/changeset_comment_block.mako',
-                self._get_template_context(c), self.request)
-
-            data.update(comment.get_dict())
-            data.update({'rendered_text': rendered_comment})
-
-            comment_broadcast_channel = channelstream.comment_channel(
-                self.db_repo_name, commit_obj=commit)
-
-            comment_data = data
-            comment_type = 'inline' if is_inline else 'general'
-            channelstream.comment_channelstream_push(
-                self.request, comment_broadcast_channel, self._rhodecode_user,
-                _('posted a new {} comment').format(comment_type),
-                comment_data=comment_data)
-
-        return data
+        return data if len(data) > 1 else data[0]
 
     @LoginRequired()
     @NotAnonymous()
@@ -665,6 +725,7 @@ class RepoCommitsView(RepoAppView):
     def repo_commit_comment_edit(self):
         self.load_default_context()
 
+        commit_id = self.request.matchdict['commit_id']
         comment_id = self.request.matchdict['comment_id']
         comment = ChangesetComment.get_or_404(comment_id)
 
@@ -717,11 +778,11 @@ class RepoCommitsView(RepoAppView):
             if not comment_history:
                 raise HTTPNotFound()
 
-            commit_id = self.request.matchdict['commit_id']
-            commit = self.db_repo.get_commit(commit_id)
-            CommentsModel().trigger_commit_comment_hook(
-                self.db_repo, self._rhodecode_user, 'edit',
-                data={'comment': comment, 'commit': commit})
+            if not comment.draft:
+                commit = self.db_repo.get_commit(commit_id)
+                CommentsModel().trigger_commit_comment_hook(
+                    self.db_repo, self._rhodecode_user, 'edit',
+                    data={'comment': comment, 'commit': commit})
 
             Session().commit()
             return {

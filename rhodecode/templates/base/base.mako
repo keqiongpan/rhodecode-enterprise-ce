@@ -1225,6 +1225,14 @@
     (function () {
         "use sctrict";
 
+        // details block auto-hide menu
+        $(document).mouseup(function(e) {
+            var container = $('.details-inline-block');
+            if (!container.is(e.target) && container.has(e.target).length === 0) {
+                $('.details-inline-block[open]').removeAttr('open')
+            }
+        });
+
         var $sideBar = $('.right-sidebar');
         var expanded = $sideBar.hasClass('right-sidebar-expanded');
         var sidebarState = templateContext.session_attrs.sidebarState;

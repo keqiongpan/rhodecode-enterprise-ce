@@ -95,7 +95,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             route_name='auth_home',
             context=PamAuthnResource)
 
-    def get_display_name(self):
+    def get_display_name(self, load_from_settings=False):
         return _('PAM')
 
     @classmethod

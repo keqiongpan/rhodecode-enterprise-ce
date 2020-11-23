@@ -1,7 +1,5 @@
 /__MAIN_APP__ - launched when rhodecode-app element is attached to DOM
 /plugins/__REGISTER__ - launched after the onDomReady() code from rhodecode.js is executed
-/ui/plugins/code/anchor_focus - launched when rc starts to scroll on load to anchor on PR/Codeview
-/ui/plugins/code/comment_form_built - launched when injectInlineForm() is executed and the form object is created
 /notifications - shows new event notifications
 /connection_controller/subscribe - subscribes user to new channels
 /connection_controller/presence - receives presence change messages

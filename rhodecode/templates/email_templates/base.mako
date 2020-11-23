@@ -337,7 +337,6 @@ ${self.plaintext_footer()}
         div.markdown-block img {
             border-style: none;
             background-color: #fff;
-            padding-right: 20px;
             max-width: 100%
         }
 
@@ -393,6 +392,13 @@ ${self.plaintext_footer()}
             border-radius: 2px;
             border: 1px solid #dbd9da;
             background-color: #eeeeee
+        }
+
+        div.markdown-block p {
+            margin-top: 0;
+            margin-bottom: 16px;
+            padding: 0;
+            line-height: unset;
         }
 
         div.markdown-block code,

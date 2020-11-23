@@ -325,6 +325,21 @@ class RepoFilesView(RepoAppView):
 
         return lf_enabled
 
+    def _get_archive_name(self, db_repo_name, commit_sha, ext, subrepos=False, path_sha=''):
+        # original backward compat name of archive
+        clean_name = safe_str(db_repo_name.replace('/', '_'))
+
+        # e.g vcsserver.zip
+        # e.g vcsserver-abcdefgh.zip
+        # e.g vcsserver-abcdefgh-defghijk.zip
+        archive_name = '{}{}{}{}{}'.format(
+            clean_name,
+            '-sub' if subrepos else '',
+            commit_sha,
+            '-{}'.format(path_sha) if path_sha else '',
+            ext)
+        return archive_name
+
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -339,6 +354,7 @@ class RepoFilesView(RepoAppView):
         default_at_path = '/'
         fname = self.request.matchdict['fname']
         subrepos = self.request.GET.get('subrepos') == 'true'
+        with_hash = str2bool(self.request.GET.get('with_hash', '1'))
         at_path = self.request.GET.get('at_path') or default_at_path
 
         if not self.db_repo.enable_downloads:
@@ -364,30 +380,30 @@ class RepoFilesView(RepoAppView):
         except Exception:
             return Response(_('No node at path {} for this repository').format(at_path))
 
-        path_sha = sha1(at_path)[:8]
+        # path sha is part of subdir
+        path_sha = ''
+        if at_path != default_at_path:
+            path_sha = sha1(at_path)[:8]
+        short_sha = '-{}'.format(safe_str(commit.short_id))
+        # used for cache etc
+        archive_name = self._get_archive_name(
+            self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
+            path_sha=path_sha)
 
-        # original backward compat name of archive
-        clean_name = safe_str(self.db_repo_name.replace('/', '_'))
-        short_sha = safe_str(commit.short_id)
+        if not with_hash:
+            short_sha = ''
+            path_sha = ''
 
-        if at_path == default_at_path:
-            archive_name = '{}-{}{}{}'.format(
-                clean_name,
-                '-sub' if subrepos else '',
-                short_sha,
-                ext)
-        # custom path and new name
-        else:
-            archive_name = '{}-{}{}-{}{}'.format(
-                clean_name,
-                '-sub' if subrepos else '',
-                short_sha,
-                path_sha,
-                ext)
+        # what end client gets served
+        response_archive_name = self._get_archive_name(
+            self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
+            path_sha=path_sha)
+        # remove extension from our archive directory name
+        archive_dir_name = response_archive_name[:-len(ext)]
 
         use_cached_archive = False
-        archive_cache_enabled = CONFIG.get(
-            'archive_cache_dir') and not self.request.GET.get('no_cache')
+        archive_cache_dir = CONFIG.get('archive_cache_dir')
+        archive_cache_enabled = archive_cache_dir and not self.request.GET.get('no_cache')
         cached_archive_path = None
 
         if archive_cache_enabled:
@@ -403,12 +419,14 @@ class RepoFilesView(RepoAppView):
             else:
                 log.debug('Archive %s is not yet cached', archive_name)
 
+        # generate new archive, as previous was not found in the cache
         if not use_cached_archive:
-            # generate new archive
-            fd, archive = tempfile.mkstemp()
+            _dir = os.path.abspath(archive_cache_dir) if archive_cache_dir else None
+            fd, archive = tempfile.mkstemp(dir=_dir)
             log.debug('Creating new temp archive in %s', archive)
             try:
-                commit.archive_repo(archive, kind=fileformat, subrepos=subrepos,
+                commit.archive_repo(archive, archive_dir_name=archive_dir_name,
+                                    kind=fileformat, subrepos=subrepos,
                                     archive_at_path=at_path)
             except ImproperArchiveTypeError:
                 return _('Unknown archive type')
@@ -445,8 +463,7 @@ class RepoFilesView(RepoAppView):
                     yield data
 
         response = Response(app_iter=get_chunked_archive(archive))
-        response.content_disposition = str(
-            'attachment; filename=%s' % archive_name)
+        response.content_disposition = str('attachment; filename=%s' % response_archive_name)
         response.content_type = str(content_type)
 
         return response

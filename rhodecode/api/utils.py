@@ -351,7 +351,10 @@ def get_pull_request_or_error(pullrequestid):
     return pull_request
 
 
-def build_commit_data(commit, detail_level):
+def build_commit_data(rhodecode_vcs_repo, commit, detail_level):
+    commit2 = commit
+    commit1 = commit.first_parent
+
     parsed_diff = []
     if detail_level == 'extended':
         for f_path in commit.added_paths:
@@ -362,8 +365,11 @@ def build_commit_data(commit, detail_level):
             parsed_diff.append(_get_commit_dict(filename=f_path, op='D'))
 
     elif detail_level == 'full':
-        from rhodecode.lib.diffs import DiffProcessor
-        diff_processor = DiffProcessor(commit.diff())
+        from rhodecode.lib import diffs
+
+        _diff = rhodecode_vcs_repo.get_diff(commit1, commit2,)
+        diff_processor = diffs.DiffProcessor(_diff, format='newdiff', show_full_diff=True)
+
         for dp in diff_processor.prepare():
             del dp['stats']['ops']
             _stats = dp['stats']

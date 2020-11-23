@@ -187,7 +187,7 @@
                     <div class="enabled pull-left" style="margin-right: 10px">
 
                         <div class="btn-group btn-group-actions">
-                            <a class="archive_link btn btn-small" data-ext=".zip" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+'.zip')}">
+                            <a class="archive_link btn btn-small" data-ext=".zip" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+'.zip', _query={'with_hash': '1'})}">
                                 <i class="icon-download"></i>
                                 ${c.rhodecode_db_repo.landing_ref_name}.zip
                                 ## replaced by some JS on select
@@ -198,12 +198,11 @@
                             </a>
 
                             <div class="btn-action-switcher-container left-align">
-                                <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
+                                <ul class="btn-action-switcher" role="menu" style="min-width: 200px; width: max-content">
                                     % for a_type, content_type, extension in h.ARCHIVE_SPECS:
                                     % if extension not in ['.zip']:
                                     <li>
-
-                                        <a class="archive_link" data-ext="${extension}" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+extension)}">
+                                        <a class="archive_link" data-ext="${extension}" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname=c.rhodecode_db_repo.landing_ref_name+extension, _query={'with_hash': '1'})}">
                                             <i class="icon-download"></i>
                                             ${c.rhodecode_db_repo.landing_ref_name+extension}
                                         </a>

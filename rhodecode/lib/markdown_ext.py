@@ -18,15 +18,83 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
+import re
 import markdown
+import xml.etree.ElementTree as etree
 
 from markdown.extensions import Extension
 from markdown.extensions.fenced_code import FencedCodeExtension
 from markdown.extensions.smart_strong import SmartEmphasisExtension
 from markdown.extensions.tables import TableExtension
-from markdown.extensions.nl2br import Nl2BrExtension
+from markdown.inlinepatterns import Pattern
 
 import gfm
+
+
+class InlineProcessor(Pattern):
+    """
+    Base class that inline patterns subclass.
+    This is the newer style inline processor that uses a more
+    efficient and flexible search approach.
+    """
+
+    def __init__(self, pattern, md=None):
+        """
+        Create an instant of an inline pattern.
+        Keyword arguments:
+        * pattern: A regular expression that matches a pattern
+        """
+        self.pattern = pattern
+        self.compiled_re = re.compile(pattern, re.DOTALL | re.UNICODE)
+
+        # Api for Markdown to pass safe_mode into instance
+        self.safe_mode = False
+        self.md = md
+
+    def handleMatch(self, m, data):
+        """Return a ElementTree element from the given match and the
+        start and end index of the matched text.
+        If `start` and/or `end` are returned as `None`, it will be
+        assumed that the processor did not find a valid region of text.
+        Subclasses should override this method.
+        Keyword arguments:
+        * m: A re match object containing a match of the pattern.
+        * data: The buffer current under analysis
+        Returns:
+        * el: The ElementTree element, text or None.
+        * start: The start of the region that has been matched or None.
+        * end: The end of the region that has been matched or None.
+        """
+        pass  # pragma: no cover
+
+
+class SimpleTagInlineProcessor(InlineProcessor):
+    """
+    Return element of type `tag` with a text attribute of group(2)
+    of a Pattern.
+    """
+    def __init__(self, pattern, tag):
+        InlineProcessor.__init__(self, pattern)
+        self.tag = tag
+
+    def handleMatch(self, m, data):  # pragma: no cover
+        el = etree.Element(self.tag)
+        el.text = m.group(2)
+        return el, m.start(0), m.end(0)
+
+
+class SubstituteTagInlineProcessor(SimpleTagInlineProcessor):
+    """ Return an element of type `tag` with no children. """
+    def handleMatch(self, m, data):
+        return etree.Element(self.tag), m.start(0), m.end(0)
+
+
+class Nl2BrExtension(Extension):
+    BR_RE = r'\n'
+
+    def extendMarkdown(self, md, md_globals):
+        br_tag = SubstituteTagInlineProcessor(self.BR_RE, 'br')
+        md.inlinePatterns.add('nl', br_tag, '_end')
 
 
 class GithubFlavoredMarkdownExtension(Extension):
@@ -51,6 +119,7 @@ class GithubFlavoredMarkdownExtension(Extension):
 
     def extendMarkdown(self, md, md_globals):
         # Built-in extensions
+        Nl2BrExtension().extendMarkdown(md, md_globals)
         FencedCodeExtension().extendMarkdown(md, md_globals)
         SmartEmphasisExtension().extendMarkdown(md, md_globals)
         TableExtension().extendMarkdown(md, md_globals)
@@ -68,7 +137,6 @@ class GithubFlavoredMarkdownExtension(Extension):
         gfm.TaskListExtension([
             ('list_attrs', {'class': 'checkbox'})
         ]).extendMarkdown(md, md_globals)
-        Nl2BrExtension().extendMarkdown(md, md_globals)
 
 
 # Global Vars

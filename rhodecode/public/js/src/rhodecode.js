@@ -704,3 +704,13 @@ var storeUserSessionAttr = function (key, val) {
     ajaxPOST(pyroutes.url('store_user_session_value'), postData, success);
     return false;
 };
+
+
+var getUserSessionAttr = function(key) {
+    var storeKey = templateContext.session_attrs;
+    var val = storeKey[key]
+    if (val !== undefined) {
+        return JSON.parse(val)
+    }
+    return null
+}

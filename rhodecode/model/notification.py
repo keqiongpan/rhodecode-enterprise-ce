@@ -55,7 +55,7 @@ class NotificationModel(BaseModel):
                                 ' of Notification got %s' % type(notification))
 
     def create(
-            self, created_by, notification_subject, notification_body,
+            self, created_by, notification_subject='', notification_body='',
             notification_type=Notification.TYPE_MESSAGE, recipients=None,
             mention_recipients=None, with_email=True, email_kwargs=None):
         """
@@ -64,11 +64,12 @@ class NotificationModel(BaseModel):
 
         :param created_by: int, str or User instance. User who created this
             notification
-        :param notification_subject: subject of notification itself
+        :param notification_subject: subject of notification itself,
+            it will be generated automatically from notification_type if not specified
         :param notification_body: body of notification text
+            it will be generated automatically from notification_type if not specified
         :param notification_type: type of notification, based on that we
             pick templates
-
         :param recipients: list of int, str or User objects, when None
             is given send to all admins
         :param mention_recipients: list of int, str or User objects,
@@ -82,13 +83,18 @@ class NotificationModel(BaseModel):
         if recipients and not getattr(recipients, '__iter__', False):
             raise Exception('recipients must be an iterable object')
 
+        if not (notification_subject and notification_body) and not notification_type:
+            raise ValueError('notification_subject, and notification_body '
+                             'cannot be empty when notification_type is not specified')
+
         created_by_obj = self._get_user(created_by)
-        # default MAIN body if not given
-        email_kwargs = email_kwargs or {'body': notification_body}
-        mention_recipients = mention_recipients or set()
 
         if not created_by_obj:
             raise Exception('unknown user %s' % created_by)
+
+        # default MAIN body if not given
+        email_kwargs = email_kwargs or {'body': notification_body}
+        mention_recipients = mention_recipients or set()
 
         if recipients is None:
             # recipients is None means to all admins
@@ -112,6 +118,15 @@ class NotificationModel(BaseModel):
 
         # add mentioned users into recipients
         final_recipients = set(recipients_objs).union(mention_recipients)
+
+        (subject, email_body, email_body_plaintext) = \
+            EmailNotificationModel().render_email(notification_type, **email_kwargs)
+
+        if not notification_subject:
+            notification_subject = subject
+
+        if not notification_body:
+            notification_body = email_body_plaintext
 
         notification = Notification.create(
             created_by=created_by_obj, subject=notification_subject,

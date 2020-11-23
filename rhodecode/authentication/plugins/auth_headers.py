@@ -95,7 +95,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
             route_name='auth_home',
             context=HeadersAuthnResource)
 
-    def get_display_name(self):
+    def get_display_name(self, load_from_settings=False):
         return _('Headers')
 
     def get_settings_schema(self):

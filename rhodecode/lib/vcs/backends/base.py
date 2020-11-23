@@ -915,8 +915,9 @@ class BaseCommit(object):
             list of parent commits
 
     """
-
+    repository = None
     branch = None
+
     """
     Depending on the backend this should be set to the branch name of the
     commit. Backends not supporting branches on commits should leave this
@@ -1192,13 +1193,14 @@ class BaseCommit(object):
         return None
 
     def archive_repo(self, archive_dest_path, kind='tgz', subrepos=None,
-                     prefix=None, write_metadata=False, mtime=None, archive_at_path='/'):
+                     archive_dir_name=None, write_metadata=False, mtime=None,
+                     archive_at_path='/'):
         """
         Creates an archive containing the contents of the repository.
 
         :param archive_dest_path: path to the file which to create the archive.
         :param kind: one of following: ``"tbz2"``, ``"tgz"``, ``"zip"``.
-        :param prefix: name of root directory in archive.
+        :param archive_dir_name: name of root directory in archive.
             Default is repository name and commit's short_id joined with dash:
             ``"{repo_name}-{short_id}"``.
         :param write_metadata: write a metadata file into archive.
@@ -1214,43 +1216,26 @@ class BaseCommit(object):
                 'Archive kind (%s) not supported use one of %s' %
                 (kind, allowed_kinds))
 
-        prefix = self._validate_archive_prefix(prefix)
-
+        archive_dir_name = self._validate_archive_prefix(archive_dir_name)
         mtime = mtime is not None or time.mktime(self.date.timetuple())
+        commit_id = self.raw_id
 
-        file_info = []
-        cur_rev = self.repository.get_commit(commit_id=self.raw_id)
-        for _r, _d, files in cur_rev.walk(archive_at_path):
-            for f in files:
-                f_path = os.path.join(prefix, f.path)
-                file_info.append(
-                    (f_path, f.mode, f.is_link(), f.raw_bytes))
+        return self.repository._remote.archive_repo(
+            archive_dest_path, kind, mtime, archive_at_path,
+            archive_dir_name, commit_id)
 
-        if write_metadata:
-            metadata = [
-                ('repo_name', self.repository.name),
-                ('commit_id', self.raw_id),
-                ('mtime', mtime),
-                ('branch', self.branch),
-                ('tags', ','.join(self.tags)),
-            ]
-            meta = ["%s:%s" % (f_name, value) for f_name, value in metadata]
-            file_info.append(('.archival.txt', 0o644, False, '\n'.join(meta)))
-
-        connection.Hg.archive_repo(archive_dest_path, mtime, file_info, kind)
-
-    def _validate_archive_prefix(self, prefix):
-        if prefix is None:
-            prefix = self._ARCHIVE_PREFIX_TEMPLATE.format(
+    def _validate_archive_prefix(self, archive_dir_name):
+        if archive_dir_name is None:
+            archive_dir_name = self._ARCHIVE_PREFIX_TEMPLATE.format(
                 repo_name=safe_str(self.repository.name),
                 short_id=self.short_id)
-        elif not isinstance(prefix, str):
-            raise ValueError("prefix not a bytes object: %s" % repr(prefix))
-        elif prefix.startswith('/'):
+        elif not isinstance(archive_dir_name, str):
+            raise ValueError("prefix not a bytes object: %s" % repr(archive_dir_name))
+        elif archive_dir_name.startswith('/'):
             raise VCSError("Prefix cannot start with leading slash")
-        elif prefix.strip() == '':
+        elif archive_dir_name.strip() == '':
             raise VCSError("Prefix cannot be empty")
-        return prefix
+        return archive_dir_name
 
     @LazyProperty
     def root(self):

@@ -32,8 +32,6 @@
 %>
 
 <script type="text/javascript">
-    // TODO: marcink switch this to pyroutes
-    AJAX_COMMENT_DELETE_URL = "${h.route_path('pullrequest_comment_delete',repo_name=c.repo_name,pull_request_id=c.pull_request.pull_request_id,comment_id='__COMMENT_ID__')}";
     templateContext.pull_request_data.pull_request_id = ${c.pull_request.pull_request_id};
     templateContext.pull_request_data.pull_request_version = '${request.GET.get('version', '')}';
 </script>
@@ -552,6 +550,42 @@
         ## CONTENT
         <div class="sidebar-content">
 
+            ## Drafts
+            % if c.rhodecode_edition_id == 'EE':
+            <div id="draftsTable" class="sidebar-element clear-both" style="display: ${'block' if c.draft_comments else 'none'}">
+                <div class="tooltip right-sidebar-collapsed-state" style="display: none;" onclick="toggleSidebar(); return false" title="${_('Drafts')}">
+                    <i class="icon-comment icon-draft"></i>
+                    <span id="drafts-count">${len(c.draft_comments)}</span>
+                </div>
+
+                <div class="right-sidebar-expanded-state pr-details-title">
+                  <span style="padding-left: 2px">
+                  <input name="select_all_drafts" type="checkbox" onclick="$('[name=submit_draft]').prop('checked', !$('[name=submit_draft]').prop('checked'))">
+                  </span>
+                  <span class="sidebar-heading noselect" onclick="refreshDraftComments(); return false">
+                    <i class="icon-comment icon-draft"></i>
+                    ${_('Drafts')}
+                  </span>
+                  <span class="block-right action_button last-item" onclick="submitDrafts(event)">${_('Submit')}</span>
+                </div>
+
+                <div id="drafts" class="right-sidebar-expanded-state pr-details-content reviewers">
+                    % if c.draft_comments:
+                        ${sidebar.comments_table(c.draft_comments, len(c.draft_comments), draft_comments=True)}
+                    % else:
+                        <table class="drafts-content-table">
+                            <tr>
+                                <td>
+                                    ${_('No TODOs yet')}
+                                </td>
+                            </tr>
+                        </table>
+                    % endif
+                </div>
+
+            </div>
+            % endif
+
             ## RULES SUMMARY/RULES
             <div class="sidebar-element clear-both">
                 <% vote_title = _ungettext(
@@ -678,7 +712,7 @@
             % endif
 
             ## TODOs
-            <div class="sidebar-element clear-both">
+            <div id="todosTable" class="sidebar-element clear-both">
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="TODOs">
                   <i class="icon-flag-filled"></i>
                   <span id="todos-count">${len(c.unresolved_comments)}</span>
@@ -712,7 +746,7 @@
                     % if c.unresolved_comments + c.resolved_comments:
                       ${sidebar.comments_table(c.unresolved_comments + c.resolved_comments, len(c.unresolved_comments), todo_comments=True)}
                     % else:
-                        <table>
+                        <table class="todos-content-table">
                             <tr>
                                 <td>
                                     ${_('No TODOs yet')}
@@ -725,7 +759,7 @@
             </div>
 
             ## COMMENTS
-            <div class="sidebar-element clear-both">
+            <div id="commentsTable" class="sidebar-element clear-both">
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Comments')}">
                     <i class="icon-comment" style="color: #949494"></i>
                     <span id="comments-count">${len(c.inline_comments_flat+c.comments)}</span>
@@ -763,7 +797,7 @@
                 % if c.inline_comments_flat + c.comments:
                     ${sidebar.comments_table(c.inline_comments_flat + c.comments, len(c.inline_comments_flat+c.comments))}
                 % else:
-                    <table>
+                    <table class="comments-content-table">
                         <tr>
                             <td>
                                 ${_('No Comments yet')}
@@ -846,6 +880,7 @@ versionController.init();
 
 reviewersController = new ReviewersController();
 commitsController = new CommitsController();
+commentsController = new CommentsController();
 
 updateController = new UpdatePrController();
 
@@ -890,6 +925,23 @@ window.setObserversData = ${c.pull_request_set_observers_data_json | n};
                 }
         );
     };
+
+    window.submitDrafts = function (event) {
+        var target = $(event.currentTarget);
+        var callback = function (result) {
+            target.removeAttr('onclick').html('saving...');
+        }
+        var draftIds = [];
+        $.each($('[name=submit_draft]:checked'), function (idx, val) {
+            draftIds.push(parseInt($(val).val()));
+        })
+        if (draftIds.length > 0) {
+            Rhodecode.comments.finalizeDrafts(draftIds, callback);
+        }
+        else {
+
+        }
+    }
 
     window.closePullRequest = function (status) {
         if (!confirm(_gettext('Are you sure to close this pull request without merging?'))) {
@@ -980,9 +1032,11 @@ window.setObserversData = ${c.pull_request_set_observers_data_json | n};
         $(btns).each(fn_display);
     });
 
-    // register submit callback on commentForm form to track TODOs
-    window.commentFormGlobalSubmitSuccessCallback = function () {
-        refreshMergeChecks();
+    // register submit callback on commentForm form to track TODOs, and refresh mergeChecks conditions
+    window.commentFormGlobalSubmitSuccessCallback = function (comment) {
+        if (!comment.draft) {
+            refreshMergeChecks();
+        }
     };
 
     ReviewerAutoComplete('#user', reviewersController);
@@ -994,7 +1048,8 @@ $(document).ready(function () {
 
     var channel = '${c.pr_broadcast_channel}';
     new ReviewerPresenceController(channel)
-
+    // register globally so inject comment logic can re-use it.
+    window.commentsController = commentsController;
 })
 </script>
 

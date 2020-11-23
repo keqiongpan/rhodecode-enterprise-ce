@@ -60,7 +60,7 @@ class CommentSchema(colander.MappingSchema):
         colander.String(),
         validator=colander.OneOf(ChangesetComment.COMMENT_TYPES),
         missing=ChangesetComment.COMMENT_TYPE_NOTE)
-
+    is_draft = colander.SchemaNode(colander.Boolean(),missing=False)
     comment_file = colander.SchemaNode(colander.String(), missing=None)
     comment_line = colander.SchemaNode(colander.String(), missing=None)
     status_change = colander.SchemaNode(

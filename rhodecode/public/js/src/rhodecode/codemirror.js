@@ -349,7 +349,12 @@ var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions)
     };
 
     var submitForm = function(cm, pred) {
-      $(cm.display.input.textarea.form).submit();
+      $(cm.display.input.textarea.form).find('.submit-comment-action').click();
+      return CodeMirror.Pass;
+    };
+
+    var submitFormAsDraft = function(cm, pred) {
+      $(cm.display.input.textarea.form).find('.submit-draft-action').click();
       return CodeMirror.Pass;
     };
 
@@ -475,9 +480,11 @@ var initCommentBoxCodeMirror = function(CommentForm, textAreaId, triggerActions)
     // submit form on Meta-Enter
     if (OSType === "mac") {
       extraKeys["Cmd-Enter"] = submitForm;
+      extraKeys["Shift-Cmd-Enter"] = submitFormAsDraft;
     }
     else {
       extraKeys["Ctrl-Enter"] = submitForm;
+      extraKeys["Shift-Ctrl-Enter"] = submitFormAsDraft;
     }
 
     if (triggerActions) {

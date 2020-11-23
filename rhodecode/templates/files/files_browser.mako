@@ -29,7 +29,7 @@
                     </a>
 
                     <div class="btn-action-switcher-container right-align">
-                        <ul class="btn-action-switcher" role="menu" style="min-width: 200px">
+                        <ul class="btn-action-switcher" role="menu" style="min-width: 200px; width: max-content">
                             <li>
                                 <a class="action_button" href="${h.route_path('repo_files_upload_file',repo_name=c.repo_name,commit_id=c.commit.raw_id,f_path=c.f_path)}">
                                     <i class="icon-upload"></i>
@@ -44,18 +44,41 @@
             % endif
 
             % if c.enable_downloads:
-              <% at_path = '{}'.format(request.GET.get('at') or c.commit.raw_id[:6]) %>
-              <div class="btn btn-default new-file">
-                  % if c.f_path == '/':
-                    <a href="${h.route_path('repo_archivefile',repo_name=c.repo_name, fname='{}.zip'.format(c.commit.raw_id))}">
-                        ${_('Download full tree ZIP')}
+              <%
+                  at_path = '{}'.format(request.GET.get('at') or c.commit.raw_id[:6])
+                  if c.f_path == '/':
+                      label = _('Full tree as {}')
+                      _query = {'with_hash': '1'}
+                  else:
+                      label = _('This tree as {}')
+                      _query = {'at_path':c.f_path, 'with_hash': '1'}
+              %>
+
+                <div class="btn-group btn-group-actions new-file">
+                    <a class="archive_link btn btn-default" data-ext=".zip" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname='{}{}'.format(c.commit.raw_id, '.zip'), _query=_query)}">
+                        <i class="icon-download"></i>
+                        ${label.format('.zip')}
                     </a>
-                  % else:
-                    <a href="${h.route_path('repo_archivefile',repo_name=c.repo_name, fname='{}.zip'.format(c.commit.raw_id), _query={'at_path':c.f_path})}">
-                        ${_('Download this tree ZIP')}
+
+                    <a class="tooltip btn btn-default btn-more-option" data-toggle="dropdown" aria-pressed="false" role="button" title="${_('more download options')}">
+                        <i class="icon-down"></i>
                     </a>
-                  % endif
-              </div>
+
+                    <div class="btn-action-switcher-container left-align">
+                        <ul class="btn-action-switcher" role="menu" style="min-width: 200px; width: max-content">
+                            % for a_type, content_type, extension in h.ARCHIVE_SPECS:
+                            % if extension not in ['.zip']:
+                            <li>
+                                <a class="archive_link" data-ext="${extension}" href="${h.route_path('repo_archivefile',repo_name=c.rhodecode_db_repo.repo_name, fname='{}{}'.format(c.commit.raw_id, extension), _query=_query)}">
+                                    <i class="icon-download"></i>
+                                    ${label.format(extension)}
+                                </a>
+                            </li>
+                            % endif
+                            % endfor
+                        </ul>
+                    </div>
+                </div>
             % endif
 
             <div class="files-quick-filter">

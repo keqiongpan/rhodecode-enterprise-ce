@@ -213,7 +213,7 @@ class RhodeCodeAuthPlugin(RhodeCodeExternalAuthPlugin):
     def get_settings_schema(self):
         return CrowdSettingsSchema()
 
-    def get_display_name(self):
+    def get_display_name(self, load_from_settings=False):
         return _('CROWD')
 
     @classmethod

@@ -104,12 +104,6 @@ def add_request_user_context(event):
     request.environ['rc_req_id'] = req_id
 
 
-def inject_app_settings(event):
-    settings = event.app.registry.settings
-    # inject info about available permissions
-    auth.set_available_permissions(settings)
-
-
 def scan_repositories_if_enabled(event):
     """
     This is subscribed to the `pyramid.events.ApplicationCreated` event. It

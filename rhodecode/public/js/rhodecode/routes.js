@@ -248,6 +248,7 @@ function registerRCRoutes() {
     pyroutes.register('pullrequest_comment_delete', '/%(repo_name)s/pull-request/%(pull_request_id)s/comment/%(comment_id)s/delete', ['repo_name', 'pull_request_id', 'comment_id']);
     pyroutes.register('pullrequest_comments', '/%(repo_name)s/pull-request/%(pull_request_id)s/comments', ['repo_name', 'pull_request_id']);
     pyroutes.register('pullrequest_todos', '/%(repo_name)s/pull-request/%(pull_request_id)s/todos', ['repo_name', 'pull_request_id']);
+    pyroutes.register('pullrequest_drafts', '/%(repo_name)s/pull-request/%(pull_request_id)s/drafts', ['repo_name', 'pull_request_id']);
     pyroutes.register('edit_repo', '/%(repo_name)s/settings', ['repo_name']);
     pyroutes.register('edit_repo_advanced', '/%(repo_name)s/settings/advanced', ['repo_name']);
     pyroutes.register('edit_repo_advanced_archive', '/%(repo_name)s/settings/advanced/archive', ['repo_name']);
@@ -386,6 +387,8 @@ function registerRCRoutes() {
     pyroutes.register('my_account_auth_tokens_add', '/_admin/my_account/auth_tokens/new', []);
     pyroutes.register('my_account_external_identity', '/_admin/my_account/external-identity', []);
     pyroutes.register('my_account_external_identity_delete', '/_admin/my_account/external-identity/delete', []);
+    pyroutes.register('pullrequest_draft_comments_submit', '/%(repo_name)s/pull-request/%(pull_request_id)s/draft_comments_submit', ['repo_name', 'pull_request_id']);
+    pyroutes.register('commit_draft_comments_submit', '/%(repo_name)s/changeset/%(commit_id)s/draft_comments_submit', ['repo_name', 'commit_id']);
     pyroutes.register('repo_artifacts_list', '/%(repo_name)s/artifacts', ['repo_name']);
     pyroutes.register('repo_artifacts_data', '/%(repo_name)s/artifacts_data', ['repo_name']);
     pyroutes.register('repo_artifacts_new', '/%(repo_name)s/artifacts/new', ['repo_name']);

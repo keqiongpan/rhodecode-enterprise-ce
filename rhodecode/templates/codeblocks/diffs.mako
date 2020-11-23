@@ -1,3 +1,4 @@
+<%namespace name="base" file="/base/base.mako"/>
 <%namespace name="commentblock" file="/changeset/changeset_file_comment.mako"/>
 
 <%def name="diff_line_anchor(commit, filename, line, type)"><%
@@ -74,24 +75,9 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 
 <div class="js-template" id="cb-comment-inline-form-template">
     <div class="comment-inline-form ac">
-
-    %if c.rhodecode_user.username != h.DEFAULT_USER:
+    %if not c.rhodecode_user.is_default:
         ## render template for inline comments
         ${commentblock.comment_form(form_type='inline')}
-    %else:
-        ${h.form('', class_='inline-form comment-form-login', method='get')}
-        <div class="pull-left">
-            <div class="comment-help pull-right">
-              ${_('You need to be logged in to leave comments.')} <a href="${h.route_path('login', _query={'came_from': h.current_route_path(request)})}">${_('Login now')}</a>
-            </div>
-        </div>
-        <div class="comment-button pull-right">
-         <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-          ${_('Cancel')}
-         </button>
-        </div>
-        <div class="clearfix"></div>
-        ${h.end_form()}
     %endif
     </div>
 </div>
@@ -287,7 +273,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         <label for="filediff-collapse-${id(filediff)}" class="filediff-heading">
             <%
                 file_comments = (get_inline_comments(inline_comments, filediff.patch['filename']) or {}).values()
-                total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not _c.outdated]
+                total_file_comments = [_c for _c in h.itertools.chain.from_iterable(file_comments) if not (_c.outdated or _c.draft)]
             %>
             <div class="filediff-collapse-indicator icon-"></div>
 
@@ -327,7 +313,7 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
         </label>
 
         ${diff_menu(filediff, use_comments=use_comments)}
-        <table data-f-path="${filediff.patch['filename']}" data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}" class="code-visible-block cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
+        <table id="file-${h.safeid(h.safe_unicode(filediff.patch['filename']))}" data-f-path="${filediff.patch['filename']}" data-anchor-id="${h.FID(filediff.raw_id, filediff.patch['filename'])}" class="code-visible-block cb cb-diff-${c.user_session_attrs["diffmode"]} code-highlight ${(over_lines_changed_limit and 'cb-collapsed' or '')}">
 
         ## new/deleted/empty content case
         % if not filediff.hunks:
@@ -626,8 +612,10 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 
     % if use_comments:
     |
-    <a href="#" onclick="return Rhodecode.comments.toggleComments(this);">
-        <span class="show-comment-button">${_('Show comments')}</span><span class="hide-comment-button">${_('Hide comments')}</span>
+    <a href="#" onclick="Rhodecode.comments.toggleDiffComments(this);return toggleElement(this)"
+                data-toggle-on="${_('Hide comments')}"
+                data-toggle-off="${_('Show comments')}">
+        <span class="hide-comment-button">${_('Hide comments')}</span>
     </a>
     % endif
 
@@ -637,23 +625,37 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
 </%def>
 
 
-<%def name="inline_comments_container(comments, active_pattern_entries=None)">
+<%def name="inline_comments_container(comments, active_pattern_entries=None, line_no='', f_path='')">
 
 <div class="inline-comments">
     %for comment in comments:
         ${commentblock.comment_block(comment, inline=True, active_pattern_entries=active_pattern_entries)}
     %endfor
-    % if comments and comments[-1].outdated:
-    <span class="btn btn-secondary cb-comment-add-button comment-outdated}" style="display: none;}">
-        ${_('Add another comment')}
-    </span>
-    % else:
-    <span onclick="return Rhodecode.comments.createComment(this)" class="btn btn-secondary cb-comment-add-button">
-        ${_('Add another comment')}
-    </span>
-    % endif
 
+    <%
+        extra_class = ''
+        extra_style = ''
+
+        if comments and comments[-1].outdated_at_version(c.at_version_num):
+            extra_class = ' comment-outdated'
+            extra_style = 'display: none;'
+
+    %>
+
+    <div class="reply-thread-container-wrapper${extra_class}" style="${extra_style}">
+        <div class="reply-thread-container${extra_class}">
+            <div class="reply-thread-gravatar">
+                ${base.gravatar(c.rhodecode_user.email, 20, tooltip=True, user=c.rhodecode_user)}
+            </div>
+            <div class="reply-thread-reply-button">
+                ## initial reply button, some JS logic can append here a FORM to leave a first comment.
+                <button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, '${f_path}', '${line_no}', null)">Reply...</button>
+            </div>
+            <div class="reply-thread-last"></div>
+        </div>
+    </div>
 </div>
+
 </%def>
 
 <%!
@@ -711,16 +713,19 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             data-line-no="${line.original.lineno}"
             >
 
-            <% line_old_comments = None %>
+            <% line_old_comments, line_old_comments_no_drafts = None, None %>
             %if line.original.get_comment_args:
-                <% line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args) %>
+                <%
+                    line_old_comments = get_comments_for('side-by-side', inline_comments, *line.original.get_comment_args)
+                    line_old_comments_no_drafts = [c for c in line_old_comments if not c.draft] if line_old_comments else []
+                    has_outdated = any([x.outdated for x in line_old_comments_no_drafts])
+                %>
             %endif
-            %if line_old_comments:
-                <% has_outdated = any([x.outdated for x in line_old_comments]) %>
+            %if line_old_comments_no_drafts:
                 % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_old_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip toggle-comment-action icon-comment-toggle" title="${_('Comments including outdated: {}. Click here to toggle them.').format(len(line_old_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_old_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip toggle-comment-action icon-comment" title="${_('Comments: {}. Click to toggle them.').format(len(line_old_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
         </td>
@@ -734,16 +739,18 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <a name="${old_line_anchor}" href="#${old_line_anchor}">${line.original.lineno}</a>
             %endif
         </td>
+
+        <% line_no = 'o{}'.format(line.original.lineno) %>
         <td class="cb-content ${action_class(line.original.action)}"
-            data-line-no="o${line.original.lineno}"
+            data-line-no="${line_no}"
             >
             %if use_comments and line.original.lineno:
-            ${render_add_comment_button()}
+            ${render_add_comment_button(line_no=line_no, f_path=filediff.patch['filename'])}
             %endif
             <span class="cb-code"><span class="cb-action ${action_class(line.original.action)}"></span>${line.original.content or '' | n}</span>
 
             %if use_comments and line.original.lineno and line_old_comments:
-                ${inline_comments_container(line_old_comments, active_pattern_entries=active_pattern_entries)}
+                ${inline_comments_container(line_old_comments, active_pattern_entries=active_pattern_entries, line_no=line_no, f_path=filediff.patch['filename'])}
             %endif
 
         </td>
@@ -752,18 +759,20 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             >
             <div>
 
+            <% line_new_comments, line_new_comments_no_drafts = None, None %>
             %if line.modified.get_comment_args:
-                <% line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args) %>
-            %else:
-                <% line_new_comments = None%>
+                <%
+                    line_new_comments = get_comments_for('side-by-side', inline_comments, *line.modified.get_comment_args)
+                    line_new_comments_no_drafts = [c for c in line_new_comments if not c.draft] if line_new_comments else []
+                    has_outdated = any([x.outdated for x in line_new_comments_no_drafts])
+                %>
             %endif
-            %if line_new_comments:
 
-                <% has_outdated = any([x.outdated for x in line_new_comments]) %>
+            %if line_new_comments_no_drafts:
                 % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(line_new_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip toggle-comment-action icon-comment-toggle" title="${_('Comments including outdated: {}. Click here to toggle them.').format(len(line_new_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(line_new_comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    <i class="tooltip toggle-comment-action icon-comment" title="${_('Comments: {}. Click to toggle them.').format(len(line_new_comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
                 % endif
             %endif
             </div>
@@ -778,22 +787,25 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 <a name="${new_line_anchor}" href="#${new_line_anchor}">${line.modified.lineno}</a>
             %endif
         </td>
+
+        <% line_no = 'n{}'.format(line.modified.lineno) %>
         <td class="cb-content ${action_class(line.modified.action)}"
-            data-line-no="n${line.modified.lineno}"
+            data-line-no="${line_no}"
             >
             %if use_comments and line.modified.lineno:
-            ${render_add_comment_button()}
+            ${render_add_comment_button(line_no=line_no, f_path=filediff.patch['filename'])}
             %endif
             <span class="cb-code"><span class="cb-action ${action_class(line.modified.action)}"></span>${line.modified.content or '' | n}</span>
-            %if use_comments and line.modified.lineno and line_new_comments:
-            ${inline_comments_container(line_new_comments, active_pattern_entries=active_pattern_entries)}
-            %endif
                 % if line_action in ['+', '-'] and prev_line_action not in ['+', '-']:
                 <div class="nav-chunk" style="visibility: hidden">
                     <i class="icon-eye" title="viewing diff hunk-${hunk.index}-${chunk_count}"></i>
                 </div>
                 <% chunk_count +=1 %>
                 % endif
+            %if use_comments and line.modified.lineno and line_new_comments:
+            ${inline_comments_container(line_new_comments, active_pattern_entries=active_pattern_entries, line_no=line_no, f_path=filediff.patch['filename'])}
+            %endif
+
         </td>
     </tr>
     %endfor
@@ -814,20 +826,22 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
         <td class="cb-data ${action_class(action)}">
             <div>
 
-            %if comments_args:
-                <% comments = get_comments_for('unified', inline_comments, *comments_args) %>
-            %else:
-                <% comments = None %>
-            %endif
+                <% comments, comments_no_drafts = None, None %>
+                %if comments_args:
+                    <%
+                        comments = get_comments_for('unified', inline_comments, *comments_args)
+                        comments_no_drafts = [c for c in line_new_comments if not c.draft] if line_new_comments else []
+                        has_outdated = any([x.outdated for x in comments_no_drafts])
+                    %>
+                %endif
 
-            % if comments:
-                <% has_outdated = any([x.outdated for x in comments]) %>
-                % if has_outdated:
-                    <i class="tooltip icon-comment-toggle" title="${_('comments including outdated: {}. Click here to display them.').format(len(comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
-                % else:
-                    <i class="tooltip icon-comment" title="${_('comments: {}. Click to toggle them.').format(len(comments))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                % if comments_no_drafts:
+                    % if has_outdated:
+                        <i class="tooltip toggle-comment-action icon-comment-toggle" title="${_('Comments including outdated: {}. Click here to toggle them.').format(len(comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    % else:
+                        <i class="tooltip toggle-comment-action icon-comment" title="${_('Comments: {}. Click to toggle them.').format(len(comments_no_drafts))}" onclick="return Rhodecode.comments.toggleLineComments(this)"></i>
+                    % endif
                 % endif
-            % endif
             </div>
         </td>
         <td class="cb-lineno ${action_class(action)}"
@@ -850,15 +864,16 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             <a name="${new_line_anchor}" href="#${new_line_anchor}">${new_line_no}</a>
             %endif
         </td>
+        <% line_no = '{}{}'.format(new_line_no and 'n' or 'o', new_line_no or old_line_no) %>
         <td class="cb-content ${action_class(action)}"
-            data-line-no="${(new_line_no and 'n' or 'o')}${(new_line_no or old_line_no)}"
+            data-line-no="${line_no}"
             >
             %if use_comments:
-            ${render_add_comment_button()}
+            ${render_add_comment_button(line_no=line_no, f_path=filediff.patch['filename'])}
             %endif
             <span class="cb-code"><span class="cb-action ${action_class(action)}"></span> ${content or '' | n}</span>
             %if use_comments and comments:
-            ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries)}
+            ${inline_comments_container(comments, active_pattern_entries=active_pattern_entries, line_no=line_no, f_path=filediff.patch['filename'])}
             %endif
         </td>
     </tr>
@@ -879,10 +894,12 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
 </%def>file changes
 
 
-<%def name="render_add_comment_button()">
-<button class="btn btn-small btn-primary cb-comment-box-opener" onclick="return Rhodecode.comments.createComment(this)">
+<%def name="render_add_comment_button(line_no='', f_path='')">
+% if not c.rhodecode_user.is_default:
+<button class="btn btn-small btn-primary cb-comment-box-opener" onclick="return Rhodecode.comments.createComment(this, '${f_path}', '${line_no}', null)">
     <span><i class="icon-comment"></i></span>
 </button>
+% endif
 </%def>
 
 <%def name="render_diffset_menu(diffset, range_diff_on=None, commit=None, pull_request_menu=None)">

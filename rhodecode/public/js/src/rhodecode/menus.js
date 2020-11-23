@@ -42,12 +42,22 @@ window.toggleElement = function (elem, target) {
   var $elem = $(elem);
   var $target = $(target);
 
-  if ($target.is(':visible') || $target.length === 0) {
+  if (target !== undefined) {
+      var show = $target.is(':visible') || $target.length === 0;
+  } else {
+      var show = $elem.hasClass('toggle-off')
+  }
+
+  if (show) {
     $target.hide();
     $elem.html($elem.data('toggleOn'))
+    $elem.addClass('toggle-on')
+    $elem.removeClass('toggle-off')
   } else {
     $target.show();
     $elem.html($elem.data('toggleOff'))
+    $elem.addClass('toggle-off')
+    $elem.removeClass('toggle-on')
   }
 
   return false

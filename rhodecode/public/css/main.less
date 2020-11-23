@@ -263,9 +263,6 @@ input.inline[type="file"] {
 // HEADER
 .header {
 
-    // TODO: johbo: Fix login pages, so that they work without a min-height
-    // for the header and then remove the min-height. I chose a smaller value
-    // intentionally here to avoid rendering issues in the main navigation.
     min-height: 49px;
     min-width: 1024px;
 
@@ -1143,9 +1140,8 @@ label {
     margin-left: -15px;
 }
 
-#rev_range_container, #rev_range_clear, #rev_range_more {
-    margin-top: -5px;
-    margin-bottom: -5px;
+#rev_range_action {
+  margin-bottom: -8px;
 }
 
 #filter_changelog {
@@ -1591,9 +1587,9 @@ table.integrations {
 }
 .pr-details-title {
     height: 20px;
-    line-height: 20px;
+    line-height: 16px;
 
-    padding-bottom: 8px;
+    padding-bottom: 4px;
     border-bottom: @border-thickness solid @grey5;
 
     .action_button.disabled {
@@ -3212,7 +3208,12 @@ details:not([open]) > :not(summary) {
 
 .sidebar-element {
   margin-top: 20px;
+
+  .icon-draft {
+    color: @color-draft
+  }
 }
+
 
 .right-sidebar-collapsed-state {
   display: flex;
@@ -3235,5 +3236,4 @@ details:not([open]) > :not(summary) {
 
 .old-comments-marker td {
   padding-top: 15px;
-  border-bottom: 1px solid @grey5;
 }

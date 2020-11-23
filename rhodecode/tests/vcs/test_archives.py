@@ -49,23 +49,32 @@ class TestArchives(BackendTestMixin):
     @classmethod
     def _get_commits(cls):
         start_date = datetime.datetime(2010, 1, 1, 20)
+        yield {
+            'message': 'Initial Commit',
+            'author': 'Joe Doe <joe.doe@example.com>',
+            'date': start_date + datetime.timedelta(hours=12),
+            'added': [
+                FileNode('executable_0o100755', '...', mode=0o100755),
+                FileNode('executable_0o100500', '...', mode=0o100500),
+                FileNode('not_executable', '...', mode=0o100644),
+            ],
+        }
         for x in range(5):
             yield {
                 'message': 'Commit %d' % x,
                 'author': 'Joe Doe <joe.doe@example.com>',
                 'date': start_date + datetime.timedelta(hours=12 * x),
                 'added': [
-                    FileNode(
-                        '%d/file_%d.txt' % (x, x), content='Foobar %d' % x),
+                    FileNode('%d/file_%d.txt' % (x, x), content='Foobar %d' % x),
                 ],
             }
 
     @pytest.mark.parametrize('compressor', ['gz', 'bz2'])
     def test_archive_tar(self, compressor):
         self.tip.archive_repo(
-            self.temp_file, kind='t' + compressor, prefix='repo')
+            self.temp_file, kind='t{}'.format(compressor), archive_dir_name='repo')
         out_dir = tempfile.mkdtemp()
-        out_file = tarfile.open(self.temp_file, 'r|' + compressor)
+        out_file = tarfile.open(self.temp_file, 'r|{}'.format(compressor))
         out_file.extractall(out_dir)
         out_file.close()
 
@@ -77,8 +86,24 @@ class TestArchives(BackendTestMixin):
 
         shutil.rmtree(out_dir)
 
+    @pytest.mark.parametrize('compressor', ['gz', 'bz2'])
+    def test_archive_tar_symlink(self, compressor):
+        return False
+
+    @pytest.mark.parametrize('compressor', ['gz', 'bz2'])
+    def test_archive_tar_file_modes(self, compressor):
+        self.tip.archive_repo(
+            self.temp_file, kind='t{}'.format(compressor), archive_dir_name='repo')
+        out_dir = tempfile.mkdtemp()
+        out_file = tarfile.open(self.temp_file, 'r|{}'.format(compressor))
+        out_file.extractall(out_dir)
+        out_file.close()
+        dest = lambda inp: os.path.join(out_dir, 'repo/' + inp)
+
+        assert oct(os.stat(dest('not_executable')).st_mode) == '0100644'
+
     def test_archive_zip(self):
-        self.tip.archive_repo(self.temp_file, kind='zip', prefix='repo')
+        self.tip.archive_repo(self.temp_file, kind='zip', archive_dir_name='repo')
         out = zipfile.ZipFile(self.temp_file)
 
         for x in range(5):
@@ -91,10 +116,10 @@ class TestArchives(BackendTestMixin):
 
     def test_archive_zip_with_metadata(self):
         self.tip.archive_repo(self.temp_file, kind='zip',
-                              prefix='repo', write_metadata=True)
+                              archive_dir_name='repo', write_metadata=True)
 
         out = zipfile.ZipFile(self.temp_file)
-        metafile = out.read('.archival.txt')
+        metafile = out.read('repo/.archival.txt')
 
         raw_id = self.tip.raw_id
         assert 'commit_id:%s' % raw_id in metafile

@@ -82,8 +82,8 @@
                 <p>
                 <strong>Exception ID: <code><a href="${c.exception_id_url}">${c.exception_id}</a></code> </strong> <br/>
 
-                Super-admins can see detailed traceback information from this exception by checking the below Exception ID.<br/>
-                Please include the above link for further details of this exception.
+                Super-admins can see details of the above error in the exception tracker found under
+                <a href="${h.route_url('admin_settings_exception_tracker')}">admin > settings > exception tracker</a>.
                 </p>
             </div>
             % endif

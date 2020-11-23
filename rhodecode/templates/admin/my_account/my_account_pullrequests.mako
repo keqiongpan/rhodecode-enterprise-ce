@@ -46,6 +46,8 @@
         $pullRequestListTable.DataTable({
             processing: true,
             serverSide: true,
+            stateSave: true,
+            stateDuration: -1,
             ajax: {
                 "url": "${h.route_path('my_account_pullrequests_data')}",
                 "data": function (d) {
@@ -119,6 +121,10 @@
                 if (data['owned']) {
                     $(row).addClass('owned');
                 }
+            },
+            "stateSaveParams": function (settings, data) {
+                data.search.search = ""; // Don't save search
+                data.start = 0;  // don't save pagination
             }
         });
         $pullRequestListTable.on('xhr.dt', function (e, settings, json, xhr) {
@@ -128,6 +134,7 @@
         $pullRequestListTable.on('preXhr.dt', function (e, settings, data) {
             $pullRequestListTable.css('opacity', 0.3);
         });
+
 
         // filter
         $('#q_filter').on('keyup',
