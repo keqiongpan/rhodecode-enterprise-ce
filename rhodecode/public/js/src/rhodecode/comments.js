@@ -1462,10 +1462,11 @@ var CommentsController = function() {
 
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
+    console.log(commentData);
+
     if (commentData.commentInline) {
-        var f_path = commentData.fPath;
-        var line_no = commentData.lineNo;
-        //TODO check this if we need to give f_path/line_no
+        var f_path = commentData.commentFPath;
+        var line_no = commentData.commentLineNo;
         this.createComment(comment, f_path, line_no, commentId)
     } else {
         this.createGeneralComment('general', "$placeholder", commentId)
