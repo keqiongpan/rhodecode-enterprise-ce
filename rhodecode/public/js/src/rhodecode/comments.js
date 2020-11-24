@@ -371,7 +371,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
                     location.reload(true);
                 } else {
                     // inject newly created comments, json_data is {<comment_id>: {}}
-                    self.attachGeneralComment(json_data)
+                    Rhodecode.comments.attachGeneralComment(json_data)
 
                     self.resetCommentFormState();
                     timeagoActivate();
