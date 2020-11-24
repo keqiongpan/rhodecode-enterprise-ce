@@ -645,12 +645,18 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     <div class="reply-thread-container-wrapper${extra_class}" style="${extra_style}">
         <div class="reply-thread-container${extra_class}">
             <div class="reply-thread-gravatar">
+                % if c.rhodecode_user.username != h.DEFAULT_USER:
                 ${base.gravatar(c.rhodecode_user.email, 20, tooltip=True, user=c.rhodecode_user)}
+                % endif
             </div>
+
             <div class="reply-thread-reply-button">
+                % if c.rhodecode_user.username != h.DEFAULT_USER:
                 ## initial reply button, some JS logic can append here a FORM to leave a first comment.
                 <button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, '${f_path}', '${line_no}', null)">Reply...</button>
+                % endif
             </div>
+            ##% endif
             <div class="reply-thread-last"></div>
         </div>
     </div>
