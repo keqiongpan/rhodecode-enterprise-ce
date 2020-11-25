@@ -618,7 +618,7 @@ $(document).ready(function() {
                     offsetScroll($line, 70);
                 }
                 if (!$line.hasClass('comment-outdated') && result.remainder === '/ReplyToComment') {
-                    $line.nextAll('.cb-comment-add-button').trigger('click');
+                    $line.parent().find('.cb-comment-add-button').trigger('click');
                 }
             }
 
