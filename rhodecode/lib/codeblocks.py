@@ -738,6 +738,7 @@ class DiffSet(object):
         try:
             return self.highlighted_filenodes[filenode][line_number - 1]
         except Exception:
+            log.exception('diff rendering error')
             return [('', u'rhodecode diff rendering error')]
 
     def action_to_op(self, action):
