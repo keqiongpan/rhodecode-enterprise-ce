@@ -48,7 +48,7 @@ def includeme(config):
 
         # If a reload command is set add a subscriber to execute it on
         # configuration changes.
-        reload_cmd = shlex.split(settings[config_keys.reload_command])
+        reload_cmd = settings[config_keys.reload_command]
         if reload_cmd:
             reload_timeout = settings[config_keys.reload_timeout] or None
             reload_subscriber = AsyncSubprocessSubscriber(
