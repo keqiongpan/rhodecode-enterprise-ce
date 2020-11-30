@@ -269,8 +269,8 @@ window.ReviewersController = function () {
                 'source_ref': sourceRef[2],
                 'target_repo': targetRepo,
                 'target_ref': targetRef[2],
-                'target_ref_type': sourceRef[0],
-                'target_ref_name': sourceRef[1]
+                'target_ref_type': targetRef[0],
+                'target_ref_name': targetRef[1]
             });
 
         self.currentRequest = $.ajax({
