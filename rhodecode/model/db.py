@@ -3967,7 +3967,7 @@ class ChangesetStatus(Base, BaseModel):
     STATUS_APPROVED = 'approved'
     STATUS_REJECTED = 'rejected'
     STATUS_UNDER_REVIEW = 'under_review'
-
+    CheckConstraint,
     STATUSES = [
         (STATUS_NOT_REVIEWED, _("Not Reviewed")),  # (no icon) and default
         (STATUS_APPROVED, _("Approved")),
@@ -5322,11 +5322,11 @@ class ScheduleEntry(Base, BaseModel):
         except ValueError:
             return dict()
 
-    def _as_raw(self, val):
+    def _as_raw(self, val, indent=None):
         if hasattr(val, 'de_coerce'):
             val = val.de_coerce()
             if val:
-                val = json.dumps(val)
+                val = json.dumps(val, indent=indent, sort_keys=True)
 
         return val
 
@@ -5334,13 +5334,11 @@ class ScheduleEntry(Base, BaseModel):
     def schedule_definition_raw(self):
         return self._as_raw(self.schedule_definition)
 
-    @property
-    def args_raw(self):
-        return self._as_raw(self.task_args)
+    def args_raw(self, indent=None):
+        return self._as_raw(self.task_args, indent)
 
-    @property
-    def kwargs_raw(self):
-        return self._as_raw(self.task_kwargs)
+    def kwargs_raw(self, indent=None):
+        return self._as_raw(self.task_kwargs, indent)
 
     def __repr__(self):
         return '<DB:ScheduleEntry({}:{})>'.format(
