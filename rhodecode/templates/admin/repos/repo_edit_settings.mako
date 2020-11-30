@@ -235,13 +235,14 @@
               %for field in c.repo_fields:
                 <div class="field">
                     <div class="label">
-                        <label for="${field.field_key_prefixed}">${field.field_label} (${field.field_key}):</label>
+                        <label for="${field.field_key_prefixed}">${(field.field_label or field.field_key)}:</label>
                     </div>
                     <div class="input input-medium">
                         ${h.text(field.field_key_prefixed, field.field_value, class_='medium')}
-                        %if field.field_desc:
-                          <span class="help-block">${field.field_desc}</span>
-                        %endif
+                        <span class="help-block">
+                            key: ${field.field_key};
+                            ${field.field_desc}
+                        </span>
                     </div>
                  </div>
               %endfor
