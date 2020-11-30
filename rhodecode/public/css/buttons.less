@@ -225,6 +225,7 @@ input[type="button"] {
     }
 }
 
+
 .btn-approved-status {
     .border ( @border-thickness, @alert1 );
     background-color: white;
@@ -429,6 +430,31 @@ input[type="button"] {
     }
 }
 
+input[type="submit"].btn-draft {
+    .border ( @border-thickness, @rcblue );
+    background-color: white;
+    color: @rcblue;
+
+    a {
+        color: @rcblue;
+    }
+
+    &:hover,
+    &.active {
+        .border ( @border-thickness, @rcdarkblue );
+        background-color: white;
+        color: @rcdarkblue;
+
+        a {
+            color: @rcdarkblue;
+        }
+    }
+
+    &:disabled {
+        background-color: white;
+        color: @rcblue;
+    }
+}
 
 input[type="submit"].btn-warning {
     &:extend(.btn-warning);
