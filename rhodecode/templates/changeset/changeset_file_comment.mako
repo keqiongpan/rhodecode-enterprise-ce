@@ -534,7 +534,7 @@
             % if form_type == 'inline':
                 <input type="hidden" name="f_path" value="{0}">
                 <input type="hidden" name="line" value="${lineno_id}">
-                <span class="cursor-pointer action_button cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+                <span style="opacity: 0.7" class="cursor-pointer cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
                 ${_('dismiss')}
                 </span>
             % endif
