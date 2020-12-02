@@ -193,9 +193,10 @@ if (show_disabled) {
 <script id="ejs_sideBarCommentHovercard" type="text/template" class="ejsTemplate">
 
 <div>
+
     <% if (is_todo) { %>
         <% if (inline) { %>
-            <strong>Inline</strong> TODO on line: <%= line_no %>
+            <strong>Inline</strong> TODO (<code>#<%- comment_id -%></code>) on line: <%= line_no %>
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
@@ -205,14 +206,14 @@ if (show_disabled) {
             <% if (review_status) { %>
                 <i class="icon-circle review-status-<%= review_status %>"></i>
             <% } %>
-            <strong>General</strong> TODO
+            <strong>General</strong> TODO (<code>#<%- comment_id -%></code>)
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
         <% } %>
     <% } else { %>
         <% if (inline) { %>
-            <strong>Inline</strong> comment on line: <%= line_no %>
+            <strong>Inline</strong> comment (<code>#<%- comment_id -%></code>) on line: <%= line_no %>
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
@@ -222,7 +223,7 @@ if (show_disabled) {
             <% if (review_status) { %>
                 <i class="icon-circle review-status-<%= review_status %>"></i>
             <% } %>
-            <strong>General</strong> comment
+            <strong>General</strong> comment (<code>#<%- comment_id -%></code>)
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
