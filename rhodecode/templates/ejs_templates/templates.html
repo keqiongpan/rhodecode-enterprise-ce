@@ -65,7 +65,9 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
 
 <tr id="reviewer_<%= member.user_id %>" class="reviewer_entry" tooltip="Review Group" data-reviewer-user-id="<%= member.user_id %>">
 
-    <% if (!create) { %>
+    <% if (create) { %>
+    <td></td>
+    <% } else { %>
     <td style="width: 20px">
         <div class="tooltip presence-state" style="display: none; position: absolute; left: 2px" title="This users is currently at this page">
           <i class="icon-eye" style="color: #0ac878"></i>
@@ -81,6 +83,7 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
         <% } %>
     </td>
     <% } %>
+
 
     <% if (mandatory) { %>
     <td style="text-align: right;width: 10px;">

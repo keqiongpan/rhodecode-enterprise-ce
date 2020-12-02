@@ -598,20 +598,6 @@
                     ${c.reviewers_count}
                 </div>
 
-                ## REVIEW RULES
-                <div id="review_rules" style="display: none" class="">
-                    <div class="right-sidebar-expanded-state pr-details-title">
-                        <span class="sidebar-heading">
-                            ${_('Reviewer rules')}
-                        </span>
-
-                    </div>
-                    <div class="pr-reviewer-rules">
-                        ## review rules will be appended here, by default reviewers logic
-                    </div>
-                    <input id="review_data" type="hidden" name="review_data" value="">
-                </div>
-
                 ## REVIEWERS
                 <div class="right-sidebar-expanded-state pr-details-title">
                     <span class="tooltip sidebar-heading" title="${vote_title}">
@@ -628,6 +614,15 @@
                 </div>
 
                 <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
+
+                    <div id="review_rules" style="display: none" class="">
+
+                        <strong>${_('Reviewer rules')}</strong>
+                        <div class="pr-reviewer-rules">
+                            ## review rules will be appended here, by default reviewers logic
+                        </div>
+                        <input id="review_data" type="hidden" name="review_data" value="">
+                    </div>
 
                     ## members redering block
                     <input type="hidden" name="__start__" value="review_members:sequence">
