@@ -954,9 +954,37 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </div>
                 <div class="btn-group">
 
-                <div class="pull-left">
-                    ${h.hidden('diff_menu_{}'.format(diffset_container_id))}
-                </div>
+                <details class="details-reset details-inline-block">
+                  <summary class="noselect btn">
+                        <i class="icon-options cursor-pointer" op="options"></i>
+                  </summary>
+
+                  <div>
+                  <details-menu class="details-dropdown" style="top: 35px;">
+
+                    <div class="dropdown-item">
+                        <div style="padding: 2px 0px">
+                        % if request.GET.get('ignorews', '') == '1':
+                            <a href="${h.current_route_path(request, ignorews=0)}">${_('Show whitespace changes')}</a>
+                        % else:
+                            <a href="${h.current_route_path(request, ignorews=1)}">${_('Hide whitespace changes')}</a>
+                        % endif
+                        </div>
+                    </div>
+
+                   <div class="dropdown-item">
+                       <div style="padding: 2px 0px">
+                        % if request.GET.get('fullcontext', '') == '1':
+                            <a href="${h.current_route_path(request, fullcontext=0)}">${_('Hide full context diff')}</a>
+                        % else:
+                            <a href="${h.current_route_path(request, fullcontext=1)}">${_('Show full context diff')}</a>
+                        % endif
+                        </div>
+                   </div>
+
+                  </details-menu>
+                  </div>
+                </details>
 
                 </div>
         </div>
@@ -1270,61 +1298,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 return null;
             };
 
-            var preloadDiffMenuData = {
-                results: [
-
-                    ## Whitespace change
-                    % if request.GET.get('ignorews', '') == '1':
-                    {
-                        id: 2,
-                        text: _gettext('Show whitespace changes'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, ignorews=0)|n}"
-                    },
-                    % else:
-                    {
-                        id: 2,
-                        text: _gettext('Hide whitespace changes'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, ignorews=1)|n}"
-                    },
-                    % endif
-
-                    ## FULL CONTEXT
-                    % if request.GET.get('fullcontext', '') == '1':
-                    {
-                        id: 3,
-                        text: _gettext('Hide full context diff'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, fullcontext=0)|n}"
-                    },
-                    % else:
-                    {
-                        id: 3,
-                        text: _gettext('Show full context diff'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, fullcontext=1)|n}"
-                    },
-                    % endif
-
-                ]
-            };
-
-            var diffMenuId = "#diff_menu_" + "${diffset_container_id}";
-            $(diffMenuId).select2({
-                minimumResultsForSearch: -1,
-                containerCssClass: "drop-menu-no-width",
-                dropdownCssClass: "drop-menu-dropdown",
-                dropdownAutoWidth: true,
-                data: preloadDiffMenuData,
-                placeholder: "${_('...')}",
-            });
-            $(diffMenuId).on('select2-selecting', function (e) {
-                e.choice.action();
-                if (e.choice.url !== null) {
-                    window.location = e.choice.url
-                }
-            });
             toggleExpand = function (el, diffsetEl) {
                 var el = $(el);
                 if (el.hasClass('collapsed')) {
