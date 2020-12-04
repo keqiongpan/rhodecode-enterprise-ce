@@ -41,7 +41,7 @@ from rhodecode.lib.diffs import (
     get_diff_whitespace_flag)
 from rhodecode.lib.exceptions import StatusChangeOnClosedPullRequestError, CommentVersionMismatch
 import rhodecode.lib.helpers as h
-from rhodecode.lib.utils2 import safe_unicode, str2bool, StrictAttributeDict
+from rhodecode.lib.utils2 import safe_unicode, str2bool, StrictAttributeDict, safe_str
 from rhodecode.lib.vcs.backends.base import EmptyCommit
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError)
@@ -110,7 +110,7 @@ class RepoCommitsView(RepoAppView):
             if not c.commit_ranges:
                 raise RepositoryError('The commit range returned an empty result')
         except CommitDoesNotExistError as e:
-            msg = _('No such commit exists. Org exception: `{}`').format(e)
+            msg = _('No such commit exists. Org exception: `{}`').format(safe_str(e))
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except Exception:

@@ -216,6 +216,7 @@ class RepoChangelogView(RepoAppView):
         pre_load = self._get_preload_attrs()
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
+
         try:
             if f_path:
                 log.debug('generating changelog for path %s', f_path)
@@ -258,8 +259,15 @@ class RepoChangelogView(RepoAppView):
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
             log.exception(safe_str(e))
             h.flash(safe_str(h.escape(e)), category='error')
-            raise HTTPFound(
-                h.route_path('repo_commits', repo_name=self.db_repo_name))
+
+            if commit_id:
+                # from single commit page, we redirect to main commits
+                raise HTTPFound(
+                    h.route_path('repo_commits', repo_name=self.db_repo_name))
+            else:
+                # otherwise we redirect to summary
+                raise HTTPFound(
+                    h.route_path('repo_summary', repo_name=self.db_repo_name))
 
         if partial_xhr or self.request.environ.get('HTTP_X_PJAX'):
             # case when loading dynamic file history in file view
