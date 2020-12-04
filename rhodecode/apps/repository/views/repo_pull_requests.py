@@ -221,9 +221,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                      target_commit, source_commit, diff_limit, file_limit,
                      fulldiff, hide_whitespace_changes, diff_context, use_ancestor=True):
 
+        target_commit_final = target_commit
+        source_commit_final = source_commit
+
         if use_ancestor:
             # we might want to not use it for versions
             target_ref_id = ancestor_commit.raw_id
+            target_commit_final = ancestor_commit
 
         vcs_diff = PullRequestModel().get_diff(
             source_repo, source_ref_id, target_ref_id,
@@ -238,11 +242,11 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         diffset = codeblocks.DiffSet(
             repo_name=self.db_repo_name,
             source_repo_name=source_repo_name,
-            source_node_getter=codeblocks.diffset_node_getter(target_commit),
-            target_node_getter=codeblocks.diffset_node_getter(source_commit),
+            source_node_getter=codeblocks.diffset_node_getter(target_commit_final),
+            target_node_getter=codeblocks.diffset_node_getter(source_commit_final),
         )
         diffset = self.path_filter.render_patchset_filtered(
-            diffset, _parsed, target_commit.raw_id, source_commit.raw_id)
+            diffset, _parsed, target_ref_id, source_ref_id)
 
         return diffset
 
