@@ -714,3 +714,11 @@ var getUserSessionAttr = function(key) {
     }
     return null
 }
+
+window.scrollDown = function () {
+    $(document).scrollTop($(document).height());
+}
+
+window.scrollUp = function scrollUp() {
+    $(window).scrollTop(0);
+}

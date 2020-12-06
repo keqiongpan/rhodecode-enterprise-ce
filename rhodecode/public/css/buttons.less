@@ -263,6 +263,10 @@ input[type="button"] {
             border-radius: @border-radius 0 0 @border-radius;
 
         }
+        // 2nd, if only 2 elements are there
+        &:nth-of-type(2) {
+            border-left-width: 0;
+        }
         // middle elements
         &:not(:first-of-type):not(:last-of-type) {
             border-radius: 0;

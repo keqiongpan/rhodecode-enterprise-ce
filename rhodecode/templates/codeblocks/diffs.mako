@@ -916,6 +916,16 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
         <div class="sidebar__inner">
             <div class="sidebar__bar">
             <div class="pull-right">
+
+                <div class="btn-group" style="margin-right: 5px;">
+                    <a class="tooltip btn" onclick="scrollDown();return false" title="${_('Scroll to page bottom')}">
+                        <i class="icon-arrow_down"></i>
+                    </a>
+                    <a class="tooltip btn" onclick="scrollUp();return false" title="${_('Scroll to page top')}">
+                        <i class="icon-arrow_up"></i>
+                    </a>
+                </div>
+
                 <div class="btn-group">
                     <a class="btn tooltip toggle-wide-diff" href="#toggle-wide-diff" onclick="toggleWideDiff(this); return false" title="${h.tooltip(_('Toggle wide diff'))}">
                     <i class="icon-wide-mode"></i>
@@ -1004,7 +1014,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </strong>
         </div>
         <div class="pull-right noselect">
-
             %if commit:
                 <span>
                     <code>${h.show_id(commit)}</code>

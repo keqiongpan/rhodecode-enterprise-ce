@@ -604,6 +604,7 @@
                         <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
                         ${_('Reviewers')}
                     </span>
+
                     %if c.allowed_to_update:
                         <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
                         <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
@@ -644,7 +645,7 @@
                                 </div>
                             % endif
                             <div class="pull-right" style="margin-bottom: 15px">
-                                <button data-role="reviewer" id="update_reviewers" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                                <button data-role="reviewer" id="update_reviewers" class="btn btn-sm no-margin">${_('Save Changes')}</button>
                             </div>
                         %endif
                         </div>
@@ -697,7 +698,7 @@
                                 </div>
                             % endif
                             <div class="pull-right" style="margin-bottom: 15px">
-                                <button data-role="observer" id="update_observers" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                                <button data-role="observer" id="update_observers" class="btn btn-sm no-margin">${_('Save Changes')}</button>
                             </div>
                         %endif
                         </div>
