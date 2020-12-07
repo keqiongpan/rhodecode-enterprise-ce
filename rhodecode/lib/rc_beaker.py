@@ -145,60 +145,6 @@ def session_factory_from_settings(settings):
     return BeakerSessionFactoryConfig(**options)
 
 
-def set_cache_regions_from_settings(settings):
-    """ Add cache support to the Pylons application.
-
-    The ``settings`` passed to the configurator are used to setup
-    the cache options. Cache options in the settings should start
-    with either 'beaker.cache.' or 'cache.'.
-
-    """
-    cache_settings = {'regions': []}
-    for key in settings.keys():
-        for prefix in ['beaker.cache.', 'cache.']:
-            if key.startswith(prefix):
-                name = key.split(prefix)[1].strip()
-                cache_settings[name] = settings[key].strip()
-
-    if ('expire' in cache_settings
-            and isinstance(cache_settings['expire'], basestring)
-            and cache_settings['expire'].lower() in ['none', 'no']):
-        cache_settings['expire'] = None
-
-    coerce_cache_params(cache_settings)
-
-    if 'enabled' not in cache_settings:
-        cache_settings['enabled'] = True
-
-    regions = cache_settings['regions']
-    if regions:
-        for region in regions:
-            if not region:
-                continue
-
-            region_settings = {
-                'data_dir': cache_settings.get('data_dir'),
-                'lock_dir': cache_settings.get('lock_dir'),
-                'expire': cache_settings.get('expire', 60),
-                'enabled': cache_settings['enabled'],
-                'key_length': cache_settings.get('key_length', 250),
-                'type': cache_settings.get('type'),
-                'url': cache_settings.get('url'),
-            }
-            region_prefix = '%s.' % region
-            region_len = len(region_prefix)
-            for key in list(cache_settings.keys()):
-                if key.startswith(region_prefix):
-                    region_settings[key[region_len:]] = cache_settings.pop(key)
-
-            if (isinstance(region_settings['expire'], basestring)
-                    and region_settings['expire'].lower() in ['none', 'no']):
-                region_settings['expire'] = None
-            coerce_cache_params(region_settings)
-            cache.cache_regions[region] = region_settings
-
-
 def includeme(config):
     session_factory = session_factory_from_settings(config.registry.settings)
     config.set_session_factory(session_factory)
-    set_cache_regions_from_settings(config.registry.settings)
