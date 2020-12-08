@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseReferencesView
 from rhodecode.lib.ext_json import json
@@ -34,9 +34,6 @@ class RepoBranchesView(BaseReferencesView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='branches_home', request_method='GET',
-        renderer='rhodecode:templates/branches/branches.mako')
     def branches(self):
         c = self.load_default_context()
 

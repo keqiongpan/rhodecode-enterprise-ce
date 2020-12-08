@@ -22,7 +22,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -176,19 +176,6 @@ class RepoChangelogView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commits', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    @view_config(
-        route_name='repo_commits_file', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    # old routes for backward compat
-    @view_config(
-        route_name='repo_changelog', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    @view_config(
-        route_name='repo_changelog_file', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
     def repo_changelog(self):
         c = self.load_default_context()
 
@@ -291,14 +278,6 @@ class RepoChangelogView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commits_elements', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/commits/changelog_elements.mako',
-        xhr=True)
-    @view_config(
-        route_name='repo_commits_elements_file', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/commits/changelog_elements.mako',
-        xhr=True)
     def repo_commits_elements(self):
         c = self.load_default_context()
         commit_id = self.request.matchdict.get('commit_id')

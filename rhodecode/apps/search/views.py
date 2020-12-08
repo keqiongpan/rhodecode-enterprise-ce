@@ -20,7 +20,7 @@
 
 import logging
 import urllib
-from pyramid.view import view_config
+
 from webhelpers2.html.tools import update_params
 
 from rhodecode.apps._base import BaseAppView, RepoAppView, RepoGroupAppView
@@ -130,9 +130,6 @@ class SearchView(BaseAppView):
         return c
 
     @LoginRequired()
-    @view_config(
-        route_name='search', request_method='GET',
-        renderer='rhodecode:templates/search/search.mako')
     def search(self):
         c = self.load_default_context()
         perform_search(self.request, c)
@@ -148,12 +145,6 @@ class SearchRepoView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='search_repo', request_method='GET',
-        renderer='rhodecode:templates/search/search.mako')
-    @view_config(
-        route_name='search_repo_alt', request_method='GET',
-        renderer='rhodecode:templates/search/search.mako')
     def search_repo(self):
         c = self.load_default_context()
         perform_search(self.request, c, repo_name=self.db_repo_name)
@@ -169,9 +160,6 @@ class SearchRepoGroupView(RepoGroupAppView):
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator(
         'group.read', 'group.write', 'group.admin')
-    @view_config(
-        route_name='search_repo_group', request_method='GET',
-        renderer='rhodecode:templates/search/search.mako')
     def search_repo_group(self):
         c = self.load_default_context()
         perform_search(self.request, c, repo_group_name=self.db_repo_group_name)

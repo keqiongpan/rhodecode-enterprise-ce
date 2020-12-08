@@ -23,7 +23,6 @@ import logging
 import collections
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.lib import helpers as h
@@ -50,13 +49,9 @@ class HomeView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
-
         return c
 
     @LoginRequired()
-    @view_config(
-        route_name='user_autocomplete_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def user_autocomplete_data(self):
         self.load_default_context()
         query = self.request.GET.get('query')
@@ -88,9 +83,6 @@ class HomeView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='user_group_autocomplete_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def user_group_autocomplete_data(self):
         self.load_default_context()
         query = self.request.GET.get('query')
@@ -434,9 +426,6 @@ class HomeView(BaseAppView, DataGridAppView):
         return files, True
 
     @LoginRequired()
-    @view_config(
-        route_name='repo_list_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_list_data(self):
         _ = self.request.translate
         self.load_default_context()
@@ -461,9 +450,6 @@ class HomeView(BaseAppView, DataGridAppView):
         return data
 
     @LoginRequired()
-    @view_config(
-        route_name='repo_group_list_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_group_list_data(self):
         _ = self.request.translate
         self.load_default_context()
@@ -619,9 +605,6 @@ class HomeView(BaseAppView, DataGridAppView):
         return queries
 
     @LoginRequired()
-    @view_config(
-        route_name='goto_switcher_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def goto_switcher_data(self):
         c = self.load_default_context()
 
@@ -750,9 +733,6 @@ class HomeView(BaseAppView, DataGridAppView):
         return {'suggestions': res}
 
     @LoginRequired()
-    @view_config(
-        route_name='home', request_method='GET',
-        renderer='rhodecode:templates/index.mako')
     def main_page(self):
         c = self.load_default_context()
         c.repo_group = None
@@ -789,9 +769,6 @@ class HomeView(BaseAppView, DataGridAppView):
             self._rhodecode_user, repo_group_id)
 
     @LoginRequired()
-    @view_config(
-        route_name='main_page_repo_groups_data',
-        request_method='GET', renderer='json_ext', xhr=True)
     def main_page_repo_groups_data(self):
         self.load_default_context()
         repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
@@ -806,9 +783,6 @@ class HomeView(BaseAppView, DataGridAppView):
         return self._main_page_repo_groups_data(repo_group_id)
 
     @LoginRequired()
-    @view_config(
-        route_name='main_page_repos_data',
-        request_method='GET', renderer='json_ext', xhr=True)
     def main_page_repos_data(self):
         self.load_default_context()
         repo_group_id = safe_int(self.request.GET.get('repo_group_id'))
@@ -824,12 +798,6 @@ class HomeView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator(*AuthUser.repo_group_read_perms)
-    @view_config(
-        route_name='repo_group_home', request_method='GET',
-        renderer='rhodecode:templates/index_repo_group.mako')
-    @view_config(
-        route_name='repo_group_home_slash', request_method='GET',
-        renderer='rhodecode:templates/index_repo_group.mako')
     def repo_group_main_page(self):
         c = self.load_default_context()
         c.repo_group = self.request.db_repo_group
@@ -837,9 +805,6 @@ class HomeView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @CSRFRequired()
-    @view_config(
-        route_name='markup_preview', request_method='POST',
-        renderer='string', xhr=True)
     def markup_preview(self):
         # Technically a CSRF token is not needed as no state changes with this
         # call. However, as this is a POST is better to have it, so automated
@@ -855,9 +820,6 @@ class HomeView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @CSRFRequired()
-    @view_config(
-        route_name='file_preview', request_method='POST',
-        renderer='string', xhr=True)
     def file_preview(self):
         # Technically a CSRF token is not needed as no state changes with this
         # call. However, as this is a POST is better to have it, so automated
@@ -883,9 +845,6 @@ class HomeView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @CSRFRequired()
-    @view_config(
-        route_name='store_user_session_value', request_method='POST',
-        renderer='string', xhr=True)
     def store_user_session_attr(self):
         key = self.request.POST.get('key')
         val = self.request.POST.get('val')

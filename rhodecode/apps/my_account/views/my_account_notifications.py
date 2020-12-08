@@ -22,7 +22,6 @@ import logging
 
 from pyramid.httpexceptions import (
     HTTPFound, HTTPNotFound, HTTPInternalServerError)
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.auth import LoginRequired, NotAnonymous, CSRFRequired
@@ -57,9 +56,6 @@ class MyAccountNotificationsView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='notifications_show_all', request_method='GET',
-        renderer='rhodecode:templates/admin/notifications/notifications_show_all.mako')
     def notifications_show_all(self):
         c = self.load_default_context()
 
@@ -105,22 +101,6 @@ class MyAccountNotificationsView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @CSRFRequired()
-    @view_config(
-        route_name='notifications_mark_all_read', request_method='POST',
-        renderer='rhodecode:templates/admin/notifications/notifications_show_all.mako')
-    def notifications_mark_all_read(self):
-        NotificationModel().mark_all_read_for_user(
-            self._rhodecode_db_user.user_id,
-            filter_=self.request.GET.getall('type'))
-        Session().commit()
-        raise HTTPFound(h.route_path('notifications_show_all'))
-
-    @LoginRequired()
-    @NotAnonymous()
-    @view_config(
-        route_name='notifications_show', request_method='GET',
-        renderer='rhodecode:templates/admin/notifications/notifications_show.mako')
     def notifications_show(self):
         c = self.load_default_context()
         notification_id = self.request.matchdict['notification_id']
@@ -150,9 +130,16 @@ class MyAccountNotificationsView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='notifications_update', request_method='POST',
-        renderer='json_ext')
+    def notifications_mark_all_read(self):
+        NotificationModel().mark_all_read_for_user(
+            self._rhodecode_db_user.user_id,
+            filter_=self.request.GET.getall('type'))
+        Session().commit()
+        raise HTTPFound(h.route_path('notifications_show_all'))
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
     def notification_update(self):
         notification_id = self.request.matchdict['notification_id']
         notification = Notification.get_or_404(notification_id)
@@ -177,9 +164,6 @@ class MyAccountNotificationsView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='notifications_delete', request_method='POST',
-        renderer='json_ext')
     def notification_delete(self):
         notification_id = self.request.matchdict['notification_id']
         notification = Notification.get_or_404(notification_id)

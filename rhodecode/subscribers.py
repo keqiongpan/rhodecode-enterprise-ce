@@ -233,7 +233,7 @@ def write_usage_data(event):
 
     # write every 6th hour
     if age_in_min and age_in_min < 60 * 6:
-        log.debug('Usage file created %s minutes ago, skipping (threashold: %s)...',
+        log.debug('Usage file created %s minutes ago, skipping (threshold: %s minutes)...',
                   age_in_min, 60 * 6)
         return
 

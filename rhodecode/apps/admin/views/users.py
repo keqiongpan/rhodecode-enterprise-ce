@@ -24,7 +24,6 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -72,19 +71,12 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='users', request_method='GET',
-        renderer='rhodecode:templates/admin/users/users.mako')
     def users_list(self):
         c = self.load_default_context()
         return self._get_template_context(c)
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        # renderer defined below
-        route_name='users_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def users_list_data(self):
         self.load_default_context()
         column_map = {
@@ -183,9 +175,6 @@ class AdminUsersView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='users_new', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_add.mako')
     def users_new(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -196,9 +185,6 @@ class AdminUsersView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='users_create', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_add.mako')
     def users_create(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -309,9 +295,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_update', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -371,9 +354,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -496,9 +476,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='user_edit', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_edit(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -525,9 +502,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='user_edit_advanced', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_edit_advanced(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -584,9 +558,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='user_edit_global_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_edit_global_perms(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -614,9 +585,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_edit_global_perms_update', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_edit_global_perms_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -682,9 +650,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_enable_force_password_reset', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_enable_force_password_reset(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -711,9 +676,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_disable_force_password_reset', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_disable_force_password_reset(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -741,9 +703,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_notice_dismiss', request_method='POST',
-        renderer='json_ext', xhr=True)
     def user_notice_dismiss(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -767,9 +726,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_create_personal_repo_group', request_method='POST',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_create_personal_repo_group(self):
         """
         Create personal repository group for this user
@@ -821,9 +777,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_auth_tokens', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def auth_tokens(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -843,9 +796,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_auth_tokens_view', request_method='POST',
-        renderer='json_ext', xhr=True)
     def auth_tokens_view(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -867,8 +817,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_auth_tokens_add', request_method='POST')
     def auth_tokens_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -899,8 +847,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_auth_tokens_delete', request_method='POST')
     def auth_tokens_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -928,9 +874,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_ssh_keys', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def ssh_keys(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -943,9 +886,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_ssh_keys_generate_keypair', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def ssh_keys_generate_keypair(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -964,8 +904,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_ssh_keys_add', request_method='POST')
     def ssh_keys_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1017,8 +955,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_ssh_keys_delete', request_method='POST')
     def ssh_keys_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1048,9 +984,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_emails', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def emails(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1065,8 +998,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_emails_add', request_method='POST')
     def emails_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1105,8 +1036,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_emails_delete', request_method='POST')
     def emails_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1131,9 +1060,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_ips', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def ips(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1152,8 +1078,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_ips_add', request_method='POST')
     # NOTE(marcink): this view is allowed for default users, as we can
     # edit their IP white list
     def ips_add(self):
@@ -1207,8 +1131,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_ips_delete', request_method='POST')
     # NOTE(marcink): this view is allowed for default users, as we can
     # edit their IP white list
     def ips_delete(self):
@@ -1236,9 +1158,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_groups_management', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def groups_management(self):
         c = self.load_default_context()
         c.user = self.db_user
@@ -1254,8 +1173,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_groups_management_updates', request_method='POST')
     def groups_management_updates(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1299,9 +1216,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_audit_logs', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_audit_logs(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1329,9 +1243,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_audit_logs_download', request_method='GET',
-        renderer='string')
     def user_audit_logs_download(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1352,9 +1263,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_perms_summary', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_perms_summary(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1367,9 +1275,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_perms_summary_json', request_method='GET',
-        renderer='json_ext')
     def user_perms_summary_json(self):
         self.load_default_context()
         perm_user = self.db_user.AuthUser(ip_addr=self.request.remote_addr)
@@ -1378,9 +1283,6 @@ class UsersView(UserAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='edit_user_caches', request_method='GET',
-        renderer='rhodecode:templates/admin/users/user_edit.mako')
     def user_caches(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1399,8 +1301,6 @@ class UsersView(UserAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_caches_update', request_method='POST')
     def user_caches_update(self):
         _ = self.request.translate
         c = self.load_default_context()

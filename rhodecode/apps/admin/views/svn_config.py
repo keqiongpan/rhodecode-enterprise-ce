@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps.svn_support.utils import generate_mod_dav_svn_config
@@ -30,14 +30,11 @@ from rhodecode.lib.auth import (
 log = logging.getLogger(__name__)
 
 
-class SvnConfigAdminSettingsView(BaseAppView):
+class AdminSvnConfigView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_vcs_svn_generate_cfg',
-        request_method='POST', renderer='json')
     def vcs_svn_generate_config(self):
         _ = self.request.translate
         try:

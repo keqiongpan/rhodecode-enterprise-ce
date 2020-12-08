@@ -21,8 +21,6 @@
 import collections
 import logging
 
-from pyramid.view import view_config
-
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps._base.navigation import navigation_list
 from rhodecode.lib.auth import (LoginRequired, HasPermissionAllDecorator)
@@ -39,9 +37,6 @@ class OpenSourceLicensesAdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_open_source', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def open_source_licenses(self):
         c = self.load_default_context()
         c.active = 'open_source'

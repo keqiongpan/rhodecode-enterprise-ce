@@ -24,7 +24,7 @@ import time
 
 import rhodecode
 
-from pyramid.view import view_config
+
 
 from rhodecode.lib.view_utils import get_format_ref_id
 from rhodecode.apps._base import RepoAppView
@@ -101,9 +101,6 @@ class RepoSummaryView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_summary_commits', request_method='GET',
-        renderer='rhodecode:templates/summary/summary_commits.mako')
     def summary_commits(self):
         c = self.load_default_context()
         self._prepare_and_set_clone_url(c)
@@ -113,15 +110,6 @@ class RepoSummaryView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_summary', request_method='GET',
-        renderer='rhodecode:templates/summary/summary.mako')
-    @view_config(
-        route_name='repo_summary_slash', request_method='GET',
-        renderer='rhodecode:templates/summary/summary.mako')
-    @view_config(
-        route_name='repo_summary_explicit', request_method='GET',
-        renderer='rhodecode:templates/summary/summary.mako')
     def summary(self):
         c = self.load_default_context()
 
@@ -176,9 +164,6 @@ class RepoSummaryView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_stats', request_method='GET',
-        renderer='json_ext')
     def repo_stats(self):
         show_stats = bool(self.db_repo.enable_statistics)
         repo_id = self.db_repo.repo_id
@@ -228,9 +213,6 @@ class RepoSummaryView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_refs_data', request_method='GET',
-        renderer='json_ext')
     def repo_refs_data(self):
         _ = self.request.translate
         self.load_default_context()
@@ -251,9 +233,6 @@ class RepoSummaryView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_refs_changelog_data', request_method='GET',
-        renderer='json_ext')
     def repo_refs_changelog_data(self):
         _ = self.request.translate
         self.load_default_context()

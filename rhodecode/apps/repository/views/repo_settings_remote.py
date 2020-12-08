@@ -21,7 +21,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
@@ -39,9 +39,6 @@ class RepoSettingsRemoteView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_remote', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_remote_edit_form(self):
         c = self.load_default_context()
         c.active = 'remote'
@@ -51,9 +48,6 @@ class RepoSettingsRemoteView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_remote_pull', request_method='POST',
-        renderer=None)
     def repo_remote_pull_changes(self):
         _ = self.request.translate
         self.load_default_context()

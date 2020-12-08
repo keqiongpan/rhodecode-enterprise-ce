@@ -35,6 +35,8 @@ class DebugStylePredicate(object):
 
 
 def includeme(config):
+    from rhodecode.apps.debug_style.views import DebugStyleView
+
     config.add_route_predicate(
         'debug_style', DebugStylePredicate)
 
@@ -42,18 +44,38 @@ def includeme(config):
         name='debug_style_home',
         pattern=ADMIN_PREFIX + '/debug_style',
         debug_style=True)
+    config.add_view(
+        DebugStyleView,
+        attr='index',
+        route_name='debug_style_home', request_method='GET',
+        renderer=None)
+
     config.add_route(
         name='debug_style_email',
         pattern=ADMIN_PREFIX + '/debug_style/email/{email_id}',
         debug_style=True)
+    config.add_view(
+        DebugStyleView,
+        attr='render_email',
+        route_name='debug_style_email', request_method='GET',
+        renderer=None)
+
     config.add_route(
         name='debug_style_email_plain_rendered',
         pattern=ADMIN_PREFIX + '/debug_style/email-rendered/{email_id}',
         debug_style=True)
+    config.add_view(
+        DebugStyleView,
+        attr='render_email',
+        route_name='debug_style_email_plain_rendered', request_method='GET',
+        renderer=None)
+
     config.add_route(
         name='debug_style_template',
         pattern=ADMIN_PREFIX + '/debug_style/t/{t_path}',
         debug_style=True)
-
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
+    config.add_view(
+        DebugStyleView,
+        attr='template',
+        route_name='debug_style_template', request_method='GET',
+        renderer=None)

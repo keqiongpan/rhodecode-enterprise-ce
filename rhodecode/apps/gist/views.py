@@ -26,7 +26,6 @@ import formencode.htmlfill
 import peppercorn
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound, HTTPBadRequest
-from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -70,9 +69,6 @@ class GistView(BaseAppView):
         return c
 
     @LoginRequired()
-    @view_config(
-        route_name='gists_show', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/gist_index.mako')
     def gist_show_all(self):
         c = self.load_default_context()
 
@@ -134,9 +130,6 @@ class GistView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='gists_new', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/gist_new.mako')
     def gist_new(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -144,9 +137,6 @@ class GistView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='gists_create', request_method='POST',
-        renderer='rhodecode:templates/admin/gists/gist_new.mako')
     def gist_create(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -222,8 +212,6 @@ class GistView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='gist_delete', request_method='POST')
     def gist_delete(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']
@@ -263,18 +251,6 @@ class GistView(BaseAppView):
         return gist
 
     @LoginRequired()
-    @view_config(
-        route_name='gist_show', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/gist_show.mako')
-    @view_config(
-        route_name='gist_show_rev', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/gist_show.mako')
-    @view_config(
-        route_name='gist_show_formatted', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='gist_show_formatted_path', request_method='GET',
-        renderer=None)
     def gist_show(self):
         gist_id = self.request.matchdict['gist_id']
 
@@ -307,9 +283,6 @@ class GistView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='gist_edit', request_method='GET',
-        renderer='rhodecode:templates/admin/gists/gist_edit.mako')
     def gist_edit(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']
@@ -341,9 +314,6 @@ class GistView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='gist_update', request_method='POST',
-        renderer='rhodecode:templates/admin/gists/gist_edit.mako')
     def gist_update(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']
@@ -397,9 +367,6 @@ class GistView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='gist_edit_check_revision', request_method='GET',
-        renderer='json_ext')
     def gist_edit_check_revision(self):
         _ = self.request.translate
         gist_id = self.request.matchdict['gist_id']

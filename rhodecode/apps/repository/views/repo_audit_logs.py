@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.helpers import SqlPage
@@ -38,9 +38,6 @@ class AuditLogsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_audit_logs', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_audit_logs(self):
         _ = self.request.translate
         c = self.load_default_context()

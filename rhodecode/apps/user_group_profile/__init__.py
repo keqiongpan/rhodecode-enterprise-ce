@@ -20,8 +20,13 @@
 
 
 def includeme(config):
+    from rhodecode.apps.user_group_profile.views import UserGroupProfileView
+
     config.add_route(
         name='user_group_profile',
         pattern='/_profile_user_group/{user_group_name}')
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
+    config.add_view(
+        UserGroupProfileView,
+        attr='user_group_profile',
+        route_name='user_group_profile', request_method='GET',
+        renderer='rhodecode:templates/user_group/user_group.mako')

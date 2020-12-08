@@ -28,7 +28,7 @@ import urlparse
 import requests
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.authentication.base import authenticate, HTTP_TYPE
@@ -114,7 +114,6 @@ class LoginView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.came_from = get_came_from(self.request)
-
         return c
 
     def _get_captcha_data(self):
@@ -148,9 +147,6 @@ class LoginView(BaseAppView):
 
         return captcha_status, captcha_message
 
-    @view_config(
-        route_name='login', request_method='GET',
-        renderer='rhodecode:templates/login.mako')
     def login(self):
         c = self.load_default_context()
         auth_user = self._rhodecode_user
@@ -175,9 +171,6 @@ class LoginView(BaseAppView):
 
         return self._get_template_context(c)
 
-    @view_config(
-        route_name='login', request_method='POST',
-        renderer='rhodecode:templates/login.mako')
     def login_post(self):
         c = self.load_default_context()
 
@@ -229,7 +222,6 @@ class LoginView(BaseAppView):
             return self._get_template_context(c)
 
     @CSRFRequired()
-    @view_config(route_name='logout', request_method='POST')
     def logout(self):
         auth_user = self._rhodecode_user
         log.info('Deleting session for user: `%s`', auth_user)
@@ -243,9 +235,6 @@ class LoginView(BaseAppView):
 
     @HasPermissionAnyDecorator(
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
-    @view_config(
-        route_name='register', request_method='GET',
-        renderer='rhodecode:templates/register.mako',)
     def register(self, defaults=None, errors=None):
         c = self.load_default_context()
         defaults = defaults or {}
@@ -270,9 +259,6 @@ class LoginView(BaseAppView):
 
     @HasPermissionAnyDecorator(
         'hg.admin', 'hg.register.auto_activate', 'hg.register.manual_activate')
-    @view_config(
-        route_name='register', request_method='POST',
-        renderer='rhodecode:templates/register.mako')
     def register_post(self):
         from rhodecode.authentication.plugins import auth_rhodecode
 
@@ -353,9 +339,6 @@ class LoginView(BaseAppView):
             h.flash(e, category='error')
             return self.register()
 
-    @view_config(
-        route_name='reset_password', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/password_reset.mako')
     def password_reset(self):
         c = self.load_default_context()
         captcha = self._get_captcha_data()
@@ -454,8 +437,6 @@ class LoginView(BaseAppView):
 
         return self._get_template_context(c, **template_context)
 
-    @view_config(route_name='reset_password_confirmation',
-                 request_method='GET')
     def password_reset_confirmation(self):
         self.load_default_context()
         if self.request.GET and self.request.GET.get('key'):

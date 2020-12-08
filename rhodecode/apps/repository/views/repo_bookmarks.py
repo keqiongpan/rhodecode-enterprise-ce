@@ -20,7 +20,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseReferencesView
 from rhodecode.lib.ext_json import json
@@ -36,9 +36,6 @@ class RepoBookmarksView(BaseReferencesView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='bookmarks_home', request_method='GET',
-        renderer='rhodecode:templates/bookmarks/bookmarks.mako')
     def bookmarks(self):
         c = self.load_default_context()
 

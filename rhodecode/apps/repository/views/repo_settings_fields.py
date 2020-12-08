@@ -24,7 +24,6 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
@@ -48,9 +47,6 @@ class RepoSettingsFieldsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_fields', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_field_edit(self):
         c = self.load_default_context()
 
@@ -63,9 +59,6 @@ class RepoSettingsFieldsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_fields_create', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_field_create(self):
         _ = self.request.translate
 
@@ -94,9 +87,6 @@ class RepoSettingsFieldsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_fields_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_field_delete(self):
         _ = self.request.translate
         field = RepositoryField.get_or_404(self.request.matchdict['field_id'])

@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.response import FileResponse
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 
@@ -128,7 +128,6 @@ class FileStoreView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(route_name='upload_file', request_method='POST', renderer='json_ext')
     def upload_file(self):
         self.load_default_context()
         file_obj = self.request.POST.get(self.upload_key)
@@ -182,7 +181,6 @@ class FileStoreView(BaseAppView):
                 'access_path': h.route_path('download_file', fid=store_uid)}
 
     # ACL is checked by scopes, if no scope the file is accessible to all
-    @view_config(route_name='download_file')
     def download_file(self):
         self.load_default_context()
         file_uid = self.request.matchdict['fid']
@@ -192,7 +190,6 @@ class FileStoreView(BaseAppView):
     # in addition to @LoginRequired ACL is checked by scopes
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_ARTIFACT_DOWNLOAD])
     @NotAnonymous()
-    @view_config(route_name='download_file_by_token')
     def download_file_by_token(self):
         """
         Special view that allows to access the download file by special URL that

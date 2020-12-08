@@ -4810,6 +4810,7 @@ class Gist(Base, BaseModel):
 
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
+            log.debug('WARN: No DB entry with id %s', id_)
             raise HTTPNotFound()
         return res
 

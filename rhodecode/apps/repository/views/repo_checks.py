@@ -20,10 +20,8 @@
 
 import logging
 
-from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 
-from rhodecode import events
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (NotAnonymous, HasRepoPermissionAny)
@@ -37,13 +35,9 @@ log = logging.getLogger(__name__)
 class RepoChecksView(BaseAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
     @NotAnonymous()
-    @view_config(
-        route_name='repo_creating', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_creating.mako')
     def repo_creating(self):
         c = self.load_default_context()
         repo_name = self.request.matchdict['repo_name']
@@ -71,9 +65,6 @@ class RepoChecksView(BaseAppView):
         return self._get_template_context(c)
 
     @NotAnonymous()
-    @view_config(
-        route_name='repo_creating_check', request_method='GET',
-        renderer='json_ext')
     def repo_creating_check(self):
         _ = self.request.translate
         task_id = self.request.GET.get('task_id')

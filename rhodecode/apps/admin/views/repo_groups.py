@@ -25,7 +25,7 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -96,9 +96,6 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     # `repo_group_list_data` via RepoGroupList
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='repo_groups', request_method='GET',
-        renderer='rhodecode:templates/admin/repo_groups/repo_groups.mako')
     def repo_group_list(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -106,9 +103,6 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     # permission check inside
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='repo_groups_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_group_list_data(self):
         self.load_default_context()
         column_map = {
@@ -254,9 +248,6 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     # perm checks inside
-    @view_config(
-        route_name='repo_group_new', request_method='GET',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_add.mako')
     def repo_group_new(self):
         c = self.load_default_context()
 
@@ -296,9 +287,6 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
     @NotAnonymous()
     @CSRFRequired()
     # perm checks inside
-    @view_config(
-        route_name='repo_group_create', request_method='POST',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_add.mako')
     def repo_group_create(self):
         c = self.load_default_context()
         _ = self.request.translate

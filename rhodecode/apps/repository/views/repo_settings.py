@@ -22,7 +22,6 @@ import logging
 
 import deform
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 
 from rhodecode import events
 from rhodecode.apps._base import RepoAppView
@@ -90,9 +89,6 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_settings(self):
         c = self.load_default_context()
         c.active = 'settings'
@@ -108,9 +104,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_settings_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -192,9 +185,6 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_edit_toggle_locking', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def toggle_locking(self):
         """
         Toggle locking of repository by simple GET call to url
@@ -224,9 +214,6 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_statistics', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_statistics_form(self):
         c = self.load_default_context()
 
@@ -250,9 +237,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_statistics_reset', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_statistics_reset(self):
         _ = self.request.translate
 

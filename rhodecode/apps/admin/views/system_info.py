@@ -21,7 +21,7 @@
 import logging
 import urllib2
 
-from pyramid.view import view_config
+
 
 import rhodecode
 from rhodecode.apps._base import BaseAppView
@@ -42,9 +42,6 @@ class AdminSystemInfoSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_system', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_system_info(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -169,9 +166,6 @@ class AdminSystemInfoSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_system_update', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings_system_update.mako')
     def settings_system_info_check_update(self):
         _ = self.request.translate
         c = self.load_default_context()

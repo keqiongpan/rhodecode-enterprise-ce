@@ -22,25 +22,35 @@ from rhodecode.apps._base import ADMIN_PREFIX
 
 
 def admin_routes(config):
+    from rhodecode.apps.ops.views import OpsView
+
     config.add_route(
         name='ops_ping',
         pattern='/ping')
+    config.add_view(
+        OpsView,
+        attr='ops_ping',
+        route_name='ops_ping', request_method='GET',
+        renderer='json_ext')
+
     config.add_route(
         name='ops_error_test',
         pattern='/error')
+    config.add_view(
+        OpsView,
+        attr='ops_error_test',
+        route_name='ops_error_test', request_method='GET',
+        renderer='json_ext')
+
     config.add_route(
         name='ops_redirect_test',
         pattern='/redirect')
+    config.add_view(
+        OpsView,
+        attr='ops_redirect_test',
+        route_name='ops_redirect_test', request_method='GET',
+        renderer='json_ext')
 
 
 def includeme(config):
-
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')
-    # make OLD entries from <4.10.0 work
-    config.add_route(
-        name='ops_ping_legacy', pattern=ADMIN_PREFIX + '/ping')
-    config.add_route(
-        name='ops_error_test_legacy', pattern=ADMIN_PREFIX + '/error_test')
-
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')

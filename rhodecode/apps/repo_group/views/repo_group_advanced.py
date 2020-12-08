@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import RepoGroupAppView
@@ -34,17 +34,13 @@ from rhodecode.model.meta import Session
 log = logging.getLogger(__name__)
 
 
-class RepoGroupSettingsView(RepoGroupAppView):
+class RepoGroupAdvancedSettingsView(RepoGroupAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator('group.admin')
-    @view_config(
-        route_name='edit_repo_group_advanced', request_method='GET',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_edit.mako')
     def edit_repo_group_advanced(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -61,9 +57,6 @@ class RepoGroupSettingsView(RepoGroupAppView):
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_group_advanced_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_edit.mako')
     def edit_repo_group_delete(self):
         _ = self.request.translate
         _ungettext = self.request.plularize

@@ -27,7 +27,7 @@ import formencode
 import formencode.htmlfill
 
 import rhodecode
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -68,7 +68,6 @@ class AdminSettingsView(BaseAppView):
         c.labs_active = str2bool(
             rhodecode.CONFIG.get('labs_settings_active', 'true'))
         c.navlist = navigation_list(self.request)
-
         return c
 
     @classmethod
@@ -109,9 +108,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_vcs', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_vcs(self):
         c = self.load_default_context()
         c.active = 'vcs'
@@ -139,9 +135,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_vcs_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_vcs_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -207,9 +200,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_vcs_svn_pattern_delete', request_method='POST',
-        renderer='json_ext', xhr=True)
     def settings_vcs_delete_svn_pattern(self):
         delete_pattern_id = self.request.POST.get('delete_svn_pattern')
         model = VcsSettingsModel()
@@ -225,9 +215,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_mapping', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_mapping(self):
         c = self.load_default_context()
         c.active = 'mapping'
@@ -245,9 +232,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_mapping_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_mapping_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -274,12 +258,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
-    @view_config(
-        route_name='admin_settings_global', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_global(self):
         c = self.load_default_context()
         c.active = 'global'
@@ -299,12 +277,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
-    @view_config(
-        route_name='admin_settings_global_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_global_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -359,9 +331,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_visual', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_visual(self):
         c = self.load_default_context()
         c.active = 'visual'
@@ -379,9 +348,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_visual_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_visual_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -441,9 +407,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_issuetracker', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_issuetracker(self):
         c = self.load_default_context()
         c.active = 'issuetracker'
@@ -470,9 +433,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_issuetracker_test', request_method='POST',
-        renderer='string', xhr=True)
     def settings_issuetracker_test(self):
         error_container = []
 
@@ -490,9 +450,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_issuetracker_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_issuetracker_update(self):
         _ = self.request.translate
         self.load_default_context()
@@ -527,9 +484,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_issuetracker_delete', request_method='POST',
-        renderer='json_ext', xhr=True)
     def settings_issuetracker_delete(self):
         _ = self.request.translate
         self.load_default_context()
@@ -547,9 +501,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_email', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_email(self):
         c = self.load_default_context()
         c.active = 'email'
@@ -568,9 +519,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_email_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_email_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -600,9 +548,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_hooks', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_hooks(self):
         c = self.load_default_context()
         c.active = 'hooks'
@@ -624,12 +569,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_hooks_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
-    @view_config(
-        route_name='admin_settings_hooks_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_hooks_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -671,9 +610,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_search', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_search(self):
         c = self.load_default_context()
         c.active = 'search'
@@ -685,9 +621,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_automation', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_automation(self):
         c = self.load_default_context()
         c.active = 'automation'
@@ -696,9 +629,6 @@ class AdminSettingsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_labs', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_labs(self):
         c = self.load_default_context()
         if not c.labs_active:
@@ -720,9 +650,6 @@ class AdminSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_labs_update', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_labs_update(self):
         _ = self.request.translate
         c = self.load_default_context()

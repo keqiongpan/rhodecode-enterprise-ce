@@ -22,7 +22,7 @@ import os
 import logging
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import (
@@ -42,9 +42,6 @@ class RepoCachesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_caches', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_caches(self):
         c = self.load_default_context()
         c.active = 'caches'
@@ -65,8 +62,6 @@ class RepoCachesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_caches', request_method='POST')
     def repo_caches_purge(self):
         _ = self.request.translate
         c = self.load_default_context()

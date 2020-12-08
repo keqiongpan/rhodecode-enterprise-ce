@@ -28,7 +28,7 @@ import urllib
 import pathlib2
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPBadRequest, HTTPFound
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -343,9 +343,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_archivefile', request_method='GET',
-        renderer=None)
     def repo_archivefile(self):
         # archive cache config
         from rhodecode import CONFIG
@@ -496,9 +493,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_diff', request_method='GET',
-        renderer=None)
     def repo_files_diff(self):
         c = self.load_default_context()
         f_path = self._get_f_path(self.request.matchdict)
@@ -581,9 +575,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_diff_2way_redirect', request_method='GET',
-        renderer=None)
     def repo_files_diff_2way_redirect(self):
         """
         Kept only to make OLD links work
@@ -610,10 +601,11 @@ class RepoFilesView(RepoAppView):
         raise HTTPFound(compare_url)
 
     @LoginRequired()
-    @view_config(
-        route_name='repo_files:default_commit', request_method='GET',
-        renderer=None)
-    def repo_files_default(self):
+    def repo_files_default_commit_redirect(self):
+        """
+        Special page that redirects to the landing page of files based on the default
+        commit for repository
+        """
         c = self.load_default_context()
         ref_name = c.rhodecode_db_repo.landing_ref_name
         landing_url = h.repo_files_by_ref_url(
@@ -630,18 +622,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_files:default_path', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_files:rendered', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_files:annotated', request_method='GET',
-        renderer=None)
     def repo_files(self):
         c = self.load_default_context()
 
@@ -759,9 +739,6 @@ class RepoFilesView(RepoAppView):
 
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files:annotated_previous', request_method='GET',
-        renderer=None)
     def repo_files_annotated_previous(self):
         self.load_default_context()
 
@@ -790,12 +767,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_nodetree_full', request_method='GET',
-        renderer=None, xhr=True)
-    @view_config(
-        route_name='repo_nodetree_full:default_path', request_method='GET',
-        renderer=None, xhr=True)
     def repo_nodetree_full(self):
         """
         Returns rendered html of file tree that contains commit date,
@@ -835,9 +806,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_file_raw', request_method='GET',
-        renderer=None)
     def repo_file_raw(self):
         """
         Action for show as raw, some mimetypes are "rendered",
@@ -902,12 +870,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_file_download', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_file_download:legacy', request_method='GET',
-        renderer=None)
     def repo_file_download(self):
         c = self.load_default_context()
 
@@ -972,9 +934,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_nodelist', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_nodelist(self):
         self.load_default_context()
 
@@ -1059,9 +1018,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_file_history', request_method='GET',
-        renderer='json_ext')
     def repo_file_history(self):
         self.load_default_context()
 
@@ -1105,9 +1061,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_file_authors', request_method='GET',
-        renderer='rhodecode:templates/files/file_authors_box.mako')
     def repo_file_authors(self):
         c = self.load_default_context()
 
@@ -1149,9 +1102,6 @@ class RepoFilesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_check_head', request_method='POST',
-        renderer='json_ext', xhr=True)
     def repo_files_check_head(self):
         self.load_default_context()
 
@@ -1186,9 +1136,6 @@ class RepoFilesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_remove_file', request_method='GET',
-        renderer='rhodecode:templates/files/files_delete.mako')
     def repo_files_remove_file(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1214,9 +1161,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_files_delete_file', request_method='POST',
-        renderer=None)
     def repo_files_delete_file(self):
         _ = self.request.translate
 
@@ -1266,9 +1210,6 @@ class RepoFilesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_edit_file', request_method='GET',
-        renderer='rhodecode:templates/files/files_edit.mako')
     def repo_files_edit_file(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1300,9 +1241,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_files_update_file', request_method='POST',
-        renderer=None)
     def repo_files_update_file(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1384,12 +1322,6 @@ class RepoFilesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_files_add_file', request_method='GET',
-        renderer='rhodecode:templates/files/files_add.mako')
-    @view_config(
-        route_name='repo_files_upload_file', request_method='GET',
-        renderer='rhodecode:templates/files/files_upload.mako')
     def repo_files_add_file(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1421,9 +1353,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_files_create_file', request_method='POST',
-        renderer=None)
     def repo_files_create_file(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -1518,9 +1447,6 @@ class RepoFilesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_files_upload_file', request_method='POST',
-        renderer='json_ext')
     def repo_files_upload_file(self):
         _ = self.request.translate
         c = self.load_default_context()

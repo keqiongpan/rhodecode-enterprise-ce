@@ -24,7 +24,7 @@ import peppercorn
 import formencode
 import formencode.htmlfill
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 from pyramid.response import Response
 from pyramid.renderers import render
 
@@ -60,9 +60,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='user_group_members_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def user_group_members(self):
         """
         Return members of given user group
@@ -93,9 +90,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_perms_summary', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_perms_summary(self):
         c = self.load_default_context()
         c.user_group = self.db_user_group
@@ -106,9 +100,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_perms_summary_json', request_method='GET',
-        renderer='json_ext')
     def user_group_perms_summary_json(self):
         self.load_default_context()
         user_group = self.db_user_group
@@ -131,9 +122,6 @@ class UserGroupsView(UserGroupAppView):
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_groups_update', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_update(self):
         _ = self.request.translate
 
@@ -230,9 +218,6 @@ class UserGroupsView(UserGroupAppView):
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='user_groups_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_delete(self):
         _ = self.request.translate
         user_group = self.db_user_group
@@ -258,9 +243,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_edit(self):
         user_group = self.db_user_group
 
@@ -293,9 +275,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_edit_perms(self):
         user_group = self.db_user_group
         c = self.load_default_context()
@@ -326,9 +305,6 @@ class UserGroupsView(UserGroupAppView):
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_group_perms_update', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_update_perms(self):
         """
         grant permission for given user group
@@ -390,9 +366,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_global_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_global_perms_edit(self):
         user_group = self.db_user_group
         c = self.load_default_context()
@@ -418,9 +391,6 @@ class UserGroupsView(UserGroupAppView):
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_group_global_perms_update', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_global_perms_update(self):
         _ = self.request.translate
         user_group = self.db_user_group
@@ -485,9 +455,6 @@ class UserGroupsView(UserGroupAppView):
 
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
-    @view_config(
-        route_name='edit_user_group_advanced', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_edit_advanced(self):
         user_group = self.db_user_group
 
@@ -515,9 +482,6 @@ class UserGroupsView(UserGroupAppView):
     @LoginRequired()
     @HasUserGroupPermissionAnyDecorator('usergroup.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_user_group_advanced_sync', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_edit.mako')
     def user_group_edit_advanced_set_synchronization(self):
         _ = self.request.translate
         user_group = self.db_user_group

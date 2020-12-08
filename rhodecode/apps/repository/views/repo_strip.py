@@ -19,7 +19,7 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import audit_logger
@@ -31,7 +31,7 @@ from rhodecode.lib.ext_json import json
 log = logging.getLogger(__name__)
 
 
-class StripView(RepoAppView):
+class RepoStripView(RepoAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
 
@@ -40,9 +40,6 @@ class StripView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_strip', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def strip(self):
         c = self.load_default_context()
         c.active = 'strip'
@@ -53,9 +50,6 @@ class StripView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='strip_check', request_method='POST',
-        renderer='json', xhr=True)
     def strip_check(self):
         from rhodecode.lib.vcs.backends.base import EmptyCommit
         data = {}
@@ -79,9 +73,6 @@ class StripView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='strip_execute', request_method='POST',
-        renderer='json', xhr=True)
     def strip_execute(self):
         from rhodecode.model.scm import ScmModel
 

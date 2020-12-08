@@ -23,7 +23,6 @@ import collections
 
 from pyramid.httpexceptions import (
     HTTPNotFound, HTTPBadRequest, HTTPFound, HTTPForbidden, HTTPConflict)
-from pyramid.view import view_config
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -340,9 +339,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit', request_method='GET',
-        renderer=None)
     def repo_commit_show(self):
         commit_id = self.request.matchdict['commit_id']
         return self._commit(commit_id, method='show')
@@ -350,12 +346,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_raw', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='repo_commit_raw_deprecated', request_method='GET',
-        renderer=None)
     def repo_commit_raw(self):
         commit_id = self.request.matchdict['commit_id']
         return self._commit(commit_id, method='raw')
@@ -363,9 +353,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_patch', request_method='GET',
-        renderer=None)
     def repo_commit_patch(self):
         commit_id = self.request.matchdict['commit_id']
         return self._commit(commit_id, method='patch')
@@ -373,9 +360,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_download', request_method='GET',
-        renderer=None)
     def repo_commit_download(self):
         commit_id = self.request.matchdict['commit_id']
         return self._commit(commit_id, method='download')
@@ -500,9 +484,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_create', request_method='POST',
-        renderer='json_ext')
     def repo_commit_comment_create(self):
         _ = self.request.translate
         commit_id = self.request.matchdict['commit_id']
@@ -538,9 +519,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_preview', request_method='POST',
-        renderer='string', xhr=True)
     def repo_commit_comment_preview(self):
         # Technically a CSRF token is not needed as no state changes with this
         # call. However, as this is a POST is better to have it, so automated
@@ -559,9 +537,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_history_view', request_method='POST',
-        renderer='string', xhr=True)
     def repo_commit_comment_history_view(self):
         c = self.load_default_context()
 
@@ -587,9 +562,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_attachment_upload', request_method='POST',
-        renderer='json_ext', xhr=True)
     def repo_commit_comment_attachment_upload(self):
         c = self.load_default_context()
         upload_key = 'attachment'
@@ -682,9 +654,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_delete', request_method='POST',
-        renderer='json_ext')
     def repo_commit_comment_delete(self):
         commit_id = self.request.matchdict['commit_id']
         comment_id = self.request.matchdict['comment_id']
@@ -719,9 +688,6 @@ class RepoCommitsView(RepoAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_commit_comment_edit', request_method='POST',
-        renderer='json_ext')
     def repo_commit_comment_edit(self):
         self.load_default_context()
 
@@ -802,9 +768,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_commit_data(self):
         commit_id = self.request.matchdict['commit_id']
         self.load_default_context()
@@ -817,9 +780,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_children', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_commit_children(self):
         commit_id = self.request.matchdict['commit_id']
         self.load_default_context()
@@ -836,9 +796,6 @@ class RepoCommitsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commit_parents', request_method='GET',
-        renderer='json_ext')
     def repo_commit_parents(self):
         commit_id = self.request.matchdict['commit_id']
         self.load_default_context()

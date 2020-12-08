@@ -22,7 +22,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPBadRequest, HTTPNotFound, HTTPFound
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -79,9 +79,6 @@ class RepoCompareView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_compare_select', request_method='GET',
-        renderer='rhodecode:templates/compare/compare_diff.mako')
     def compare_select(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -111,9 +108,6 @@ class RepoCompareView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_compare', request_method='GET',
-        renderer=None)
     def compare(self):
         _ = self.request.translate
         c = self.load_default_context()

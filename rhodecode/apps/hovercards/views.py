@@ -23,7 +23,7 @@ import logging
 import collections
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseAppView, RepoAppView
 from rhodecode.lib import helpers as h
@@ -54,9 +54,6 @@ class HoverCardsView(BaseAppView):
         return c
 
     @LoginRequired()
-    @view_config(
-        route_name='hovercard_user', request_method='GET', xhr=True,
-        renderer='rhodecode:templates/hovercards/hovercard_user.mako')
     def hovercard_user(self):
         c = self.load_default_context()
         user_id = self.request.matchdict['user_id']
@@ -64,9 +61,6 @@ class HoverCardsView(BaseAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @view_config(
-        route_name='hovercard_username', request_method='GET', xhr=True,
-        renderer='rhodecode:templates/hovercards/hovercard_user.mako')
     def hovercard_username(self):
         c = self.load_default_context()
         username = self.request.matchdict['username']
@@ -77,9 +71,6 @@ class HoverCardsView(BaseAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @view_config(
-        route_name='hovercard_user_group', request_method='GET', xhr=True,
-        renderer='rhodecode:templates/hovercards/hovercard_user_group.mako')
     def hovercard_user_group(self):
         c = self.load_default_context()
         user_group_id = self.request.matchdict['user_group_id']
@@ -87,9 +78,6 @@ class HoverCardsView(BaseAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @view_config(
-        route_name='hovercard_pull_request', request_method='GET', xhr=True,
-        renderer='rhodecode:templates/hovercards/hovercard_pull_request.mako')
     def hovercard_pull_request(self):
         c = self.load_default_context()
         c.pull_request = PullRequest.get_or_404(
@@ -107,9 +95,6 @@ class HoverCardsRepoView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='hovercard_repo_commit', request_method='GET', xhr=True,
-        renderer='rhodecode:templates/hovercards/hovercard_repo_commit.mako')
     def hovercard_repo_commit(self):
         c = self.load_default_context()
         commit_id = self.request.matchdict['commit_id']

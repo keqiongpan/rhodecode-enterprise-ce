@@ -38,56 +38,110 @@ class VCSCallPredicate(object):
 
 
 def includeme(config):
+    from rhodecode.apps.home.views import HomeView
+    
+    config.add_route_predicate(
+        'skip_vcs_call', VCSCallPredicate)
 
     config.add_route(
         name='home',
         pattern='/')
+    config.add_view(
+        HomeView,
+        attr='main_page',
+        route_name='home', request_method='GET',
+        renderer='rhodecode:templates/index.mako')
 
     config.add_route(
         name='main_page_repos_data',
         pattern='/_home_repos')
+    config.add_view(
+        HomeView,
+        attr='main_page_repos_data',
+        route_name='main_page_repos_data',
+        request_method='GET', renderer='json_ext', xhr=True)
 
     config.add_route(
         name='main_page_repo_groups_data',
         pattern='/_home_repo_groups')
+    config.add_view(
+        HomeView,
+        attr='main_page_repo_groups_data',
+        route_name='main_page_repo_groups_data',
+        request_method='GET', renderer='json_ext', xhr=True)
 
     config.add_route(
         name='user_autocomplete_data',
         pattern='/_users')
+    config.add_view(
+        HomeView,
+        attr='user_autocomplete_data',
+        route_name='user_autocomplete_data', request_method='GET',
+        renderer='json_ext', xhr=True)
 
     config.add_route(
         name='user_group_autocomplete_data',
         pattern='/_user_groups')
+    config.add_view(
+        HomeView,
+        attr='user_group_autocomplete_data',
+        route_name='user_group_autocomplete_data', request_method='GET',
+        renderer='json_ext', xhr=True)
 
     config.add_route(
         name='repo_list_data',
         pattern='/_repos')
+    config.add_view(
+        HomeView,
+        attr='repo_list_data',
+        route_name='repo_list_data', request_method='GET',
+        renderer='json_ext', xhr=True)
 
     config.add_route(
         name='repo_group_list_data',
         pattern='/_repo_groups')
+    config.add_view(
+        HomeView,
+        attr='repo_group_list_data',
+        route_name='repo_group_list_data', request_method='GET',
+        renderer='json_ext', xhr=True)
 
     config.add_route(
         name='goto_switcher_data',
         pattern='/_goto_data')
+    config.add_view(
+        HomeView,
+        attr='goto_switcher_data',
+        route_name='goto_switcher_data', request_method='GET',
+        renderer='json_ext', xhr=True)
 
     config.add_route(
         name='markup_preview',
         pattern='/_markup_preview')
+    config.add_view(
+        HomeView,
+        attr='markup_preview',
+        route_name='markup_preview', request_method='POST',
+        renderer='string', xhr=True)
 
     config.add_route(
         name='file_preview',
         pattern='/_file_preview')
+    config.add_view(
+        HomeView,
+        attr='file_preview',
+        route_name='file_preview', request_method='POST',
+        renderer='string', xhr=True)
 
     config.add_route(
         name='store_user_session_value',
         pattern='/_store_session_attr')
+    config.add_view(
+        HomeView,
+        attr='store_user_session_attr',
+        route_name='store_user_session_value', request_method='POST',
+        renderer='string', xhr=True)
 
     # register our static links via redirection mechanism
     routing_links.connect_redirection_links(config)
 
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
-
-    config.add_route_predicate(
-        'skip_vcs_call', VCSCallPredicate)

@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound
 from packaging.version import Version
 
@@ -42,7 +42,7 @@ from rhodecode.model.scm import ScmModel
 log = logging.getLogger(__name__)
 
 
-class RepoSettingsView(RepoAppView):
+class RepoSettingsAdvancedView(RepoAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
@@ -57,9 +57,6 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_advanced', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -89,9 +86,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_advanced_archive', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_archive(self):
         """
         Archives the repository. It will become read-only, and not visible in search
@@ -132,9 +126,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_advanced_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_delete(self):
         """
         Deletes the repository, or shows warnings if deletion is not possible
@@ -209,9 +200,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_advanced_journal', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_journal(self):
         """
         Set's this repository to be visible in public journal,
@@ -236,9 +224,6 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_advanced_fork', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_fork(self):
         """
         Mark given repository as a fork of another
@@ -281,10 +266,7 @@ class RepoSettingsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_advanced_locking', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
-    def edit_advanced_locking(self):
+    def edit_advanced_toggle_locking(self):
         """
         Toggle locking of repository
         """
@@ -309,9 +291,6 @@ class RepoSettingsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_advanced_hooks', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_advanced_install_hooks(self):
         """
         Install Hooks for repository

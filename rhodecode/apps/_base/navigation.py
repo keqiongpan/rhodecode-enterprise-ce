@@ -144,3 +144,5 @@ def includeme(config):
     labs_active = str2bool(settings.get('labs_settings_active', False))
     navigation_registry_instance = NavigationRegistry(labs_active=labs_active)
     config.registry.registerUtility(navigation_registry_instance)
+    log.debug('Created new nabigation instance, %s', navigation_registry_instance)
+

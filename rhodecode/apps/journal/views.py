@@ -18,13 +18,9 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
-
 import logging
 import itertools
 
-
-
-from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.response import Response
 from pyramid.renderers import render
@@ -218,9 +214,6 @@ class JournalView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='journal', request_method='GET',
-        renderer=None)
     def journal(self):
         c = self.load_default_context()
 
@@ -258,9 +251,6 @@ class JournalView(BaseAppView):
 
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @NotAnonymous()
-    @view_config(
-        route_name='journal_atom', request_method='GET',
-        renderer=None)
     def journal_atom(self):
         """
         Produce an atom-1.0 feed via feedgenerator module
@@ -274,9 +264,6 @@ class JournalView(BaseAppView):
 
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @NotAnonymous()
-    @view_config(
-        route_name='journal_rss', request_method='GET',
-        renderer=None)
     def journal_rss(self):
         """
         Produce an rss feed via feedgenerator module
@@ -289,39 +276,6 @@ class JournalView(BaseAppView):
         return self._rss_feed(following_repos, c.search_term, public=False)
 
     @LoginRequired()
-    @NotAnonymous()
-    @CSRFRequired()
-    @view_config(
-        route_name='toggle_following', request_method='POST',
-        renderer='json_ext')
-    def toggle_following(self):
-        user_id = self.request.POST.get('follows_user_id')
-        if user_id:
-            try:
-                ScmModel().toggle_following_user(user_id, self._rhodecode_user.user_id)
-                Session().commit()
-                return 'ok'
-            except Exception:
-                raise HTTPBadRequest()
-
-        repo_id = self.request.POST.get('follows_repo_id')
-        repo = Repository.get_or_404(repo_id)
-        perm_set = ['repository.read', 'repository.write', 'repository.admin']
-        has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'RepoWatch check')
-        if repo and has_perm:
-            try:
-                ScmModel().toggle_following_repo(repo_id, self._rhodecode_user.user_id)
-                Session().commit()
-                return 'ok'
-            except Exception:
-                raise HTTPBadRequest()
-
-        raise HTTPBadRequest()
-
-    @LoginRequired()
-    @view_config(
-        route_name='journal_public', request_method='GET',
-        renderer=None)
     def journal_public(self):
         c = self.load_default_context()
         # Return a rendered template
@@ -357,9 +311,6 @@ class JournalView(BaseAppView):
         return Response(html)
 
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
-    @view_config(
-        route_name='journal_public_atom', request_method='GET',
-        renderer=None)
     def journal_public_atom(self):
         """
         Produce an atom-1.0 feed via feedgenerator module
@@ -373,9 +324,6 @@ class JournalView(BaseAppView):
         return self._atom_feed(following_repos, c.search_term)
 
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
-    @view_config(
-        route_name='journal_public_rss', request_method='GET',
-        renderer=None)
     def journal_public_rss(self):
         """
         Produce an rss2 feed via feedgenerator module
@@ -387,3 +335,30 @@ class JournalView(BaseAppView):
             .all()
 
         return self._rss_feed(following_repos, c.search_term)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    def toggle_following(self):
+        user_id = self.request.POST.get('follows_user_id')
+        if user_id:
+            try:
+                ScmModel().toggle_following_user(user_id, self._rhodecode_user.user_id)
+                Session().commit()
+                return 'ok'
+            except Exception:
+                raise HTTPBadRequest()
+
+        repo_id = self.request.POST.get('follows_repo_id')
+        repo = Repository.get_or_404(repo_id)
+        perm_set = ['repository.read', 'repository.write', 'repository.admin']
+        has_perm = HasRepoPermissionAny(*perm_set)(repo.repo_name, 'RepoWatch check')
+        if repo and has_perm:
+            try:
+                ScmModel().toggle_following_repo(repo_id, self._rhodecode_user.user_id)
+                Session().commit()
+                return 'ok'
+            except Exception:
+                raise HTTPBadRequest()
+
+        raise HTTPBadRequest()

@@ -26,7 +26,7 @@ import formencode.htmlfill
 import peppercorn
 from pyramid.httpexceptions import (
     HTTPFound, HTTPNotFound, HTTPForbidden, HTTPBadRequest, HTTPConflict)
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 
 from rhodecode.apps._base import RepoAppView, DataGridAppView
@@ -147,9 +147,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_show_all', request_method='GET',
-        renderer='rhodecode:templates/pullrequests/pullrequests.mako')
     def pull_request_list(self):
         c = self.load_default_context()
 
@@ -177,9 +174,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_show_all_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def pull_request_list_data(self):
         self.load_default_context()
 
@@ -311,9 +305,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_show', request_method='GET',
-        renderer='rhodecode:templates/pullrequests/pullrequest_show.mako')
     def pull_request_show(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -842,9 +833,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_new', request_method='GET',
-        renderer='rhodecode:templates/pullrequests/pullrequest.mako')
     def pull_request_new(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -902,9 +890,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_repo_refs', request_method='GET',
-        renderer='json_ext', xhr=True)
     def pull_request_repo_refs(self):
         self.load_default_context()
         target_repo_name = self.request.matchdict['target_repo_name']
@@ -925,9 +910,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_repo_targets', request_method='GET',
-        renderer='json_ext', xhr=True)
     def pullrequest_repo_targets(self):
         _ = self.request.translate
         filter_query = self.request.GET.get('query')
@@ -998,9 +980,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_comments', request_method='POST',
-        renderer='string_html', xhr=True)
     def pullrequest_comments(self):
         self.load_default_context()
 
@@ -1038,9 +1017,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_todos', request_method='POST',
-        renderer='string_html', xhr=True)
     def pullrequest_todos(self):
         self.load_default_context()
 
@@ -1080,9 +1056,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @NotAnonymous()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='pullrequest_drafts', request_method='POST',
-        renderer='string_html', xhr=True)
     def pullrequest_drafts(self):
         self.load_default_context()
 
@@ -1123,9 +1096,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_create', request_method='POST',
-        renderer=None)
     def pull_request_create(self):
         _ = self.request.translate
         self.assure_not_empty_repo()
@@ -1281,9 +1251,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_update', request_method='POST',
-        renderer='json_ext')
     def pull_request_update(self):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
@@ -1465,9 +1432,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_merge', request_method='POST',
-        renderer='json_ext')
     def pull_request_merge(self):
         """
         Merge will perform a server-side merge of the specified
@@ -1541,9 +1505,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_delete', request_method='POST',
-        renderer='json_ext')
     def pull_request_delete(self):
         _ = self.request.translate
 
@@ -1719,9 +1680,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_comment_create', request_method='POST',
-        renderer='json_ext')
     def pull_request_comment_create(self):
         _ = self.request.translate
 
@@ -1756,9 +1714,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_comment_delete', request_method='POST',
-        renderer='json_ext')
     def pull_request_comment_delete(self):
         pull_request = PullRequest.get_or_404(
             self.request.matchdict['pull_request_id'])
@@ -1810,9 +1765,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='pullrequest_comment_edit', request_method='POST',
-        renderer='json_ext')
     def pull_request_comment_edit(self):
         self.load_default_context()
 

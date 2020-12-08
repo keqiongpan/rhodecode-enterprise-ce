@@ -92,6 +92,7 @@ def make_pyramid_app(global_config, **settings):
     # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
     # will be replaced by the value of the environment variable "NAME" in this case.
     start_time = time.time()
+    log.info('Pyramid app config starting')
 
     debug = asbool(global_config.get('debug'))
     if debug:
@@ -121,6 +122,7 @@ def make_pyramid_app(global_config, **settings):
     pyramid_app.config = config
 
     config.configure_celery(global_config['__file__'])
+
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
     total_time = time.time() - start_time
@@ -256,14 +258,10 @@ def includeme(config, auth_resources=None):
     config.include('pyramid_mako')
     config.include('rhodecode.lib.rc_beaker')
     config.include('rhodecode.lib.rc_cache')
-
     config.include('rhodecode.apps._base.navigation')
     config.include('rhodecode.apps._base.subscribers')
     config.include('rhodecode.tweens')
     config.include('rhodecode.authentication')
-
-    if load_all:
-        config.include('rhodecode.integrations')
 
     if load_all:
         ce_auth_resources = [
@@ -291,15 +289,17 @@ def includeme(config, auth_resources=None):
 
     # apps
     if load_all:
+        config.include('rhodecode.api')
         config.include('rhodecode.apps._base')
         config.include('rhodecode.apps.hovercards')
         config.include('rhodecode.apps.ops')
-        config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')
         config.include('rhodecode.apps.file_store')
+        config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.login')
         config.include('rhodecode.apps.home')
         config.include('rhodecode.apps.journal')
+
         config.include('rhodecode.apps.repository')
         config.include('rhodecode.apps.repo_group')
         config.include('rhodecode.apps.user_group')
@@ -307,11 +307,14 @@ def includeme(config, auth_resources=None):
         config.include('rhodecode.apps.user_profile')
         config.include('rhodecode.apps.user_group_profile')
         config.include('rhodecode.apps.my_account')
+        config.include('rhodecode.apps.gist')
+
         config.include('rhodecode.apps.svn_support')
         config.include('rhodecode.apps.ssh_support')
-        config.include('rhodecode.apps.gist')
         config.include('rhodecode.apps.debug_style')
-        config.include('rhodecode.api')
+
+    if load_all:
+        config.include('rhodecode.integrations')
 
     config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
     config.add_translation_dirs('rhodecode:i18n/')

@@ -21,7 +21,6 @@
 import logging
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib import helpers as h
@@ -46,9 +45,6 @@ class RepoSettingsPermissionsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_permissions(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -62,9 +58,6 @@ class RepoSettingsPermissionsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_perms', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def edit_permissions_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -104,9 +97,6 @@ class RepoSettingsPermissionsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_perms_set_private', request_method='POST',
-        renderer='json_ext')
     def edit_permissions_set_private_repo(self):
         _ = self.request.translate
         self.load_default_context()

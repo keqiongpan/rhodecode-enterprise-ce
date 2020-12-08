@@ -67,6 +67,8 @@ def maybe_create_history_store(event):
 
 
 def includeme(config):
+    from rhodecode.apps.channelstream.views import ChannelstreamView
+
     settings = config.registry.settings
     PLUGIN_DEFINITION['config']['enabled'] = asbool(
         settings.get('channelstream.enabled'))
@@ -85,12 +87,20 @@ def includeme(config):
     config.add_route(
         name='channelstream_connect',
         pattern=ADMIN_PREFIX + '/channelstream/connect')
+    config.add_view(
+        ChannelstreamView,
+        attr='channelstream_connect',
+        route_name='channelstream_connect', renderer='json_ext')
+
     config.add_route(
         name='channelstream_subscribe',
         pattern=ADMIN_PREFIX + '/channelstream/subscribe')
+    config.add_view(
+        ChannelstreamView,
+        attr='channelstream_subscribe',
+        route_name='channelstream_subscribe', renderer='json_ext')
+
     config.add_route(
         name='channelstream_proxy',
         pattern=settings.get('channelstream.proxy_path') or '/_channelstream')
 
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')

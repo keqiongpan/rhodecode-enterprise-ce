@@ -20,9 +20,7 @@
 import pytz
 import logging
 
-from pyramid.view import view_config
 from pyramid.response import Response
-
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.feedgenerator import Rss201rev2Feed, Atom1Feed
@@ -118,8 +116,6 @@ class RepoFeedView(RepoAppView):
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(route_name='atom_feed_home', request_method='GET', renderer=None)
-    @view_config(route_name='atom_feed_home_old', request_method='GET', renderer=None)
     def atom(self):
         """
         Produce an atom-1.0 feed via feedgenerator module
@@ -166,8 +162,6 @@ class RepoFeedView(RepoAppView):
     @LoginRequired(auth_token_access=[UserApiKeys.ROLE_FEED])
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(route_name='rss_feed_home', request_method='GET', renderer=None)
-    @view_config(route_name='rss_feed_home_old', request_method='GET', renderer=None)
     def rss(self):
         """
         Produce an rss2 feed via feedgenerator module
