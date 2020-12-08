@@ -234,7 +234,7 @@ def includeme_first(config):
         '_static/rhodecode', path='rhodecode:public', cache_max_age=3600 * 24)
 
 
-def includeme(config):
+def includeme(config, auth_resources=None):
     log.debug('Initializing main includeme from %s', os.path.basename(__file__))
     settings = config.registry.settings
     config.set_request_factory(Request)
@@ -266,14 +266,23 @@ def includeme(config):
         config.include('rhodecode.integrations')
 
     if load_all:
+        ce_auth_resources = [
+            'rhodecode.authentication.plugins.auth_crowd',
+            'rhodecode.authentication.plugins.auth_headers',
+            'rhodecode.authentication.plugins.auth_jasig_cas',
+            'rhodecode.authentication.plugins.auth_ldap',
+            'rhodecode.authentication.plugins.auth_pam',
+            'rhodecode.authentication.plugins.auth_rhodecode',
+            'rhodecode.authentication.plugins.auth_token',
+        ]
+
         # load CE authentication plugins
-        config.include('rhodecode.authentication.plugins.auth_crowd')
-        config.include('rhodecode.authentication.plugins.auth_headers')
-        config.include('rhodecode.authentication.plugins.auth_jasig_cas')
-        config.include('rhodecode.authentication.plugins.auth_ldap')
-        config.include('rhodecode.authentication.plugins.auth_pam')
-        config.include('rhodecode.authentication.plugins.auth_rhodecode')
-        config.include('rhodecode.authentication.plugins.auth_token')
+
+        if auth_resources:
+            ce_auth_resources.extend(auth_resources)
+
+        for resource in ce_auth_resources:
+            config.include(resource)
 
         # Auto discover authentication plugins and include their configuration.
         if asbool(settings.get('auth_plugin.import_legacy_plugins', 'true')):
