@@ -57,7 +57,6 @@ class FileStoreView(BaseAppView):
         return _content_type, _encoding
 
     def _serve_file(self, file_uid):
-
         if not self.storage.exists(file_uid):
             store_path = self.storage.store_path(file_uid)
             log.debug('File with FID:%s not found in the store under `%s`',
@@ -112,8 +111,19 @@ class FileStoreView(BaseAppView):
         # For file store we don't submit any session data, this logic tells the
         # Session lib to skip it
         setattr(self.request, '_file_response', True)
-        return FileResponse(file_path, request=self.request,
-                            content_type=content_type, content_encoding=content_encoding)
+        response = FileResponse(
+            file_path, request=self.request,
+            content_type=content_type, content_encoding=content_encoding)
+
+        file_name = db_obj.file_display_name
+
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="{}"'.format(str(file_name))
+        )
+        response.headers["X-RC-Artifact-Id"] = str(db_obj.file_store_id)
+        response.headers["X-RC-Artifact-Desc"] = str(db_obj.file_description)
+        response.headers["X-RC-Artifact-Sha256"] = str(db_obj.file_hash)
+        return response
 
     @LoginRequired()
     @NotAnonymous()
