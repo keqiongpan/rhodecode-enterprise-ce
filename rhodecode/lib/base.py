@@ -469,7 +469,14 @@ def get_auth_user(request):
     ip_addr = get_ip_addr(environ)
 
     # make sure that we update permissions each time we call controller
-    _auth_token = (request.GET.get('auth_token', '') or request.GET.get('api_key', ''))
+    _auth_token = (
+            # ?auth_token=XXX
+            request.GET.get('auth_token', '')
+            # ?api_key=XXX !LEGACY
+            or request.GET.get('api_key', '')
+            # or headers....
+            or request.headers.get('X-Rc-Auth-Token', '')
+    )
     if not _auth_token and request.matchdict:
         url_auth_token = request.matchdict.get('_auth_token')
         _auth_token = url_auth_token

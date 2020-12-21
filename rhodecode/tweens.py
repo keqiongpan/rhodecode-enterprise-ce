@@ -119,3 +119,4 @@ def includeme(config):
 
     # This needs to be the LAST item
     config.add_tween('rhodecode.lib.middleware.request_wrapper.RequestWrapperTween')
+    log.debug('configured all tweens')
