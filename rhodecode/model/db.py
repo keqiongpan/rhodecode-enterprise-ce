@@ -749,8 +749,11 @@ class User(Base, BaseModel):
 
     def get_artifact_token(self, cache=True):
         artifacts_tokens = UserApiKeys.query()\
-            .filter(UserApiKeys.user == self)\
+            .filter(UserApiKeys.user == self) \
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time())) \
             .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+
         if cache:
             artifacts_tokens = artifacts_tokens.options(
                 FromCache("sql_cache_short", "get_user_artifact_token_%s" % self.user_id))
@@ -759,6 +762,24 @@ class User(Base, BaseModel):
         if artifacts_tokens:
             return artifacts_tokens[0].api_key
         return 'NO_ARTIFACT_TOKEN_AVAILABLE'
+
+    def get_or_create_artifact_token(self):
+        artifacts_tokens = UserApiKeys.query()\
+            .filter(UserApiKeys.user == self) \
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time())) \
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+
+        artifacts_tokens = artifacts_tokens.all()
+        if artifacts_tokens:
+            return artifacts_tokens[0].api_key
+        else:
+            from rhodecode.model.auth_token import AuthTokenModel
+            artifact_token = AuthTokenModel().create(
+                self, 'auto-generated-artifact-token',
+                lifetime=-1, role=UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+            Session.commit()
+            return artifact_token.api_key
 
     @classmethod
     def get(cls, user_id, cache=False):
