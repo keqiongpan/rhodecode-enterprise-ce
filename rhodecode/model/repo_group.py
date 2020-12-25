@@ -60,6 +60,9 @@ class RepoGroupModel(BaseModel):
         return self._get_instance(RepoGroup, repo_group,
                                   callback=RepoGroup.get_by_group_name)
 
+    def get_repo_group(self, repo_group):
+        return self._get_repo_group(repo_group)
+
     @LazyProperty
     def repos_path(self):
         """

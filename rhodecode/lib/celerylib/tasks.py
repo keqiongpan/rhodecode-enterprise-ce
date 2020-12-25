@@ -354,7 +354,7 @@ def check_for_update():
 @async_task(ignore_result=False)
 def beat_check(*args, **kwargs):
     log = get_logger(beat_check)
-    log.info('Got args: %r and kwargs %r', args, kwargs)
+    log.info('%r: Got args: %r and kwargs %r', beat_check, args, kwargs)
     return time.time()
 
 

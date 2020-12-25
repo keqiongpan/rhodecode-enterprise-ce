@@ -22,7 +22,7 @@ import logging
 
 import psutil
 import signal
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps._base.navigation import navigation_list
@@ -84,9 +84,6 @@ class AdminProcessManagementView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_process_management', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def process_management(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -99,9 +96,6 @@ class AdminProcessManagementView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_process_management_data', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings_process_management_data.mako')
     def process_management_data(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -111,9 +105,6 @@ class AdminProcessManagementView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_process_management_signal',
-        request_method='POST', renderer='json_ext')
     def process_management_signal(self):
         pids = self.request.json.get('pids', [])
         result = []
@@ -155,9 +146,6 @@ class AdminProcessManagementView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_process_management_master_signal',
-        request_method='POST', renderer='json_ext')
     def process_management_master_signal(self):
         pid_data = self.request.json.get('pid_data', {})
         pid = safe_int(pid_data['pid'])

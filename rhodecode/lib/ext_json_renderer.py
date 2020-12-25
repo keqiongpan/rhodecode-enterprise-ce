@@ -27,11 +27,14 @@ def pyramid_ext_json(info):
     """
     def _render(value, system):
         request = system.get('request')
+        indent = None
         if request is not None:
             response = request.response
             ct = response.content_type
             if ct == response.default_content_type:
                 response.content_type = 'application/json'
-        return json.dumps(value)
+            indent = getattr(request, 'ext_json_indent', None)
+
+        return json.dumps(value, indent=indent)
 
     return _render

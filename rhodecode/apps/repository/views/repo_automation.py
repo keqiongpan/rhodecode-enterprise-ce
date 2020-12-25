@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.apps.repository.utils import get_default_reviewers_data
@@ -36,9 +36,6 @@ class RepoAutomationView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='repo_automation', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_automation(self):
         c = self.load_default_context()
         c.active = 'automation'

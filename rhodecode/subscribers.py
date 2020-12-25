@@ -18,6 +18,8 @@
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 import io
+import shlex
+
 import math
 import re
 import os
@@ -231,7 +233,7 @@ def write_usage_data(event):
 
     # write every 6th hour
     if age_in_min and age_in_min < 60 * 6:
-        log.debug('Usage file created %s minutes ago, skipping (threashold: %s)...',
+        log.debug('Usage file created %s minutes ago, skipping (threshold: %s minutes)...',
                   age_in_min, 60 * 6)
         return
 
@@ -357,10 +359,16 @@ class AsyncSubscriber(Subscriber):
 class AsyncSubprocessSubscriber(AsyncSubscriber):
     """
     Subscriber that uses the subprocess32 module to execute a command if an
-    event is received. Events are handled asynchronously.
+    event is received. Events are handled asynchronously::
+
+        subscriber = AsyncSubprocessSubscriber('ls -la', timeout=10)
+        subscriber(dummyEvent) # running __call__(event)
+
     """
 
     def __init__(self, cmd, timeout=None):
+        if not isinstance(cmd, (list, tuple)):
+            cmd = shlex.split(cmd)
         super(AsyncSubprocessSubscriber, self).__init__()
         self._cmd = cmd
         self._timeout = timeout
@@ -384,6 +392,6 @@ class AsyncSubprocessSubscriber(AsyncSubscriber):
             log.exception('Error while executing command.')
             if e.output:
                 log.error('Command output: %s', e.output)
-        except:
+        except Exception:
             log.exception(
                 'Exception while executing command %s.', cmd)

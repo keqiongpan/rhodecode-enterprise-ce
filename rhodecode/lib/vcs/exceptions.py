@@ -218,8 +218,9 @@ def map_vcs_exceptions(func):
 
             if kind:
                 if any(e.args):
-                    args = [a for a in e.args]
-                    args[0] = '{}:'.format(exc_name)  # prefix first arg with org exc name
+                    _args = [a for a in e.args]
+                    # replace the first argument with a prefix exc name
+                    args = ['{}:'.format(exc_name, _args[0] if _args else '?')] + _args[1:]
                 else:
                     args = [__traceback_info__ or '{}: UnhandledException'.format(exc_name)]
                 if debug or __traceback_info__ and kind not in ['unhandled', 'lookup']:

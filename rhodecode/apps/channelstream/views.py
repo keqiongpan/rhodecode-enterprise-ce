@@ -21,7 +21,7 @@
 import logging
 import uuid
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPBadRequest, HTTPForbidden, HTTPBadGateway
 
 from rhodecode.apps._base import BaseAppView
@@ -54,8 +54,7 @@ class ChannelstreamView(BaseAppView):
         return c
 
     @NotAnonymous()
-    @view_config(route_name='channelstream_connect', renderer='json_ext')
-    def connect(self):
+    def channelstream_connect(self):
         """ handle authorization of users trying to connect """
 
         self.load_default_context()
@@ -132,8 +131,7 @@ class ChannelstreamView(BaseAppView):
         return connect_result
 
     @NotAnonymous()
-    @view_config(route_name='channelstream_subscribe', renderer='json_ext')
-    def subscribe(self):
+    def channelstream_subscribe(self):
         """ can be used to subscribe specific connection to other channels """
         self.load_default_context()
         try:

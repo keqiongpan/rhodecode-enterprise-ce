@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.apps.repository.utils import get_default_reviewers_data
@@ -38,9 +38,6 @@ class RepoReviewRulesView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='repo_reviewers', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_review_rules(self):
         c = self.load_default_context()
         c.active = 'reviewers'
@@ -50,9 +47,6 @@ class RepoReviewRulesView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_default_reviewers_data', request_method='GET',
-        renderer='json_ext')
     def repo_default_reviewers_data(self):
         self.load_default_context()
 

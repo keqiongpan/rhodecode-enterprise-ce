@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import RepoGroupAppView
@@ -45,9 +45,6 @@ class RepoGroupPermissionsView(RepoGroupAppView):
 
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator('group.admin')
-    @view_config(
-        route_name='edit_repo_group_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_edit.mako')
     def edit_repo_group_permissions(self):
         c = self.load_default_context()
         c.active = 'permissions'
@@ -57,9 +54,6 @@ class RepoGroupPermissionsView(RepoGroupAppView):
     @LoginRequired()
     @HasRepoGroupPermissionAnyDecorator('group.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_group_perms_update', request_method='POST',
-        renderer='rhodecode:templates/admin/repo_groups/repo_group_edit.mako')
     def edit_repo_groups_permissions_update(self):
         _ = self.request.translate
         c = self.load_default_context()

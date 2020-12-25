@@ -36,6 +36,8 @@ timeout during large pushes.
     proxy_set_header            X-Host $http_host;
     proxy_set_header            X-Real-IP $remote_addr;
     proxy_set_header            X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header            X-Forwarded-Proto $proto;
+    proxy_set_header            X-Url-Scheme $scheme;
     proxy_set_header            Proxy-host $proxy_host;
 
     proxy_connect_timeout       7200;

@@ -40,7 +40,7 @@ def route_path(name, params=None, **kwargs):
 
     base_url = {
         'notifications_show_all': ADMIN_PREFIX + '/notifications',
-        'notifications_mark_all_read': ADMIN_PREFIX + '/notifications/mark_all_read',
+        'notifications_mark_all_read': ADMIN_PREFIX + '/notifications_mark_all_read',
         'notifications_show': ADMIN_PREFIX + '/notifications/{notification_id}',
         'notifications_update': ADMIN_PREFIX + '/notifications/{notification_id}/update',
         'notifications_delete': ADMIN_PREFIX + '/notifications/{notification_id}/delete',
@@ -59,6 +59,15 @@ class TestNotificationsController(TestController):
             inst = Notification.get(n.notification_id)
             Session().delete(inst)
         Session().commit()
+
+    def test_mark_all_read(self, user_util):
+        user = user_util.create_user(password='qweqwe')
+        self.log_user(user.username, 'qweqwe')
+
+        self.app.post(
+            route_path('notifications_mark_all_read'), status=302,
+            params={'csrf_token': self.csrf_token}
+        )
 
     def test_show_all(self, user_util):
         user = user_util.create_user(password='qweqwe')

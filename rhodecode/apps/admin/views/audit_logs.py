@@ -21,7 +21,6 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.model.db import joinedload, UserLog
@@ -34,15 +33,13 @@ log = logging.getLogger(__name__)
 
 
 class AdminAuditLogsView(BaseAppView):
+
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         return c
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_audit_logs', request_method='GET',
-        renderer='rhodecode:templates/admin/admin_audit_logs.mako')
     def admin_audit_logs(self):
         c = self.load_default_context()
 
@@ -76,9 +73,6 @@ class AdminAuditLogsView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_audit_log_entry', request_method='GET',
-        renderer='rhodecode:templates/admin/admin_audit_log_entry.mako')
     def admin_audit_log_entry(self):
         c = self.load_default_context()
         audit_log_id = self.request.matchdict['audit_log_id']

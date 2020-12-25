@@ -120,3 +120,11 @@ class RhodeCodeIntegrationEvent(RhodecodeEvent):
     Special subclass for Integration events
     """
     description = ''
+
+
+class FtsBuild(RhodecodeEvent):
+    """
+    This event will be triggered when FTS Build is triggered
+    """
+    name = 'fts-build'
+    display_name = 'Start FTS Build'

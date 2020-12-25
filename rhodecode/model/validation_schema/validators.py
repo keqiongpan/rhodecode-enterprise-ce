@@ -147,6 +147,14 @@ class CloneUriValidator(object):
 def json_validator(node, value):
     try:
         json.loads(value)
-    except (Exception,):
+    except (Exception,) as e:
         msg = _(u'Please enter a valid json object')
+        raise colander.Invalid(node, msg)
+
+
+def json_validator_with_exc(node, value):
+    try:
+        json.loads(value)
+    except (Exception,) as e:
+        msg = _(u'Please enter a valid json object: `{}`'.format(e))
         raise colander.Invalid(node, msg)

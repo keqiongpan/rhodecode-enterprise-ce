@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
@@ -36,9 +36,6 @@ class RepoMaintenanceView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_maintenance', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_maintenance(self):
         c = self.load_default_context()
         c.active = 'maintenance'
@@ -48,9 +45,6 @@ class RepoMaintenanceView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_maintenance_execute', request_method='GET',
-        renderer='json', xhr=True)
     def repo_maintenance_execute(self):
         c = self.load_default_context()
         c.active = 'maintenance'

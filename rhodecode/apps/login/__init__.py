@@ -23,22 +23,57 @@ from rhodecode.apps._base import ADMIN_PREFIX
 
 
 def includeme(config):
-
+    from rhodecode.apps.login.views import LoginView
+    
     config.add_route(
         name='login',
         pattern=ADMIN_PREFIX + '/login')
+    config.add_view(
+        LoginView,
+        attr='login',
+        route_name='login', request_method='GET',
+        renderer='rhodecode:templates/login.mako')
+    config.add_view(
+        LoginView,
+        attr='login_post',
+        route_name='login', request_method='POST',
+        renderer='rhodecode:templates/login.mako')
+
     config.add_route(
         name='logout',
         pattern=ADMIN_PREFIX + '/logout')
+    config.add_view(
+        LoginView,
+        attr='logout',
+        route_name='logout', request_method='POST')
+
     config.add_route(
         name='register',
         pattern=ADMIN_PREFIX + '/register')
+    config.add_view(
+        LoginView,
+        attr='register',
+        route_name='register', request_method='GET',
+        renderer='rhodecode:templates/register.mako')
+    config.add_view(
+        LoginView,
+        attr='register_post',
+        route_name='register', request_method='POST',
+        renderer='rhodecode:templates/register.mako')
+
     config.add_route(
         name='reset_password',
         pattern=ADMIN_PREFIX + '/password_reset')
+    config.add_view(
+        LoginView,
+        attr='password_reset',
+        route_name='reset_password', request_method=('GET', 'POST'),
+        renderer='rhodecode:templates/password_reset.mako')
+
     config.add_route(
         name='reset_password_confirmation',
         pattern=ADMIN_PREFIX + '/password_reset_confirmation')
-
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
+    config.add_view(
+        LoginView,
+        attr='password_reset_confirmation',
+        route_name='reset_password_confirmation', request_method='GET')

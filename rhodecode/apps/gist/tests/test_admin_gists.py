@@ -43,9 +43,9 @@ def route_path(name, params=None, **kwargs):
         'gist_edit': ADMIN_PREFIX + '/gists/{gist_id}/edit',
         'gist_edit_check_revision': ADMIN_PREFIX + '/gists/{gist_id}/edit/check_revision',
         'gist_update': ADMIN_PREFIX + '/gists/{gist_id}/update',
-        'gist_show_rev': ADMIN_PREFIX + '/gists/{gist_id}/{revision}',
-        'gist_show_formatted': ADMIN_PREFIX + '/gists/{gist_id}/{revision}/{format}',
-        'gist_show_formatted_path': ADMIN_PREFIX + '/gists/{gist_id}/{revision}/{format}/{f_path}',
+        'gist_show_rev': ADMIN_PREFIX + '/gists/{gist_id}/rev/{revision}',
+        'gist_show_formatted': ADMIN_PREFIX + '/gists/{gist_id}/rev/{revision}/{format}',
+        'gist_show_formatted_path': ADMIN_PREFIX + '/gists/{gist_id}/rev/{revision}/{format}/{f_path}',
 
     }[name].format(**kwargs)
 

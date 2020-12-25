@@ -37,6 +37,7 @@ from rhodecode.lib.vcs.backends.git.diff import GitDiff
 def get_svn_files(repo, vcs_repo, refs):
     txn_id = refs[0]
     files = []
+
     stdout, stderr = vcs_repo.run_svn_command(
         ['svnlook', 'changed', repo.repo_full_path, '--transaction', txn_id])
 
@@ -63,10 +64,17 @@ def get_svn_files(repo, vcs_repo, refs):
         parsed_entry['operation'] = rc_op
 
         if rc_op in ['A', 'M']:
+
             stdout, stderr = vcs_repo.run_svn_command(
-                ['svnlook', 'filesize', repo.repo_full_path, path, '--transaction', txn_id])
-            file_size = int(stdout.strip())
-            parsed_entry['file_size'] = file_size
+                ['svnlook', 'filesize', repo.repo_full_path, path, '--transaction', txn_id],
+                _safe=True
+            )
+
+            if "Path '{}' is not a file".format(path.rstrip('/')) in stderr:
+                # skip dirs
+                continue
+
+            parsed_entry['file_size'] = int(stdout.strip())
 
         files.append(parsed_entry)
 

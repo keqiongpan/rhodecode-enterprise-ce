@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import (
@@ -39,9 +39,6 @@ class RepoArtifactsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_artifacts_list', request_method='GET',
-        renderer='rhodecode:templates/artifacts/artifact_list.mako')
     def repo_artifacts(self):
         c = self.load_default_context()
         c.active = 'artifacts'

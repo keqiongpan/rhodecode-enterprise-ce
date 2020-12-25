@@ -62,24 +62,25 @@ def configure_dogpile_cache(settings):
     avail_regions = set()
     for key in rc_cache_data.keys():
         namespace_name = key.split('.', 1)[0]
-        avail_regions.add(namespace_name)
-    log.debug('dogpile: found following cache regions: %s', avail_regions)
+        if namespace_name in avail_regions:
+            continue
 
-    # register them into namespace
-    for region_name in avail_regions:
+        avail_regions.add(namespace_name)
+        log.debug('dogpile: found following cache regions: %s', namespace_name)
+
         new_region = make_region(
-            name=region_name,
+            name=namespace_name,
             function_key_generator=None
         )
 
-        new_region.configure_from_config(settings, 'rc_cache.{}.'.format(region_name))
+        new_region.configure_from_config(settings, 'rc_cache.{}.'.format(namespace_name))
         new_region.function_key_generator = backend_key_generator(new_region.actual_backend)
         if log.isEnabledFor(logging.DEBUG):
             region_args = dict(backend=new_region.actual_backend.__class__,
                                region_invalidator=new_region.region_invalidator.__class__)
-            log.debug('dogpile: registering a new region `%s` %s', region_name, region_args)
+            log.debug('dogpile: registering a new region `%s` %s', namespace_name, region_args)
 
-        region_meta.dogpile_cache_regions[region_name] = new_region
+        region_meta.dogpile_cache_regions[namespace_name] = new_region
 
 
 def includeme(config):

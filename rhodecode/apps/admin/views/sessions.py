@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import BaseAppView
@@ -37,17 +37,13 @@ log = logging.getLogger(__name__)
 
 
 class AdminSessionSettingsView(BaseAppView):
+
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_sessions', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def settings_sessions(self):
         c = self.load_default_context()
 
@@ -71,8 +67,6 @@ class AdminSessionSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_sessions_cleanup', request_method='POST')
     def settings_sessions_cleanup(self):
         _ = self.request.translate
         expire_days = safe_int(self.request.params.get('expire_days'))

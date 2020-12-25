@@ -92,6 +92,7 @@ def make_pyramid_app(global_config, **settings):
     # Allows to use format style "{ENV_NAME}" placeholders in the configuration. It
     # will be replaced by the value of the environment variable "NAME" in this case.
     start_time = time.time()
+    log.info('Pyramid app config starting')
 
     debug = asbool(global_config.get('debug'))
     if debug:
@@ -121,6 +122,7 @@ def make_pyramid_app(global_config, **settings):
     pyramid_app.config = config
 
     config.configure_celery(global_config['__file__'])
+
     # creating the app uses a connection - return it after we are done
     meta.Session.remove()
     total_time = time.time() - start_time
@@ -234,7 +236,7 @@ def includeme_first(config):
         '_static/rhodecode', path='rhodecode:public', cache_max_age=3600 * 24)
 
 
-def includeme(config):
+def includeme(config, auth_resources=None):
     log.debug('Initializing main includeme from %s', os.path.basename(__file__))
     settings = config.registry.settings
     config.set_request_factory(Request)
@@ -256,24 +258,29 @@ def includeme(config):
     config.include('pyramid_mako')
     config.include('rhodecode.lib.rc_beaker')
     config.include('rhodecode.lib.rc_cache')
-
     config.include('rhodecode.apps._base.navigation')
     config.include('rhodecode.apps._base.subscribers')
     config.include('rhodecode.tweens')
     config.include('rhodecode.authentication')
 
     if load_all:
-        config.include('rhodecode.integrations')
+        ce_auth_resources = [
+            'rhodecode.authentication.plugins.auth_crowd',
+            'rhodecode.authentication.plugins.auth_headers',
+            'rhodecode.authentication.plugins.auth_jasig_cas',
+            'rhodecode.authentication.plugins.auth_ldap',
+            'rhodecode.authentication.plugins.auth_pam',
+            'rhodecode.authentication.plugins.auth_rhodecode',
+            'rhodecode.authentication.plugins.auth_token',
+        ]
 
-    if load_all:
         # load CE authentication plugins
-        config.include('rhodecode.authentication.plugins.auth_crowd')
-        config.include('rhodecode.authentication.plugins.auth_headers')
-        config.include('rhodecode.authentication.plugins.auth_jasig_cas')
-        config.include('rhodecode.authentication.plugins.auth_ldap')
-        config.include('rhodecode.authentication.plugins.auth_pam')
-        config.include('rhodecode.authentication.plugins.auth_rhodecode')
-        config.include('rhodecode.authentication.plugins.auth_token')
+
+        if auth_resources:
+            ce_auth_resources.extend(auth_resources)
+
+        for resource in ce_auth_resources:
+            config.include(resource)
 
         # Auto discover authentication plugins and include their configuration.
         if asbool(settings.get('auth_plugin.import_legacy_plugins', 'true')):
@@ -282,15 +289,17 @@ def includeme(config):
 
     # apps
     if load_all:
+        config.include('rhodecode.api')
         config.include('rhodecode.apps._base')
         config.include('rhodecode.apps.hovercards')
         config.include('rhodecode.apps.ops')
-        config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.channelstream')
         config.include('rhodecode.apps.file_store')
+        config.include('rhodecode.apps.admin')
         config.include('rhodecode.apps.login')
         config.include('rhodecode.apps.home')
         config.include('rhodecode.apps.journal')
+
         config.include('rhodecode.apps.repository')
         config.include('rhodecode.apps.repo_group')
         config.include('rhodecode.apps.user_group')
@@ -298,11 +307,14 @@ def includeme(config):
         config.include('rhodecode.apps.user_profile')
         config.include('rhodecode.apps.user_group_profile')
         config.include('rhodecode.apps.my_account')
+        config.include('rhodecode.apps.gist')
+
         config.include('rhodecode.apps.svn_support')
         config.include('rhodecode.apps.ssh_support')
-        config.include('rhodecode.apps.gist')
         config.include('rhodecode.apps.debug_style')
-        config.include('rhodecode.api')
+
+    if load_all:
+        config.include('rhodecode.integrations')
 
     config.add_route('rhodecode_support', 'https://rhodecode.com/help/', static=True)
     config.add_translation_dirs('rhodecode:i18n/')

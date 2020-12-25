@@ -645,12 +645,18 @@ return '%s_%s_%i' % (h.md5_safe(commit+filename), type, line)
     <div class="reply-thread-container-wrapper${extra_class}" style="${extra_style}">
         <div class="reply-thread-container${extra_class}">
             <div class="reply-thread-gravatar">
+                % if c.rhodecode_user.username != h.DEFAULT_USER:
                 ${base.gravatar(c.rhodecode_user.email, 20, tooltip=True, user=c.rhodecode_user)}
+                % endif
             </div>
+
             <div class="reply-thread-reply-button">
+                % if c.rhodecode_user.username != h.DEFAULT_USER:
                 ## initial reply button, some JS logic can append here a FORM to leave a first comment.
                 <button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, '${f_path}', '${line_no}', null)">Reply...</button>
+                % endif
             </div>
+            ##% endif
             <div class="reply-thread-last"></div>
         </div>
     </div>
@@ -910,6 +916,16 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
         <div class="sidebar__inner">
             <div class="sidebar__bar">
             <div class="pull-right">
+
+                <div class="btn-group" style="margin-right: 5px;">
+                    <a class="tooltip btn" onclick="scrollDown();return false" title="${_('Scroll to page bottom')}">
+                        <i class="icon-arrow_down"></i>
+                    </a>
+                    <a class="tooltip btn" onclick="scrollUp();return false" title="${_('Scroll to page top')}">
+                        <i class="icon-arrow_up"></i>
+                    </a>
+                </div>
+
                 <div class="btn-group">
                     <a class="btn tooltip toggle-wide-diff" href="#toggle-wide-diff" onclick="toggleWideDiff(this); return false" title="${h.tooltip(_('Toggle wide diff'))}">
                     <i class="icon-wide-mode"></i>
@@ -948,9 +964,37 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </div>
                 <div class="btn-group">
 
-                <div class="pull-left">
-                    ${h.hidden('diff_menu_{}'.format(diffset_container_id))}
-                </div>
+                <details class="details-reset details-inline-block">
+                  <summary class="noselect btn">
+                        <i class="icon-options cursor-pointer" op="options"></i>
+                  </summary>
+
+                  <div>
+                  <details-menu class="details-dropdown" style="top: 35px;">
+
+                    <div class="dropdown-item">
+                        <div style="padding: 2px 0px">
+                        % if request.GET.get('ignorews', '') == '1':
+                            <a href="${h.current_route_path(request, ignorews=0)}">${_('Show whitespace changes')}</a>
+                        % else:
+                            <a href="${h.current_route_path(request, ignorews=1)}">${_('Hide whitespace changes')}</a>
+                        % endif
+                        </div>
+                    </div>
+
+                   <div class="dropdown-item">
+                       <div style="padding: 2px 0px">
+                        % if request.GET.get('fullcontext', '') == '1':
+                            <a href="${h.current_route_path(request, fullcontext=0)}">${_('Hide full context diff')}</a>
+                        % else:
+                            <a href="${h.current_route_path(request, fullcontext=1)}">${_('Show full context diff')}</a>
+                        % endif
+                        </div>
+                   </div>
+
+                  </details-menu>
+                  </div>
+                </details>
 
                 </div>
         </div>
@@ -970,7 +1014,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
             </strong>
         </div>
         <div class="pull-right noselect">
-
             %if commit:
                 <span>
                     <code>${h.show_id(commit)}</code>
@@ -1264,61 +1307,6 @@ def get_comments_for(diff_type, comments, filename, line_version, line_number):
                 return null;
             };
 
-            var preloadDiffMenuData = {
-                results: [
-
-                    ## Whitespace change
-                    % if request.GET.get('ignorews', '') == '1':
-                    {
-                        id: 2,
-                        text: _gettext('Show whitespace changes'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, ignorews=0)|n}"
-                    },
-                    % else:
-                    {
-                        id: 2,
-                        text: _gettext('Hide whitespace changes'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, ignorews=1)|n}"
-                    },
-                    % endif
-
-                    ## FULL CONTEXT
-                    % if request.GET.get('fullcontext', '') == '1':
-                    {
-                        id: 3,
-                        text: _gettext('Hide full context diff'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, fullcontext=0)|n}"
-                    },
-                    % else:
-                    {
-                        id: 3,
-                        text: _gettext('Show full context diff'),
-                        action: function () {},
-                        url: "${h.current_route_path(request, fullcontext=1)|n}"
-                    },
-                    % endif
-
-                ]
-            };
-
-            var diffMenuId = "#diff_menu_" + "${diffset_container_id}";
-            $(diffMenuId).select2({
-                minimumResultsForSearch: -1,
-                containerCssClass: "drop-menu-no-width",
-                dropdownCssClass: "drop-menu-dropdown",
-                dropdownAutoWidth: true,
-                data: preloadDiffMenuData,
-                placeholder: "${_('...')}",
-            });
-            $(diffMenuId).on('select2-selecting', function (e) {
-                e.choice.action();
-                if (e.choice.url !== null) {
-                    window.location = e.choice.url
-                }
-            });
             toggleExpand = function (el, diffsetEl) {
                 var el = $(el);
                 if (el.hasClass('collapsed')) {

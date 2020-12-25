@@ -26,7 +26,6 @@ import formencode
 import formencode.htmlfill
 import peppercorn
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode import forms
@@ -65,14 +64,10 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
         c.allow_scoped_tokens = self.ALLOW_SCOPED_TOKENS
-
         return c
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_profile', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_profile(self):
         c = self.load_default_context()
         c.active = 'profile'
@@ -81,9 +76,75 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_password', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
+    def my_account_edit(self):
+        c = self.load_default_context()
+        c.active = 'profile_edit'
+        c.extern_type = c.user.extern_type
+        c.extern_name = c.user.extern_name
+
+        schema = user_schema.UserProfileSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
+        appstruct = {
+            'username': c.user.username,
+            'email': c.user.email,
+            'firstname': c.user.firstname,
+            'lastname': c.user.lastname,
+            'description': c.user.description,
+        }
+        c.form = forms.RcForm(
+            schema, appstruct=appstruct,
+            action=h.route_path('my_account_update'),
+            buttons=(forms.buttons.save, forms.buttons.reset))
+
+        return self._get_template_context(c)
+
+    @LoginRequired()
+    @NotAnonymous()
+    @CSRFRequired()
+    def my_account_update(self):
+        _ = self.request.translate
+        c = self.load_default_context()
+        c.active = 'profile_edit'
+        c.perm_user = c.auth_user
+        c.extern_type = c.user.extern_type
+        c.extern_name = c.user.extern_name
+
+        schema = user_schema.UserProfileSchema().bind(
+            username=c.user.username, user_emails=c.user.emails)
+        form = forms.RcForm(
+            schema, buttons=(forms.buttons.save, forms.buttons.reset))
+
+        controls = self.request.POST.items()
+        try:
+            valid_data = form.validate(controls)
+            skip_attrs = ['admin', 'active', 'extern_type', 'extern_name',
+                          'new_password', 'password_confirmation']
+            if c.extern_type != "rhodecode":
+                # forbid updating username for external accounts
+                skip_attrs.append('username')
+            old_email = c.user.email
+            UserModel().update_user(
+                     self._rhodecode_user.user_id, skip_attrs=skip_attrs,
+                     **valid_data)
+            if old_email != valid_data['email']:
+                old = UserEmailMap.query() \
+                    .filter(UserEmailMap.user == c.user)\
+                    .filter(UserEmailMap.email == valid_data['email'])\
+                    .first()
+                old.email = old_email
+            h.flash(_('Your account was updated successfully'), category='success')
+            Session().commit()
+        except forms.ValidationFailure as e:
+            c.form = e
+            return self._get_template_context(c)
+        except Exception:
+            log.exception("Exception updating user")
+            h.flash(_('Error occurred during update of user'),
+                    category='error')
+        raise HTTPFound(h.route_path('my_account_profile'))
+
+    @LoginRequired()
+    @NotAnonymous()
     def my_account_password(self):
         c = self.load_default_context()
         c.active = 'password'
@@ -103,9 +164,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_password_update', request_method='POST',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_password_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -146,9 +204,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_auth_tokens', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_auth_tokens(self):
         _ = self.request.translate
 
@@ -167,9 +222,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_auth_tokens_view', request_method='POST', xhr=True,
-        renderer='json_ext')
     def my_account_auth_tokens_view(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -192,8 +244,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_auth_tokens_add', request_method='POST',)
     def my_account_auth_tokens_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -220,8 +270,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_auth_tokens_delete', request_method='POST')
     def my_account_auth_tokens_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -244,9 +292,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_emails', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_emails(self):
         _ = self.request.translate
 
@@ -269,9 +314,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_emails_add', request_method='POST',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_emails_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -312,8 +354,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_emails_delete', request_method='POST')
     def my_account_emails_delete(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -334,9 +374,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_notifications_test_channelstream',
-        request_method='POST', renderer='json_ext')
     def my_account_notifications_test_channelstream(self):
         message = 'Test message sent via Channelstream by user: {}, on {}'.format(
             self._rhodecode_user.username, datetime.datetime.now())
@@ -424,9 +461,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_repos', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_repos(self):
         c = self.load_default_context()
         c.active = 'repos'
@@ -437,9 +471,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_watched', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_watched(self):
         c = self.load_default_context()
         c.active = 'watched'
@@ -450,9 +481,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_bookmarks', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_bookmarks(self):
         c = self.load_default_context()
         c.active = 'bookmarks'
@@ -519,8 +547,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_bookmarks_update', request_method='POST')
     def my_account_bookmarks_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -559,9 +585,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_goto_bookmark', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_goto_bookmark(self):
 
         bookmark_id = self.request.matchdict['bookmark_id']
@@ -606,9 +629,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_perms', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_perms(self):
         c = self.load_default_context()
         c.active = 'perms'
@@ -618,9 +638,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_notifications', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_notifications(self):
         c = self.load_default_context()
         c.active = 'notifications'
@@ -630,92 +647,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_notifications_toggle_visibility',
-        request_method='POST', renderer='json_ext')
     def my_notifications_toggle_visibility(self):
         user = self._rhodecode_db_user
         new_status = not user.user_data.get('notification_status', True)
         user.update_userdata(notification_status=new_status)
         Session().commit()
         return user.user_data['notification_status']
-
-    @LoginRequired()
-    @NotAnonymous()
-    @view_config(
-        route_name='my_account_edit',
-        request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
-    def my_account_edit(self):
-        c = self.load_default_context()
-        c.active = 'profile_edit'
-        c.extern_type = c.user.extern_type
-        c.extern_name = c.user.extern_name
-
-        schema = user_schema.UserProfileSchema().bind(
-            username=c.user.username, user_emails=c.user.emails)
-        appstruct = {
-            'username': c.user.username,
-            'email': c.user.email,
-            'firstname': c.user.firstname,
-            'lastname': c.user.lastname,
-            'description': c.user.description,
-        }
-        c.form = forms.RcForm(
-            schema, appstruct=appstruct,
-            action=h.route_path('my_account_update'),
-            buttons=(forms.buttons.save, forms.buttons.reset))
-
-        return self._get_template_context(c)
-
-    @LoginRequired()
-    @NotAnonymous()
-    @CSRFRequired()
-    @view_config(
-        route_name='my_account_update',
-        request_method='POST',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
-    def my_account_update(self):
-        _ = self.request.translate
-        c = self.load_default_context()
-        c.active = 'profile_edit'
-        c.perm_user = c.auth_user
-        c.extern_type = c.user.extern_type
-        c.extern_name = c.user.extern_name
-
-        schema = user_schema.UserProfileSchema().bind(
-            username=c.user.username, user_emails=c.user.emails)
-        form = forms.RcForm(
-            schema, buttons=(forms.buttons.save, forms.buttons.reset))
-
-        controls = self.request.POST.items()
-        try:
-            valid_data = form.validate(controls)
-            skip_attrs = ['admin', 'active', 'extern_type', 'extern_name',
-                          'new_password', 'password_confirmation']
-            if c.extern_type != "rhodecode":
-                # forbid updating username for external accounts
-                skip_attrs.append('username')
-            old_email = c.user.email
-            UserModel().update_user(
-                     self._rhodecode_user.user_id, skip_attrs=skip_attrs,
-                     **valid_data)
-            if old_email != valid_data['email']:
-                old = UserEmailMap.query() \
-                    .filter(UserEmailMap.user == c.user)\
-                    .filter(UserEmailMap.email == valid_data['email'])\
-                    .first()
-                old.email = old_email
-            h.flash(_('Your account was updated successfully'), category='success')
-            Session().commit()
-        except forms.ValidationFailure as e:
-            c.form = e
-            return self._get_template_context(c)
-        except Exception:
-            log.exception("Exception updating user")
-            h.flash(_('Error occurred during update of user'),
-                    category='error')
-        raise HTTPFound(h.route_path('my_account_profile'))
 
     def _get_pull_requests_list(self, statuses):
         draw, start, limit = self._extract_chunk(self.request)
@@ -781,10 +718,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_pullrequests',
-        request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_pullrequests(self):
         c = self.load_default_context()
         c.active = 'pullrequests'
@@ -796,9 +729,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_pullrequests_data',
-        request_method='GET', renderer='json_ext')
     def my_account_pullrequests_data(self):
         self.load_default_context()
         req_get = self.request.GET
@@ -813,10 +743,6 @@ class MyAccountView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_user_group_membership',
-        request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_user_group_membership(self):
         c = self.load_default_context()
         c.active = 'user_group_membership'

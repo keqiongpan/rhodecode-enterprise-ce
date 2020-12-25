@@ -19,7 +19,6 @@
 # and proprietary license terms, please see https://rhodecode.com/licenses/
 
 import logging
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseReferencesView
 from rhodecode.lib.ext_json import json
@@ -33,9 +32,6 @@ class RepoTagsView(BaseReferencesView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='tags_home', request_method='GET',
-        renderer='rhodecode:templates/tags/tags.mako')
     def tags(self):
         c = self.load_default_context()
 

@@ -65,6 +65,9 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
 
 <tr id="reviewer_<%= member.user_id %>" class="reviewer_entry" tooltip="Review Group" data-reviewer-user-id="<%= member.user_id %>">
 
+    <% if (create) { %>
+    <td style="width: 1px"></td>
+    <% } else { %>
     <td style="width: 20px">
         <div class="tooltip presence-state" style="display: none; position: absolute; left: 2px" title="This users is currently at this page">
           <i class="icon-eye" style="color: #0ac878"></i>
@@ -79,6 +82,25 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
         </div>
         <% } %>
     </td>
+    <% } %>
+
+
+    <% if (mandatory) { %>
+    <td style="text-align: right;width: 10px;">
+        <div class="reviewer_member_mandatory tooltip" title="Mandatory reviewer">
+            <i class="icon-lock"></i>
+        </div>
+    </td>
+
+    <% } else { %>
+    <td style="text-align: right;width: 10px;">
+        <% if (allowed_to_update) { %>
+          <div class="<%=role %>_member_remove" onclick="reviewersController.removeMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
+              <i class="icon-remove" style="color: #e85e4d;"></i>
+          </div>
+        <% } %>
+    </td>
+    <% } %>
 
     <td>
       <div id="reviewer_<%= member.user_id %>_name" class="reviewer_name">
@@ -94,32 +116,12 @@ var data_hovercard_url = pyroutes.url('hovercard_user', {"user_id": user_id})
             })
         %>
       </div>
-    </td>
-
-    <td style="width: 10px">
     <% if (reviewGroup !== null) { %>
         <span class="tooltip" title="Member of review group from rule: `<%= member.user_group.name %>`" style="color: <%= reviewGroupColor %>">
         <%- reviewGroup %>
         </span>
     <% } %>
     </td>
-
-    <% if (mandatory) { %>
-    <td style="text-align: right;width: 10px;">
-        <div class="reviewer_member_mandatory tooltip" title="Mandatory reviewer">
-            <i class="icon-lock"></i>
-        </div>
-    </td>
-
-    <% } else { %>
-    <td style="text-align: right;width: 10px;">
-        <% if (allowed_to_update) { %>
-          <div class="<%=role %>_member_remove" onclick="reviewersController.removeMember(<%= member.user_id %>, true)" style="visibility: <%= edit_visibility %>;">
-              <i class="icon-remove"></i>
-          </div>
-        <% } %>
-    </td>
-    <% } %>
 
 </tr>
 
@@ -194,9 +196,10 @@ if (show_disabled) {
 <script id="ejs_sideBarCommentHovercard" type="text/template" class="ejsTemplate">
 
 <div>
+
     <% if (is_todo) { %>
         <% if (inline) { %>
-            <strong>Inline</strong> TODO on line: <%= line_no %>
+            <strong>Inline</strong> TODO (<code>#<%- comment_id -%></code>) on line: <%= line_no %>
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
@@ -206,14 +209,14 @@ if (show_disabled) {
             <% if (review_status) { %>
                 <i class="icon-circle review-status-<%= review_status %>"></i>
             <% } %>
-            <strong>General</strong> TODO
+            <strong>General</strong> TODO (<code>#<%- comment_id -%></code>)
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
         <% } %>
     <% } else { %>
         <% if (inline) { %>
-            <strong>Inline</strong> comment on line: <%= line_no %>
+            <strong>Inline</strong> comment (<code>#<%- comment_id -%></code>) on line: <%= line_no %>
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>
@@ -223,7 +226,7 @@ if (show_disabled) {
             <% if (review_status) { %>
                 <i class="icon-circle review-status-<%= review_status %>"></i>
             <% } %>
-            <strong>General</strong> comment
+            <strong>General</strong> comment (<code>#<%- comment_id -%></code>)
             <% if (version_info) { %>
                 <%= version_info %>
             <% } %>

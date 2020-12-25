@@ -20,26 +20,48 @@
 
 
 def includeme(config):
-
+    from rhodecode.apps.hovercards.views import HoverCardsView, HoverCardsRepoView
     config.add_route(
         name='hovercard_user',
         pattern='/_hovercard/user/{user_id}')
+    config.add_view(
+        HoverCardsView,
+        attr='hovercard_user',
+        route_name='hovercard_user', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_user.mako')
 
     config.add_route(
         name='hovercard_username',
         pattern='/_hovercard/username/{username}')
+    config.add_view(
+        HoverCardsView,
+        attr='hovercard_username',
+        route_name='hovercard_username', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_user.mako')
 
     config.add_route(
         name='hovercard_user_group',
         pattern='/_hovercard/user_group/{user_group_id}')
+    config.add_view(
+        HoverCardsView,
+        attr='hovercard_user_group',
+        route_name='hovercard_user_group', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_user_group.mako')
 
     config.add_route(
         name='hovercard_pull_request',
         pattern='/_hovercard/pull_request/{pull_request_id}')
+    config.add_view(
+        HoverCardsView,
+        attr='hovercard_pull_request',
+        route_name='hovercard_pull_request', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_pull_request.mako')
 
     config.add_route(
         name='hovercard_repo_commit',
         pattern='/_hovercard/commit/{repo_name:.*?[^/]}/{commit_id}', repo_route=True)
-
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
+    config.add_view(
+        HoverCardsRepoView,
+        attr='hovercard_repo_commit',
+        route_name='hovercard_repo_commit', request_method='GET', xhr=True,
+        renderer='rhodecode:templates/hovercards/hovercard_repo_commit.mako')

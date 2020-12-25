@@ -398,7 +398,10 @@ class DiffSet(object):
                  ):
 
         self.highlight_mode = highlight_mode
-        self.highlighted_filenodes = {}
+        self.highlighted_filenodes = {
+            'before': {},
+            'after': {}
+        }
         self.source_node_getter = source_node_getter
         self.target_node_getter = target_node_getter
         self.source_nodes = source_nodes or {}
@@ -657,7 +660,7 @@ class DiffSet(object):
                 else:
                     before_tokens = self.get_line_tokens(
                         line_text=before['line'], line_number=before['old_lineno'],
-                        input_file=source_file, no_hl=no_hl)
+                        input_file=source_file, no_hl=no_hl, source='before')
                 original.lineno = before['old_lineno']
                 original.content = before['line']
                 original.action = self.action_to_op(before['action'])
@@ -671,7 +674,7 @@ class DiffSet(object):
                 else:
                     after_tokens = self.get_line_tokens(
                         line_text=after['line'], line_number=after['new_lineno'],
-                        input_file=target_file, no_hl=no_hl)
+                        input_file=target_file, no_hl=no_hl, source='after')
                 modified.lineno = after['new_lineno']
                 modified.content = after['line']
                 modified.action = self.action_to_op(after['action'])
@@ -705,7 +708,7 @@ class DiffSet(object):
 
         return lines
 
-    def get_line_tokens(self, line_text, line_number, input_file=None, no_hl=False):
+    def get_line_tokens(self, line_text, line_number, input_file=None, no_hl=False, source=''):
         filenode = None
         filename = None
 
@@ -720,8 +723,7 @@ class DiffSet(object):
             lexer = self._get_lexer_for_filename(filename)
             file_size_allowed = input_file.size < self.max_file_size_limit
             if line_number and file_size_allowed:
-                return self.get_tokenized_filenode_line(
-                    input_file, line_number, lexer)
+                return self.get_tokenized_filenode_line(input_file, line_number, lexer, source)
 
         if hl_mode in (self.HL_REAL, self.HL_FAST) and filename:
             lexer = self._get_lexer_for_filename(filename)
@@ -729,16 +731,19 @@ class DiffSet(object):
 
         return list(tokenize_string(line_text, plain_text_lexer))
 
-    def get_tokenized_filenode_line(self, filenode, line_number, lexer=None):
+    def get_tokenized_filenode_line(self, filenode, line_number, lexer=None, source=''):
 
-        if filenode not in self.highlighted_filenodes:
-            tokenized_lines = filenode_as_lines_tokens(filenode, lexer)
-            self.highlighted_filenodes[filenode] = tokenized_lines
+        def tokenize(_filenode):
+            self.highlighted_filenodes[source][filenode] = filenode_as_lines_tokens(filenode, lexer)
+
+        if filenode not in self.highlighted_filenodes[source]:
+            tokenize(filenode)
 
         try:
-            return self.highlighted_filenodes[filenode][line_number - 1]
+            return self.highlighted_filenodes[source][filenode][line_number - 1]
         except Exception:
-            return [('', u'rhodecode diff rendering error')]
+            log.exception('diff rendering error')
+            return [('', u'L{}: rhodecode diff rendering error'.format(line_number))]
 
     def action_to_op(self, action):
         return {

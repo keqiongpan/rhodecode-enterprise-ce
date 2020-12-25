@@ -25,10 +25,8 @@ import formencode.htmlfill
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest
 from pyramid.response import Response
 from pyramid.renderers import render
-from pyramid.view import view_config
 
 from rhodecode.apps._base import RepoAppView
-from rhodecode.lib import audit_logger
 from rhodecode.lib import helpers as h
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAnyDecorator, CSRFRequired)
@@ -71,9 +69,6 @@ class RepoSettingsVcsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_vcs', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_vcs_settings(self):
         c = self.load_default_context()
         model = VcsSettingsModel(repo=self.db_repo_name)
@@ -100,9 +95,6 @@ class RepoSettingsVcsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_vcs_update', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_settings_vcs_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -153,9 +145,6 @@ class RepoSettingsVcsView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_vcs_svn_pattern_delete', request_method='POST',
-        renderer='json_ext', xhr=True)
     def repo_settings_delete_svn_pattern(self):
         self.load_default_context()
         delete_pattern_id = self.request.POST.get('delete_svn_pattern')

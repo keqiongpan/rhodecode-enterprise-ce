@@ -598,26 +598,13 @@
                     ${c.reviewers_count}
                 </div>
 
-                ## REVIEW RULES
-                <div id="review_rules" style="display: none" class="">
-                    <div class="right-sidebar-expanded-state pr-details-title">
-                        <span class="sidebar-heading">
-                            ${_('Reviewer rules')}
-                        </span>
-
-                    </div>
-                    <div class="pr-reviewer-rules">
-                        ## review rules will be appended here, by default reviewers logic
-                    </div>
-                    <input id="review_data" type="hidden" name="review_data" value="">
-                </div>
-
                 ## REVIEWERS
                 <div class="right-sidebar-expanded-state pr-details-title">
                     <span class="tooltip sidebar-heading" title="${vote_title}">
                         <i class="icon-circle review-status-${c.pull_request_review_status}"></i>
                         ${_('Reviewers')}
                     </span>
+
                     %if c.allowed_to_update:
                         <span id="open_edit_reviewers" class="block-right action_button last-item">${_('Edit')}</span>
                         <span id="close_edit_reviewers" class="block-right action_button last-item" style="display: none;">${_('Close')}</span>
@@ -628,6 +615,15 @@
                 </div>
 
                 <div id="reviewers" class="right-sidebar-expanded-state pr-details-content reviewers">
+
+                    <div id="review_rules" style="display: none" class="">
+
+                        <strong>${_('Reviewer rules')}</strong>
+                        <div class="pr-reviewer-rules">
+                            ## review rules will be appended here, by default reviewers logic
+                        </div>
+                        <input id="review_data" type="hidden" name="review_data" value="">
+                    </div>
 
                     ## members redering block
                     <input type="hidden" name="__start__" value="review_members:sequence">
@@ -649,7 +645,7 @@
                                 </div>
                             % endif
                             <div class="pull-right" style="margin-bottom: 15px">
-                                <button data-role="reviewer" id="update_reviewers" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                                <button data-role="reviewer" id="update_reviewers" class="btn btn-sm no-margin">${_('Save Changes')}</button>
                             </div>
                         %endif
                         </div>
@@ -702,7 +698,7 @@
                                 </div>
                             % endif
                             <div class="pull-right" style="margin-bottom: 15px">
-                                <button data-role="observer" id="update_observers" class="btn btn-small no-margin">${_('Save Changes')}</button>
+                                <button data-role="observer" id="update_observers" class="btn btn-sm no-margin">${_('Save Changes')}</button>
                             </div>
                         %endif
                         </div>

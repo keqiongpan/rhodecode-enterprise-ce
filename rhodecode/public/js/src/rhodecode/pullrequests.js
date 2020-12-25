@@ -269,8 +269,8 @@ window.ReviewersController = function () {
                 'source_ref': sourceRef[2],
                 'target_repo': targetRepo,
                 'target_ref': targetRef[2],
-                'target_ref_type': sourceRef[0],
-                'target_ref_name': sourceRef[1]
+                'target_ref_type': targetRef[0],
+                'target_ref_name': targetRef[1]
             });
 
         self.currentRequest = $.ajax({
@@ -397,6 +397,7 @@ window.ReviewersController = function () {
                     'user_group': reviewer_obj.user_group,
                     'create': true,
                     'rule_show': true,
+                    'rhodecode_user': templateContext.rhodecode_user
                 })
 
                 if (role === self.ROLE_REVIEWER) {
@@ -820,7 +821,8 @@ window.ReviewersPanel = {
                     'review_status': member.review_status,
                     'review_status_label': member.review_status_label,
                     'user_group': member.user_group,
-                    'create': false
+                    'create': false,
+                    'rhodecode_user': templateContext.rhodecode_user
                 });
 
                 $(self.controller.$reviewMembers.selector).append(entry)
@@ -915,7 +917,8 @@ window.ObserversPanel = {
                     'review_status': member.review_status,
                     'review_status_label': member.review_status_label,
                     'user_group': member.user_group,
-                    'create': false
+                    'create': false,
+                    'rhodecode_user': templateContext.rhodecode_user
                 });
 
                 $(self.controller.$observerMembers.selector).append(entry)

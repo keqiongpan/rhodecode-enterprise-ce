@@ -510,9 +510,9 @@
             % if form_type == 'inline':
                 % if c.rhodecode_edition_id == 'EE':
                     ## Disable the button for CE, the "real" validation is in the backend code anyway
-                    <input class="btn btn-warning comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
+                    <input class="btn btn-draft comment-button-input submit-draft-action" id="save_draft_${lineno_id}" name="save_draft" type="submit" value="${_('Add draft')}" data-is-draft=true onclick="$(this).addClass('submitter')">
                 % else:
-                    <input class="btn btn-warning comment-button-input submit-draft-action disabled" disabled="disabled" type="submit"  value="${_('Add draft')}" onclick="return false;" title="Draft comments only available in EE edition of RhodeCode">
+                    <input class="btn btn-draft comment-button-input submit-draft-action disabled" disabled="disabled" type="submit"  value="${_('Add draft')}" onclick="return false;" title="Draft comments only available in EE edition of RhodeCode">
                 % endif
             % endif
 
@@ -534,9 +534,9 @@
             % if form_type == 'inline':
                 <input type="hidden" name="f_path" value="{0}">
                 <input type="hidden" name="line" value="${lineno_id}">
-                <button type="button" class="cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
-                <i class="icon-cancel-circled2"></i>
-                </button>
+                <span style="opacity: 0.7" class="cursor-pointer cb-comment-cancel" onclick="return Rhodecode.comments.cancelComment(this);">
+                ${_('dismiss')}
+                </span>
             % endif
         </div>
 

@@ -22,7 +22,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPFound
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -176,19 +176,6 @@ class RepoChangelogView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commits', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    @view_config(
-        route_name='repo_commits_file', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    # old routes for backward compat
-    @view_config(
-        route_name='repo_changelog', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
-    @view_config(
-        route_name='repo_changelog_file', request_method='GET',
-        renderer='rhodecode:templates/commits/changelog.mako')
     def repo_changelog(self):
         c = self.load_default_context()
 
@@ -216,6 +203,7 @@ class RepoChangelogView(RepoAppView):
         pre_load = self._get_preload_attrs()
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
+
         try:
             if f_path:
                 log.debug('generating changelog for path %s', f_path)
@@ -258,8 +246,15 @@ class RepoChangelogView(RepoAppView):
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
             log.exception(safe_str(e))
             h.flash(safe_str(h.escape(e)), category='error')
-            raise HTTPFound(
-                h.route_path('repo_commits', repo_name=self.db_repo_name))
+
+            if commit_id:
+                # from single commit page, we redirect to main commits
+                raise HTTPFound(
+                    h.route_path('repo_commits', repo_name=self.db_repo_name))
+            else:
+                # otherwise we redirect to summary
+                raise HTTPFound(
+                    h.route_path('repo_summary', repo_name=self.db_repo_name))
 
         if partial_xhr or self.request.environ.get('HTTP_X_PJAX'):
             # case when loading dynamic file history in file view
@@ -283,14 +278,6 @@ class RepoChangelogView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_commits_elements', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/commits/changelog_elements.mako',
-        xhr=True)
-    @view_config(
-        route_name='repo_commits_elements_file', request_method=('GET', 'POST'),
-        renderer='rhodecode:templates/commits/changelog_elements.mako',
-        xhr=True)
     def repo_commits_elements(self):
         c = self.load_default_context()
         commit_id = self.request.matchdict.get('commit_id')

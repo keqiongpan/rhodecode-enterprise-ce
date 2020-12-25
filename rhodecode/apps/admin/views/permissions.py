@@ -25,7 +25,6 @@ import formencode.htmlfill
 import datetime
 from pyramid.interfaces import IRoutesMapper
 
-from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -59,9 +58,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_application', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_application(self):
         c = self.load_default_context()
         c.active = 'application'
@@ -90,9 +86,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_permissions_application_update', request_method='POST',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_application_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -149,9 +142,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_object', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_objects(self):
         c = self.load_default_context()
         c.active = 'objects'
@@ -174,9 +164,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_permissions_object_update', request_method='POST',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_objects_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -225,9 +212,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_branch', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_branch(self):
         c = self.load_default_context()
         c.active = 'branch'
@@ -249,9 +233,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_global', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_global(self):
         c = self.load_default_context()
         c.active = 'global'
@@ -274,9 +255,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_permissions_global_update', request_method='POST',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_global_update(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -327,9 +305,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_ips', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_ips(self):
         c = self.load_default_context()
         c.active = 'ips'
@@ -342,9 +317,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_overview', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def permissions_overview(self):
         c = self.load_default_context()
         c.active = 'perms'
@@ -355,9 +327,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_auth_token_access', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def auth_token_access(self):
         from rhodecode import CONFIG
 
@@ -415,9 +384,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_ssh_keys', request_method='GET',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def ssh_keys(self):
         c = self.load_default_context()
         c.active = 'ssh_keys'
@@ -426,9 +392,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_permissions_ssh_keys_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def ssh_keys_data(self):
         _ = self.request.translate
         self.load_default_context()
@@ -498,9 +461,6 @@ class AdminPermissionsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_permissions_ssh_keys_update', request_method='POST',
-        renderer='rhodecode:templates/admin/permissions/permissions.mako')
     def ssh_keys_update(self):
         _ = self.request.translate
         self.load_default_context()

@@ -21,7 +21,6 @@ import os
 import logging
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.apps._base.navigation import navigation_list
@@ -99,9 +98,6 @@ class ExceptionsTrackerView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_exception_tracker', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def browse_exceptions(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -117,9 +113,6 @@ class ExceptionsTrackerView(BaseAppView):
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_settings_exception_tracker_show', request_method='GET',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def exception_show(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -132,9 +125,6 @@ class ExceptionsTrackerView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_exception_tracker_delete_all', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def exception_delete_all(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -159,9 +149,6 @@ class ExceptionsTrackerView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_settings_exception_tracker_delete', request_method='POST',
-        renderer='rhodecode:templates/admin/settings/settings.mako')
     def exception_delete(self):
         _ = self.request.translate
         c = self.load_default_context()

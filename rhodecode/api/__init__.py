@@ -527,6 +527,14 @@ class jsonrpc_deprecated_method(object):
         return result
 
 
+def add_api_methods(config):
+    from rhodecode.api.views import (
+        deprecated_api, gist_api, pull_request_api, repo_api, repo_group_api,
+        server_api, search_api, testing_api, user_api, user_group_api)
+
+    config.scan('rhodecode.api.views')
+
+
 def includeme(config):
     plugin_module = 'rhodecode.api'
     plugin_settings = get_plugin_settings(
@@ -549,7 +557,8 @@ def includeme(config):
     config.add_route(
         'apiv2', plugin_settings.get('url', DEFAULT_URL), jsonrpc_call=True)
 
-    config.scan(plugin_module, ignore='rhodecode.api.tests')
     # register some exception handling view
     config.add_view(exception_view, context=JSONRPCBaseError)
     config.add_notfound_view(exception_view, jsonrpc_method_not_found=True)
+
+    add_api_methods(config)

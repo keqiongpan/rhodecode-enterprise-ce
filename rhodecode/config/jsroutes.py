@@ -20,7 +20,7 @@
 
 def generate_jsroutes_content(jsroutes):
     statements = []
-    for url_name, url, fields in jsroutes:
+    for url_name, url, fields in sorted(jsroutes):
         statements.append(
             "pyroutes.register('%s', '%s', %s);" % (url_name, url, fields))
     return u'''

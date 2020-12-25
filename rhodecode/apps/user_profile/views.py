@@ -21,7 +21,6 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.auth import LoginRequired, NotAnonymous
@@ -36,9 +35,6 @@ class UserProfileView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='user_profile', request_method='GET',
-        renderer='rhodecode:templates/users/user.mako')
     def user_profile(self):
         # register local template context
         c = self._get_local_tmpl_context()

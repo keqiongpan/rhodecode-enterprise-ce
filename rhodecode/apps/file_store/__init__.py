@@ -35,18 +35,31 @@ def _sanitize_settings_and_apply_defaults(settings):
 
 
 def includeme(config):
+    from rhodecode.apps.file_store.views import FileStoreView
+
     settings = config.registry.settings
     _sanitize_settings_and_apply_defaults(settings)
 
     config.add_route(
         name='upload_file',
         pattern='/_file_store/upload')
+    config.add_view(
+        FileStoreView,
+        attr='upload_file',
+        route_name='upload_file', request_method='POST', renderer='json_ext')
+
     config.add_route(
         name='download_file',
         pattern='/_file_store/download/{fid:.*}')
+    config.add_view(
+        FileStoreView,
+        attr='download_file',
+        route_name='download_file')
+
     config.add_route(
         name='download_file_by_token',
         pattern='/_file_store/token-download/{_auth_token}/{fid:.*}')
-
-    # Scan module for configuration decorators.
-    config.scan('.views', ignore='.tests')
+    config.add_view(
+        FileStoreView,
+        attr='download_file_by_token',
+        route_name='download_file_by_token')

@@ -20,7 +20,7 @@
 
 import logging
 
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import RepoAppView
 from rhodecode.lib.auth import LoginRequired, HasRepoPermissionAnyDecorator
@@ -36,9 +36,6 @@ class RepoSettingsBranchPermissionsView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_perms_branch', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def branch_permissions(self):
         c = self.load_default_context()
         c.active = 'permissions_branch'

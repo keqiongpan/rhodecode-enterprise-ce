@@ -24,7 +24,7 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -64,9 +64,6 @@ class RepoForksView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_forks_show_all', request_method='GET',
-        renderer='rhodecode:templates/forks/forks.mako')
     def repo_forks_show_all(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -74,9 +71,6 @@ class RepoForksView(RepoAppView, DataGridAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_forks_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repo_forks_data(self):
         _ = self.request.translate
         self.load_default_context()
@@ -174,9 +168,6 @@ class RepoForksView(RepoAppView, DataGridAppView):
     @HasPermissionAnyDecorator('hg.admin', 'hg.fork.repository')
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
-    @view_config(
-        route_name='repo_fork_new', request_method='GET',
-        renderer='rhodecode:templates/forks/forks.mako')
     def repo_fork_new(self):
         c = self.load_default_context()
 
@@ -204,9 +195,6 @@ class RepoForksView(RepoAppView, DataGridAppView):
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='repo_fork_create', request_method='POST',
-        renderer='rhodecode:templates/forks/fork.mako')
     def repo_fork_create(self):
         _ = self.request.translate
         c = self.load_default_context()

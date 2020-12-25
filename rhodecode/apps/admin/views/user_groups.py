@@ -24,7 +24,7 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
+
 from pyramid.response import Response
 from pyramid.renderers import render
 
@@ -51,19 +51,14 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         PermissionModel().set_global_permission_choices(
             c, gettext_translator=self.request.translate)
-
         return c
 
     # permission check in data loading of
     # `user_groups_list_data` via UserGroupList
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='user_groups', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_groups.mako')
     def user_groups_list(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -71,9 +66,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
     # permission check inside
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='user_groups_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def user_groups_list_data(self):
         self.load_default_context()
         column_map = {
@@ -197,9 +189,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
-    @view_config(
-        route_name='user_groups_new', request_method='GET',
-        renderer='rhodecode:templates/admin/user_groups/user_group_add.mako')
     def user_groups_new(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -207,9 +196,6 @@ class AdminUserGroupsView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @HasPermissionAnyDecorator('hg.admin', 'hg.usergroup.create.true')
     @CSRFRequired()
-    @view_config(
-        route_name='user_groups_create', request_method='POST',
-        renderer='rhodecode:templates/admin/user_groups/user_group_add.mako')
     def user_groups_create(self):
         _ = self.request.translate
         c = self.load_default_context()

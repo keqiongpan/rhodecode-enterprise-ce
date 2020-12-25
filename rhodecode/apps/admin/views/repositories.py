@@ -23,7 +23,7 @@ import formencode
 import formencode.htmlfill
 
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden
-from pyramid.view import view_config
+
 from pyramid.renderers import render
 from pyramid.response import Response
 
@@ -52,7 +52,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
     def _load_form_data(self, c):
@@ -65,9 +64,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     # perms check inside
-    @view_config(
-        route_name='repos', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repos.mako')
     def repository_list(self):
         c = self.load_default_context()
         return self._get_template_context(c)
@@ -75,9 +71,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     # perms check inside
-    @view_config(
-        route_name='repos_data', request_method='GET',
-        renderer='json_ext', xhr=True)
     def repository_list_data(self):
         self.load_default_context()
         column_map = {
@@ -162,9 +155,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     # perms check inside
-    @view_config(
-        route_name='repo_new', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_add.mako')
     def repository_new(self):
         c = self.load_default_context()
 
@@ -216,9 +206,6 @@ class AdminReposView(BaseAppView, DataGridAppView):
     @NotAnonymous()
     @CSRFRequired()
     # perms check inside
-    @view_config(
-        route_name='repo_create', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repos.mako')
     def repository_create(self):
         c = self.load_default_context()
 

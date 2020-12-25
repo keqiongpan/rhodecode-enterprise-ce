@@ -21,7 +21,7 @@
 import time
 import logging
 
-from pyramid.view import view_config
+
 from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import BaseAppView
@@ -38,12 +38,6 @@ class OpsView(BaseAppView):
 
         return c
 
-    @view_config(
-        route_name='ops_ping', request_method='GET',
-        renderer='json_ext')
-    @view_config(
-        route_name='ops_ping_legacy', request_method='GET',
-        renderer='json_ext')
     def ops_ping(self):
         data = {
             'instance': self.request.registry.settings.get('instance_id'),
@@ -59,12 +53,6 @@ class OpsView(BaseAppView):
             })
         return {'ok': data}
 
-    @view_config(
-        route_name='ops_error_test', request_method='GET',
-        renderer='json_ext')
-    @view_config(
-        route_name='ops_error_test_legacy', request_method='GET',
-        renderer='json_ext')
     def ops_error_test(self):
         """
         Test exception handling and emails on errors
@@ -78,9 +66,6 @@ class OpsView(BaseAppView):
                'Client:{}. Generation time: {}.'.format(self.request.user, time.time()))
         raise TestException(msg)
 
-    @view_config(
-        route_name='ops_redirect_test', request_method='GET',
-        renderer='json_ext')
     def ops_redirect_test(self):
         """
         Test redirect handling

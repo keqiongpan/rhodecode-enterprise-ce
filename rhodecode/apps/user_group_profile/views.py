@@ -21,7 +21,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.view import view_config
+
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.auth import HasUserGroupPermissionAnyDecorator, LoginRequired, NotAnonymous
@@ -36,9 +36,6 @@ class UserGroupProfileView(BaseAppView):
     @LoginRequired()
     @NotAnonymous()
     @HasUserGroupPermissionAnyDecorator('usergroup.read', 'usergroup.write', 'usergroup.admin',)
-    @view_config(
-        route_name='user_group_profile', request_method='GET',
-        renderer='rhodecode:templates/user_group/user_group.mako')
     def user_group_profile(self):
         c = self._get_local_tmpl_context()
         c.active = 'profile'

@@ -23,7 +23,6 @@ import logging
 import formencode
 import formencode.htmlfill
 
-from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.response import Response
@@ -41,17 +40,13 @@ log = logging.getLogger(__name__)
 
 
 class AdminDefaultSettingsView(BaseAppView):
+
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
-
         return c
 
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
-    @view_config(
-        route_name='admin_defaults_repositories', request_method='GET',
-        renderer='rhodecode:templates/admin/defaults/defaults.mako')
     def defaults_repository_show(self):
         c = self.load_default_context()
         c.backends = BACKENDS.keys()
@@ -72,9 +67,6 @@ class AdminDefaultSettingsView(BaseAppView):
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='admin_defaults_repositories_update', request_method='POST',
-        renderer='rhodecode:templates/admin/defaults/defaults.mako')
     def defaults_repository_update(self):
         _ = self.request.translate
         c = self.load_default_context()

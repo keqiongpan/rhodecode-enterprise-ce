@@ -46,7 +46,7 @@ def _pre_push_hook(*args, **kwargs):
     # e.g store a list of patterns to be forbidden e.g `*.exe, *.dump`
     forbid_files = extra_fields.get_field(repo_extra_fields, key='forbid_files_glob',
                                           convert_type=False, default=[])
-    forbid_files = aslist(forbid_files)
+    forbid_files = aslist(forbid_files, sep=',')
 
     # forbid_files = ['*']  # example pattern
 

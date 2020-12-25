@@ -21,7 +21,6 @@
 import os
 import time
 import errno
-import shutil
 import hashlib
 
 from rhodecode.lib.ext_json import json
@@ -212,10 +211,19 @@ class LocalFileStorage(object):
         filename, path = self.resolve_name(uid_filename, dest_directory)
         stored_file_dir = os.path.dirname(path)
 
-        file_obj.seek(0)
+        no_body_seek = kwargs.pop('no_body_seek', False)
+        if no_body_seek:
+            pass
+        else:
+            file_obj.seek(0)
 
         with open(path, "wb") as dest:
-            shutil.copyfileobj(file_obj, dest)
+            length = 256 * 1024
+            while 1:
+                buf = file_obj.read(length)
+                if not buf:
+                    break
+                dest.write(buf)
 
         metadata = {}
         if extra_metadata:

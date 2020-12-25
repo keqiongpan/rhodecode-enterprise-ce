@@ -21,7 +21,6 @@
 import logging
 
 from pyramid.httpexceptions import HTTPFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView, DataGridAppView
 from rhodecode.apps.ssh_support import SshKeyFileChangeEvent
@@ -41,17 +40,12 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
     def load_default_context(self):
         c = self._get_local_tmpl_context()
         c.user = c.auth_user.get_instance()
-
         c.ssh_enabled = self.request.registry.settings.get(
             'ssh.generate_authorized_keyfile')
-
         return c
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_ssh_keys', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def my_account_ssh_keys(self):
         _ = self.request.translate
 
@@ -63,9 +57,6 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='my_account_ssh_keys_generate', request_method='GET',
-        renderer='rhodecode:templates/admin/my_account/my_account.mako')
     def ssh_keys_generate_keypair(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -84,8 +75,6 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_ssh_keys_add', request_method='POST',)
     def my_account_ssh_keys_add(self):
         _ = self.request.translate
         c = self.load_default_context()
@@ -132,8 +121,6 @@ class MyAccountSshKeysView(BaseAppView, DataGridAppView):
     @LoginRequired()
     @NotAnonymous()
     @CSRFRequired()
-    @view_config(
-        route_name='my_account_ssh_keys_delete', request_method='POST')
     def my_account_ssh_keys_delete(self):
         _ = self.request.translate
         c = self.load_default_context()

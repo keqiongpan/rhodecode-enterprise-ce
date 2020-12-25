@@ -749,8 +749,11 @@ class User(Base, BaseModel):
 
     def get_artifact_token(self, cache=True):
         artifacts_tokens = UserApiKeys.query()\
-            .filter(UserApiKeys.user == self)\
+            .filter(UserApiKeys.user == self) \
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time())) \
             .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+
         if cache:
             artifacts_tokens = artifacts_tokens.options(
                 FromCache("sql_cache_short", "get_user_artifact_token_%s" % self.user_id))
@@ -759,6 +762,24 @@ class User(Base, BaseModel):
         if artifacts_tokens:
             return artifacts_tokens[0].api_key
         return 'NO_ARTIFACT_TOKEN_AVAILABLE'
+
+    def get_or_create_artifact_token(self):
+        artifacts_tokens = UserApiKeys.query()\
+            .filter(UserApiKeys.user == self) \
+            .filter(or_(UserApiKeys.expires == -1,
+                        UserApiKeys.expires >= time.time())) \
+            .filter(UserApiKeys.role == UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+
+        artifacts_tokens = artifacts_tokens.all()
+        if artifacts_tokens:
+            return artifacts_tokens[0].api_key
+        else:
+            from rhodecode.model.auth_token import AuthTokenModel
+            artifact_token = AuthTokenModel().create(
+                self, 'auto-generated-artifact-token',
+                lifetime=-1, role=UserApiKeys.ROLE_ARTIFACT_DOWNLOAD)
+            Session.commit()
+            return artifact_token.api_key
 
     @classmethod
     def get(cls, user_id, cache=False):
@@ -3967,7 +3988,7 @@ class ChangesetStatus(Base, BaseModel):
     STATUS_APPROVED = 'approved'
     STATUS_REJECTED = 'rejected'
     STATUS_UNDER_REVIEW = 'under_review'
-
+    CheckConstraint,
     STATUSES = [
         (STATUS_NOT_REVIEWED, _("Not Reviewed")),  # (no icon) and default
         (STATUS_APPROVED, _("Approved")),
@@ -4810,6 +4831,7 @@ class Gist(Base, BaseModel):
 
         res = cls.query().filter(cls.gist_access_id == id_).scalar()
         if not res:
+            log.debug('WARN: No DB entry with id %s', id_)
             raise HTTPNotFound()
         return res
 
@@ -5322,11 +5344,11 @@ class ScheduleEntry(Base, BaseModel):
         except ValueError:
             return dict()
 
-    def _as_raw(self, val):
+    def _as_raw(self, val, indent=None):
         if hasattr(val, 'de_coerce'):
             val = val.de_coerce()
             if val:
-                val = json.dumps(val)
+                val = json.dumps(val, indent=indent, sort_keys=True)
 
         return val
 
@@ -5334,13 +5356,11 @@ class ScheduleEntry(Base, BaseModel):
     def schedule_definition_raw(self):
         return self._as_raw(self.schedule_definition)
 
-    @property
-    def args_raw(self):
-        return self._as_raw(self.task_args)
+    def args_raw(self, indent=None):
+        return self._as_raw(self.task_args, indent)
 
-    @property
-    def kwargs_raw(self):
-        return self._as_raw(self.task_kwargs)
+    def kwargs_raw(self, indent=None):
+        return self._as_raw(self.task_kwargs, indent)
 
     def __repr__(self):
         return '<DB:ScheduleEntry({}:{})>'.format(

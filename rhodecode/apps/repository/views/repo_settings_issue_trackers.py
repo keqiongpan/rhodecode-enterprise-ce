@@ -21,7 +21,7 @@
 import logging
 
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
-from pyramid.view import view_config
+
 import formencode
 
 from rhodecode.apps._base import RepoAppView
@@ -45,9 +45,6 @@ class RepoSettingsIssueTrackersView(RepoAppView):
 
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
-    @view_config(
-        route_name='edit_repo_issuetracker', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_issuetracker(self):
         c = self.load_default_context()
         c.active = 'issuetracker'
@@ -62,9 +59,6 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_issuetracker_test', request_method='POST',
-        renderer='string', xhr=True)
     def repo_issuetracker_test(self):
         return h.urlify_commit_message(
             self.request.POST.get('test_text', ''),
@@ -73,9 +67,6 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_issuetracker_delete', request_method='POST',
-        renderer='json_ext', xhr=True)
     def repo_issuetracker_delete(self):
         _ = self.request.translate
         uid = self.request.POST.get('uid')
@@ -107,9 +98,6 @@ class RepoSettingsIssueTrackersView(RepoAppView):
     @LoginRequired()
     @HasRepoPermissionAnyDecorator('repository.admin')
     @CSRFRequired()
-    @view_config(
-        route_name='edit_repo_issuetracker_update', request_method='POST',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
     def repo_issuetracker_update(self):
         _ = self.request.translate
         # Save inheritance

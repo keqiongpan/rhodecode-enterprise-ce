@@ -37,25 +37,6 @@ from . import config_keys
 log = logging.getLogger(__name__)
 
 
-def includeme(config):
-    settings = config.registry.settings
-    _sanitize_settings_and_apply_defaults(settings)
-
-    if settings[config_keys.generate_config]:
-        # Add subscriber to generate the Apache mod dav svn configuration on
-        # repository group events.
-        config.add_subscriber(generate_config_subscriber, RepoGroupEvent)
-
-        # If a reload command is set add a subscriber to execute it on
-        # configuration changes.
-        reload_cmd = shlex.split(settings[config_keys.reload_command])
-        if reload_cmd:
-            reload_timeout = settings[config_keys.reload_timeout] or None
-            reload_subscriber = AsyncSubprocessSubscriber(
-                cmd=reload_cmd, timeout=reload_timeout)
-            config.add_subscriber(reload_subscriber, ModDavSvnConfigChange)
-
-
 def _sanitize_settings_and_apply_defaults(settings):
     """
     Set defaults, convert to python types and validate settings.
@@ -88,3 +69,22 @@ def _append_path_sep(path):
     if isinstance(path, compat.string_types) and not path.endswith(os.path.sep):
         path += os.path.sep
     return path
+
+
+def includeme(config):
+    settings = config.registry.settings
+    _sanitize_settings_and_apply_defaults(settings)
+
+    if settings[config_keys.generate_config]:
+        # Add subscriber to generate the Apache mod dav svn configuration on
+        # repository group events.
+        config.add_subscriber(generate_config_subscriber, RepoGroupEvent)
+
+        # If a reload command is set add a subscriber to execute it on
+        # configuration changes.
+        reload_cmd = settings[config_keys.reload_command]
+        if reload_cmd:
+            reload_timeout = settings[config_keys.reload_timeout] or None
+            reload_subscriber = AsyncSubprocessSubscriber(
+                cmd=reload_cmd, timeout=reload_timeout)
+            config.add_subscriber(reload_subscriber, ModDavSvnConfigChange)

@@ -22,7 +22,6 @@ import os
 import logging
 import datetime
 
-from pyramid.view import view_config
 from pyramid.renderers import render_to_response
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib.celerylib import run_task, tasks
@@ -37,12 +36,8 @@ class DebugStyleView(BaseAppView):
 
     def load_default_context(self):
         c = self._get_local_tmpl_context()
-
         return c
 
-    @view_config(
-        route_name='debug_style_home', request_method='GET',
-        renderer=None)
     def index(self):
         c = self.load_default_context()
         c.active = 'index'
@@ -51,12 +46,6 @@ class DebugStyleView(BaseAppView):
             'debug_style/index.html', self._get_template_context(c),
             request=self.request)
 
-    @view_config(
-        route_name='debug_style_email', request_method='GET',
-        renderer=None)
-    @view_config(
-        route_name='debug_style_email_plain_rendered', request_method='GET',
-        renderer=None)
     def render_email(self):
         c = self.load_default_context()
         email_id = self.request.matchdict['email_id']
@@ -457,9 +446,6 @@ users: description edit fixes
             template, self._get_template_context(c),
             request=self.request)
 
-    @view_config(
-        route_name='debug_style_template', request_method='GET',
-        renderer=None)
     def template(self):
         t_path = self.request.matchdict['t_path']
         c = self.load_default_context()
@@ -483,4 +469,3 @@ users: description edit fixes
         return render_to_response(
             'debug_style/' + t_path, self._get_template_context(c),
             request=self.request)
-

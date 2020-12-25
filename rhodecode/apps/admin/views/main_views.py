@@ -21,7 +21,6 @@
 import logging
 
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
-from pyramid.view import view_config
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
@@ -39,9 +38,6 @@ class AdminMainView(BaseAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @view_config(
-        route_name='admin_home', request_method='GET',
-        renderer='rhodecode:templates/admin/main.mako')
     def admin_main(self):
         c = self.load_default_context()
         c.active = 'admin'
@@ -52,9 +48,6 @@ class AdminMainView(BaseAppView):
         return self._get_template_context(c)
 
     @LoginRequired()
-    @view_config(route_name='pull_requests_global_0', request_method='GET')
-    @view_config(route_name='pull_requests_global_1', request_method='GET')
-    @view_config(route_name='pull_requests_global', request_method='GET')
     def pull_requests(self):
         """
         Global redirect for Pull Requests
