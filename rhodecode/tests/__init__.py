@@ -33,15 +33,15 @@ import pytest
 from rhodecode.model.db import User
 from rhodecode.lib import auth
 from rhodecode.lib import helpers as h
-from rhodecode.lib.helpers import flash, link_to
+from rhodecode.lib.helpers import flash
 from rhodecode.lib.utils2 import safe_str
 
 
 log = logging.getLogger(__name__)
 
 __all__ = [
-    'get_new_dir', 'TestController',
-    'link_to', 'clear_cache_regions',
+    'get_new_dir', 'TestController', 'route_path_generator',
+    'clear_cache_regions',
     'assert_session_flash', 'login_user', 'no_newline_id_generator',
     'TESTS_TMP_PATH', 'HG_REPO', 'GIT_REPO', 'SVN_REPO',
     'NEW_HG_REPO', 'NEW_GIT_REPO',
@@ -243,3 +243,13 @@ def no_newline_id_generator(test_name):
         .replace(' ', '_S')
 
     return test_name or 'test-with-empty-name'
+
+
+def route_path_generator(url_defs, name, params=None, **kwargs):
+    import urllib
+
+    base_url = url_defs[name].format(**kwargs)
+
+    if params:
+        base_url = '{}?{}'.format(base_url, urllib.urlencode(params))
+    return base_url

@@ -23,23 +23,23 @@ import pytest
 from rhodecode.apps._base import ADMIN_PREFIX
 from rhodecode.model.db import User
 from rhodecode.tests import (
-    TestController, TEST_USER_ADMIN_LOGIN, TEST_USER_ADMIN_PASS,
-    TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS, assert_session_flash)
+    TestController, route_path_generator, assert_session_flash)
 from rhodecode.tests.fixture import Fixture
 from rhodecode.tests.utils import AssertResponse
 
 fixture = Fixture()
 
 
-def route_path(name, **kwargs):
-    return {
+def route_path(name, params=None, **kwargs):
+    url_defs = {
         'my_account_auth_tokens':
             ADMIN_PREFIX + '/my_account/auth_tokens',
         'my_account_auth_tokens_add':
             ADMIN_PREFIX + '/my_account/auth_tokens/new',
         'my_account_auth_tokens_delete':
             ADMIN_PREFIX + '/my_account/auth_tokens/delete',
-    }[name].format(**kwargs)
+    }
+    return route_path_generator(url_defs, name=name, params=params, **kwargs)
 
 
 class TestMyAccountAuthTokens(TestController):
