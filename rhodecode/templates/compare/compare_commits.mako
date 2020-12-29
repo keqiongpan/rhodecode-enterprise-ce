@@ -12,6 +12,9 @@
     <input type="hidden" name="__start__" value="revisions:sequence">
     <table class="rctable compare_view_commits">
         <tr>
+            % if hasattr(c, 'commit_versions'):
+                <th>ver</th>
+            % endif
             <th>${_('Time')}</th>
             <th>${_('Author')}</th>
             <th>${_('Commit')}</th>
@@ -30,6 +33,11 @@
             class="compare_select"
             style="${'display: none' if c.collapse_all_commits else ''}"
         >
+            % if hasattr(c, 'commit_versions'):
+                <td class="tooltip" title="${_('Pull request version this commit was introduced')}">
+                    <code>${('v{}'.format(c.commit_versions[commit.raw_id][0]) if c.commit_versions[commit.raw_id] else 'latest')}</code>
+                </td>
+            % endif
             <td class="td-time">
                 ${h.age_component(commit.date)}
             </td>

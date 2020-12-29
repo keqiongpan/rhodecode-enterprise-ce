@@ -357,6 +357,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 pull_request_id=pull_request_id))
 
         versions = pull_request_display_obj.versions()
+
+        c.commit_versions = PullRequestModel().pr_commits_versions(versions)
+
         # used to store per-commit range diffs
         c.changes = collections.OrderedDict()
 
