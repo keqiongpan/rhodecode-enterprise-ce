@@ -60,14 +60,24 @@ log = logging.getLogger(__name__)
     default=None,
     help='Enable public access on this installation. '
          'Default is public access enabled.')
+@click.option(
+    '--skip-existing-db',
+    default=False,
+    is_flag=True,
+    help='Do not destroy and re-initialize the database if it already exist.')
+@click.option(
+    '--apply-license-key',
+    default=False,
+    is_flag=True,
+    help='Get the license key from a license file or ENV and apply during DB creation.')
 def main(ini_path, force_yes, user, email, password, api_key, repos,
-         public_access):
+         public_access, skip_existing_db, apply_license_key):
     return command(ini_path, force_yes, user, email, password, api_key,
-                   repos, public_access)
+                   repos, public_access, skip_existing_db, apply_license_key)
 
 
 def command(ini_path, force_yes, user, email, password, api_key, repos,
-            public_access):
+            public_access, skip_existing_db, apply_license_key):
     # mapping of old parameters to new CLI from click
     options = dict(
         username=user,
@@ -85,6 +95,9 @@ def command(ini_path, force_yes, user, email, password, api_key, repos,
     db_uri = config['sqlalchemy.db1.url']
     dbmanage = DbManage(log_sql=True, dbconf=db_uri, root='.',
                         tests=False, cli_args=options)
+    if skip_existing_db and dbmanage.db_exists():
+        return
+
     dbmanage.create_tables(override=True)
     dbmanage.set_db_version()
     opts = dbmanage.config_prompt(None)
@@ -93,6 +106,13 @@ def command(ini_path, force_yes, user, email, password, api_key, repos,
     dbmanage.create_admin_and_prompt()
     dbmanage.create_permissions()
     dbmanage.populate_default_permissions()
+    if apply_license_key:
+        try:
+            from rc_license.models import apply_trial_license_if_missing
+            apply_trial_license_if_missing(force=True)
+        except ImportError:
+            pass
+
     Session().commit()
 
     with bootstrap(ini_path, env={'RC_CMD_SETUP_RC': '1'}) as env:

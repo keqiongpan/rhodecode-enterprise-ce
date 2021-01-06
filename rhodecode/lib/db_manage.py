@@ -66,10 +66,22 @@ class DbManage(object):
         self.root = root
         self.dburi = dbconf
         self.log_sql = log_sql
-        self.db_exists = False
         self.cli_args = cli_args or {}
         self.init_db(SESSION=SESSION)
         self.ask_ok = self.get_ask_ok_func(self.cli_args.get('force_ask'))
+
+    def db_exists(self):
+        if not self.sa:
+            self.init_db()
+        try:
+            self.sa.query(RhodeCodeUi)\
+                .filter(RhodeCodeUi.ui_key == '/')\
+                .scalar()
+            return True
+        except Exception:
+            return False
+        finally:
+            self.sa.rollback()
 
     def get_ask_ok_func(self, param):
         if param not in [None]:
