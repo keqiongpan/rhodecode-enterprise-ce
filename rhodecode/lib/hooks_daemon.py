@@ -120,7 +120,7 @@ class ThreadedHookCallbackDaemon(object):
     _done = False
 
     def __init__(self, txn_id=None, host=None, port=None):
-        self._prepare(txn_id=txn_id, host=None, port=port)
+        self._prepare(txn_id=txn_id, host=host, port=port)
 
     def __enter__(self):
         log.debug('Running `%s` callback daemon', self.__class__.__name__)
