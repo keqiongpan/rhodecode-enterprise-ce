@@ -47,7 +47,6 @@ from rhodecode.lib.vcs import VCSCommunicationError
 from rhodecode.lib.exceptions import VCSServerUnavailable
 from rhodecode.lib.middleware.appenlight import wrap_in_appenlight_if_enabled
 from rhodecode.lib.middleware.https_fixup import HttpsFixup
-from rhodecode.lib.celerylib.loader import configure_celery
 from rhodecode.lib.plugins.utils import register_rhodecode_plugin
 from rhodecode.lib.utils2 import aslist as rhodecode_aslist, AttributeDict
 from rhodecode.lib.exc_tracking import store_exception
@@ -237,6 +236,7 @@ def includeme_first(config):
 
 
 def includeme(config, auth_resources=None):
+    from rhodecode.lib.celerylib.loader import configure_celery
     log.debug('Initializing main includeme from %s', os.path.basename(__file__))
     settings = config.registry.settings
     config.set_request_factory(Request)
