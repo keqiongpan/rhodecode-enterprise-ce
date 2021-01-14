@@ -25,20 +25,20 @@ import pytest
 from whoosh import query
 
 from rhodecode.tests import (
-    TestController, HG_REPO,
+    TestController, route_path_generator, HG_REPO,
     TEST_USER_REGULAR_LOGIN, TEST_USER_REGULAR_PASS)
 from rhodecode.tests.utils import AssertResponse
 
 
-def route_path(name, **kwargs):
+def route_path(name, params=None, **kwargs):
     from rhodecode.apps._base import ADMIN_PREFIX
-    return {
+    url_defs = {
         'search':
             ADMIN_PREFIX + '/search',
         'search_repo':
             '/{repo_name}/search',
-
-    }[name].format(**kwargs)
+    }
+    return route_path_generator(url_defs, name=name, params=params, **kwargs)
 
 
 class TestSearchController(TestController):

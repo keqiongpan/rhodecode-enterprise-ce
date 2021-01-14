@@ -3821,8 +3821,12 @@ class ChangesetComment(Base, BaseModel):
         return q.all()
 
     @classmethod
-    def get_index_from_version(cls, pr_version, versions):
-        num_versions = [x.pull_request_version_id for x in versions]
+    def get_index_from_version(cls, pr_version, versions=None, num_versions=None):
+
+        if versions is not None:
+            num_versions = [x.pull_request_version_id for x in versions]
+
+        num_versions = num_versions or []
         try:
             return num_versions.index(pr_version) + 1
         except (IndexError, ValueError):

@@ -610,6 +610,20 @@ class PullRequestModel(BaseModel):
         return _org_pull_request_obj, pull_request_obj, \
                pull_request_display_obj, at_version
 
+    def pr_commits_versions(self, versions):
+        """
+        Maps the pull-request commits into all known PR versions. This way we can obtain
+        each pr version the commit was introduced in.
+        """
+        commit_versions = collections.defaultdict(list)
+        num_versions = [x.pull_request_version_id for x in versions]
+        for ver in versions:
+            for commit_id in ver.revisions:
+                ver_idx = ChangesetComment.get_index_from_version(
+                    ver.pull_request_version_id, num_versions=num_versions)
+                commit_versions[commit_id].append(ver_idx)
+        return commit_versions
+
     def create(self, created_by, source_repo, source_ref, target_repo,
                target_ref, revisions, reviewers, observers, title, description=None,
                common_ancestor_id=None,
