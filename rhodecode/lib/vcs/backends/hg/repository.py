@@ -765,7 +765,14 @@ class MercurialRepository(BaseRepository):
 
         try:
             if target_ref.type == 'branch' and len(self._heads(target_ref.name)) != 1:
-                heads = '\n,'.join(self._heads(target_ref.name))
+                heads_all = self._heads(target_ref.name)
+                max_heads = 10
+                if len(heads_all) > max_heads:
+                    heads = '\n,'.join(
+                        heads_all[:max_heads] +
+                        ['and {} more.'.format(len(heads_all)-max_heads)])
+                else:
+                    heads = '\n,'.join(heads_all)
                 metadata = {
                     'target_ref': target_ref,
                     'source_ref': source_ref,
@@ -854,7 +861,16 @@ class MercurialRepository(BaseRepository):
             except RepositoryError as e:
                 log.exception('Failure when doing local merge on hg shadow repo')
                 if isinstance(e, UnresolvedFilesInRepo):
-                    metadata['unresolved_files'] = '\n* conflict: ' + ('\n * conflict: '.join(e.args[0]))
+                    all_conflicts = list(e.args[0])
+                    max_conflicts = 20
+                    if len(all_conflicts) > max_conflicts:
+                        conflicts = all_conflicts[:max_conflicts] \
+                                    + ['and {} more.'.format(len(all_conflicts)-max_conflicts)]
+                    else:
+                        conflicts = all_conflicts
+                    metadata['unresolved_files'] = \
+                        '\n* conflict: ' + \
+                        ('\n * conflict: '.join(conflicts))
 
                 merge_possible = False
                 merge_failure_reason = MergeFailureReason.MERGE_FAILED
