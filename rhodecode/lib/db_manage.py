@@ -609,6 +609,7 @@ class DbManage(object):
             ('gravatar_url', User.DEFAULT_GRAVATAR_URL, 'unicode'),
 
             ('clone_uri_tmpl', Repository.DEFAULT_CLONE_URI, 'unicode'),
+            ('clone_uri_id_tmpl', Repository.DEFAULT_CLONE_URI_ID, 'unicode'),
             ('clone_uri_ssh_tmpl', Repository.DEFAULT_CLONE_URI_SSH, 'unicode'),
             ('support_url', '', 'unicode'),
             ('update_url', RhodeCodeSetting.DEFAULT_UPDATE_URL, 'unicode'),

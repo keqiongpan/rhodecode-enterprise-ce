@@ -174,6 +174,9 @@ ${h.secure_form(h.route_path('admin_settings_visual_update'), request=request)}
            ${h.text('rhodecode_clone_uri_tmpl', size=60)} HTTP[S]
         </div>
         <div class="field">
+            ${h.text('rhodecode_clone_uri_id_tmpl', size=60)} HTTP UID
+        </div>
+        <div class="field">
            ${h.text('rhodecode_clone_uri_ssh_tmpl', size=60)} SSH
         </div>
         <div class="field">

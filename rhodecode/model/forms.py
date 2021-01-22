@@ -390,6 +390,7 @@ def ApplicationVisualisationForm(localizer):
         rhodecode_markup_renderer = v.OneOf(['markdown', 'rst'])
         rhodecode_gravatar_url = v.UnicodeString(min=3)
         rhodecode_clone_uri_tmpl = v.UnicodeString(not_empty=False, if_empty=Repository.DEFAULT_CLONE_URI)
+        rhodecode_clone_uri_id_tmpl = v.UnicodeString(not_empty=False, if_empty=Repository.DEFAULT_CLONE_URI_ID)
         rhodecode_clone_uri_ssh_tmpl = v.UnicodeString(not_empty=False, if_empty=Repository.DEFAULT_CLONE_URI_SSH)
         rhodecode_support_url = v.UnicodeString()
         rhodecode_show_revision_number = v.StringBoolean(if_missing=False)

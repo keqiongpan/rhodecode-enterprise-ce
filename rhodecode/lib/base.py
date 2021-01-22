@@ -342,6 +342,7 @@ def attach_context_attributes(context, request, user_id=None, is_api=None):
     if request.GET.get('default_encoding'):
         context.default_encodings.insert(0, request.GET.get('default_encoding'))
     context.clone_uri_tmpl = rc_config.get('rhodecode_clone_uri_tmpl')
+    context.clone_uri_id_tmpl = rc_config.get('rhodecode_clone_uri_id_tmpl')
     context.clone_uri_ssh_tmpl = rc_config.get('rhodecode_clone_uri_ssh_tmpl')
 
     # INI stored
