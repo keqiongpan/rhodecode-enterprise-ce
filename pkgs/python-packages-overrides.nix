@@ -274,6 +274,12 @@ self: super: {
     ];
   });
 
+  "pytest" = super."pytest".override (attrs: {
+    patches = [
+      ./patches/pytest/setuptools.patch
+    ];
+  });
+
   # Avoid that base packages screw up the build process
   inherit (basePythonPackages)
     setuptools;
