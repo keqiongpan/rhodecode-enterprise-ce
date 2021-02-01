@@ -4220,6 +4220,12 @@ class _PullRequestBase(BaseModel):
             return True
         return False
 
+    @property
+    def title_safe(self):
+        return self.title\
+            .replace('{', '{{')\
+            .replace('}', '}}')
+
     @hybrid_property
     def description_safe(self):
         from rhodecode.lib import helpers as h

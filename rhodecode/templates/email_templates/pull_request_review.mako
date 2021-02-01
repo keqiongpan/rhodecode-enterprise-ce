@@ -8,7 +8,7 @@
 data = {
     'user': '@'+h.person(user),
     'pr_id': pull_request.pull_request_id,
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
 }
 
 if user_role == 'observer':
@@ -26,7 +26,7 @@ ${subject_template.format(**data) |n}
 data = {
     'user': h.person(user),
     'pr_id': pull_request.pull_request_id,
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
     'source_ref_type': pull_request.source_ref_parts.type,
     'source_ref_name': pull_request.source_ref_parts.name,
     'target_ref_type': pull_request.target_ref_parts.type,
@@ -66,7 +66,7 @@ ${self.plaintext_footer()}
 data = {
     'user': h.person(user),
     'pr_id': pull_request.pull_request_id,
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
     'source_ref_type': pull_request.source_ref_parts.type,
     'source_ref_name': pull_request.source_ref_parts.name,
     'target_ref_type': pull_request.target_ref_parts.type,

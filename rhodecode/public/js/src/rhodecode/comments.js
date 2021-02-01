@@ -1462,7 +1462,6 @@ var CommentsController = function() {
 
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
-    console.log(commentData);
 
     if (commentData.commentInline) {
         var f_path = commentData.commentFPath;
