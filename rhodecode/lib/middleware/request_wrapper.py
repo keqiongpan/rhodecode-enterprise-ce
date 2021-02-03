@@ -37,21 +37,29 @@ class RequestWrapperTween(object):
 
         # one-time configuration code goes here
 
+    def _get_user_info(self, request):
+        user = get_current_rhodecode_user(request)
+        if not user:
+            user = AuthUser.repr_user(ip=get_ip_addr(request.environ))
+        return user
+
     def __call__(self, request):
         start = time.time()
         log.debug('Starting request time measurement')
         try:
             response = self.handler(request)
         finally:
-            end = time.time()
-            total = end - start
             count = request.request_count()
             _ver_ = rhodecode.__version__
-            default_user_info = AuthUser.repr_user(ip=get_ip_addr(request.environ))
-            user_info = get_current_rhodecode_user(request) or default_user_info
+            statsd = request.statsd
+            total = time.time() - start
+            if statsd:
+                statsd.timing('rhodecode.req.timing', total)
+                statsd.incr('rhodecode.req.count')
+
             log.info(
                 'Req[%4s] %s %s Request to %s time: %.4fs [%s], RhodeCode %s',
-                count, user_info, request.environ.get('REQUEST_METHOD'),
+                count, self._get_user_info(request), request.environ.get('REQUEST_METHOD'),
                 safe_str(get_access_path(request.environ)), total,
                 get_user_agent(request. environ), _ver_
             )

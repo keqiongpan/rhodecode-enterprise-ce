@@ -340,6 +340,10 @@ def includeme(config, auth_resources=None):
         'rhodecode.lib.request_counter.get_request_counter',
         'request_count')
 
+    config.add_request_method(
+        'rhodecode.lib._vendor.statsd.get_statsd_client',
+        'statsd', reify=True)
+
     # Set the authorization policy.
     authz_policy = ACLAuthorizationPolicy()
     config.set_authorization_policy(authz_policy)
