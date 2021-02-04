@@ -33,9 +33,9 @@ from email.utils import formatdate
 
 import rhodecode
 from rhodecode.lib import audit_logger
-from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask
+from rhodecode.lib.celerylib import get_logger, async_task, RequestContextTask, run_task
 from rhodecode.lib import hooks_base
-from rhodecode.lib.utils2 import safe_int, str2bool
+from rhodecode.lib.utils2 import safe_int, str2bool, aslist
 from rhodecode.model.db import (
     Session, IntegrityError, true, Repository, RepoGroup, User)
 
@@ -338,15 +338,39 @@ def repo_maintenance(repoid):
 
 
 @async_task(ignore_result=True)
-def check_for_update():
+def check_for_update(send_email_notification=True, email_recipients=None):
     from rhodecode.model.update import UpdateModel
+    from rhodecode.model.notification import EmailNotificationModel
+
+    log = get_logger(check_for_update)
     update_url = UpdateModel().get_update_url()
     cur_ver = rhodecode.__version__
 
     try:
         data = UpdateModel().get_update_data(update_url)
-        latest = data['versions'][0]
-        UpdateModel().store_version(latest['version'])
+
+        current_ver = UpdateModel().get_stored_version(fallback=cur_ver)
+        latest_ver = data['versions'][0]['version']
+        UpdateModel().store_version(latest_ver)
+
+        if send_email_notification:
+            log.debug('Send email notification is enabled. '
+                      'Current RhodeCode version: %s, latest known: %s', current_ver, latest_ver)
+            if UpdateModel().is_outdated(current_ver, latest_ver):
+
+                email_kwargs = {
+                    'current_ver': current_ver,
+                    'latest_ver': latest_ver,
+                }
+
+                (subject, email_body, email_body_plaintext) = EmailNotificationModel().render_email(
+                    EmailNotificationModel.TYPE_UPDATE_AVAILABLE, **email_kwargs)
+
+                email_recipients = aslist(email_recipients, sep=',') or \
+                                   [user.email for user in User.get_all_super_admins()]
+                run_task(send_email, email_recipients, subject,
+                         email_body_plaintext, email_body)
+
     except Exception:
         pass
 

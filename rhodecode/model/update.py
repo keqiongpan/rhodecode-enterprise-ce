@@ -60,11 +60,11 @@ class UpdateModel(BaseModel):
         Session().add(setting)
         Session().commit()
 
-    def get_stored_version(self):
+    def get_stored_version(self, fallback=None):
         obj = SettingsModel().get_setting_by_name(self.UPDATE_SETTINGS_KEY)
         if obj:
             return obj.app_settings_value
-        return '0.0.0'
+        return fallback or '0.0.0'
 
     def _sanitize_version(self, version):
         """
