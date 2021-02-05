@@ -595,12 +595,13 @@ class DbManage(object):
             # Visual
             ('show_public_icon', True, 'bool'),
             ('show_private_icon', True, 'bool'),
-            ('stylify_metatags', False, 'bool'),
+            ('stylify_metatags', True, 'bool'),
             ('dashboard_items', 100, 'int'),
             ('admin_grid_items', 25, 'int'),
 
             ('markup_renderer', 'markdown', 'unicode'),
 
+            ('repository_fields', True, 'bool'),
             ('show_version', True, 'bool'),
             ('show_revision_number', True, 'bool'),
             ('show_sha_length', 12, 'int'),
