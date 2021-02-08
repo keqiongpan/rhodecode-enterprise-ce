@@ -595,12 +595,13 @@ class DbManage(object):
             # Visual
             ('show_public_icon', True, 'bool'),
             ('show_private_icon', True, 'bool'),
-            ('stylify_metatags', False, 'bool'),
+            ('stylify_metatags', True, 'bool'),
             ('dashboard_items', 100, 'int'),
             ('admin_grid_items', 25, 'int'),
 
             ('markup_renderer', 'markdown', 'unicode'),
 
+            ('repository_fields', True, 'bool'),
             ('show_version', True, 'bool'),
             ('show_revision_number', True, 'bool'),
             ('show_sha_length', 12, 'int'),
@@ -609,6 +610,7 @@ class DbManage(object):
             ('gravatar_url', User.DEFAULT_GRAVATAR_URL, 'unicode'),
 
             ('clone_uri_tmpl', Repository.DEFAULT_CLONE_URI, 'unicode'),
+            ('clone_uri_id_tmpl', Repository.DEFAULT_CLONE_URI_ID, 'unicode'),
             ('clone_uri_ssh_tmpl', Repository.DEFAULT_CLONE_URI_SSH, 'unicode'),
             ('support_url', '', 'unicode'),
             ('update_url', RhodeCodeSetting.DEFAULT_UPDATE_URL, 'unicode'),

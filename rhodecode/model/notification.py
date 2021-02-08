@@ -343,6 +343,7 @@ class EmailNotificationModel(BaseModel):
     TYPE_PASSWORD_RESET_CONFIRMATION = 'password_reset_confirmation'
     TYPE_EMAIL_TEST = 'email_test'
     TYPE_EMAIL_EXCEPTION = 'exception'
+    TYPE_UPDATE_AVAILABLE = 'update_available'
     TYPE_TEST = 'test'
 
     email_types = {
@@ -352,6 +353,8 @@ class EmailNotificationModel(BaseModel):
             'rhodecode:templates/email_templates/test.mako',
         TYPE_EMAIL_EXCEPTION:
             'rhodecode:templates/email_templates/exception_tracker.mako',
+        TYPE_UPDATE_AVAILABLE:
+            'rhodecode:templates/email_templates/update_available.mako',
         TYPE_EMAIL_TEST:
             'rhodecode:templates/email_templates/email_test.mako',
         TYPE_REGISTRATION:

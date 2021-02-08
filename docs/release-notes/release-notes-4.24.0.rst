@@ -1,4 +1,4 @@
-|RCE| 4.23.0 |RNS|
+|RCE| 4.24.0 |RNS|
 ------------------
 
 Release Date
@@ -16,14 +16,16 @@ New Features
   Can be used for backups etc.
 - Pull requests: expose commit versions in the pull-request commit list.
 
+
 General
 ^^^^^^^
 
 - Deps: bumped redis to 3.5.3
-- rcextensions: improve examples
+- Rcextensions: improve examples for some usage.
 - Setup: added optional parameters to apply a default license, or skip re-creation of database at install.
 - Docs: update headers for NGINX
 - Beaker cache: remove no longer used beaker cache init
+- Installation: the installer no longer requires gzip and bzip packages, and works on python 2 and 3
 
 
 Security

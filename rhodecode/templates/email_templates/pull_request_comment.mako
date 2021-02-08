@@ -14,7 +14,7 @@ data = {
     'comment_type': comment_type,
     'comment_id': comment_id,
 
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
     'pr_id': pull_request.pull_request_id,
     'mention_prefix': '[mention] ' if mention else '',
 }
@@ -31,7 +31,6 @@ else:
         _('{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: "{pr_title}"').format(**data)
 %>
 
-
 ${subject_template.format(**data) |n}
 </%def>
 
@@ -47,7 +46,7 @@ data = {
     'comment_type': comment_type,
     'comment_id': comment_id,
 
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
     'pr_id': pull_request.pull_request_id,
     'source_ref_type': pull_request.source_ref_parts.type,
     'source_ref_name': pull_request.source_ref_parts.name,
@@ -99,7 +98,7 @@ data = {
     'comment_id': comment_id,
     'renderer_type': renderer_type or 'plain',
 
-    'pr_title': pull_request.title,
+    'pr_title': pull_request.title_safe,
     'pr_id': pull_request.pull_request_id,
     'status': status_change,
     'source_ref_type': pull_request.source_ref_parts.type,

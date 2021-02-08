@@ -384,6 +384,7 @@ class AdminSettingsView(BaseAppView):
                 ('markup_renderer', 'rhodecode_markup_renderer', 'unicode'),
                 ('gravatar_url', 'rhodecode_gravatar_url', 'unicode'),
                 ('clone_uri_tmpl', 'rhodecode_clone_uri_tmpl', 'unicode'),
+                ('clone_uri_id_tmpl', 'rhodecode_clone_uri_id_tmpl', 'unicode'),
                 ('clone_uri_ssh_tmpl', 'rhodecode_clone_uri_ssh_tmpl', 'unicode'),
                 ('support_url', 'rhodecode_support_url', 'unicode'),
                 ('show_revision_number', 'rhodecode_show_revision_number', 'bool'),

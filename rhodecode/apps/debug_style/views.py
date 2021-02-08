@@ -102,6 +102,11 @@ Check if we should use full-topic or mini-topic.
                 'date': datetime.datetime.now(),
             },
 
+            'update_available': {
+                'current_ver': '4.23.0',
+                'latest_ver': '4.24.0',
+            },
+
             'exception': {
                 'email_prefix': '[RHODECODE ERROR]',
                 'exc_id': exc_traceback['exc_id'],

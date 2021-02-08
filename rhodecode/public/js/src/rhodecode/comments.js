@@ -25,6 +25,7 @@ var firefoxAnchorFix = function() {
   }
 };
 
+
 var linkifyComments = function(comments) {
   var firstCommentId = null;
   if (comments) {
@@ -36,12 +37,12 @@ var linkifyComments = function(comments) {
   }
 };
 
+
 var bindToggleButtons = function() {
   $('.comment-toggle').on('click', function() {
         $(this).parent().nextUntil('tr.line').toggle('inline-comments');
   });
 };
-
 
 
 var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
@@ -61,8 +62,6 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
     });
     return request;
 };
-
-
 
 
 /* Comment form for main and inline comments */
@@ -239,8 +238,7 @@ var _submitAjaxPOST = function(url, postData, successHandler, failHandler) {
         };
 
         this.markCommentResolved = function(resolvedCommentId){
-            $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolved').show();
-            $('#comment-label-{0}'.format(resolvedCommentId)).find('.resolve').hide();
+            Rhodecode.comments.markCommentResolved(resolvedCommentId)
         };
 
         this.isAllowedToSubmit = function() {
@@ -1308,6 +1306,11 @@ var CommentsController = function() {
       return $(tmpl);
   }
 
+  this.markCommentResolved = function(commentId) {
+    $('#comment-label-{0}'.format(commentId)).find('.resolved').show();
+    $('#comment-label-{0}'.format(commentId)).find('.resolve').hide();
+  };
+
   this.createComment = function(node, f_path, line_no, resolutionComment) {
       self.edit = false;
       var $node = $(node);
@@ -1403,7 +1406,7 @@ var CommentsController = function() {
 
                     //mark visually which comment was resolved
                     if (resolvesCommentId) {
-                        commentForm.markCommentResolved(resolvesCommentId);
+                        self.markCommentResolved(resolvesCommentId);
                     }
 
                     // run global callback on submit
@@ -1462,7 +1465,6 @@ var CommentsController = function() {
 
     var comment = $('#comment-'+commentId);
     var commentData = comment.data();
-    console.log(commentData);
 
     if (commentData.commentInline) {
         var f_path = commentData.commentFPath;
@@ -1492,6 +1494,141 @@ var CommentsController = function() {
     cm.setValue(_gettext('TODO from comment {0} was fixed.').format(commentUrl));
     form.submit();
     return false;
+  };
+
+  this.resolveTodo = function (elem, todoId) {
+      var commentId = todoId;
+
+      SwalNoAnimation.fire({
+          title: 'Resolve TODO {0}'.format(todoId),
+          showCancelButton: true,
+          confirmButtonText: _gettext('Yes'),
+          showLoaderOnConfirm: true,
+
+          allowOutsideClick: function () {
+              !Swal.isLoading()
+          },
+          preConfirm: function () {
+              var comment = $('#comment-' + commentId);
+              var commentData = comment.data();
+
+              var f_path = null
+              var line_no = null
+              if (commentData.commentInline) {
+                  f_path = commentData.commentFPath;
+                  line_no = commentData.commentLineNo;
+              }
+
+              var renderer = templateContext.visual.default_renderer;
+              var commentBoxUrl = '{1}#comment-{0}'.format(commentId);
+
+              // Pull request case
+              if (templateContext.pull_request_data.pull_request_id !== null) {
+                  var commentUrl = pyroutes.url('pullrequest_comment_create',
+                          {
+                              'repo_name': templateContext.repo_name,
+                              'pull_request_id': templateContext.pull_request_data.pull_request_id,
+                              'comment_id': commentId
+                          });
+              } else {
+                  var commentUrl = pyroutes.url('repo_commit_comment_create',
+                          {
+                              'repo_name': templateContext.repo_name,
+                              'commit_id': templateContext.commit_data.commit_id,
+                              'comment_id': commentId
+                          });
+              }
+
+              if (renderer === 'rst') {
+                  commentBoxUrl = '`#{0} <{1}#comment-{0}>`_'.format(commentId, commentUrl);
+              } else if (renderer === 'markdown') {
+                  commentBoxUrl = '[#{0}]({1}#comment-{0})'.format(commentId, commentUrl);
+              }
+              var resolveText = _gettext('TODO from comment {0} was fixed.').format(commentBoxUrl);
+
+              var postData = {
+                  text: resolveText,
+                  comment_type: 'note',
+                  draft: false,
+                  csrf_token: CSRF_TOKEN,
+                  resolves_comment_id: commentId
+              }
+              if (commentData.commentInline) {
+                  postData['f_path'] = f_path;
+                  postData['line'] = line_no;
+              }
+
+              return new Promise(function (resolve, reject) {
+                  $.ajax({
+                      type: 'POST',
+                      data: postData,
+                      url: commentUrl,
+                      headers: {'X-PARTIAL-XHR': true}
+                  })
+                  .done(function (data) {
+                      resolve(data);
+                  })
+                  .fail(function (jqXHR, textStatus, errorThrown) {
+                      var prefix = "Error while resolving TODO.\n"
+                      var message = formatErrorMessage(jqXHR, textStatus, errorThrown, prefix);
+                      ajaxErrorSwal(message);
+                  });
+              })
+          }
+
+      })
+      .then(function (result) {
+          var success = function (json_data) {
+              resolvesCommentId = commentId;
+              var commentResolved = json_data[Object.keys(json_data)[0]]
+
+              try {
+
+                  if (commentResolved.f_path) {
+                      // inject newly created comments, json_data is {<comment_id>: {}}
+                      self.attachInlineComment(json_data)
+                  } else {
+                      self.attachGeneralComment(json_data)
+                  }
+
+                  //mark visually which comment was resolved
+                  if (resolvesCommentId) {
+                      self.markCommentResolved(resolvesCommentId);
+                  }
+
+                  // run global callback on submit
+                  if (window.commentFormGlobalSubmitSuccessCallback !== undefined) {
+                      commentFormGlobalSubmitSuccessCallback({
+                          draft: false,
+                          comment_id: commentId
+                      });
+                  }
+
+              } catch (e) {
+                  console.error(e);
+              }
+
+              if (window.updateSticky !== undefined) {
+                  // potentially our comments change the active window size, so we
+                  // notify sticky elements
+                  updateSticky()
+              }
+
+              if (window.refreshAllComments !== undefined) {
+                  // if we have this handler, run it, and refresh all comments boxes
+                  refreshAllComments()
+              }
+              // re trigger the linkification of next/prev navigation
+              linkifyComments($('.inline-comment-injected'));
+              timeagoActivate();
+              tooltipActivate();
+          };
+
+          if (result.value) {
+            $(elem).remove();
+            success(result.value)
+          }
+      })
   };
 
 };

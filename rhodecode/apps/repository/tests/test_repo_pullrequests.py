@@ -420,6 +420,27 @@ class TestPullrequestsView(object):
         assert pull_request.title == 'New title'
         assert pull_request.description == 'New description'
 
+    def test_edit_title_description(self, pr_util, csrf_token):
+        pull_request = pr_util.create_pull_request()
+        pull_request_id = pull_request.pull_request_id
+
+        response = self.app.post(
+            route_path('pullrequest_update',
+                repo_name=pull_request.target_repo.repo_name,
+                pull_request_id=pull_request_id),
+            params={
+                'edit_pull_request': 'true',
+                'title': 'New title {} {2} {foo}',
+                'description': 'New description',
+                'csrf_token': csrf_token})
+
+        assert_session_flash(
+            response, u'Pull request title & description updated.',
+            category='success')
+
+        pull_request = PullRequest.get(pull_request_id)
+        assert pull_request.title_safe == 'New title {{}} {{2}} {{foo}}'
+
     def test_edit_title_description_closed(self, pr_util, csrf_token):
         pull_request = pr_util.create_pull_request()
         pull_request_id = pull_request.pull_request_id

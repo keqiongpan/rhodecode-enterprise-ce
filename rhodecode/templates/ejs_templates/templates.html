@@ -236,6 +236,14 @@ if (show_disabled) {
     Created:
     <time class="timeago" title="<%= created_on %>" datetime="<%= datetime %>"><%= $.timeago(datetime) %></time>
 
+    <% if (is_todo) { %>
+    <div style="text-align: center; padding-top: 5px">
+    <a class="btn btn-sm" href="#resolveTodo<%- comment_id -%>" onclick="Rhodecode.comments.resolveTodo(this, '<%- comment_id -%>'); return false">
+        <strong>Resolve TODO</strong>
+    </a>
+    </div>
+    <% } %>
+
 </div>
 
 </script>

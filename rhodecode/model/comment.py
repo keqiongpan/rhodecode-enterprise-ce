@@ -336,6 +336,7 @@ class CommentsModel(BaseModel):
         comment.author = user
         resolved_comment = self.__get_commit_comment(
             validated_kwargs['resolves_comment_id'])
+
         # check if the comment actually belongs to this PR
         if resolved_comment and resolved_comment.pull_request and \
                 resolved_comment.pull_request != pull_request:
@@ -349,6 +350,10 @@ class CommentsModel(BaseModel):
             log.warning('Comment tried to resolved unrelated todo comment: %s',
                         resolved_comment)
             # comment not bound to this repo, forbid
+            resolved_comment = None
+
+        if resolved_comment and resolved_comment.resolved_by:
+            # if this comment is already resolved, don't mark it again!
             resolved_comment = None
 
         comment.resolved_comment = resolved_comment

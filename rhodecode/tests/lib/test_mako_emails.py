@@ -27,6 +27,16 @@ from rhodecode.model.db import User, PullRequestReviewers
 from rhodecode.model.notification import EmailNotificationModel
 
 
+@pytest.fixture()
+def pr():
+    def factory(ref):
+        return collections.namedtuple(
+            'PullRequest',
+            'pull_request_id, title, title_safe, description, source_ref_parts, source_ref_name, target_ref_parts, target_ref_name')\
+            (200, 'Example Pull Request', 'Example Pull Request', 'Desc of PR', ref, 'bookmark', ref, 'Branch')
+    return factory
+
+
 def test_get_template_obj(app, request_stub):
     template = EmailNotificationModel().get_renderer(
         EmailNotificationModel.TYPE_TEST, request_stub)
@@ -53,14 +63,10 @@ def test_render_email(app, http_host_only_stub):
 
 
 @pytest.mark.parametrize('role', PullRequestReviewers.ROLES)
-def test_render_pr_email(app, user_admin, role):
+def test_render_pr_email(app, user_admin, role, pr):
     ref = collections.namedtuple(
         'Ref', 'name, type')('fxies123', 'book')
-
-    pr = collections.namedtuple('PullRequest',
-        'pull_request_id, title, description, source_ref_parts, source_ref_name, target_ref_parts, target_ref_name')(
-        200, 'Example Pull Request', 'Desc of PR', ref, 'bookmark', ref, 'Branch')
-
+    pr = pr(ref)
     source_repo = target_repo = collections.namedtuple(
         'Repo', 'type, repo_name')('hg', 'pull_request_1')
 
@@ -89,13 +95,11 @@ def test_render_pr_email(app, user_admin, role):
         assert subject == '@test_admin (RhodeCode Admin) added you as observer to pull request. !200: "Example Pull Request"'
 
 
-def test_render_pr_update_email(app, user_admin):
+def test_render_pr_update_email(app, user_admin, pr):
     ref = collections.namedtuple(
         'Ref', 'name, type')('fxies123', 'book')
 
-    pr = collections.namedtuple('PullRequest',
-        'pull_request_id, title, description, source_ref_parts, source_ref_name, target_ref_parts, target_ref_name')(
-        200, 'Example Pull Request', 'Desc of PR', ref, 'bookmark', ref, 'Branch')
+    pr = pr(ref)
 
     source_repo = target_repo = collections.namedtuple(
         'Repo', 'type, repo_name')('hg', 'pull_request_1')
@@ -150,13 +154,11 @@ def test_render_pr_update_email(app, user_admin):
     EmailNotificationModel.TYPE_COMMIT_COMMENT,
     EmailNotificationModel.TYPE_PULL_REQUEST_COMMENT
 ])
-def test_render_comment_subject_no_newlines(app, mention, email_type):
+def test_render_comment_subject_no_newlines(app, mention, email_type, pr):
     ref = collections.namedtuple(
         'Ref', 'name, type')('fxies123', 'book')
 
-    pr = collections.namedtuple('PullRequest',
-        'pull_request_id, title, description, source_ref_parts, source_ref_name, target_ref_parts, target_ref_name')(
-        200, 'Example Pull Request', 'Desc of PR', ref, 'bookmark', ref, 'Branch')
+    pr = pr(ref)
 
     source_repo = target_repo = collections.namedtuple(
         'Repo', 'type, repo_name')('hg', 'pull_request_1')
