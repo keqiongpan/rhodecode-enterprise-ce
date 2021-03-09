@@ -32,6 +32,7 @@ import json
 from rhodecode.lib import diffs
 from rhodecode.lib.vcs.backends.hg.diff import MercurialDiff
 from rhodecode.lib.vcs.backends.git.diff import GitDiff
+from vcsserver.utils import safe_int
 
 
 def get_svn_files(repo, vcs_repo, refs):
@@ -74,7 +75,7 @@ def get_svn_files(repo, vcs_repo, refs):
                 # skip dirs
                 continue
 
-            parsed_entry['file_size'] = int(stdout.strip())
+            parsed_entry['file_size'] = safe_int(stdout.strip()) or 0
 
         files.append(parsed_entry)
 
