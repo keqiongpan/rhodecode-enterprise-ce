@@ -373,6 +373,11 @@ class RepoFilesView(RepoAppView):
         except EmptyRepositoryError:
             return Response(_('Empty repository'))
 
+        # we used a ref, or a shorter version, lets redirect client ot use explicit hash
+        if commit_id != commit.raw_id:
+            fname='{}{}'.format(commit.raw_id, ext)
+            raise HTTPFound(self.request.current_route_path(fname=fname))
+
         try:
             at_path = commit.get_node(at_path).path or default_at_path
         except Exception:
@@ -405,9 +410,10 @@ class RepoFilesView(RepoAppView):
         cached_archive_path = None
 
         if archive_cache_enabled:
-            # check if we it's ok to write
+            # check if we it's ok to write, and re-create the archive cache
             if not os.path.isdir(CONFIG['archive_cache_dir']):
                 os.makedirs(CONFIG['archive_cache_dir'])
+
             cached_archive_path = os.path.join(
                 CONFIG['archive_cache_dir'], archive_name)
             if os.path.isfile(cached_archive_path):
