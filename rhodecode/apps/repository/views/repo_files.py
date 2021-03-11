@@ -325,17 +325,18 @@ class RepoFilesView(RepoAppView):
 
         return lf_enabled
 
-    def _get_archive_name(self, db_repo_name, commit_sha, ext, subrepos=False, path_sha=''):
+    def _get_archive_name(self, db_repo_name, commit_sha, ext, subrepos=False, path_sha='', with_hash=True):
         # original backward compat name of archive
         clean_name = safe_str(db_repo_name.replace('/', '_'))
 
         # e.g vcsserver.zip
         # e.g vcsserver-abcdefgh.zip
         # e.g vcsserver-abcdefgh-defghijk.zip
-        archive_name = '{}{}{}{}{}'.format(
+        archive_name = '{}{}{}{}{}{}'.format(
             clean_name,
             '-sub' if subrepos else '',
             commit_sha,
+            '-{}'.format('plain') if not with_hash else '',
             '-{}'.format(path_sha) if path_sha else '',
             ext)
         return archive_name
@@ -385,7 +386,7 @@ class RepoFilesView(RepoAppView):
         # used for cache etc
         archive_name = self._get_archive_name(
             self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
-            path_sha=path_sha)
+            path_sha=path_sha, with_hash=with_hash)
 
         if not with_hash:
             short_sha = ''
@@ -394,7 +395,7 @@ class RepoFilesView(RepoAppView):
         # what end client gets served
         response_archive_name = self._get_archive_name(
             self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
-            path_sha=path_sha)
+            path_sha=path_sha, with_hash=with_hash)
         # remove extension from our archive directory name
         archive_dir_name = response_archive_name[:-len(ext)]
 
