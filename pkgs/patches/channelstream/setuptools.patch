@@ -1,0 +1,13 @@
+diff -rup channelstream-0.6.14-orig/setup.py channelstream-0.6.14/setup.py
+
+--- channelstream-0.6.14/setup-orig.py	2021-03-11 12:34:45.000000000 +0100
++++ channelstream-0.6.14/setup.py	2021-03-11 12:34:56.000000000 +0100
+@@ -52,7 +52,7 @@ setup(
+     include_package_data=True,
+     install_requires=requires,
+     python_requires=">=2.7",
+-    setup_requires=["pytest-runner"],
++    setup_requires=["pytest-runner==5.1.0"],
+     extras_require={
+         "dev": ["coverage", "pytest", "pyramid", "tox", "mock", "webtest"],
+         "lint": ["black"],

@@ -280,6 +280,18 @@ self: super: {
     ];
   });
 
+  "pyramid-apispec" = super."pyramid-apispec".override (attrs: {
+    patches = [
+      ./patches/pyramid_apispec/setuptools.patch
+    ];
+  });
+
+  "channelstream" = super."channelstream".override (attrs: {
+    patches = [
+      ./patches/channelstream/setuptools.patch
+    ];
+  });
+
   # Avoid that base packages screw up the build process
   inherit (basePythonPackages)
     setuptools;
