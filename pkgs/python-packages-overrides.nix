@@ -292,6 +292,12 @@ self: super: {
     ];
   });
 
+  "rhodecode-tools" = super."rhodecode-tools".override (attrs: {
+    patches = [
+      ./patches/rhodecode_tools/setuptools.patch
+    ];
+  });
+
   # Avoid that base packages screw up the build process
   inherit (basePythonPackages)
     setuptools;
