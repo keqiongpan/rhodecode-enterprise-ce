@@ -27,8 +27,8 @@
 <%def name="main()">
 ## Container to gather extracted Tickets
 <%
-    c.referenced_commit_issues = []
-    c.referenced_desc_issues = []
+    c.referenced_commit_issues = h.IssuesRegistry()
+    c.referenced_desc_issues = h.IssuesRegistry()
 %>
 
 <script type="text/javascript">
@@ -86,7 +86,7 @@
     </div>
 
     <div id="pr-desc" class="input" title="${_('Rendered using {} renderer').format(c.renderer)}">
-        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name, issues_container=c.referenced_desc_issues)}
+        ${h.render(c.pull_request.description, renderer=c.renderer, repo_name=c.repo_name, issues_container_callback=c.referenced_desc_issues())}
     </div>
 
     <div id="pr-desc-edit" class="input textarea" style="display: none;">
@@ -435,7 +435,7 @@
                                 </td>
                                 <td class="mid td-description">
                                     <div class="log-container truncate-wrap">
-                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name, issues_container=c.referenced_commit_issues)}</div>
+                                        <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${h.urlify_commit_message(commit.message, c.repo_name, issues_container_callback=c.referenced_commit_issues(commit.serialize()))}</div>
                                     </div>
                                 </td>
                             </tr>
@@ -809,7 +809,7 @@
             <div class="sidebar-element clear-both">
                 <div class="tooltip right-sidebar-collapsed-state" style="display: none" onclick="toggleSidebar(); return false" title="${_('Referenced Tickets')}">
                     <i class="icon-info-circled"></i>
-                    ${(len(c.referenced_desc_issues) + len(c.referenced_commit_issues))}
+                    ${(c.referenced_desc_issues.issues_unique_count + c.referenced_commit_issues.issues_unique_count)}
                 </div>
 
                 <div class="right-sidebar-expanded-state pr-details-title">
@@ -822,15 +822,17 @@
                     <table>
 
                         <tr><td><code>${_('In pull request description')}:</code></td></tr>
-                        % if c.referenced_desc_issues:
-                            % for ticket_dict in sorted(c.referenced_desc_issues):
+                        % if c.referenced_desc_issues.issues:
+
+                            % for ticket_id, ticket_dict in c.referenced_desc_issues.unique_issues.items():
                             <tr>
                                 <td>
-                                    <a href="${ticket_dict.get('url')}">
-                                    ${ticket_dict.get('id')}
+                                    <a href="${ticket_dict[0].get('url')}">
+                                    ${ticket_id}
                                     </a>
                                 </td>
                             </tr>
+
                             % endfor
                         % else:
                             <tr>
@@ -841,13 +843,14 @@
                         % endif
 
                         <tr><td style="padding-top: 10px"><code>${_('In commit messages')}:</code></td></tr>
-                        % if c.referenced_commit_issues:
-                            % for ticket_dict in sorted(c.referenced_commit_issues):
+                        % if c.referenced_commit_issues.issues:
+                            % for ticket_id, ticket_dict in c.referenced_commit_issues.unique_issues.items():
                             <tr>
                                 <td>
-                                    <a href="${ticket_dict.get('url')}">
-                                    ${ticket_dict.get('id')}
+                                    <a href="${ticket_dict[0].get('url')}">
+                                    ${ticket_id}
                                     </a>
+                                    - ${_ungettext('in %s commit', 'in %s commits', len(ticket_dict)) % (len(ticket_dict))}
                                 </td>
                             </tr>
                             % endfor

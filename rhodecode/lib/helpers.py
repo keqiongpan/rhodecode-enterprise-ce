@@ -25,6 +25,7 @@ Consists of functions to typically be used within templates, but also
 available to Controllers. This module is available to both as 'h'.
 """
 import base64
+import collections
 
 import os
 import random
@@ -1733,7 +1734,7 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
 
 
 def urlify_commit_message(commit_text, repository=None, active_pattern_entries=None,
-                          issues_container=None, error_container=None):
+                          issues_container_callback=None, error_container=None):
     """
     Parses given text message and makes proper links.
     issues are linked to given issue-server, and rest is a commit link
@@ -1756,8 +1757,9 @@ def urlify_commit_message(commit_text, repository=None, active_pattern_entries=N
     new_text, issues, errors = process_patterns(
         new_text, repository or '', active_entries=active_pattern_entries)
 
-    if issues_container is not None:
-        issues_container.extend(issues)
+    if issues_container_callback is not None:
+        for issue in issues:
+            issues_container_callback(issue)
 
     if error_container is not None:
         error_container.extend(errors)
@@ -1802,7 +1804,7 @@ def renderer_from_filename(filename, exclude=None):
 
 
 def render(source, renderer='rst', mentions=False, relative_urls=None,
-           repo_name=None, active_pattern_entries=None, issues_container=None):
+           repo_name=None, active_pattern_entries=None, issues_container_callback=None):
 
     def maybe_convert_relative_links(html_source):
         if relative_urls:
@@ -1819,8 +1821,9 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues, errors = process_patterns(
                 source, repo_name, link_format='rst',
                 active_entries=active_pattern_entries)
-            if issues_container is not None:
-                issues_container.extend(issues)
+            if issues_container_callback is not None:
+                for issue in issues:
+                    issues_container_callback(issue)
 
         return literal(
             '<div class="rst-block">%s</div>' %
@@ -1833,8 +1836,10 @@ def render(source, renderer='rst', mentions=False, relative_urls=None,
             source, issues, errors = process_patterns(
                 source, repo_name, link_format='markdown',
                 active_entries=active_pattern_entries)
-            if issues_container is not None:
-                issues_container.extend(issues)
+            if issues_container_callback is not None:
+                for issue in issues:
+                    issues_container_callback(issue)
+
 
         return literal(
             '<div class="markdown-block">%s</div>' %
@@ -2115,3 +2120,29 @@ def is_active(menu_entry, selected):
 
     if selected in menu_entry:
         return "active"
+
+
+class IssuesRegistry(object):
+    """
+    issue_registry = IssuesRegistry()
+    some_func(issues_callback=issues_registry(...))
+    """
+
+    def __init__(self):
+        self.issues = []
+        self.unique_issues = collections.defaultdict(lambda: [])
+
+    def __call__(self, commit_dict=None):
+        def callback(issue):
+            if commit_dict and issue:
+                issue['commit'] = commit_dict
+            self.issues.append(issue)
+            self.unique_issues[issue['id']].append(issue)
+        return callback
+
+    def get_issues(self):
+        return self.issues
+
+    @property
+    def issues_unique_count(self):
+        return len(set(i['id'] for i in self.issues))
