@@ -908,7 +908,8 @@ class PullRequestModel(BaseModel):
 
         try:
             if source_ref_type in self.REF_TYPES:
-                source_commit = source_repo.get_commit(source_ref_name)
+                source_commit = source_repo.get_commit(
+                    source_ref_name, reference_obj=pull_request.source_ref_parts)
             else:
                 source_commit = source_repo.get_commit(source_ref_id)
         except CommitDoesNotExistError:
@@ -922,7 +923,8 @@ class PullRequestModel(BaseModel):
 
         try:
             if target_ref_type in self.REF_TYPES:
-                target_commit = target_repo.get_commit(target_ref_name)
+                target_commit = target_repo.get_commit(
+                    target_ref_name, reference_obj=pull_request.target_ref_parts)
             else:
                 target_commit = target_repo.get_commit(target_ref_id)
         except CommitDoesNotExistError:

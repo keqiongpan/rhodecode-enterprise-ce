@@ -72,6 +72,10 @@ class Reference(_Reference):
         if self.type == 'book':
             return self.name
 
+    @property
+    def to_unicode(self):
+        return reference_to_unicode(self)
+
 
 def unicode_to_reference(raw):
     """
@@ -483,7 +487,7 @@ class BaseRepository(object):
         self._is_empty = False
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
-                   translate_tag=None, maybe_unreachable=False):
+                   translate_tag=None, maybe_unreachable=False, reference_obj=None):
         """
         Returns instance of `BaseCommit` class. If `commit_id` and `commit_idx`
         are both None, most recent commit is returned.

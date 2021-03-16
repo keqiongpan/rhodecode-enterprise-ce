@@ -2398,10 +2398,10 @@ class Repository(Base, BaseModel):
     # SCM PROPERTIES
     #==========================================================================
 
-    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, maybe_unreachable=False):
+    def get_commit(self, commit_id=None, commit_idx=None, pre_load=None, maybe_unreachable=False, reference_obj=None):
         return get_commit_safe(
             self.scm_instance(), commit_id, commit_idx, pre_load=pre_load,
-            maybe_unreachable=maybe_unreachable)
+            maybe_unreachable=maybe_unreachable, reference_obj=reference_obj)
 
     def get_changeset(self, rev=None, pre_load=None):
         warnings.warn("Use get_commit", DeprecationWarning)
