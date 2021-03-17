@@ -241,25 +241,33 @@ class GitRepository(BaseRepository):
 
         is_bstr = isinstance(commit_id_or_idx, (str, unicode))
         is_branch = reference_obj and reference_obj.branch
-        is_numeric_idx = \
-            (is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12) \
-            or isinstance(commit_id_or_idx, int)
 
-        if not is_branch and (is_numeric_idx or is_null(commit_id_or_idx)):
-            try:
-                commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
-            except Exception:
-                raise CommitDoesNotExistError(commit_missing_err)
-
-        elif is_bstr:
+        lookup_ok = False
+        if is_bstr:
             # Need to call remote to translate id for tagging scenarios,
             # or branch that are numeric
             try:
                 remote_data = self._remote.get_object(commit_id_or_idx,
                                                       maybe_unreachable=maybe_unreachable)
                 commit_id_or_idx = remote_data["commit_id"]
+                lookup_ok = True
             except (CommitDoesNotExistError,):
-                raise CommitDoesNotExistError(commit_missing_err)
+                lookup_ok = False
+
+        if lookup_ok is False:
+            is_numeric_idx = \
+                (is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12) \
+                or isinstance(commit_id_or_idx, int)
+            if not is_branch and (is_numeric_idx or is_null(commit_id_or_idx)):
+                try:
+                    commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
+                    lookup_ok = True
+                except Exception:
+                    raise CommitDoesNotExistError(commit_missing_err)
+
+        # we failed regular lookup, and by integer number lookup
+        if lookup_ok is False:
+            raise CommitDoesNotExistError(commit_missing_err)
 
         # Ensure we return full id
         if not SHA_PATTERN.match(str(commit_id_or_idx)):
