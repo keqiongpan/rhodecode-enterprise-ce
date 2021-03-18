@@ -950,8 +950,8 @@ def includeme(config):
     config.add_view(
         RepoMaintenanceView,
         attr='repo_maintenance',
-        route_name='edit_repo_maintenance_execute', request_method='GET',
-        renderer='json', xhr=True)
+        route_name='edit_repo_maintenance', request_method='GET',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
 
     config.add_route(
         name='edit_repo_maintenance_execute',
@@ -959,8 +959,8 @@ def includeme(config):
     config.add_view(
         RepoMaintenanceView,
         attr='repo_maintenance_execute',
-        route_name='edit_repo_maintenance', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+        route_name='edit_repo_maintenance_execute', request_method='GET',
+        renderer='json', xhr=True)
 
     # Fields
     config.add_route(
