@@ -57,7 +57,7 @@
             </td>
             <td class="mid td-description">
                 <div class="log-container truncate-wrap">
-                    <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name, issues_container_callback=getattr(c, 'referenced_commit_issues', lambda p:p)(commit.serialize()))}</div>
+                    <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name, issues_container_callback=getattr(c, 'referenced_commit_issues', h.IssuesRegistry())(commit.serialize()))}</div>
                 </div>
             </td>
         </tr>
