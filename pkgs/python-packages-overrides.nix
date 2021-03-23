@@ -280,6 +280,54 @@ self: super: {
     ];
   });
 
+  "pytest-runner" = super."pytest-runner".override (attrs: {
+    propagatedBuildInputs = [
+      self."setuptools-scm"
+    ];
+  });
+
+  "py" = super."py".override (attrs: {
+    propagatedBuildInputs = [
+      self."setuptools-scm"
+    ];
+  });
+
+  "python-dateutil" = super."python-dateutil".override (attrs: {
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      self."setuptools-scm"
+    ];
+  });
+
+  "configparser" = super."configparser".override (attrs: {
+    patches = [
+      ./patches/configparser/pyproject.patch
+    ];
+    propagatedBuildInputs = [
+      self."setuptools-scm"
+    ];
+  });
+
+  "importlib-metadata" = super."importlib-metadata".override (attrs: {
+
+    patches = [
+      ./patches/importlib_metadata/pyproject.patch
+    ];
+
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      self."setuptools-scm"
+    ];
+
+  });
+
+  "zipp" = super."zipp".override (attrs: {
+    patches = [
+      ./patches/zipp/pyproject.patch
+    ];
+    propagatedBuildInputs = attrs.propagatedBuildInputs ++ [
+      self."setuptools-scm"
+    ];
+  });
+
   "pyramid-apispec" = super."pyramid-apispec".override (attrs: {
     patches = [
       ./patches/pyramid_apispec/setuptools.patch

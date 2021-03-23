@@ -2092,6 +2092,17 @@ self: super: {
       license = [ pkgs.lib.licenses.mit ];
     };
   };
+  "setuptools-scm" = super.buildPythonPackage {
+    name = "setuptools-scm-3.5.0";
+    doCheck = false;
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/b2/f7/60a645aae001a2e06cf4b8db2fba9d9f36b8fd378f10647e3e218b61b74b/setuptools_scm-3.5.0.tar.gz";
+      sha256 = "5bdf21a05792903cafe7ae0c9501182ab52497614fa6b1750d9dbae7b60c1a87";
+    };
+    meta = {
+      license = [ pkgs.lib.licenses.psfl ];
+    };
+  };
   "simplegeneric" = super.buildPythonPackage {
     name = "simplegeneric-0.8.1";
     doCheck = false;

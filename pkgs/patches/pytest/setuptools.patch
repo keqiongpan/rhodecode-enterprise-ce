@@ -6,7 +6,7 @@ diff -rup pytest-4.6.5-orig/setup.py pytest-4.6.5/setup.py
      setup(
          use_scm_version={"write_to": "src/_pytest/_version.py"},
 -        setup_requires=["setuptools-scm", "setuptools>=40.0"],
-+        setup_requires=["setuptools-scm", "setuptools<=42.0"],
++        setup_requires=["setuptools-scm<6.0.0", "setuptools<=42.0"],
          package_dir={"": "src"},
          # fmt: off
          extras_require={
