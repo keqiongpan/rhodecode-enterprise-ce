@@ -12,6 +12,12 @@
  ******************************************************************************/
 function registerRCRoutes() {
     // routes registration
+    pyroutes.register('admin_artifacts', '/_admin/artifacts', []);
+    pyroutes.register('admin_artifacts_data', '/_admin/artifacts-data', []);
+    pyroutes.register('admin_artifacts_delete', '/_admin/artifacts/%(uid)s/delete', ['uid']);
+    pyroutes.register('admin_artifacts_show_all', '/_admin/artifacts', []);
+    pyroutes.register('admin_artifacts_show_info', '/_admin/artifacts/%(uid)s', ['uid']);
+    pyroutes.register('admin_artifacts_update', '/_admin/artifacts/%(uid)s/update', ['uid']);
     pyroutes.register('admin_audit_log_entry', '/_admin/audit_logs/%(audit_log_id)s', ['audit_log_id']);
     pyroutes.register('admin_audit_logs', '/_admin/audit_logs', []);
     pyroutes.register('admin_defaults_repositories', '/_admin/defaults/repositories', []);
