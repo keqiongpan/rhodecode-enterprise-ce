@@ -524,8 +524,10 @@ class PermissionCalculator(object):
 
         # In case we want to extend this list we should make sure
         # this is in sync with User.DEFAULT_USER_PERMISSIONS definitions
+        from rhodecode.model.permission import PermissionModel
+
         _configurable = frozenset([
-            'hg.fork.none', 'hg.fork.repository',
+            PermissionModel.FORKING_DISABLED, PermissionModel.FORKING_ENABLED,
             'hg.create.none', 'hg.create.repository',
             'hg.usergroup.create.false', 'hg.usergroup.create.true',
             'hg.repogroup.create.false', 'hg.repogroup.create.true',
