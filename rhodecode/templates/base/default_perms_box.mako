@@ -62,7 +62,7 @@
            <div class="radios">
                ${h.radio('default_fork_create' + suffix, c.fork_choices[1][0], label=c.fork_choices[1][1], **kwargs)}
                ${h.radio('default_fork_create' + suffix, c.fork_choices[0][0], label=c.fork_choices[0][1], **kwargs)}
-               <span class="help-block">${_('Permission to create root level repository forks. When disabled, users can still fork repositories inside their own repository groups.')}</span>
+               <span class="help-block">${_('Permission to create repository forks. Root level forks will only work if repository creation is enabled.')}</span>
            </div>
         </div>
         <div class="field">
