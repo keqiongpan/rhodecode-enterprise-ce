@@ -39,6 +39,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.db import (_hash_key, func, or_, in_filter_generator,
     Session, RepoGroup, UserRepoGroupToPerm, User, Permission, UserGroupRepoGroupToPerm,
     UserGroup, Repository)
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.settings import VcsSettingsModel, SettingsModel
 from rhodecode.lib.caching_query import FromCache
 from rhodecode.lib.utils2 import action_logger_generic
@@ -531,8 +532,14 @@ class RepoGroupModel(BaseModel):
 
             new_path = repo_group.full_path
 
+            affected_user_ids = []
             if 'user' in form_data:
-                repo_group.user = User.get_by_username(form_data['user'])
+                old_owner_id = repo_group.user.user_id
+                new_owner = User.get_by_username(form_data['user'])
+                repo_group.user = new_owner
+
+                if old_owner_id != new_owner.user_id:
+                    affected_user_ids = [new_owner.user_id, old_owner_id]
 
             self.sa.add(repo_group)
 
@@ -565,6 +572,9 @@ class RepoGroupModel(BaseModel):
 
             # Trigger update event.
             events.trigger(events.RepoGroupUpdateEvent(repo_group))
+
+            if affected_user_ids:
+                PermissionModel().trigger_permission_flush(affected_user_ids)
 
             return repo_group
         except Exception:
