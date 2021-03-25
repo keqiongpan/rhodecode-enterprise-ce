@@ -594,6 +594,9 @@ def credentials_filter(uri):
     :param uri:
     """
     import urlobject
+    if isinstance(uri, rhodecode.lib.encrypt.InvalidDecryptedValue):
+        return 'InvalidDecryptionKey'
+
     url_obj = urlobject.URLObject(cleaned_uri(uri))
     url_obj = url_obj.without_password().without_username()
 
