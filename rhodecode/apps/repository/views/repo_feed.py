@@ -104,6 +104,9 @@ class RepoFeedView(RepoAppView):
 
     def _get_commits(self):
         pre_load = ['author', 'branch', 'date', 'message', 'parents']
+        if self.rhodecode_vcs_repo.is_empty():
+            return []
+
         collection = self.rhodecode_vcs_repo.get_commits(
             branch_name=None, show_hidden=False, pre_load=pre_load,
             translate_tags=False)
@@ -137,6 +140,7 @@ class RepoFeedView(RepoAppView):
                 language=self.language,
                 ttl=self.ttl
             )
+
             for commit in reversed(self._get_commits()):
                 date = self._set_timezone(commit.date)
                 feed.add_item(
