@@ -46,6 +46,7 @@ from rhodecode.model.db import (
     Session, Repository, UserRepoToPerm, UserGroupRepoToPerm,
     UserRepoGroupToPerm, UserGroupRepoGroupToPerm, User, Permission,
     Statistics, UserGroup, RepoGroup, RepositoryField, UserLog)
+from rhodecode.model.permission import PermissionModel
 from rhodecode.model.settings import VcsSettingsModel
 
 log = logging.getLogger(__name__)
@@ -422,8 +423,15 @@ class RepoModel(BaseModel):
         try:
             cur_repo = self._get_repo(repo)
             source_repo_name = cur_repo.repo_name
+
+            affected_user_ids = []
             if 'user' in kwargs:
-                cur_repo.user = User.get_by_username(kwargs['user'])
+                old_owner_id = cur_repo.user.user_id
+                new_owner = User.get_by_username(kwargs['user'])
+                cur_repo.user = new_owner
+
+                if old_owner_id != new_owner.user_id:
+                    affected_user_ids = [new_owner.user_id, old_owner_id]
 
             if 'repo_group' in kwargs:
                 cur_repo.group = RepoGroup.get(kwargs['repo_group'])
@@ -473,6 +481,9 @@ class RepoModel(BaseModel):
                 # rename repository
                 self._rename_filesystem_repo(
                     old=source_repo_name, new=new_name)
+
+            if affected_user_ids:
+                PermissionModel().trigger_permission_flush(affected_user_ids)
 
             return cur_repo
         except Exception:

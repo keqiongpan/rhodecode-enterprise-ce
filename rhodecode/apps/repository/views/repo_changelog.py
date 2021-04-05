@@ -34,7 +34,7 @@ from rhodecode.lib.auth import (
 from rhodecode.lib.ext_json import json
 from rhodecode.lib.graphmod import _colored, _dagwalker
 from rhodecode.lib.helpers import RepoPage
-from rhodecode.lib.utils2 import safe_int, safe_str, str2bool
+from rhodecode.lib.utils2 import safe_int, safe_str, str2bool, safe_unicode
 from rhodecode.lib.vcs.exceptions import (
     RepositoryError, CommitDoesNotExistError,
     CommitError, NodeDoesNotExistError, EmptyRepositoryError)
@@ -110,7 +110,7 @@ class RepoChangelogView(RepoAppView):
 
     def _check_if_valid_branch(self, branch_name, repo_name, f_path):
         if branch_name not in self.rhodecode_vcs_repo.branches_all:
-            h.flash('Branch {} is not found.'.format(h.escape(branch_name)),
+            h.flash(u'Branch {} is not found.'.format(h.escape(safe_unicode(branch_name))),
                     category='warning')
             redirect_url = h.route_path(
                 'repo_commits_file', repo_name=repo_name,

@@ -594,6 +594,9 @@ def credentials_filter(uri):
     :param uri:
     """
     import urlobject
+    if isinstance(uri, rhodecode.lib.encrypt.InvalidDecryptedValue):
+        return 'InvalidDecryptionKey'
+
     url_obj = urlobject.URLObject(cleaned_uri(uri))
     url_obj = url_obj.without_password().without_username()
 
@@ -655,7 +658,7 @@ def get_clone_url(request, uri_tmpl, repo_name, repo_id, repo_type, **override):
 
 
 def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None,
-                    maybe_unreachable=False):
+                    maybe_unreachable=False, reference_obj=None):
     """
     Safe version of get_commit if this commit doesn't exists for a
     repository it returns a Dummy one instead
@@ -665,6 +668,7 @@ def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None,
     :param commit_idx: numeric commit index
     :param pre_load: optional list of commit attributes to load
     :param maybe_unreachable: translate unreachable commits on git repos
+    :param reference_obj: explicitly search via a reference obj in git. E.g "branch:123" would mean branch "123"
     """
     # TODO(skreft): remove these circular imports
     from rhodecode.lib.vcs.backends.base import BaseRepository, EmptyCommit
@@ -676,7 +680,7 @@ def get_commit_safe(repo, commit_id=None, commit_idx=None, pre_load=None,
     try:
         commit = repo.get_commit(
             commit_id=commit_id, commit_idx=commit_idx, pre_load=pre_load,
-            maybe_unreachable=maybe_unreachable)
+            maybe_unreachable=maybe_unreachable, reference_obj=reference_obj)
     except (RepositoryError, LookupError):
         commit = EmptyCommit()
     return commit

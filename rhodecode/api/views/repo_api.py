@@ -1212,7 +1212,7 @@ def fork_repo(request, apiuser, repoid, fork_name,
         validate_repo_permissions(apiuser, repoid, repo, _perms)
 
         # check if the regular user has at least fork permissions as well
-        if not HasPermissionAnyApi('hg.fork.repository')(user=apiuser):
+        if not HasPermissionAnyApi(PermissionModel.FORKING_ENABLED)(user=apiuser):
             raise JSONRPCForbidden()
 
     # check if user can set owner parameter

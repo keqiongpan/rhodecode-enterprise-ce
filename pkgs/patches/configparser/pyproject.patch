@@ -1,0 +1,10 @@
+diff -rup configparser-4.0.2-orig/pyproject.toml configparser-4.0.2/pyproject.toml
+--- configparser-4.0.2-orig/pyproject.toml 2021-03-22 21:28:11.000000000 +0100
++++ configparser-4.0.2/pyproject.toml 2021-03-22 21:28:11.000000000 +0100
+@@ -1,5 +1,5 @@
+ [build-system]
+-requires = ["setuptools>=40.7", "wheel", "setuptools_scm>=1.15"]
++requires = ["setuptools<=42.0", "wheel", "setuptools_scm<6.0.0"]
+ build-backend = "setuptools.build_meta"
+
+ [tool.black]

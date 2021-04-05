@@ -130,6 +130,24 @@ file_store_get_info (EE only)
      error :  null
 
 
+file_store_delete (EE only)
+---------------------------
+
+.. py:function:: file_store_delete(apiuser, store_fid)
+
+   Delete an artifact based on the secret uuid.
+
+   Example output:
+
+   .. code-block:: bash
+
+     id : <id_given_in_input>
+     result: {
+         "artifact" : {"uid": "some uid", "removed": true}
+     }
+     error :  null
+
+
 file_store_add_metadata (EE only)
 ---------------------------------
 

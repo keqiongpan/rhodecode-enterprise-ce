@@ -1,0 +1,12 @@
+diff -rup rhodecode-tools-1.4.0-orig/setup.py rhodecode-tools-1.4.0/setup.py
+--- rhodecode-tools-1.4.0/setup-orig.py	2021-03-11 12:34:45.000000000 +0100
++++ rhodecode-tools-1.4.0/setup.py	2021-03-11 12:34:56.000000000 +0100
+@@ -69,7 +69,7 @@ def _get_requirements(req_filename, excl
+
+
+ # requirements extract
+-setup_requirements = ['pytest-runner']
++setup_requirements = ['pytest-runner==5.1.0']
+ install_requirements = _get_requirements(
+     'requirements.txt', exclude=['setuptools'])
+ test_requirements = _get_requirements('requirements_test.txt')

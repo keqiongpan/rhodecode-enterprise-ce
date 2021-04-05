@@ -221,7 +221,7 @@ if (show_disabled) {
                 <%= version_info %>
             <% } %>
             <br/>
-            File: <code><%- file_name -%></code>
+            File: <code><%= file_name -%></code>
         <% } else { %>
             <% if (review_status) { %>
                 <i class="icon-circle review-status-<%= review_status %>"></i>

@@ -277,7 +277,7 @@ class SubversionRepository(base.BaseRepository):
         return os.path.join(self.path, 'hooks')
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
-                   translate_tag=None, maybe_unreachable=False):
+                   translate_tag=None, maybe_unreachable=False, reference_obj=None):
         if self.is_empty():
             raise EmptyRepositoryError("There are no commits yet")
         if commit_id is not None:

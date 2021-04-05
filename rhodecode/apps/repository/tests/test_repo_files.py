@@ -542,6 +542,28 @@ class TestRepositoryArchival(object):
             for header in headers:
                 assert header in response.headers.items()
 
+    def test_archival_no_hash(self, backend):
+        backend.enable_downloads()
+        commit = backend.repo.get_commit(commit_idx=173)
+        for a_type, content_type, extension in settings.ARCHIVE_SPECS:
+
+            short = 'plain' + extension
+            fname = commit.raw_id + extension
+            filename = '%s-%s' % (backend.repo_name, short)
+            response = self.app.get(
+                route_path('repo_archivefile',
+                           repo_name=backend.repo_name,
+                           fname=fname, params={'with_hash': 0}))
+
+            assert response.status == '200 OK'
+            headers = [
+                ('Content-Disposition', 'attachment; filename=%s' % filename),
+                ('Content-Type', '%s' % content_type),
+            ]
+
+            for header in headers:
+                assert header in response.headers.items()
+
     @pytest.mark.parametrize('arch_ext',[
         'tar', 'rar', 'x', '..ax', '.zipz', 'tar.gz.tar'])
     def test_archival_wrong_ext(self, backend, arch_ext):

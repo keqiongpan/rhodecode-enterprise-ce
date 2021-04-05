@@ -1,0 +1,12 @@
+diff -rup pyramid-apispec-0.3.2-orig/setup.py pyramid-apispec-0.3.2/setup.py
+--- pyramid-apispec-0.3.2-orig/setup.py	2021-03-11 11:19:26.000000000 +0100
++++ pyramid-apispec-0.3.2/setup.py	2021-03-11 11:19:51.000000000 +0100
+@@ -44,7 +44,7 @@ setup(
+     packages=find_packages(exclude=["contrib", "docs", "tests"]),
+     package_data={"pyramid_apispec": ["static/*.*"], "": ["LICENSE"]},
+     install_requires=["apispec[yaml]==1.0.0"],
+-    setup_requires=["pytest-runner"],
++    setup_requires=["pytest-runner==5.1"],
+     extras_require={
+         "dev": ["coverage", "pytest", "pyramid", "tox", "webtest"],
+         "demo": ["marshmallow==2.15.3", "pyramid", "apispec", "webtest"],

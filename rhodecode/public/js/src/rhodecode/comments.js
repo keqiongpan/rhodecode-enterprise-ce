@@ -1331,7 +1331,7 @@ var CommentsController = function() {
 
           // There aren't any comments, we init the `.inline-comments` with `reply-thread-container` first
           if ($comments.length===0) {
-            var replBtn = '<button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, \'{0}\', \'{1}\', null)">Reply...</button>'.format(f_path, line_no)
+            var replBtn = '<button class="cb-comment-add-button" onclick="return Rhodecode.comments.createComment(this, \'{0}\', \'{1}\', null)">Reply...</button>'.format(escapeHtml(f_path), line_no)
             var $reply_container = $('#cb-comments-inline-container-template')
             $reply_container.find('button.cb-comment-add-button').replaceWith(replBtn);
             $td.append($($reply_container).html());

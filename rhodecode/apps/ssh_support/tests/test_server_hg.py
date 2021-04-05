@@ -108,6 +108,7 @@ class TestMercurialServer(object):
     def test_run_returns_executes_command(self, hg_server):
         server = hg_server.create()
         from rhodecode.apps.ssh_support.lib.backends.hg import MercurialTunnelWrapper
+        os.environ['SSH_CLIENT'] = '127.0.0.1'
         with mock.patch.object(MercurialTunnelWrapper, 'create_hooks_env') as _patch:
             _patch.return_value = 0
             with mock.patch.object(MercurialTunnelWrapper, 'command', return_value='date'):

@@ -161,13 +161,26 @@ def detect_vcs_request(environ, backends):
     # List of path views first chunk we don't do any checks
     white_list = [
         # e.g /_file_store/download
-        '_file_store'
+        '_file_store',
+
+        # static files no detection
+        '_static',
+
+        # full channelstream connect should be VCS skipped
+        '_admin/channelstream/connect',
     ]
 
     path_info = environ['PATH_INFO']
 
-    if get_path_elem(path_info) in white_list:
+    path_elem = get_path_elem(path_info)
+
+    if path_elem in white_list:
         log.debug('path `%s` in whitelist, skipping...', path_info)
+        return handler
+
+    path_url = path_info.lstrip('/')
+    if path_url in white_list:
+        log.debug('full url path `%s` in whitelist, skipping...', path_url)
         return handler
 
     if VCS_TYPE_KEY in environ:
@@ -181,7 +194,7 @@ def detect_vcs_request(environ, backends):
             log.debug('got handler:%s from environ', handler)
 
     if not handler:
-        log.debug('request start: checking if request is of VCS type in order: %s', backends)
+        log.debug('request start: checking if request for `%s` is of VCS type in order: %s', path_elem, backends)
         for vcs_type in backends:
             vcs_check, _handler = checks[vcs_type]
             if vcs_check(environ):

@@ -674,6 +674,10 @@ class RepoCommitsView(RepoAppView):
         is_repo_comment = comment.repo.repo_id == self.db_repo.repo_id
         comment_repo_admin = is_repo_admin and is_repo_comment
 
+        if comment.draft and not comment_owner:
+            # We never allow to delete draft comments for other than owners
+            raise HTTPNotFound()
+
         if super_admin or comment_owner or comment_repo_admin:
             CommentsModel().delete(comment=comment, auth_user=self._rhodecode_user)
             Session().commit()

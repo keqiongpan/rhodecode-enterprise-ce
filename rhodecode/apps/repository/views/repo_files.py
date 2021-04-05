@@ -325,17 +325,18 @@ class RepoFilesView(RepoAppView):
 
         return lf_enabled
 
-    def _get_archive_name(self, db_repo_name, commit_sha, ext, subrepos=False, path_sha=''):
+    def _get_archive_name(self, db_repo_name, commit_sha, ext, subrepos=False, path_sha='', with_hash=True):
         # original backward compat name of archive
         clean_name = safe_str(db_repo_name.replace('/', '_'))
 
         # e.g vcsserver.zip
         # e.g vcsserver-abcdefgh.zip
         # e.g vcsserver-abcdefgh-defghijk.zip
-        archive_name = '{}{}{}{}{}'.format(
+        archive_name = '{}{}{}{}{}{}'.format(
             clean_name,
             '-sub' if subrepos else '',
             commit_sha,
+            '-{}'.format('plain') if not with_hash else '',
             '-{}'.format(path_sha) if path_sha else '',
             ext)
         return archive_name
@@ -372,6 +373,11 @@ class RepoFilesView(RepoAppView):
         except EmptyRepositoryError:
             return Response(_('Empty repository'))
 
+        # we used a ref, or a shorter version, lets redirect client ot use explicit hash
+        if commit_id != commit.raw_id:
+            fname='{}{}'.format(commit.raw_id, ext)
+            raise HTTPFound(self.request.current_route_path(fname=fname))
+
         try:
             at_path = commit.get_node(at_path).path or default_at_path
         except Exception:
@@ -385,7 +391,7 @@ class RepoFilesView(RepoAppView):
         # used for cache etc
         archive_name = self._get_archive_name(
             self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
-            path_sha=path_sha)
+            path_sha=path_sha, with_hash=with_hash)
 
         if not with_hash:
             short_sha = ''
@@ -394,7 +400,7 @@ class RepoFilesView(RepoAppView):
         # what end client gets served
         response_archive_name = self._get_archive_name(
             self.db_repo_name, commit_sha=short_sha, ext=ext, subrepos=subrepos,
-            path_sha=path_sha)
+            path_sha=path_sha, with_hash=with_hash)
         # remove extension from our archive directory name
         archive_dir_name = response_archive_name[:-len(ext)]
 
@@ -404,9 +410,10 @@ class RepoFilesView(RepoAppView):
         cached_archive_path = None
 
         if archive_cache_enabled:
-            # check if we it's ok to write
+            # check if we it's ok to write, and re-create the archive cache
             if not os.path.isdir(CONFIG['archive_cache_dir']):
                 os.makedirs(CONFIG['archive_cache_dir'])
+
             cached_archive_path = os.path.join(
                 CONFIG['archive_cache_dir'], archive_name)
             if os.path.isfile(cached_archive_path):

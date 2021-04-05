@@ -416,6 +416,12 @@ ${h.style_metatag(tag_type, tag)|n,trim}
     </a>
 </%def>
 
+<%def name="repo_artifact_admin_name(file_uid, artifact_display_name)">
+    <a href="${h.route_path('admin_artifacts_show_info', uid=file_uid)}">
+        ${(artifact_display_name or '_EMPTY_NAME_')}
+    </a>
+</%def>
+
 <%def name="repo_artifact_uid(repo_name, file_uid)">
     <code>${h.shorter(file_uid, size=24, prefix=True)}</code>
 </%def>
@@ -442,6 +448,7 @@ ${h.style_metatag(tag_type, tag)|n,trim}
  </div>
 % endif
 </%def>
+
 
 <%def name="markup_form(form_id, form_text='', help_text=None)">
 

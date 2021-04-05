@@ -1748,6 +1748,10 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         is_repo_comment = comment.repo.repo_name == self.db_repo_name
         comment_repo_admin = is_repo_admin and is_repo_comment
 
+        if comment.draft and not comment_owner:
+            # We never allow to delete draft comments for other than owners
+            raise HTTPNotFound()
+
         if super_admin or comment_owner or comment_repo_admin:
             old_calculated_status = comment.pull_request.calculated_review_status()
             CommentsModel().delete(comment=comment, auth_user=self._rhodecode_user)

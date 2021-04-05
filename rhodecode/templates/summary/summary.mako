@@ -95,7 +95,8 @@ $(document).ready(function(){
             var fname = selectedReference.raw_id + ext;
             var href = pyroutes.url('repo_archivefile', {
                 'repo_name': templateContext.repo_name,
-                'fname': fname
+                'fname': fname,
+                'with_hash': '1'
             });
             // set new label
             $(this).html(ico + ' {0}{1}'.format(escapeHtml(e.added.text), ext));

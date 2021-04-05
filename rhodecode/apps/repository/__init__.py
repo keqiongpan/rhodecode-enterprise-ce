@@ -932,8 +932,8 @@ def includeme(config):
         name='edit_repo_perms_branch',
         pattern='/{repo_name:.*?[^/]}/settings/branch_permissions', repo_route=True)
     config.add_view(
-        RepoBranchesView,
-        attr='branches',
+        RepoSettingsBranchPermissionsView,
+        attr='branch_permissions',
         route_name='edit_repo_perms_branch', request_method='GET',
         renderer='rhodecode:templates/admin/repos/repo_edit.mako')
 
@@ -950,8 +950,8 @@ def includeme(config):
     config.add_view(
         RepoMaintenanceView,
         attr='repo_maintenance',
-        route_name='edit_repo_maintenance_execute', request_method='GET',
-        renderer='json', xhr=True)
+        route_name='edit_repo_maintenance', request_method='GET',
+        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
 
     config.add_route(
         name='edit_repo_maintenance_execute',
@@ -959,8 +959,8 @@ def includeme(config):
     config.add_view(
         RepoMaintenanceView,
         attr='repo_maintenance_execute',
-        route_name='edit_repo_maintenance', request_method='GET',
-        renderer='rhodecode:templates/admin/repos/repo_edit.mako')
+        route_name='edit_repo_maintenance_execute', request_method='GET',
+        renderer='json', xhr=True)
 
     # Fields
     config.add_route(

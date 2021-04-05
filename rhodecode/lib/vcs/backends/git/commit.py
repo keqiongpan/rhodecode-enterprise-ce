@@ -98,7 +98,7 @@ class GitCommit(base.BaseCommit):
             elif attr == "parents":
                 value = self._make_commits(value)
             elif attr == "branch":
-                value = value[0] if value else None
+                value = self._set_branch(value)
             self.__dict__[attr] = value
 
     @LazyProperty
@@ -156,13 +156,15 @@ class GitCommit(base.BaseCommit):
                 branches.append(name)
         return branches
 
-    @LazyProperty
-    def branch(self):
-        branches = self._remote.branch(self.raw_id)
-
+    def _set_branch(self, branches):
         if branches:
             # actually commit can have multiple branches in git
             return safe_unicode(branches[0])
+
+    @LazyProperty
+    def branch(self):
+        branches = self._remote.branch(self.raw_id)
+        return self._set_branch(branches)
 
     def _get_tree_id_for_path(self, path):
         path = safe_str(path)

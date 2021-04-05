@@ -165,7 +165,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @HasPermissionAnyDecorator('hg.admin', 'hg.fork.repository')
+    @HasPermissionAnyDecorator('hg.admin', PermissionModel.FORKING_ENABLED)
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     def repo_fork_new(self):
@@ -191,7 +191,7 @@ class RepoForksView(RepoAppView, DataGridAppView):
 
     @LoginRequired()
     @NotAnonymous()
-    @HasPermissionAnyDecorator('hg.admin', 'hg.fork.repository')
+    @HasPermissionAnyDecorator('hg.admin', PermissionModel.FORKING_ENABLED)
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
     @CSRFRequired()

@@ -24,7 +24,7 @@
     ## to speed up lookups cache some functions before the loop
     <%
         active_patterns = h.get_active_pattern_entries(c.repo_name)
-        urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns, issues_container=getattr(c, 'referenced_commit_issues', None))
+        urlify_commit_message = h.partial(h.urlify_commit_message, active_pattern_entries=active_patterns)
     %>
 
     %for commit in c.commit_ranges:
@@ -57,7 +57,7 @@
             </td>
             <td class="mid td-description">
                 <div class="log-container truncate-wrap">
-                    <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name)}</div>
+                    <div class="message truncate" id="c-${commit.raw_id}" data-message-raw="${commit.message}">${urlify_commit_message(commit.message, c.repo_name, issues_container_callback=getattr(c, 'referenced_commit_issues', h.IssuesRegistry())(commit.serialize()))}</div>
                 </div>
             </td>
         </tr>

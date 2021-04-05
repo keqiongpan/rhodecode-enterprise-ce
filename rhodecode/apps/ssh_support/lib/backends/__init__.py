@@ -89,6 +89,14 @@ class SshWrapper(object):
 
         return conn
 
+    def maybe_translate_repo_uid(self, repo_name):
+        if repo_name.startswith('_'):
+            from rhodecode.model.repo import RepoModel
+            by_id_match = RepoModel().get_repo_by_id(repo_name)
+            if by_id_match:
+                repo_name = by_id_match.repo_name
+        return repo_name
+
     def get_repo_details(self, mode):
         vcs_type = mode if mode in ['svn', 'hg', 'git'] else None
         repo_name = None
@@ -97,14 +105,14 @@ class SshWrapper(object):
         hg_match = re.match(hg_pattern, self.command)
         if hg_match is not None:
             vcs_type = 'hg'
-            repo_name = hg_match.group(1).strip('/')
+            repo_name = self.maybe_translate_repo_uid(hg_match.group(1).strip('/'))
             return vcs_type, repo_name, mode
 
         git_pattern = r'^git-(receive-pack|upload-pack)\s\'[/]?(\S+?)(|\.git)\'$'
         git_match = re.match(git_pattern, self.command)
         if git_match is not None:
             vcs_type = 'git'
-            repo_name = git_match.group(2).strip('/')
+            repo_name = self.maybe_translate_repo_uid(git_match.group(2).strip('/'))
             mode = git_match.group(1)
             return vcs_type, repo_name, mode
 

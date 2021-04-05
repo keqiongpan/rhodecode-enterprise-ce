@@ -255,7 +255,7 @@ class LocalFileStorage(object):
 
         return filename, metadata
 
-    def get_metadata(self, filename):
+    def get_metadata(self, filename, ignore_missing=False):
         """
         Reads JSON stored metadata for a file
 
@@ -264,6 +264,7 @@ class LocalFileStorage(object):
         """
         filename = self.store_path(filename)
         filename_meta = filename + '.meta'
-
+        if ignore_missing and not os.path.isfile(filename_meta):
+            return {}
         with open(filename_meta, "rb") as source_meta:
             return json.loads(source_meta.read())

@@ -228,7 +228,8 @@ class GitRepository(BaseRepository):
             return []
         return output.splitlines()
 
-    def _lookup_commit(self, commit_id_or_idx, translate_tag=True, maybe_unreachable=False):
+    def _lookup_commit(self, commit_id_or_idx, translate_tag=True, maybe_unreachable=False, reference_obj=None):
+
         def is_null(value):
             return len(value) == commit_id_or_idx.count('0')
 
@@ -239,21 +240,34 @@ class GitRepository(BaseRepository):
             *map(safe_str, [commit_id_or_idx, self.name]))
 
         is_bstr = isinstance(commit_id_or_idx, (str, unicode))
-        if ((is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12)
-            or isinstance(commit_id_or_idx, int) or is_null(commit_id_or_idx)):
-            try:
-                commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
-            except Exception:
-                raise CommitDoesNotExistError(commit_missing_err)
+        is_branch = reference_obj and reference_obj.branch
 
-        elif is_bstr:
-            # Need to call remote to translate id for tagging scenario
+        lookup_ok = False
+        if is_bstr:
+            # Need to call remote to translate id for tagging scenarios,
+            # or branch that are numeric
             try:
                 remote_data = self._remote.get_object(commit_id_or_idx,
                                                       maybe_unreachable=maybe_unreachable)
                 commit_id_or_idx = remote_data["commit_id"]
+                lookup_ok = True
             except (CommitDoesNotExistError,):
-                raise CommitDoesNotExistError(commit_missing_err)
+                lookup_ok = False
+
+        if lookup_ok is False:
+            is_numeric_idx = \
+                (is_bstr and commit_id_or_idx.isdigit() and len(commit_id_or_idx) < 12) \
+                or isinstance(commit_id_or_idx, int)
+            if not is_branch and (is_numeric_idx or is_null(commit_id_or_idx)):
+                try:
+                    commit_id_or_idx = self.commit_ids[int(commit_id_or_idx)]
+                    lookup_ok = True
+                except Exception:
+                    raise CommitDoesNotExistError(commit_missing_err)
+
+        # we failed regular lookup, and by integer number lookup
+        if lookup_ok is False:
+            raise CommitDoesNotExistError(commit_missing_err)
 
         # Ensure we return full id
         if not SHA_PATTERN.match(str(commit_id_or_idx)):
@@ -413,11 +427,12 @@ class GitRepository(BaseRepository):
             return
 
     def get_commit(self, commit_id=None, commit_idx=None, pre_load=None,
-                   translate_tag=True, maybe_unreachable=False):
+                   translate_tag=True, maybe_unreachable=False, reference_obj=None):
         """
         Returns `GitCommit` object representing commit from git repository
         at the given `commit_id` or head (most recent commit) if None given.
         """
+
         if self.is_empty():
             raise EmptyRepositoryError("There are no commits yet")
 
@@ -443,7 +458,9 @@ class GitRepository(BaseRepository):
             commit_id = "tip"
 
         if translate_tag:
-            commit_id = self._lookup_commit(commit_id, maybe_unreachable=maybe_unreachable)
+            commit_id = self._lookup_commit(
+                commit_id, maybe_unreachable=maybe_unreachable,
+                reference_obj=reference_obj)
 
         try:
             idx = self._commit_ids[commit_id]

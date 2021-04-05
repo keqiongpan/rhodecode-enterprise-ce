@@ -17,7 +17,7 @@
 # This program is dual-licensed. If you wish to learn more about the
 # RhodeCode Enterprise Edition, including its added features, Support services,
 # and proprietary license terms, please see https://rhodecode.com/licenses/
-
+import os
 import mock
 import pytest
 
@@ -174,6 +174,7 @@ class TestSubversionServer(object):
     def test_run_returns_executes_command(self, svn_server):
         server = svn_server.create()
         from rhodecode.apps.ssh_support.lib.backends.svn import SubversionTunnelWrapper
+        os.environ['SSH_CLIENT'] = '127.0.0.1'
         with mock.patch.object(
                 SubversionTunnelWrapper, 'get_first_client_response',
                 return_value={'url': 'http://server/test-svn'}):

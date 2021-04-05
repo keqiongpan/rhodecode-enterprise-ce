@@ -115,6 +115,7 @@
           <li class="${h.is_active('repository_groups', active)}"><a href="${h.route_path('repo_groups')}">${_('Repository groups')}</a></li>
           <li class="${h.is_active('users', active)}"><a href="${h.route_path('users')}">${_('Users')}</a></li>
           <li class="${h.is_active('user_groups', active)}"><a href="${h.route_path('user_groups')}">${_('User groups')}</a></li>
+          <li class="${h.is_active('artifacts', active)}"><a href="${h.route_path('admin_artifacts')}">${_('Artifacts')}</a></li>
           <li class="${h.is_active('permissions', active)}"><a href="${h.route_path('admin_permissions_application')}">${_('Permissions')}</a></li>
           <li class="${h.is_active('authentication', active)}"><a href="${h.route_path('auth_home', traverse='')}">${_('Authentication')}</a></li>
           <li class="${h.is_active('integrations', active)}"><a href="${h.route_path('global_integrations_home')}">${_('Integrations')}</a></li>

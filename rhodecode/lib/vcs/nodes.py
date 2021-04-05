@@ -468,7 +468,7 @@ class FileNode(Node):
         mtype, encoding = db.guess_type(self.name)
 
         if mtype is None:
-            if self.is_binary:
+            if not self.is_largefile() and self.is_binary:
                 mtype = 'application/octet-stream'
                 encoding = None
             else:
@@ -839,6 +839,7 @@ class LargeFileNode(FileNode):
         self.org_path = org_path
         self.kind = NodeKind.LARGEFILE
         self.alias = alias
+        self._content = ''
 
     def _validate_path(self, path):
         """

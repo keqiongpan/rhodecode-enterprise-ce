@@ -41,6 +41,8 @@ class PermissionModel(BaseModel):
     """
     Permissions model for RhodeCode
     """
+    FORKING_DISABLED = 'hg.fork.none'
+    FORKING_ENABLED = 'hg.fork.repository'
 
     cls = Permission
     global_perms = {
@@ -122,8 +124,8 @@ class PermissionModel(BaseModel):
             ('hg.repogroup.create.true', _('Enabled'))]
 
         c_obj.fork_choices = [
-            ('hg.fork.none', _('Disabled')),
-            ('hg.fork.repository', _('Enabled'))]
+            (self.FORKING_DISABLED, _('Disabled')),
+            (self.FORKING_ENABLED, _('Enabled'))]
 
         c_obj.inherit_default_permission_choices = [
             ('hg.inherit_default_perms.false', _('Disabled')),
