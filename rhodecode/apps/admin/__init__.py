@@ -27,6 +27,7 @@ def admin_routes(config):
     Admin prefixed routes
     """
     from rhodecode.apps.admin.views.audit_logs import AdminAuditLogsView
+    from rhodecode.apps.admin.views.artifacts import AdminArtifactsView
     from rhodecode.apps.admin.views.defaults import AdminDefaultSettingsView
     from rhodecode.apps.admin.views.exception_tracker import ExceptionsTrackerView
     from rhodecode.apps.admin.views.main_views import AdminMainView
@@ -59,6 +60,34 @@ def admin_routes(config):
         attr='admin_audit_log_entry',
         route_name='admin_audit_log_entry', request_method='GET',
         renderer='rhodecode:templates/admin/admin_audit_log_entry.mako')
+
+    # Artifacts EE feature
+    config.add_route(
+        'admin_artifacts',
+        pattern=ADMIN_PREFIX + '/artifacts')
+    config.add_route(
+        'admin_artifacts_show_all',
+        pattern=ADMIN_PREFIX + '/artifacts')
+    config.add_view(
+        AdminArtifactsView,
+        attr='artifacts',
+        route_name='admin_artifacts', request_method='GET',
+        renderer='rhodecode:templates/admin/artifacts/artifacts.mako')
+    config.add_view(
+        AdminArtifactsView,
+        attr='artifacts',
+        route_name='admin_artifacts_show_all', request_method='GET',
+        renderer='rhodecode:templates/admin/artifacts/artifacts.mako')
+    # EE views
+    config.add_route(
+        name='admin_artifacts_show_info',
+        pattern=ADMIN_PREFIX + '/artifacts/{uid}')
+    config.add_route(
+        name='admin_artifacts_delete',
+        pattern=ADMIN_PREFIX + '/artifacts/{uid}/delete')
+    config.add_route(
+        name='admin_artifacts_update',
+        pattern=ADMIN_PREFIX + '/artifacts/{uid}/update')
 
     config.add_route(
         name='admin_settings_open_source',
