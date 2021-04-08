@@ -311,6 +311,7 @@ class BaseRepository(object):
     DEFAULT_CONTACT = u"Unknown"
     DEFAULT_DESCRIPTION = u"unknown"
     EMPTY_COMMIT_ID = '0' * 40
+    COMMIT_ID_PAT = re.compile(r'[0-9a-fA-F]{40}')
 
     path = None
 

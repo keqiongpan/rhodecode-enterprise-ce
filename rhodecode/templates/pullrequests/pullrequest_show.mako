@@ -143,9 +143,9 @@
                     ## pull url
                     <li>
                         %if h.is_hg(c.pull_request.source_repo):
-                            <% clone_url = 'hg pull -r {} {}'.format(h.short_id(c.source_ref), c.pull_request.source_repo.clone_url()) %>
+                            <% clone_url = u'hg pull -r {} {}'.format(h.short_id(c.source_ref), c.pull_request.source_repo.clone_url()) %>
                         %elif h.is_git(c.pull_request.source_repo):
-                            <% clone_url = 'git pull {} {}'.format(c.pull_request.source_repo.clone_url(), c.pull_request.source_ref_parts.name) %>
+                            <% clone_url = u'git pull {} {}'.format(c.pull_request.source_repo.clone_url(), c.pull_request.source_ref_parts.name) %>
                         %endif
 
                         <span>${_('Pull changes from source')}</span>: <input type="text" class="input-monospace pr-pullinfo" value="${clone_url}" readonly="readonly">

@@ -618,7 +618,7 @@ class GitRepository(BaseRepository):
         else:
             output, __ = self.run_git_command(
                 ['merge-base', commit_id1, commit_id2])
-            ancestor_id = re.findall(r'[0-9a-fA-F]{40}', output)[0]
+            ancestor_id = self.COMMIT_ID_PAT.findall(output)[0]
 
         log.debug('Found common ancestor with sha: %s', ancestor_id)
 
@@ -642,7 +642,7 @@ class GitRepository(BaseRepository):
                  '%s..%s' % (commit_id1, commit_id2)])
             commits = [
                 repo1.get_commit(commit_id=commit_id, pre_load=pre_load)
-                for commit_id in re.findall(r'[0-9a-fA-F]{40}', output)]
+                for commit_id in self.COMMIT_ID_PAT.findall(output)]
 
         return commits
 
