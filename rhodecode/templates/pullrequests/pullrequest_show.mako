@@ -560,7 +560,7 @@
 
                 <div class="right-sidebar-expanded-state pr-details-title">
                   <span style="padding-left: 2px">
-                  <input name="select_all_drafts" type="checkbox" onclick="$('[name=submit_draft]').prop('checked', !$('[name=submit_draft]').prop('checked'))">
+                  <input name="select_all_drafts" type="checkbox" onclick="selectDraftComments(event)">
                   </span>
                   <span class="sidebar-heading noselect" onclick="refreshDraftComments(); return false">
                     <i class="icon-comment icon-draft"></i>
@@ -940,6 +940,11 @@ window.setObserversData = ${c.pull_request_set_observers_data_json | n};
         else {
 
         }
+    }
+
+    window.selectDraftComments = function (event) {
+        var $target = $(event.currentTarget);
+        $('[name=submit_draft]').prop('checked', $target.prop('checked'))
     }
 
     window.closePullRequest = function (status) {
