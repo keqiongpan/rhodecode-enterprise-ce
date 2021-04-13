@@ -63,7 +63,7 @@
         </tr>
     %endfor
         <tr class="compare_select_hidden" style="${('' if c.collapse_all_commits else 'display: none')}">
-            <td colspan="5">
+            <td colspan="7">
                 ${_ungettext('{} commit hidden, click expand to show them.', '{} commits hidden, click expand to show them.', len(c.commit_ranges)).format(len(c.commit_ranges))}
             </td>
         </tr>
