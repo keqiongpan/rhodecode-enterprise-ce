@@ -911,7 +911,7 @@ class User(Base, BaseModel):
             return {}
 
         try:
-            return json.loads(self._user_data)
+            return json.loads(self._user_data) or {}
         except TypeError:
             return {}
 
