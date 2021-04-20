@@ -65,11 +65,11 @@
                     <fieldset>
                         <div class="gist-type-fields-wrapper">
 
-                        <input type="radio" id="private_gist" checked="" name="gist_type" value="private">
+                        <input type="radio" id="private_gist" checked="" name="gist_type" value="private" onchange="setGistId('private')">
                         <label for="private_gist">${_('Private Gist')}</label>
                         <span class="tooltip label" title="${_('Private Gists are not listed and only accessible through their secret url.')}">${_('Private Gist')}</span>
 
-                        <input type="radio" id="public_gist" name="gist_type" value="public">
+                        <input type="radio" id="public_gist" name="gist_type" value="public" onchange="setGistId('public')">
                         <label for="public_gist">${_('Public Gist')}</label>
                         <span class="tooltip label" title="${_('Public Gists are accessible to anyone and listed in Gists page.')}">${_('Public Gist')}</span>
                         </div>
@@ -99,5 +99,14 @@
     setCodeMirrorModeFromInput(
         modes_select, filename_selector, myCodeMirror, null);
 
+    setGistId = function(gistType) {
+        if (gistType === 'private') {
+            $('#gistid').removeAttr('disabled');
+        }
+        else {
+            $('#gistid').val('');
+            $('#gistid').attr('disabled', 'disabled')
+        }
+    }
 </script>
 </%def>
