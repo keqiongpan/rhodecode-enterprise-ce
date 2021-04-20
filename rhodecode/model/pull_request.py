@@ -56,7 +56,7 @@ from rhodecode.model import BaseModel
 from rhodecode.model.changeset_status import ChangesetStatusModel
 from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
-    or_, String, cast, PullRequest, PullRequestReviewers, ChangesetStatus,
+    aliased, null, lazyload, and_, or_, func, String, cast, PullRequest, PullRequestReviewers, ChangesetStatus,
     PullRequestVersion, ChangesetComment, Repository, RepoReviewRule, User)
 from rhodecode.model.meta import Session
 from rhodecode.model.notification import NotificationModel, \
@@ -319,7 +319,7 @@ class PullRequestModel(BaseModel):
 
         if search_q:
             like_expression = u'%{}%'.format(safe_unicode(search_q))
-            q = q.join(User)
+            q = q.join(User, User.user_id == PullRequest.user_id)
             q = q.filter(or_(
                 cast(PullRequest.pull_request_id, String).ilike(like_expression),
                 User.username.ilike(like_expression),
@@ -405,36 +405,30 @@ class PullRequestModel(BaseModel):
 
         return pull_requests
 
-    def count_awaiting_review(self, repo_name, search_q=None, source=False, statuses=None,
-                              opened_by=None):
+    def count_awaiting_review(self, repo_name, search_q=None, statuses=None):
         """
         Count the number of pull requests for a specific repository that are
         awaiting review.
 
         :param repo_name: target or source repo
         :param search_q: filter by text
-        :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
-        :param opened_by: author user of the pull request
         :returns: int number of pull requests
         """
         pull_requests = self.get_awaiting_review(
-            repo_name, search_q=search_q, source=source, statuses=statuses, opened_by=opened_by)
+            repo_name, search_q=search_q, statuses=statuses)
 
         return len(pull_requests)
 
-    def get_awaiting_review(self, repo_name, search_q=None, source=False, statuses=None,
-                            opened_by=None, offset=0, length=None,
-                            order_by=None, order_dir='desc'):
+    def get_awaiting_review(self, repo_name, search_q=None, statuses=None,
+                            offset=0, length=None, order_by=None, order_dir='desc'):
         """
         Get all pull requests for a specific repository that are awaiting
         review.
 
         :param repo_name: target or source repo
         :param search_q: filter by text
-        :param source: boolean flag to specify if repo_name refers to source
         :param statuses: list of pull request statuses
-        :param opened_by: author user of the pull request
         :param offset: pagination offset
         :param length: length of returned list
         :param order_by: order of the returned list
@@ -442,8 +436,8 @@ class PullRequestModel(BaseModel):
         :returns: list of pull requests
         """
         pull_requests = self.get_all(
-            repo_name, search_q=search_q, source=source, statuses=statuses,
-            opened_by=opened_by, order_by=order_by, order_dir=order_dir)
+            repo_name, search_q=search_q, statuses=statuses,
+            order_by=order_by, order_dir=order_dir)
 
         _filtered_pull_requests = []
         for pr in pull_requests:
@@ -456,68 +450,117 @@ class PullRequestModel(BaseModel):
         else:
             return _filtered_pull_requests
 
-    def count_awaiting_my_review(self, repo_name, search_q=None, source=False, statuses=None,
-                                 opened_by=None, user_id=None):
+    def _prepare_awaiting_my_review_review_query(
+            self, repo_name, user_id, search_q=None, statuses=None,
+            order_by=None, order_dir='desc'):
+
+        for_review_statuses = [
+            ChangesetStatus.STATUS_UNDER_REVIEW, ChangesetStatus.STATUS_NOT_REVIEWED
+        ]
+
+        pull_request_alias = aliased(PullRequest)
+        status_alias = aliased(ChangesetStatus)
+        reviewers_alias = aliased(PullRequestReviewers)
+        repo_alias = aliased(Repository)
+
+        last_ver_subq = Session()\
+            .query(func.min(ChangesetStatus.version)) \
+            .filter(ChangesetStatus.pull_request_id == reviewers_alias.pull_request_id)\
+            .filter(ChangesetStatus.user_id == reviewers_alias.user_id) \
+            .subquery()
+
+        q = Session().query(pull_request_alias) \
+            .options(lazyload(pull_request_alias.author)) \
+            .join(reviewers_alias,
+                  reviewers_alias.pull_request_id == pull_request_alias.pull_request_id) \
+            .join(repo_alias,
+                  repo_alias.repo_id == pull_request_alias.target_repo_id) \
+            .outerjoin(status_alias,
+                       and_(status_alias.user_id == reviewers_alias.user_id,
+                            status_alias.pull_request_id == reviewers_alias.pull_request_id)) \
+            .filter(or_(status_alias.version == null(),
+                        status_alias.version == last_ver_subq)) \
+            .filter(reviewers_alias.user_id == user_id) \
+            .filter(repo_alias.repo_name == repo_name) \
+            .filter(or_(status_alias.status == null(), status_alias.status.in_(for_review_statuses))) \
+            .group_by(pull_request_alias)
+
+        # closed,opened
+        if statuses:
+            q = q.filter(pull_request_alias.status.in_(statuses))
+
+        if search_q:
+            like_expression = u'%{}%'.format(safe_unicode(search_q))
+            q = q.join(User, User.user_id == pull_request_alias.user_id)
+            q = q.filter(or_(
+                cast(pull_request_alias.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
+                pull_request_alias.title.ilike(like_expression),
+                pull_request_alias.description.ilike(like_expression),
+            ))
+
+        if order_by:
+            order_map = {
+                'name_raw': pull_request_alias.pull_request_id,
+                'title': pull_request_alias.title,
+                'updated_on_raw': pull_request_alias.updated_on,
+                'target_repo': pull_request_alias.target_repo_id
+            }
+            if order_dir == 'asc':
+                q = q.order_by(order_map[order_by].asc())
+            else:
+                q = q.order_by(order_map[order_by].desc())
+
+        return q
+
+    def count_awaiting_my_review(self, repo_name, user_id, search_q=None, statuses=None):
         """
         Count the number of pull requests for a specific repository that are
         awaiting review from a specific user.
 
         :param repo_name: target or source repo
-        :param search_q: filter by text
-        :param source: boolean flag to specify if repo_name refers to source
-        :param statuses: list of pull request statuses
-        :param opened_by: author user of the pull request
         :param user_id: reviewer user of the pull request
+        :param search_q: filter by text
+        :param statuses: list of pull request statuses
         :returns: int number of pull requests
         """
-        pull_requests = self.get_awaiting_my_review(
-            repo_name, search_q=search_q, source=source, statuses=statuses,
-            opened_by=opened_by, user_id=user_id)
+        q = self._prepare_awaiting_my_review_review_query(
+            repo_name, user_id, search_q=search_q, statuses=statuses)
+        return q.count()
 
-        return len(pull_requests)
-
-    def get_awaiting_my_review(self, repo_name, search_q=None, source=False, statuses=None,
-                               opened_by=None, user_id=None, offset=0,
-                               length=None, order_by=None, order_dir='desc'):
+    def get_awaiting_my_review(self, repo_name, user_id, search_q=None, statuses=None,
+                               offset=0, length=None, order_by=None, order_dir='desc'):
         """
         Get all pull requests for a specific repository that are awaiting
         review from a specific user.
 
         :param repo_name: target or source repo
-        :param search_q: filter by text
-        :param source: boolean flag to specify if repo_name refers to source
-        :param statuses: list of pull request statuses
-        :param opened_by: author user of the pull request
         :param user_id: reviewer user of the pull request
+        :param search_q: filter by text
+        :param statuses: list of pull request statuses
         :param offset: pagination offset
         :param length: length of returned list
         :param order_by: order of the returned list
         :param order_dir: 'asc' or 'desc' ordering direction
         :returns: list of pull requests
         """
-        pull_requests = self.get_all(
-            repo_name, search_q=search_q, source=source, statuses=statuses,
-            opened_by=opened_by, order_by=order_by, order_dir=order_dir)
 
-        _my = PullRequestModel().get_not_reviewed(user_id)
-        my_participation = []
-        for pr in pull_requests:
-            if pr in _my:
-                my_participation.append(pr)
-        _filtered_pull_requests = my_participation
+        q = self._prepare_awaiting_my_review_review_query(
+            repo_name, user_id, search_q=search_q, statuses=statuses,
+            order_by=order_by, order_dir=order_dir)
+
         if length:
-            return _filtered_pull_requests[offset:offset+length]
+            pull_requests = q.limit(length).offset(offset).all()
         else:
-            return _filtered_pull_requests
+            pull_requests = q.all()
 
-    def get_not_reviewed(self, user_id):
-        return [
-            x.pull_request for x in PullRequestReviewers.query().filter(
-                PullRequestReviewers.user_id == user_id).all()
-        ]
+        return pull_requests
 
-    def _prepare_participating_query(self, user_id=None, statuses=None, query='',
-                                     order_by=None, order_dir='desc'):
+    def _prepare_im_participating_query(self, user_id=None, statuses=None, query='',
+                                        order_by=None, order_dir='desc'):
+        """
+        return a query of pull-requests user is an creator, or he's added as a reviewer
+        """
         q = PullRequest.query()
         if user_id:
             reviewers_subquery = Session().query(
@@ -535,7 +578,7 @@ class PullRequestModel(BaseModel):
 
         if query:
             like_expression = u'%{}%'.format(safe_unicode(query))
-            q = q.join(User)
+            q = q.join(User, User.user_id == PullRequest.user_id)
             q = q.filter(or_(
                 cast(PullRequest.pull_request_id, String).ilike(like_expression),
                 User.username.ilike(like_expression),
@@ -557,17 +600,97 @@ class PullRequestModel(BaseModel):
         return q
 
     def count_im_participating_in(self, user_id=None, statuses=None, query=''):
-        q = self._prepare_participating_query(user_id, statuses=statuses, query=query)
+        q = self._prepare_im_participating_query(user_id, statuses=statuses, query=query)
         return q.count()
 
     def get_im_participating_in(
             self, user_id=None, statuses=None, query='', offset=0,
             length=None, order_by=None, order_dir='desc'):
         """
-        Get all Pull requests that i'm participating in, or i have opened
+        Get all Pull requests that i'm participating in as a reviewer, or i have opened
         """
 
-        q = self._prepare_participating_query(
+        q = self._prepare_im_participating_query(
+            user_id, statuses=statuses, query=query, order_by=order_by,
+            order_dir=order_dir)
+
+        if length:
+            pull_requests = q.limit(length).offset(offset).all()
+        else:
+            pull_requests = q.all()
+
+        return pull_requests
+
+    def _prepare_participating_in_for_review_query(
+            self, user_id, statuses=None, query='', order_by=None, order_dir='desc'):
+
+        for_review_statuses = [
+            ChangesetStatus.STATUS_UNDER_REVIEW, ChangesetStatus.STATUS_NOT_REVIEWED
+        ]
+
+        pull_request_alias = aliased(PullRequest)
+        status_alias = aliased(ChangesetStatus)
+        reviewers_alias = aliased(PullRequestReviewers)
+
+        last_ver_subq = Session()\
+            .query(func.min(ChangesetStatus.version)) \
+            .filter(ChangesetStatus.pull_request_id == reviewers_alias.pull_request_id)\
+            .filter(ChangesetStatus.user_id == reviewers_alias.user_id) \
+            .subquery()
+
+        q = Session().query(pull_request_alias) \
+            .options(lazyload(pull_request_alias.author)) \
+            .join(reviewers_alias,
+                  reviewers_alias.pull_request_id == pull_request_alias.pull_request_id) \
+            .outerjoin(status_alias,
+                       and_(status_alias.user_id == reviewers_alias.user_id,
+                            status_alias.pull_request_id == reviewers_alias.pull_request_id)) \
+            .filter(or_(status_alias.version == null(),
+                        status_alias.version == last_ver_subq)) \
+            .filter(reviewers_alias.user_id == user_id) \
+            .filter(or_(status_alias.status == null(), status_alias.status.in_(for_review_statuses))) \
+            .group_by(pull_request_alias)
+
+        # closed,opened
+        if statuses:
+            q = q.filter(pull_request_alias.status.in_(statuses))
+
+        if query:
+            like_expression = u'%{}%'.format(safe_unicode(query))
+            q = q.join(User, User.user_id == pull_request_alias.user_id)
+            q = q.filter(or_(
+                cast(pull_request_alias.pull_request_id, String).ilike(like_expression),
+                User.username.ilike(like_expression),
+                pull_request_alias.title.ilike(like_expression),
+                pull_request_alias.description.ilike(like_expression),
+            ))
+
+        if order_by:
+            order_map = {
+                'name_raw': pull_request_alias.pull_request_id,
+                'title': pull_request_alias.title,
+                'updated_on_raw': pull_request_alias.updated_on,
+                'target_repo': pull_request_alias.target_repo_id
+            }
+            if order_dir == 'asc':
+                q = q.order_by(order_map[order_by].asc())
+            else:
+                q = q.order_by(order_map[order_by].desc())
+
+        return q
+
+    def count_im_participating_in_for_review(self, user_id, statuses=None, query=''):
+        q = self._prepare_participating_in_for_review_query(user_id, statuses=statuses, query=query)
+        return q.count()
+
+    def get_im_participating_in_for_review(
+            self, user_id, statuses=None, query='', offset=0,
+            length=None, order_by=None, order_dir='desc'):
+        """
+        Get all Pull requests that needs user approval or rejection
+        """
+
+        q = self._prepare_participating_in_for_review_query(
             user_id, statuses=statuses, query=query, order_by=order_by,
             order_dir=order_dir)
 

@@ -354,7 +354,7 @@ class ChangesetStatusModel(BaseModel):
                 Session().add(new_status)
             return new_statuses
 
-    def aggregate_votes_by_user(self, commit_statuses, reviewers_data):
+    def aggregate_votes_by_user(self, commit_statuses, reviewers_data, user=None):
 
         commit_statuses_map = collections.defaultdict(list)
         for st in commit_statuses:
@@ -368,6 +368,10 @@ class ChangesetStatusModel(BaseModel):
         for obj in reviewers_data:
             if not obj.user:
                 continue
+            if user and obj.user.username != user.username:
+                # single user filter
+                continue
+
             statuses = commit_statuses_map.get(obj.user.username, None)
             if statuses:
                 status_groups = itertools.groupby(
@@ -376,16 +380,19 @@ class ChangesetStatusModel(BaseModel):
 
             reviewers.append((obj, obj.user, obj.reasons, obj.mandatory, statuses))
 
-        return reviewers
+        if user:
+            return reviewers[0] if reviewers else reviewers
+        else:
+            return reviewers
 
-    def reviewers_statuses(self, pull_request):
+    def reviewers_statuses(self, pull_request, user=None):
         _commit_statuses = self.get_statuses(
             pull_request.source_repo,
             pull_request=pull_request,
             with_revisions=True)
         reviewers = pull_request.get_pull_request_reviewers(
             role=PullRequestReviewers.ROLE_REVIEWER)
-        return self.aggregate_votes_by_user(_commit_statuses, reviewers)
+        return self.aggregate_votes_by_user(_commit_statuses, reviewers, user=user)
 
     def calculated_review_status(self, pull_request):
         """

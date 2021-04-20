@@ -1,17 +1,29 @@
 <%namespace name="base" file="/base/base.mako"/>
 
 <div class="panel panel-default">
-  <div class="panel-body">
-    <div style="height: 35px">
-        <%
-        selected_filter = 'all'
-        if c.closed:
-            selected_filter = 'all_closed'
-        %>
+    <div class="panel-heading">
+        <h3 class="panel-title">${_('Pull Requests You Participate In')}</h3>
+    </div>
 
+    <div class="panel-body panel-body-min-height">
+        <div class="title">
         <ul class="button-links">
-          <li class="btn ${h.is_active('all', selected_filter)}"><a href="${h.route_path('my_account_pullrequests')}">${_('All')}</a></li>
-          <li class="btn ${h.is_active('all_closed', selected_filter)}"><a href="${h.route_path('my_account_pullrequests', _query={'pr_show_closed':1})}">${_('All + Closed')}</a></li>
+            <li><a class="btn ${h.is_active('all', c.selected_filter)}"
+                   href="${h.route_path('my_account_pullrequests',          _query={})}">
+                ${_('Open')}
+                </a>
+            </li>
+            <li><a class="btn ${h.is_active('all_closed', c.selected_filter)}"
+                   href="${h.route_path('my_account_pullrequests',   _query={'closed':1})}">
+                ${_('All + Closed')}
+            </a>
+            </li>
+            <li><a class="btn ${h.is_active('awaiting_my_review', c.selected_filter)}"
+                   href="${h.route_path('my_account_pullrequests',  _query={'awaiting_my_review':1})}">
+
+                ${_('Awaiting my review')}
+            </a>
+            </li>
         </ul>
 
         <div class="grid-quick-filter">
@@ -20,19 +32,13 @@
                     <i class="icon-search"></i>
                 </li>
                 <li class="grid-filter-box-input">
-                    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter" placeholder="${_('quick filter...')}" value=""/>
+                    <input class="q_filter_box" id="q_filter" size="15" type="text" name="filter"
+                           placeholder="${_('quick filter...')}" value=""/>
                 </li>
             </ul>
         </div>
-    </div>
-  </div>
-</div>
+        </div>
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">${_('Pull Requests You Participate In')}</h3>
-    </div>
-    <div class="panel-body panel-body-min-height">
         <table id="pull_request_list_table" class="rctable table-bordered"></table>
     </div>
 </div>
@@ -52,6 +58,7 @@
                 "url": "${h.route_path('my_account_pullrequests_data')}",
                 "data": function (d) {
                     d.closed = "${c.closed}";
+                    d.awaiting_my_review = "${c.awaiting_my_review}";
                 },
                 "dataSrc": function (json) {
                     return json.data;
@@ -60,13 +67,19 @@
 
             dom: 'rtp',
             pageLength: ${c.visual.dashboard_items},
-            order: [[1, "desc"]],
+            order: [[2, "desc"]],
             columns: [
                 {
                     data: {
                         "_": "status",
                         "sort": "status"
-                    }, title: "", className: "td-status", orderable: false
+                    }, title: "PR", className: "td-status", orderable: false
+                },
+                {
+                    data: {
+                        "_": "my_status",
+                        "sort": "status"
+                    }, title: "You", className: "td-status", orderable: false
                 },
                 {
                     data: {

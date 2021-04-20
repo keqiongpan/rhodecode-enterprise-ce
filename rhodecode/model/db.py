@@ -41,10 +41,10 @@ from sqlalchemy import (
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType, BigInteger)
-from sqlalchemy.sql.expression import true, false, case
+from sqlalchemy.sql.expression import true, false, case, null
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
-    relationship, joinedload, class_mapper, validates, aliased)
+    relationship, lazyload, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # pragma: no cover
@@ -4479,9 +4479,9 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().calculated_review_status(self)
 
-    def reviewers_statuses(self):
+    def reviewers_statuses(self, user=None):
         from rhodecode.model.changeset_status import ChangesetStatusModel
-        return ChangesetStatusModel().reviewers_statuses(self)
+        return ChangesetStatusModel().reviewers_statuses(self, user=user)
 
     def get_pull_request_reviewers(self, role=None):
         qry = PullRequestReviewers.query()\

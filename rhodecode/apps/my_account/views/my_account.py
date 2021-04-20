@@ -43,7 +43,7 @@ from rhodecode.model.comment import CommentsModel
 from rhodecode.model.db import (
     IntegrityError, or_, in_filter_generator,
     Repository, UserEmailMap, UserApiKeys, UserFollowing,
-    PullRequest, UserBookmark, RepoGroup)
+    PullRequest, UserBookmark, RepoGroup, ChangesetStatus)
 from rhodecode.model.meta import Session
 from rhodecode.model.pull_request import PullRequestModel
 from rhodecode.model.user import UserModel
@@ -654,21 +654,31 @@ class MyAccountView(BaseAppView, DataGridAppView):
         Session().commit()
         return user.user_data['notification_status']
 
-    def _get_pull_requests_list(self, statuses):
+    def _get_pull_requests_list(self, statuses, filter_type=None):
         draw, start, limit = self._extract_chunk(self.request)
         search_q, order_by, order_dir = self._extract_ordering(self.request)
 
         _render = self.request.get_partial_renderer(
             'rhodecode:templates/data_table/_dt_elements.mako')
 
-        pull_requests = PullRequestModel().get_im_participating_in(
-            user_id=self._rhodecode_user.user_id,
-            statuses=statuses, query=search_q,
-            offset=start, length=limit, order_by=order_by,
-            order_dir=order_dir)
+        if filter_type == 'awaiting_my_review':
+            pull_requests = PullRequestModel().get_im_participating_in_for_review(
+                user_id=self._rhodecode_user.user_id,
+                statuses=statuses, query=search_q,
+                offset=start, length=limit, order_by=order_by,
+                order_dir=order_dir)
 
-        pull_requests_total_count = PullRequestModel().count_im_participating_in(
-            user_id=self._rhodecode_user.user_id, statuses=statuses, query=search_q)
+            pull_requests_total_count = PullRequestModel().count_im_participating_in_for_review(
+                user_id=self._rhodecode_user.user_id, statuses=statuses, query=search_q)
+        else:
+            pull_requests = PullRequestModel().get_im_participating_in(
+                user_id=self._rhodecode_user.user_id,
+                statuses=statuses, query=search_q,
+                offset=start, length=limit, order_by=order_by,
+                order_dir=order_dir)
+
+            pull_requests_total_count = PullRequestModel().count_im_participating_in(
+                user_id=self._rhodecode_user.user_id, statuses=statuses, query=search_q)
 
         data = []
         comments_model = CommentsModel()
@@ -677,6 +687,12 @@ class MyAccountView(BaseAppView, DataGridAppView):
             comments_count = comments_model.get_all_comments(
                 repo_id, pull_request=pr, include_drafts=False, count_only=True)
             owned = pr.user_id == self._rhodecode_user.user_id
+
+            review_statuses = pr.reviewers_statuses(user=self._rhodecode_db_user)
+            my_review_status = ChangesetStatus.STATUS_NOT_REVIEWED
+            if review_statuses and review_statuses[4]:
+                _review_obj, _user, _reasons, _mandatory, statuses = review_statuses
+                my_review_status = statuses[0][1].status
 
             data.append({
                 'target_repo': _render('pullrequest_target_repo',
@@ -688,6 +704,8 @@ class MyAccountView(BaseAppView, DataGridAppView):
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
+                'my_status': _render('pullrequest_status',
+                                     my_review_status),
                 'title': _render('pullrequest_title', pr.title, pr.description),
                 'description': h.escape(pr.description),
                 'updated_on': _render('pullrequest_updated_on',
@@ -723,7 +741,14 @@ class MyAccountView(BaseAppView, DataGridAppView):
         c.active = 'pullrequests'
         req_get = self.request.GET
 
-        c.closed = str2bool(req_get.get('pr_show_closed'))
+        c.closed = str2bool(req_get.get('closed'))
+        c.awaiting_my_review = str2bool(req_get.get('awaiting_my_review'))
+
+        c.selected_filter = 'all'
+        if c.closed:
+            c.selected_filter = 'all_closed'
+        if c.awaiting_my_review:
+            c.selected_filter = 'awaiting_my_review'
 
         return self._get_template_context(c)
 
@@ -732,13 +757,19 @@ class MyAccountView(BaseAppView, DataGridAppView):
     def my_account_pullrequests_data(self):
         self.load_default_context()
         req_get = self.request.GET
+
+        awaiting_my_review = str2bool(req_get.get('awaiting_my_review'))
         closed = str2bool(req_get.get('closed'))
 
         statuses = [PullRequest.STATUS_NEW, PullRequest.STATUS_OPEN]
         if closed:
             statuses += [PullRequest.STATUS_CLOSED]
 
-        data = self._get_pull_requests_list(statuses=statuses)
+        filter_type = \
+            'awaiting_my_review' if awaiting_my_review \
+            else None
+
+        data = self._get_pull_requests_list(statuses=statuses, filter_type=filter_type)
         return data
 
     @LoginRequired()
