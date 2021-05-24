@@ -39,7 +39,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
-from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist, retry
 from rhodecode.lib.vcs.backends.base import (
     EmptyCommit, UpdateFailureReason, unicode_to_reference)
 from rhodecode.lib.vcs.exceptions import (
@@ -1353,9 +1353,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def _update_commits(self, c, pull_request):
         _ = self.request.translate
 
-        with pull_request.set_state(PullRequest.STATE_UPDATING):
-            resp = PullRequestModel().update_commits(
+        @retry(exception=Exception, n_tries=3)
+        def commits_update():
+            return PullRequestModel().update_commits(
                 pull_request, self._rhodecode_db_user)
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            resp = commits_update()  # retry x3
 
         if resp.executed:
 

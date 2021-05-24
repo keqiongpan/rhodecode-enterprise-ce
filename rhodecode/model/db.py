@@ -4062,7 +4062,7 @@ class _SetState(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val is not None:
+        if exc_val is not None or exc_type is not None:
             log.error(traceback.format_exc(exc_tb))
             return None
 
