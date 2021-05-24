@@ -232,6 +232,9 @@ def create_repo_group(
             user=apiuser)
 
         Session().commit()
+
+        PermissionModel().trigger_permission_flush()
+
         return {
             'msg': 'Created new repo group `%s`' % validated_group_name,
             'repo_group': repo_group.get_api_data()
