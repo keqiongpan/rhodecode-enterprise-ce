@@ -76,7 +76,11 @@ class TestMyAccountEdit(TestController):
                              'requests requiring your participation.')
 
     @pytest.mark.backends("git", "hg")
-    def test_my_account_my_pullrequests_data(self, pr_util, xhr_header):
+    @pytest.mark.parametrize('params, expected_title', [
+        ({'closed': 1}, 'Closed'),
+        ({'awaiting_my_review': 1}, 'Awaiting my review'),
+    ])
+    def test_my_account_my_pullrequests_data(self, pr_util, xhr_header, params, expected_title):
         self.log_user()
         response = self.app.get(route_path('my_account_pullrequests_data'),
                                 extra_environ=xhr_header)

@@ -171,7 +171,7 @@
             This repository is already archived. Only super-admin users can un-archive this repository.
         % else:
             <button class="btn btn-small btn-warning" type="submit"
-                    onclick="submitConfirm(event, this, _gettext('Confirm to archive this repository'), _gettext('Archive'), '${c.rhodecode_db_repo.repo_name}')"
+                    onclick="submitConfirm(event, this, _gettext('Confirm to archive this repository. <br/>This action is irreversible !'), _gettext('Archive'), '${c.rhodecode_db_repo.repo_name}')"
             >
                 ${_('Archive this repository')}
             </button>
@@ -180,6 +180,9 @@
         </div>
         <div class="field">
             <span class="help-block">
+                <strong>
+                    ${_('This action is irreversible')} !
+                </strong><br/>
                 ${_('Archiving the repository will make it entirely read-only. The repository cannot be committed to.'
                     'It is hidden from the search results and dashboard. ')}
             </span>

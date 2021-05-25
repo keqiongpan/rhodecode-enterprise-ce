@@ -539,8 +539,14 @@ class RepoCommitsView(RepoAppView):
     @CSRFRequired()
     def repo_commit_comment_history_view(self):
         c = self.load_default_context()
-
         comment_history_id = self.request.matchdict['comment_history_id']
+
+        comment = ChangesetComment.get_or_404(comment_history_id)
+        comment_owner = (comment.author.user_id == self._rhodecode_db_user.user_id)
+        if comment.draft and not comment_owner:
+            # if we see draft comments history, we only allow this for owner
+            raise HTTPNotFound()
+
         comment_history = ChangesetCommentHistory.get_or_404(comment_history_id)
         is_repo_comment = comment_history.comment.repo.repo_id == self.db_repo.repo_id
 
@@ -549,8 +555,7 @@ class RepoCommitsView(RepoAppView):
 
             rendered_comment = render(
                 'rhodecode:templates/changeset/comment_history.mako',
-                self._get_template_context(c)
-                , self.request)
+                self._get_template_context(c), self.request)
             return rendered_comment
         else:
             log.warning('No permissions for user %s to show comment_history_id: %s',

@@ -111,9 +111,10 @@ ${c.repo_commits.render()}
 </div>
 %else:
 
-%if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
+
 <div class="quick_start">
   <div class="fieldset">
+    %if h.HasRepoPermissionAny('repository.write','repository.admin')(c.repo_name):
     <p><b>${_('Add or upload files directly via RhodeCode:')}</b></p>
     <div class="pull-left">
         <a href="${h.route_path('repo_files_add_file',repo_name=c.repo_name,commit_id=0, f_path='')}" class="btn btn-default">${_('Add New File')}</a>
@@ -123,6 +124,7 @@ ${c.repo_commits.render()}
     </div>
     %endif
   </div>
+
 
 <div class="fieldset">
 <p><b>${_('Push new repo:')}</b></p>

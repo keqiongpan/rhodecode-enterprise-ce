@@ -23,13 +23,14 @@
 
 <div class="box">
     <div class="title">
+
     <ul class="button-links">
-      <li class="btn ${h.is_active('open', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,         _query={'source':0})}">${_('Opened')}</a></li>
-      <li class="btn ${h.is_active('my', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Opened by me')}</a></li>
-      <li class="btn ${h.is_active('awaiting', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
-      <li class="btn ${h.is_active('awaiting_my', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
-      <li class="btn ${h.is_active('closed', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
-      <li class="btn ${h.is_active('source', c.active)}"><a href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
+      <li><a class="btn ${h.is_active('open', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'open':1})}">${_('Open')}</a></li>
+      <li><a class="btn ${h.is_active('my', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,           _query={'source':0,'my':1})}">${_('Created by me')}</a></li>
+      <li><a class="btn ${h.is_active('awaiting', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,     _query={'source':0,'awaiting_review':1})}">${_('Awaiting review')}</a></li>
+      <li><a class="btn ${h.is_active('awaiting_my', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,  _query={'source':0,'awaiting_my_review':1})}">${_('Awaiting my review')}</a></li>
+      <li><a class="btn ${h.is_active('closed', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':0,'closed':1})}">${_('Closed')}</a></li>
+      <li><a class="btn ${h.is_active('source', c.active)}" href="${h.route_path('pullrequest_show_all',repo_name=c.repo_name,       _query={'source':1})}">${_('From this repo')}</a></li>
     </ul>
 
     <ul class="links">
@@ -88,20 +89,50 @@ $(document).ready(function() {
       },
       dom: 'rtp',
       pageLength: ${c.visual.dashboard_items},
-      order: [[ 1, "desc" ]],
+      order: [[ 2, "desc" ]],
       columns: [
-         { data: {"_": "status",
-                  "sort": "status"}, title: "", className: "td-status", orderable: false},
-         { data: {"_": "name",
-                  "sort": "name_raw"}, title: "${_('Id')}", className: "td-componentname", "type": "num" },
-         { data: {"_": "title",
-                  "sort": "title"}, title: "${_('Title')}", className: "td-description" },
-         { data: {"_": "author",
-                  "sort": "author_raw"}, title: "${_('Author')}", className: "td-user", orderable: false },
-         { data: {"_": "comments",
-                  "sort": "comments_raw"}, title: "", className: "td-comments", orderable: false},
-         { data: {"_": "updated_on",
-                  "sort": "updated_on_raw"}, title: "${_('Last Update')}", className: "td-time" }
+        {
+            data: {
+                "_": "status",
+                "sort": "status"
+            }, title: "PR", className: "td-status", orderable: false
+        },
+        {
+            data: {
+                "_": "my_status",
+                "sort": "status"
+            }, title: "You", className: "td-status", orderable: false
+        },
+        {
+            data: {
+                "_": "name",
+                "sort": "name_raw"
+            }, title: "${_('Id')}", className: "td-componentname", "type": "num"
+        },
+        {
+            data: {
+                "_": "title",
+                "sort": "title"
+            }, title: "${_('Title')}", className: "td-description"
+        },
+        {
+            data: {
+                "_": "author",
+                "sort": "author_raw"
+            }, title: "${_('Author')}", className: "td-user", orderable: false
+        },
+        {
+            data: {
+                "_": "comments",
+                "sort": "comments_raw"
+            }, title: "", className: "td-comments", orderable: false
+        },
+        {
+            data: {
+                "_": "updated_on",
+                "sort": "updated_on_raw"
+            }, title: "${_('Last Update')}", className: "td-time"
+        }
       ],
       language: {
             paginate: DEFAULT_GRID_PAGINATION,

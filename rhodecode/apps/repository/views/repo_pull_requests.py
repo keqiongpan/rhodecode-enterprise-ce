@@ -39,7 +39,7 @@ from rhodecode.lib.ext_json import json
 from rhodecode.lib.auth import (
     LoginRequired, HasRepoPermissionAny, HasRepoPermissionAnyDecorator,
     NotAnonymous, CSRFRequired)
-from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist
+from rhodecode.lib.utils2 import str2bool, safe_str, safe_unicode, safe_int, aslist, retry
 from rhodecode.lib.vcs.backends.base import (
     EmptyCommit, UpdateFailureReason, unicode_to_reference)
 from rhodecode.lib.vcs.exceptions import (
@@ -79,21 +79,20 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if filter_type == 'awaiting_review':
             pull_requests = PullRequestModel().get_awaiting_review(
-                repo_name, search_q=search_q, source=source, opened_by=opened_by,
-                statuses=statuses, offset=start, length=limit,
-                order_by=order_by, order_dir=order_dir)
+                repo_name,
+                search_q=search_q, statuses=statuses,
+                offset=start, length=limit, order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_review(
-                repo_name, search_q=search_q, source=source, statuses=statuses,
-                opened_by=opened_by)
+                repo_name,
+                search_q=search_q, statuses=statuses)
         elif filter_type == 'awaiting_my_review':
             pull_requests = PullRequestModel().get_awaiting_my_review(
-                repo_name, search_q=search_q, source=source, opened_by=opened_by,
-                user_id=self._rhodecode_user.user_id, statuses=statuses,
-                offset=start, length=limit, order_by=order_by,
-                order_dir=order_dir)
+                repo_name, self._rhodecode_user.user_id,
+                search_q=search_q, statuses=statuses,
+                offset=start, length=limit, order_by=order_by, order_dir=order_dir)
             pull_requests_total_count = PullRequestModel().count_awaiting_my_review(
-                repo_name, search_q=search_q, source=source, user_id=self._rhodecode_user.user_id,
-                statuses=statuses, opened_by=opened_by)
+                repo_name, self._rhodecode_user.user_id,
+                search_q=search_q, statuses=statuses)
         else:
             pull_requests = PullRequestModel().get_all(
                 repo_name, search_q=search_q, source=source, opened_by=opened_by,
@@ -110,6 +109,12 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 self.db_repo.repo_id, pull_request=pr,
                 include_drafts=False, count_only=True)
 
+            review_statuses = pr.reviewers_statuses(user=self._rhodecode_db_user)
+            my_review_status = ChangesetStatus.STATUS_NOT_REVIEWED
+            if review_statuses and review_statuses[4]:
+                _review_obj, _user, _reasons, _mandatory, statuses = review_statuses
+                my_review_status = statuses[0][1].status
+
             data.append({
                 'name': _render('pullrequest_name',
                                 pr.pull_request_id, pr.pull_request_state,
@@ -118,6 +123,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                 'name_raw': pr.pull_request_id,
                 'status': _render('pullrequest_status',
                                   pr.calculated_review_status()),
+                'my_status': _render('pullrequest_status',
+                                     my_review_status),
                 'title': _render('pullrequest_title', pr.title, pr.description),
                 'description': h.escape(pr.description),
                 'updated_on': _render('pullrequest_updated_on',
@@ -1346,9 +1353,13 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
     def _update_commits(self, c, pull_request):
         _ = self.request.translate
 
-        with pull_request.set_state(PullRequest.STATE_UPDATING):
-            resp = PullRequestModel().update_commits(
+        @retry(exception=Exception, n_tries=3)
+        def commits_update():
+            return PullRequestModel().update_commits(
                 pull_request, self._rhodecode_db_user)
+
+        with pull_request.set_state(PullRequest.STATE_UPDATING):
+            resp = commits_update()  # retry x3
 
         if resp.executed:
 

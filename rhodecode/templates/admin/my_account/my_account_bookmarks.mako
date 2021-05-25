@@ -26,50 +26,41 @@
                     </div>
                 </div>
             </div>
-            <p class="help-block help-block-inline" >
-                ${_('Server URL is available as ${server_url} variable. E.g. Redirect url: ${server_url}/_admin/exception_tracker')}
-            </p>
 
-            <div class="label">
+            <div class="label" style="margin-top:10px">
                 <label for="redirect_url">${_('Redirect URL')}:</label>
             </div>
             <div class="input">
                 <input type="text" name="redirect_url" value="${redirect_url}" style="width: 600px"/>
             </div>
+            <p class="help-block help-block-inline">
+                ${_('Server URL is available as ${server_url} variable. E.g. Redirect url: ${server_url}/_admin/exception_tracker')}
+            </p>
 
+            <div class="select" style="margin-top:5px">
+                <div class="label">
+                    <label for="redirect_url">${_('Templates')}:</label>
+                </div>
 
-            <div class="select">
                 % if repo:
-                    <div class="label">
-                        <label for="redirect_url">${_('Repository template')}:</label>
-                    </div>
                     ${dt.repo_name(name=repo.repo_name, rtype=repo.repo_type,rstate=None,private=None,archived=False,fork_of=False)}
                     ${h.hidden('bookmark_repo', repo.repo_id)}
                 % elif repo_group:
-                    <div class="label">
-                        <label for="redirect_url">${_('Repository group template')}:</label>
-                    </div>
                     ${dt.repo_group_name(repo_group.group_name)}
                     ${h.hidden('bookmark_repo_group', repo_group.group_id)}
                 % else:
-                    <div class="label">
-                        <label for="redirect_url">${_('Template Repository or Repository group')}:</label>
+                    <div>
+                        ${h.hidden('bookmark_repo', class_='bookmark_repo')}
+                        <p class="help-block help-block-inline">${_('Available as ${repo_url}  e.g. Redirect url: ${repo_url}/changelog')}</p>
                     </div>
-                    ${h.hidden('bookmark_repo', class_='bookmark_repo')}
-                    <span style="padding-right:15px">OR</span>
-                    ${h.hidden('bookmark_repo_group', class_='bookmark_repo_group')}
+                    <div style="margin-top:5px">
+                        ${h.hidden('bookmark_repo_group', class_='bookmark_repo_group')}
+                        <p class="help-block help-block-inline">${_('Available as ${repo_group_url} e.g. Redirect url: ${repo_group_url}')}</p>
+                    </div>
+
                 % endif
             </div>
 
-            <p class="help-block help-block-inline" >
-            % if repo:
-                ${_('Available as ${repo_url}  e.g. Redirect url: ${repo_url}/changelog')}
-            % elif repo_group:
-                ${_('Available as ${repo_group_url} e.g. Redirect url: ${repo_group_url}')}
-            % else:
-                ${_('Available as full url variables in redirect url. i.e: ${repo_url}, ${repo_group_url}.')}
-            % endif
-            </p>
         </td>
 
     </tr>

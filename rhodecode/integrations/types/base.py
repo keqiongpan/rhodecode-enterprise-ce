@@ -131,7 +131,7 @@ class IntegrationTypeBase(object):
         :param event:
         :return: bool
         """
-        allowed_events = self.settings['events']
+        allowed_events = self.settings.get('events') or []
         if event.name not in allowed_events:
             log.debug('event ignored: %r event %s not in allowed set of events %s',
                       event, event.name, allowed_events)

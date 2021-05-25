@@ -349,13 +349,7 @@ class AdminRepoGroupsView(BaseAppView, DataGridAppView):
                     % repo_group_name, category='error')
             raise HTTPFound(h.route_path('home'))
 
-        affected_user_ids = [self._rhodecode_user.user_id]
-        if copy_permissions:
-            user_group_perms = repo_group.permissions(expand_from_user_groups=True)
-            copy_perms = [perm['user_id'] for perm in user_group_perms]
-            # also include those newly created by copy
-            affected_user_ids.extend(copy_perms)
-        PermissionModel().trigger_permission_flush(affected_user_ids)
+        PermissionModel().trigger_permission_flush()
 
         raise HTTPFound(
             h.route_path('repo_group_home',

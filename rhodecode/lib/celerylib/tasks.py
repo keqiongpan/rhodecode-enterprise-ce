@@ -38,6 +38,7 @@ from rhodecode.lib import hooks_base
 from rhodecode.lib.utils2 import safe_int, str2bool, aslist
 from rhodecode.model.db import (
     Session, IntegrityError, true, Repository, RepoGroup, User)
+from rhodecode.model.permission import PermissionModel
 
 
 @async_task(ignore_result=True, base=RequestContextTask)
@@ -216,6 +217,9 @@ def create_repo(form_data, cur_user):
             repo=audit_logger.RepoWrap(repo_name=repo_name, repo_id=repo_id))
 
         Session().commit()
+
+        PermissionModel().trigger_permission_flush()
+
     except Exception as e:
         log.warning('Exception occurred when creating repository, '
                     'doing cleanup...', exc_info=True)

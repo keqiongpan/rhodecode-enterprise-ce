@@ -41,10 +41,10 @@ from sqlalchemy import (
     Index, Sequence, UniqueConstraint, ForeignKey, CheckConstraint, Column,
     Boolean, String, Unicode, UnicodeText, DateTime, Integer, LargeBinary,
     Text, Float, PickleType, BigInteger)
-from sqlalchemy.sql.expression import true, false, case
+from sqlalchemy.sql.expression import true, false, case, null
 from sqlalchemy.sql.functions import coalesce, count  # pragma: no cover
 from sqlalchemy.orm import (
-    relationship, joinedload, class_mapper, validates, aliased)
+    relationship, lazyload, joinedload, class_mapper, validates, aliased)
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.exc import IntegrityError  # pragma: no cover
@@ -911,7 +911,7 @@ class User(Base, BaseModel):
             return {}
 
         try:
-            return json.loads(self._user_data)
+            return json.loads(self._user_data) or {}
         except TypeError:
             return {}
 
@@ -4062,7 +4062,7 @@ class _SetState(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val is not None:
+        if exc_val is not None or exc_type is not None:
             log.error(traceback.format_exc(exc_tb))
             return None
 
@@ -4479,9 +4479,9 @@ class PullRequest(Base, _PullRequestBase):
         from rhodecode.model.changeset_status import ChangesetStatusModel
         return ChangesetStatusModel().calculated_review_status(self)
 
-    def reviewers_statuses(self):
+    def reviewers_statuses(self, user=None):
         from rhodecode.model.changeset_status import ChangesetStatusModel
-        return ChangesetStatusModel().reviewers_statuses(self)
+        return ChangesetStatusModel().reviewers_statuses(self, user=user)
 
     def get_pull_request_reviewers(self, role=None):
         qry = PullRequestReviewers.query()\

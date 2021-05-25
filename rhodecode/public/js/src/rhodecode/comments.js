@@ -791,6 +791,11 @@ var CommentsController = function() {
           refreshDraftComments()
         }
 
+        if (window.refreshAllComments !== undefined) {
+          // if we have this handler, run it, and refresh all comments boxes
+          refreshAllComments()
+        }
+
         return false;
     };
 

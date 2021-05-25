@@ -41,7 +41,7 @@ class TestPullRequestList(object):
 
     @pytest.mark.parametrize('params, expected_title', [
         ({'source': 0, 'closed': 1}, 'Closed'),
-        ({'source': 0, 'my': 1}, 'Opened by me'),
+        ({'source': 0, 'my': 1}, 'Created by me'),
         ({'source': 0, 'awaiting_review': 1}, 'Awaiting review'),
         ({'source': 0, 'awaiting_my_review': 1}, 'Awaiting my review'),
         ({'source': 1}, 'From this repo'),

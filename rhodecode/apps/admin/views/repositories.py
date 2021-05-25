@@ -242,11 +242,7 @@ class AdminReposView(BaseAppView, DataGridAppView):
 
         repo_name = form_result.get('repo_name_full')
 
-        affected_user_ids = [self._rhodecode_user.user_id]
-        if copy_permissions:
-            # permission flush is done in repo creating
-            pass
-        PermissionModel().trigger_permission_flush(affected_user_ids)
+        PermissionModel().trigger_permission_flush()
 
         raise HTTPFound(
             h.route_path('repo_creating', repo_name=repo_name,

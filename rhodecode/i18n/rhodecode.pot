@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: rhodecode-enterprise-ce 4.24.0\n"
+"Project-Id-Version: rhodecode-enterprise-ce 4.25.0\n"
 "Report-Msgid-Bugs-To: marcin@rhodecode.com\n"
-"POT-Creation-Date: 2021-01-14 15:36+0000\n"
+"POT-Creation-Date: 2021-04-05 19:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -111,7 +111,7 @@ msgstr ""
 #: rhodecode/apps/admin/views/settings.py:156
 #: rhodecode/apps/admin/views/settings.py:291
 #: rhodecode/apps/admin/views/settings.py:360
-#: rhodecode/apps/admin/views/settings.py:663
+#: rhodecode/apps/admin/views/settings.py:664
 #: rhodecode/apps/repository/views/repo_settings_vcs.py:116
 msgid "Some form inputs contain invalid data."
 msgstr ""
@@ -135,54 +135,54 @@ msgstr ""
 msgid "Updated application settings"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:399
+#: rhodecode/apps/admin/views/settings.py:400
 msgid "Updated visualisation settings"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:402
+#: rhodecode/apps/admin/views/settings.py:403
 msgid "Error occurred during updating visualisation settings"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:464
+#: rhodecode/apps/admin/views/settings.py:465
 #: rhodecode/apps/repository/views/repo_settings_issue_trackers.py:115
 msgid "Invalid issue tracker pattern: {}"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:481
+#: rhodecode/apps/admin/views/settings.py:482
 #: rhodecode/apps/repository/views/repo_settings_issue_trackers.py:124
 msgid "Updated issue tracker entries"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:498
+#: rhodecode/apps/admin/views/settings.py:499
 #: rhodecode/apps/repository/views/repo_settings_issue_trackers.py:82
 msgid "Removed issue tracker entry."
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:530
+#: rhodecode/apps/admin/views/settings.py:531
 msgid "Please enter email address"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:546
+#: rhodecode/apps/admin/views/settings.py:547
 msgid "Send email task created"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:587
+#: rhodecode/apps/admin/views/settings.py:588
 msgid "Added new hook"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:602
+#: rhodecode/apps/admin/views/settings.py:603
 msgid "Updated hooks"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:606
+#: rhodecode/apps/admin/views/settings.py:607
 msgid "Error occurred during hook creation"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:687
+#: rhodecode/apps/admin/views/settings.py:688
 msgid "Error occurred during updating labs settings"
 msgstr ""
 
-#: rhodecode/apps/admin/views/settings.py:692
+#: rhodecode/apps/admin/views/settings.py:693
 msgid "Updated Labs settings"
 msgstr ""
 
@@ -592,7 +592,7 @@ msgstr ""
 msgid "1 month"
 msgstr ""
 
-#: rhodecode/apps/gist/views.py:63 rhodecode/public/js/scripts.js:48529
+#: rhodecode/apps/gist/views.py:63 rhodecode/public/js/scripts.js:48670
 #: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:48
 #: rhodecode/public/js/src/rhodecode.js:634
@@ -653,8 +653,8 @@ msgstr ""
 #: rhodecode/templates/admin/repos/repo_add.mako:19
 #: rhodecode/templates/admin/users/user_edit_advanced.mako:12
 #: rhodecode/templates/base/base.mako:114
-#: rhodecode/templates/base/base.mako:133
-#: rhodecode/templates/base/base.mako:1191
+#: rhodecode/templates/base/base.mako:134
+#: rhodecode/templates/base/base.mako:1192
 msgid "Repositories"
 msgstr ""
 
@@ -894,104 +894,104 @@ msgstr ""
 msgid "No such commit exists for this repository. Commit: {}"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:358
+#: rhodecode/apps/repository/views/repo_files.py:359
 msgid "Downloads disabled"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:364
+#: rhodecode/apps/repository/views/repo_files.py:365
 msgid "Unknown archive type for: `{}`"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:370
+#: rhodecode/apps/repository/views/repo_files.py:371
 msgid "Unknown commit_id {}"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:373
+#: rhodecode/apps/repository/views/repo_files.py:374
 msgid "Empty repository"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:378
+#: rhodecode/apps/repository/views/repo_files.py:384
 msgid "No node at path {} for this repository"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:429
+#: rhodecode/apps/repository/views/repo_files.py:436
 msgid "Unknown archive type"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:986
+#: rhodecode/apps/repository/views/repo_files.py:993
 msgid "Changesets"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1007
-#: rhodecode/apps/repository/views/repo_summary.py:243
-#: rhodecode/model/pull_request.py:1910 rhodecode/model/scm.py:999
+#: rhodecode/apps/repository/views/repo_files.py:1014
+#: rhodecode/apps/repository/views/repo_summary.py:239
+#: rhodecode/model/pull_request.py:1912 rhodecode/model/scm.py:999
 #: rhodecode/templates/base/vcs_settings.mako:235
 #: rhodecode/templates/summary/components.mako:10
 msgid "Branches"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1011
+#: rhodecode/apps/repository/views/repo_files.py:1018
 #: rhodecode/model/scm.py:1016 rhodecode/templates/base/vcs_settings.mako:260
 #: rhodecode/templates/summary/components.mako:34
 msgid "Tags"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1155
-#: rhodecode/apps/repository/views/repo_files.py:1181
+#: rhodecode/apps/repository/views/repo_files.py:1162
+#: rhodecode/apps/repository/views/repo_files.py:1188
 msgid "Deleted file {} via RhodeCode Enterprise"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1202
+#: rhodecode/apps/repository/views/repo_files.py:1209
 msgid "Successfully deleted file `{}`"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1206
-#: rhodecode/apps/repository/views/repo_files.py:1319
-#: rhodecode/apps/repository/views/repo_files.py:1443
-#: rhodecode/apps/repository/views/repo_files.py:1564
+#: rhodecode/apps/repository/views/repo_files.py:1213
+#: rhodecode/apps/repository/views/repo_files.py:1326
+#: rhodecode/apps/repository/views/repo_files.py:1450
+#: rhodecode/apps/repository/views/repo_files.py:1571
 msgid "Error occurred during commit"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1236
-#: rhodecode/apps/repository/views/repo_files.py:1265
+#: rhodecode/apps/repository/views/repo_files.py:1243
+#: rhodecode/apps/repository/views/repo_files.py:1272
 msgid "Edited file {} via RhodeCode Enterprise"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1288
+#: rhodecode/apps/repository/views/repo_files.py:1295
 msgid "No changes detected on {}"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1312
+#: rhodecode/apps/repository/views/repo_files.py:1319
 msgid "Successfully committed changes to file `{}`"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1348
-#: rhodecode/apps/repository/views/repo_files.py:1387
+#: rhodecode/apps/repository/views/repo_files.py:1355
+#: rhodecode/apps/repository/views/repo_files.py:1394
 msgid "Added file via RhodeCode Enterprise"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1403
+#: rhodecode/apps/repository/views/repo_files.py:1410
 msgid "No filename specified"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1428
+#: rhodecode/apps/repository/views/repo_files.py:1435
 msgid "Successfully committed new file `{}`"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1436
-#: rhodecode/apps/repository/views/repo_files.py:1546
+#: rhodecode/apps/repository/views/repo_files.py:1443
+#: rhodecode/apps/repository/views/repo_files.py:1553
 msgid "The location specified must be a relative path and must not contain .. in the path"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1491
+#: rhodecode/apps/repository/views/repo_files.py:1498
 msgid "Uploaded file via RhodeCode Enterprise"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1535
+#: rhodecode/apps/repository/views/repo_files.py:1542
 msgid "Successfully committed {} new files"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_files.py:1537
+#: rhodecode/apps/repository/views/repo_files.py:1544
 msgid "Successfully committed 1 new file"
 msgstr ""
 
@@ -1215,23 +1215,23 @@ msgstr ""
 msgid "Error occurred during updating repository VCS settings"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_summary.py:222
+#: rhodecode/apps/repository/views/repo_summary.py:218
 #: rhodecode/templates/admin/permissions/permissions.mako:42
 #: rhodecode/templates/summary/components.mako:8
 msgid "Branch"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_summary.py:223
+#: rhodecode/apps/repository/views/repo_summary.py:219
 #: rhodecode/templates/summary/components.mako:32
 msgid "Tag"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_summary.py:224
+#: rhodecode/apps/repository/views/repo_summary.py:220
 #: rhodecode/templates/summary/components.mako:44
 msgid "Bookmark"
 msgstr ""
 
-#: rhodecode/apps/repository/views/repo_summary.py:244
+#: rhodecode/apps/repository/views/repo_summary.py:240
 msgid "Closed branches"
 msgstr ""
 
@@ -1291,9 +1291,9 @@ msgid "Enable or disable this authentication plugin."
 msgstr ""
 
 #: rhodecode/authentication/schema.py:38 rhodecode/integrations/schema.py:32
-#: rhodecode/model/permission.py:110 rhodecode/model/permission.py:114
-#: rhodecode/model/permission.py:118 rhodecode/model/permission.py:122
-#: rhodecode/model/permission.py:126 rhodecode/model/permission.py:130
+#: rhodecode/model/permission.py:112 rhodecode/model/permission.py:116
+#: rhodecode/model/permission.py:120 rhodecode/model/permission.py:124
+#: rhodecode/model/permission.py:128 rhodecode/model/permission.py:132
 #: rhodecode/model/validation_schema/schemas/integration_schema.py:195
 #: rhodecode/templates/admin/auth/auth_settings.mako:64
 #: rhodecode/templates/admin/integrations/list.mako:71
@@ -1806,7 +1806,7 @@ msgstr ""
 #: rhodecode/templates/admin/settings/settings_issuetracker.mako:16
 #: rhodecode/templates/admin/settings/settings_labs.mako:49
 #: rhodecode/templates/admin/settings/settings_vcs.mako:14
-#: rhodecode/templates/admin/settings/settings_visual.mako:215
+#: rhodecode/templates/admin/settings/settings_visual.mako:218
 #: rhodecode/templates/admin/user_groups/user_group_edit_perms.mako:217
 #: rhodecode/templates/admin/users/user_edit_auth_tokens.mako:107
 #: rhodecode/templates/admin/users/user_edit_emails.mako:66
@@ -1841,7 +1841,7 @@ msgstr ""
 #: rhodecode/templates/changeset/changeset_file_comment.mako:236
 #: rhodecode/templates/changeset/changeset_file_comment.mako:250
 #: rhodecode/templates/changeset/changeset_file_comment.mako:259
-#: rhodecode/templates/data_table/_dt_elements.mako:439
+#: rhodecode/templates/data_table/_dt_elements.mako:445
 #: rhodecode/templates/debug_style/buttons.html:132
 #: rhodecode/templates/files/files_source.mako:40
 #: rhodecode/templates/files/files_source.mako:47
@@ -2229,15 +2229,15 @@ msgstr ""
 msgid "Commit not found"
 msgstr ""
 
-#: rhodecode/lib/auth.py:1769
+#: rhodecode/lib/auth.py:1771
 msgid "IP {} not allowed"
 msgstr ""
 
-#: rhodecode/lib/auth.py:1861
+#: rhodecode/lib/auth.py:1863
 msgid "You need to be a registered user to perform this action"
 msgstr ""
 
-#: rhodecode/lib/auth.py:1905
+#: rhodecode/lib/auth.py:1907
 msgid "You need to be signed in to view this page"
 msgstr ""
 
@@ -2249,7 +2249,7 @@ msgstr ""
 msgid "Click to select line"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1878
+#: rhodecode/lib/helpers.py:1883
 msgid ""
 "Example filter terms:\n"
 "     repository:vcs\n"
@@ -2271,7 +2271,7 @@ msgid ""
 "     \"username:test AND repository:test*\"\n"
 msgstr ""
 
-#: rhodecode/lib/helpers.py:1902
+#: rhodecode/lib/helpers.py:1907
 #, python-format
 msgid "%s repository is not mapped to db perhaps it was created or renamed from the filesystem please run the application again in order to rescan repositories"
 msgstr ""
@@ -2760,7 +2760,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_0.py:3011
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_1.py:3012
 #: rhodecode/lib/dbmigrate/schema/db_4_9_0_0.py:3230 rhodecode/model/db.py:3997
-#: rhodecode/public/js/scripts.js:42595 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42733 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:72
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:396
 msgid "Not Reviewed"
@@ -3520,7 +3520,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_0.py:2358
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_1.py:2359
 #: rhodecode/lib/dbmigrate/schema/db_4_9_0_0.py:2559 rhodecode/model/db.py:3174
-#: rhodecode/model/permission.py:105
+#: rhodecode/model/permission.py:107
 msgid "Manual activation of external account"
 msgstr ""
 
@@ -3560,7 +3560,7 @@ msgstr ""
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_0.py:2359
 #: rhodecode/lib/dbmigrate/schema/db_4_7_0_1.py:2360
 #: rhodecode/lib/dbmigrate/schema/db_4_9_0_0.py:2560 rhodecode/model/db.py:3175
-#: rhodecode/model/permission.py:106
+#: rhodecode/model/permission.py:108
 msgid "Automatic activation of external account"
 msgstr ""
 
@@ -3986,51 +3986,51 @@ msgstr ""
 msgid "Commit index"
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:186
+#: rhodecode/lib/vcs/backends/base.py:190
 msgid "This pull request can be automatically merged."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:188
+#: rhodecode/lib/vcs/backends/base.py:192
 msgid "This pull request cannot be merged because of an unhandled exception. {exception}"
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:191
+#: rhodecode/lib/vcs/backends/base.py:195
 msgid "This pull request cannot be merged because of merge conflicts. {unresolved_files}"
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:193
+#: rhodecode/lib/vcs/backends/base.py:197
 msgid "This pull request could not be merged because push to target:`{target}@{merge_commit}` failed."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:196
+#: rhodecode/lib/vcs/backends/base.py:200
 msgid "This pull request cannot be merged because the target `{target_ref.name}` is not a head."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:199
+#: rhodecode/lib/vcs/backends/base.py:203
 msgid "This pull request cannot be merged because the source contains more branches than the target."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:202
+#: rhodecode/lib/vcs/backends/base.py:206
 msgid "This pull request cannot be merged because the target `{target_ref.name}` has multiple heads: `{heads}`."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:205
+#: rhodecode/lib/vcs/backends/base.py:209
 msgid "This pull request cannot be merged because the target repository is locked by {locked_by}."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:209
+#: rhodecode/lib/vcs/backends/base.py:213
 msgid "This pull request cannot be merged because the target reference `{target_ref.name}` is missing."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:212
+#: rhodecode/lib/vcs/backends/base.py:216
 msgid "This pull request cannot be merged because the source reference `{source_ref.name}` is missing."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:215
+#: rhodecode/lib/vcs/backends/base.py:219
 msgid "This pull request cannot be merged because of conflicts related to sub repositories."
 msgstr ""
 
-#: rhodecode/lib/vcs/backends/base.py:220
+#: rhodecode/lib/vcs/backends/base.py:224
 msgid "This pull request cannot be merged because the target or the source reference is missing."
 msgstr ""
 
@@ -4138,8 +4138,8 @@ msgstr ""
 msgid "%(user)s commented on pull request at %(date_or_age)s"
 msgstr ""
 
-#: rhodecode/model/permission.py:71 rhodecode/model/permission.py:77
-#: rhodecode/model/permission.py:83
+#: rhodecode/model/permission.py:73 rhodecode/model/permission.py:79
+#: rhodecode/model/permission.py:85
 #: rhodecode/templates/admin/repo_groups/repo_group_edit_permissions.mako:11
 #: rhodecode/templates/admin/repo_groups/repo_group_edit_permissions.mako:217
 #: rhodecode/templates/admin/repos/repo_edit_permissions.mako:11
@@ -4147,27 +4147,27 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: rhodecode/model/permission.py:72 rhodecode/model/permission.py:78
-#: rhodecode/model/permission.py:84
+#: rhodecode/model/permission.py:74 rhodecode/model/permission.py:80
+#: rhodecode/model/permission.py:86
 #: rhodecode/templates/admin/repo_groups/repo_group_edit_permissions.mako:12
 #: rhodecode/templates/admin/repos/repo_edit_permissions.mako:12
 #: rhodecode/templates/admin/user_groups/user_group_edit_perms.mako:16
 msgid "Read"
 msgstr ""
 
-#: rhodecode/model/permission.py:73 rhodecode/model/permission.py:79
-#: rhodecode/model/permission.py:85
+#: rhodecode/model/permission.py:75 rhodecode/model/permission.py:81
+#: rhodecode/model/permission.py:87
 #: rhodecode/templates/admin/repo_groups/repo_group_edit_permissions.mako:13
 #: rhodecode/templates/admin/repos/repo_edit_permissions.mako:13
 #: rhodecode/templates/admin/user_groups/user_group_edit_perms.mako:17
 #: rhodecode/templates/changeset/changeset_file_comment.mako:392
 #: rhodecode/templates/changeset/changeset_file_comment.mako:443
-#: rhodecode/templates/data_table/_dt_elements.mako:453
+#: rhodecode/templates/data_table/_dt_elements.mako:460
 msgid "Write"
 msgstr ""
 
-#: rhodecode/model/permission.py:74 rhodecode/model/permission.py:80
-#: rhodecode/model/permission.py:86
+#: rhodecode/model/permission.py:76 rhodecode/model/permission.py:82
+#: rhodecode/model/permission.py:88
 #: rhodecode/templates/admin/auth/plugin_settings.mako:12
 #: rhodecode/templates/admin/defaults/defaults.mako:12
 #: rhodecode/templates/admin/integrations/base.mako:21
@@ -4189,51 +4189,51 @@ msgstr ""
 #: rhodecode/templates/admin/user_groups/user_group_edit_perms.mako:18
 #: rhodecode/templates/admin/users/user_add.mako:11
 #: rhodecode/templates/admin/users/user_edit.mako:12
-#: rhodecode/templates/base/base.mako:838
+#: rhodecode/templates/base/base.mako:839
 msgid "Admin"
 msgstr ""
 
-#: rhodecode/model/permission.py:89
+#: rhodecode/model/permission.py:91
 msgid "Protected/No Access"
 msgstr ""
 
-#: rhodecode/model/permission.py:90
+#: rhodecode/model/permission.py:92
 msgid "Web merge"
 msgstr ""
 
-#: rhodecode/model/permission.py:91
+#: rhodecode/model/permission.py:93
 msgid "Push"
 msgstr ""
 
-#: rhodecode/model/permission.py:92
+#: rhodecode/model/permission.py:94
 msgid "Force Push"
 msgstr ""
 
-#: rhodecode/model/permission.py:95 rhodecode/model/permission.py:109
-#: rhodecode/model/permission.py:113 rhodecode/model/permission.py:117
-#: rhodecode/model/permission.py:121 rhodecode/model/permission.py:125
-#: rhodecode/model/permission.py:129
+#: rhodecode/model/permission.py:97 rhodecode/model/permission.py:111
+#: rhodecode/model/permission.py:115 rhodecode/model/permission.py:119
+#: rhodecode/model/permission.py:123 rhodecode/model/permission.py:127
+#: rhodecode/model/permission.py:131
 #: rhodecode/templates/admin/my_account/my_account_notifications.mako:27
 msgid "Disabled"
 msgstr ""
 
-#: rhodecode/model/permission.py:96
+#: rhodecode/model/permission.py:98
 msgid "Allowed with manual account activation"
 msgstr ""
 
-#: rhodecode/model/permission.py:97
+#: rhodecode/model/permission.py:99
 msgid "Allowed with automatic account activation"
 msgstr ""
 
-#: rhodecode/model/permission.py:100
+#: rhodecode/model/permission.py:102
 msgid "Allow password recovery"
 msgstr ""
 
-#: rhodecode/model/permission.py:101
+#: rhodecode/model/permission.py:103
 msgid "Hide password recovery link"
 msgstr ""
 
-#: rhodecode/model/permission.py:102
+#: rhodecode/model/permission.py:104
 msgid "Disable password recovery"
 msgstr ""
 
@@ -4261,79 +4261,79 @@ msgstr ""
 msgid "This pull request cannot be updated because the source reference is missing."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1688
+#: rhodecode/model/pull_request.py:1690
 msgid "Server-side pull request merging is disabled."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1691
+#: rhodecode/model/pull_request.py:1693
 msgid "This pull request is closed."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1705
+#: rhodecode/model/pull_request.py:1707
 msgid "Pull request merging is not supported."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1722
+#: rhodecode/model/pull_request.py:1724
 msgid "Target repository large files support is disabled."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1725
+#: rhodecode/model/pull_request.py:1727
 msgid "Source repository large files support is disabled."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1909 rhodecode/model/scm.py:1008
+#: rhodecode/model/pull_request.py:1911 rhodecode/model/scm.py:1008
 #: rhodecode/templates/admin/my_account/my_account.mako:32
-#: rhodecode/templates/base/base.mako:638
+#: rhodecode/templates/base/base.mako:639
 #: rhodecode/templates/summary/components.mako:46
 msgid "Bookmarks"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1914
+#: rhodecode/model/pull_request.py:1916
 msgid "Commit IDs"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:1917
+#: rhodecode/model/pull_request.py:1919
 #: rhodecode/templates/summary/components.mako:22
 msgid "Closed Branches"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2103
+#: rhodecode/model/pull_request.py:2105
 msgid "WIP marker in title prevents from accidental merge."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2113
+#: rhodecode/model/pull_request.py:2115
 msgid "User `{}` not allowed to perform merge."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2131
+#: rhodecode/model/pull_request.py:2133
 msgid "Target branch `{}` changes rejected by rule {}."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2146
+#: rhodecode/model/pull_request.py:2148
 msgid "Pull request reviewer approval is pending."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2160
+#: rhodecode/model/pull_request.py:2162
 msgid "Cannot merge, {} TODO still not resolved."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2163
+#: rhodecode/model/pull_request.py:2165
 msgid "Cannot merge, {} TODOs still not resolved."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2218
+#: rhodecode/model/pull_request.py:2220
 msgid "Merge strategy: rebase"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2223
+#: rhodecode/model/pull_request.py:2225
 msgid "Merge strategy: explicit merge commit"
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2231
+#: rhodecode/model/pull_request.py:2233
 msgid "Source branch will be closed before the merge."
 msgstr ""
 
-#: rhodecode/model/pull_request.py:2233
+#: rhodecode/model/pull_request.py:2235
 msgid "Source branch will be deleted after the merge."
 msgstr ""
 
@@ -4880,129 +4880,133 @@ msgstr ""
 msgid "Note Comment"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:39599 rhodecode/public/js/scripts.js:39987
+#: rhodecode/public/js/scripts.js:39599 rhodecode/public/js/scripts.js:39985
 #: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:103
 #: rhodecode/public/js/src/rhodecode/codemirror.js:730
-#: rhodecode/public/js/src/rhodecode/comments.js:267
+#: rhodecode/public/js/src/rhodecode/comments.js:265
 msgid "Status Review"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:39614 rhodecode/public/js/scripts.js:40004
+#: rhodecode/public/js/scripts.js:39614 rhodecode/public/js/scripts.js:40002
 #: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:24
 #: rhodecode/public/js/src/rhodecode/codemirror.js:745
-#: rhodecode/public/js/src/rhodecode/comments.js:284
+#: rhodecode/public/js/src/rhodecode/comments.js:282
 msgid "Comment text will be set automatically based on currently selected status ({0}) ..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:39695 rhodecode/public/js/scripts.js:40213
-#: rhodecode/public/js/scripts.js:41745 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:39695 rhodecode/public/js/scripts.js:40211
+#: rhodecode/public/js/scripts.js:41883 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:49
 #: rhodecode/public/js/src/rhodecode/codemirror.js:826
-#: rhodecode/public/js/src/rhodecode/comments.js:493
+#: rhodecode/public/js/src/rhodecode/comments.js:491
 #: rhodecode/public/js/src/rhodecode/files.js:499
 #: rhodecode/templates/files/files_browser_tree.mako:57
 msgid "Loading ..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:39860 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:39859 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:123
-#: rhodecode/public/js/src/rhodecode/comments.js:140
+#: rhodecode/public/js/src/rhodecode/comments.js:139
 msgid "Update Comment"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:39884 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:39883 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:150
-#: rhodecode/public/js/src/rhodecode/comments.js:164
+#: rhodecode/public/js/src/rhodecode/comments.js:163
 msgid "resolve comment"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40157 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40155 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:83
-#: rhodecode/public/js/src/rhodecode/comments.js:437
+#: rhodecode/public/js/src/rhodecode/comments.js:435
 msgid "Saving Draft..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40159 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40157 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:108
-#: rhodecode/public/js/src/rhodecode/comments.js:439
+#: rhodecode/public/js/src/rhodecode/comments.js:437
 msgid "Submitting..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40481 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40479 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:131
-#: rhodecode/public/js/src/rhodecode/comments.js:761
+#: rhodecode/public/js/src/rhodecode/comments.js:759
 msgid "Yes, delete comment #{0}!"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40526 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40524 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:106
-#: rhodecode/public/js/src/rhodecode/comments.js:806
+#: rhodecode/public/js/src/rhodecode/comments.js:804
 msgid "Submit {0} draft comment."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40529 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40527 rhodecode/public/js/scripts.js:41225
+#: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:130
-#: rhodecode/public/js/src/rhodecode/comments.js:809
+#: rhodecode/public/js/src/rhodecode/comments.js:807
+#: rhodecode/public/js/src/rhodecode/comments.js:1505
 msgid "Yes"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40621 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40619 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:47
-#: rhodecode/public/js/src/rhodecode/comments.js:901
+#: rhodecode/public/js/src/rhodecode/comments.js:899
 msgid "Leave a resolution comment, or click resolve button to resolve TODO comment #{0}"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:40825 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:40823 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:23
-#: rhodecode/public/js/src/rhodecode/comments.js:1105
+#: rhodecode/public/js/src/rhodecode/comments.js:1103
 msgid "Comment body was not changed."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41071 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41074 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:44
-#: rhodecode/public/js/src/rhodecode/comments.js:1351
+#: rhodecode/public/js/src/rhodecode/comments.js:1354
 msgid "Leave a comment on file {0} line {1}."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41212 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41214 rhodecode/public/js/scripts.js:41267
+#: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:113
-#: rhodecode/public/js/src/rhodecode/comments.js:1492
+#: rhodecode/public/js/src/rhodecode/comments.js:1494
+#: rhodecode/public/js/src/rhodecode/comments.js:1547
 msgid "TODO from comment {0} was fixed."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41494 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41632 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:154
 #: rhodecode/public/js/src/rhodecode/files.js:248
 msgid "truncated result"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41496 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41634 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:155
 #: rhodecode/public/js/src/rhodecode/files.js:250
 msgid "truncated results"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41505 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41643 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:60
 #: rhodecode/public/js/src/rhodecode/files.js:259
 msgid "No matching files"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41563 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41701 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:86
 #: rhodecode/public/js/src/rhodecode/files.js:317
 msgid "Selection link"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41660 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41798 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:10
 #: rhodecode/public/js/src/rhodecode/files.js:414
 msgid "All Authors"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41810 rhodecode/public/js/scripts.js:41813
+#: rhodecode/public/js/scripts.js:41948 rhodecode/public/js/scripts.js:41951
 #: rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:38
 #: rhodecode/public/js/src/rhodecode/files.js:564
@@ -5010,141 +5014,141 @@ msgstr ""
 msgid "File `{0}` has a newer version available, or has been removed. Click {1} to see the latest version."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41816 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41954 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:117
 #: rhodecode/public/js/src/rhodecode/files.js:570
 msgid "There is an existing path `{0}` at this commit."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41819 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:41957 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:116
 #: rhodecode/public/js/src/rhodecode/files.js:573
 msgid "There is a later version of file tree available. Click {0} to create a file at the latest tree."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41873 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42011 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:105
 #: rhodecode/public/js/src/rhodecode/followers.js:26
 msgid "Stopped watching this repository"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41874 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42012 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:129
 #: rhodecode/public/js/src/rhodecode/followers.js:27
-#: rhodecode/templates/base/base.mako:310
+#: rhodecode/templates/base/base.mako:311
 msgid "Watch"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41877 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42015 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:102
 #: rhodecode/public/js/src/rhodecode/followers.js:30
 msgid "Started watching this repository"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:41878 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42016 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:122
 #: rhodecode/public/js/src/rhodecode/followers.js:31
-#: rhodecode/templates/base/base.mako:308
+#: rhodecode/templates/base/base.mako:309
 msgid "Unwatch"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42384 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42522 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:12
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:185
 msgid "All reviewers must vote."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42408 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42546 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:54
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:209
 msgid "No additional review rules set."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42454 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42592 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:50
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:255
 msgid "Loading diff ..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42507 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42645 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:115
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:308
 msgid "There are no commits to merge."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42579 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42717 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:128
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:380
 msgid "User `{0}` not allowed to be a reviewer"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42585 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42723 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:127
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:386
 msgid "User `{0}` already in reviewers/observers"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42699 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42838 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:135
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:501
 msgid "added manually by \"{0}\""
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42704 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:42843 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:147
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:506
 msgid "member of \"{0}\""
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42937 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:43076 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:125
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:739
 msgid "Updating..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:42947 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:43086 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:40
 #: rhodecode/public/js/src/rhodecode/pullrequests.js:749
 msgid "Force updating..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:47812 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:47953 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:98
 #: rhodecode/public/js/src/rhodecode/users.js:54
 msgid "Show this authentication token?"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:47814 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:47955 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:90
 #: rhodecode/public/js/src/rhodecode/users.js:56
 msgid "Show"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:47850 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:47991 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:16
 #: rhodecode/public/js/src/rhodecode/users.js:92
 msgid "Authentication Token"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:48039 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:48180 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:139
 #: rhodecode/public/js/src/rhodecode.js:144
 msgid "file"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:48183 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:48324 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:53
 #: rhodecode/public/js/src/rhodecode.js:288
 msgid "Loading..."
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:48565 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:48706 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:136
 #: rhodecode/public/js/src/rhodecode.js:670
 msgid "date not in future"
 msgstr ""
 
-#: rhodecode/public/js/scripts.js:48573 rhodecode/public/js/scripts.min.js:1
+#: rhodecode/public/js/scripts.js:48714 rhodecode/public/js/scripts.min.js:1
 #: rhodecode/public/js/rhodecode/i18n/js_translations.js:100
 #: rhodecode/public/js/src/rhodecode.js:678
 msgid "Specified expiration date"
@@ -5737,8 +5741,8 @@ msgid "%s Repository group dashboard"
 msgstr ""
 
 #: rhodecode/templates/index_repo_group.mako:13
-#: rhodecode/templates/base/base.mako:810
 #: rhodecode/templates/base/base.mako:811
+#: rhodecode/templates/base/base.mako:812
 msgid "Home"
 msgstr ""
 
@@ -5933,9 +5937,9 @@ msgstr ""
 #: rhodecode/templates/admin/admin_log_base.mako:10
 #: rhodecode/templates/admin/defaults/defaults.mako:32
 #: rhodecode/templates/admin/permissions/permissions_objects.mako:16
-#: rhodecode/templates/base/base.mako:658
-#: rhodecode/templates/base/base.mako:660
-#: rhodecode/templates/base/base.mako:662
+#: rhodecode/templates/base/base.mako:659
+#: rhodecode/templates/base/base.mako:661
+#: rhodecode/templates/base/base.mako:663
 #: rhodecode/templates/search/search_commit.mako:8
 #: rhodecode/templates/search/search_path.mako:7
 msgid "Repository"
@@ -6261,7 +6265,7 @@ msgid "Expires"
 msgstr ""
 
 #: rhodecode/templates/admin/gists/gist_new.mako:5
-#: rhodecode/templates/base/base.mako:577
+#: rhodecode/templates/base/base.mako:578
 msgid "New Gist"
 msgstr ""
 
@@ -6353,7 +6357,7 @@ msgstr ""
 #: rhodecode/templates/admin/integrations/new.mako:15
 #: rhodecode/templates/admin/repo_groups/repo_group_edit.mako:33
 #: rhodecode/templates/admin/repos/repo_edit.mako:74
-#: rhodecode/templates/base/base.mako:120
+#: rhodecode/templates/base/base.mako:121
 msgid "Integrations"
 msgstr ""
 
@@ -6368,7 +6372,7 @@ msgstr ""
 #: rhodecode/templates/admin/settings/settings.mako:14
 #: rhodecode/templates/admin/user_groups/user_group_edit.mako:34
 #: rhodecode/templates/admin/user_groups/user_group_edit_settings.mako:9
-#: rhodecode/templates/base/base.mako:122
+#: rhodecode/templates/base/base.mako:123
 msgid "Settings"
 msgstr ""
 
@@ -6469,7 +6473,7 @@ msgid "No description available"
 msgstr ""
 
 #: rhodecode/templates/admin/my_account/my_account.mako:5
-#: rhodecode/templates/base/base.mako:622
+#: rhodecode/templates/base/base.mako:623
 msgid "My account"
 msgstr ""
 
@@ -6520,15 +6524,15 @@ msgstr ""
 
 #: rhodecode/templates/admin/my_account/my_account.mako:45
 #: rhodecode/templates/admin/notifications/notifications_show_all.mako:42
-#: rhodecode/templates/base/base.mako:385
-#: rhodecode/templates/base/base.mako:626
+#: rhodecode/templates/base/base.mako:386
+#: rhodecode/templates/base/base.mako:627
 msgid "Pull Requests"
 msgstr ""
 
 #: rhodecode/templates/admin/my_account/my_account.mako:46
 #: rhodecode/templates/admin/permissions/permissions.mako:14
 #: rhodecode/templates/admin/user_groups/user_group_edit.mako:35
-#: rhodecode/templates/base/base.mako:118
+#: rhodecode/templates/base/base.mako:119
 msgid "Permissions"
 msgstr ""
 
@@ -7047,7 +7051,7 @@ msgstr ""
 #: rhodecode/templates/admin/repo_groups/repo_group_add.mako:14
 #: rhodecode/templates/admin/users/user_edit_advanced.mako:13
 #: rhodecode/templates/base/base.mako:115
-#: rhodecode/templates/base/base.mako:136
+#: rhodecode/templates/base/base.mako:137
 msgid "Repository groups"
 msgstr ""
 
@@ -7062,7 +7066,7 @@ msgstr ""
 #: rhodecode/templates/admin/repo_groups/repo_group_edit_settings.mako:25
 #: rhodecode/templates/admin/repos/repo_add_base.mako:43
 #: rhodecode/templates/admin/repos/repo_edit_settings.mako:33
-#: rhodecode/templates/base/base.mako:671
+#: rhodecode/templates/base/base.mako:672
 #: rhodecode/templates/data_table/_dt_elements.mako:217
 #: rhodecode/templates/forks/fork.mako:41
 msgid "Repository group"
@@ -7312,7 +7316,7 @@ msgid "Import Existing Repository ?"
 msgstr ""
 
 #: rhodecode/templates/admin/repos/repo_add_base.mako:23
-#: rhodecode/templates/base/base.mako:332
+#: rhodecode/templates/base/base.mako:333
 msgid "Clone from"
 msgstr ""
 
@@ -8024,7 +8028,7 @@ msgstr ""
 #: rhodecode/templates/admin/settings/settings_global.mako:140
 #: rhodecode/templates/admin/settings/settings_labs.mako:48
 #: rhodecode/templates/admin/settings/settings_vcs.mako:13
-#: rhodecode/templates/admin/settings/settings_visual.mako:214
+#: rhodecode/templates/admin/settings/settings_visual.mako:217
 msgid "Save settings"
 msgstr ""
 
@@ -8550,7 +8554,7 @@ msgstr ""
 msgid "Clone URL templates"
 msgstr ""
 
-#: rhodecode/templates/admin/settings/settings_visual.mako:181
+#: rhodecode/templates/admin/settings/settings_visual.mako:184
 msgid ""
 "Schema of clone url construction eg. '{scheme}://{user}@{netloc}/{repo}', available vars:\n"
 "                       {scheme} 'http' or 'https' sent from running RhodeCode server,\n"
@@ -8562,11 +8566,11 @@ msgid ""
 "                       {repoid} ID of repository, can be used to contruct clone-by-id"
 msgstr ""
 
-#: rhodecode/templates/admin/settings/settings_visual.mako:196
+#: rhodecode/templates/admin/settings/settings_visual.mako:199
 msgid "Custom Support Link"
 msgstr ""
 
-#: rhodecode/templates/admin/settings/settings_visual.mako:204
+#: rhodecode/templates/admin/settings/settings_visual.mako:207
 #, python-format
 msgid ""
 "Custom url for the support link located at the bottom.\n"
@@ -8582,7 +8586,7 @@ msgstr ""
 #: rhodecode/templates/admin/user_groups/user_group_add.mako:13
 #: rhodecode/templates/admin/users/user_edit_advanced.mako:14
 #: rhodecode/templates/base/base.mako:117
-#: rhodecode/templates/base/base.mako:139
+#: rhodecode/templates/base/base.mako:140
 msgid "User groups"
 msgstr ""
 
@@ -9090,16 +9094,21 @@ msgstr ""
 msgid "Delegated Admin Panel"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:119
+#: rhodecode/templates/base/base.mako:118
+#: rhodecode/templates/base/base.mako:395
+msgid "Artifacts"
+msgstr ""
+
+#: rhodecode/templates/base/base.mako:120
 msgid "Authentication"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:121
+#: rhodecode/templates/base/base.mako:122
 msgid "Defaults"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:161
-#: rhodecode/templates/base/base.mako:201
+#: rhodecode/templates/base/base.mako:162
+#: rhodecode/templates/base/base.mako:202
 #: rhodecode/templates/changeset/changeset.mako:140
 #: rhodecode/templates/files/files_source_header.mako:57
 #: rhodecode/templates/files/files_tree_header.mako:44
@@ -9107,40 +9116,40 @@ msgstr ""
 msgid "Show More"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:304
-#: rhodecode/templates/base/base.mako:315
+#: rhodecode/templates/base/base.mako:305
+#: rhodecode/templates/base/base.mako:316
 msgid "RSS Feed"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:306
+#: rhodecode/templates/base/base.mako:307
 msgid "Watch this Repository and actions on it in your personalized journal"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:324
+#: rhodecode/templates/base/base.mako:325
 msgid "Fork of"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:341
+#: rhodecode/templates/base/base.mako:342
 #, python-format
 msgid "Repository locked by %(user)s"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:346
+#: rhodecode/templates/base/base.mako:347
 msgid "Repository not locked. Pull repository to lock it."
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:362
+#: rhodecode/templates/base/base.mako:363
 msgid "This repository has been archived. It is now read-only."
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:375
+#: rhodecode/templates/base/base.mako:376
 #: rhodecode/templates/data_table/_dt_elements.mako:58
 #: rhodecode/templates/data_table/_dt_elements.mako:59
 #: rhodecode/templates/data_table/_dt_elements.mako:207
 msgid "Summary"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:376
+#: rhodecode/templates/base/base.mako:377
 #: rhodecode/templates/data_table/_dt_elements.mako:63
 #: rhodecode/templates/data_table/_dt_elements.mako:64
 #: rhodecode/templates/files/file_authors_box.mako:30
@@ -9150,7 +9159,7 @@ msgstr ""
 msgid "Commits"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:377
+#: rhodecode/templates/base/base.mako:378
 #: rhodecode/templates/data_table/_dt_elements.mako:68
 #: rhodecode/templates/data_table/_dt_elements.mako:69
 #: rhodecode/templates/files/files.mako:15
@@ -9158,87 +9167,83 @@ msgstr ""
 msgid "Files"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:378
+#: rhodecode/templates/base/base.mako:379
 #: rhodecode/templates/bookmarks/bookmarks.mako:78
 #: rhodecode/templates/branches/branches.mako:77
 #: rhodecode/templates/tags/tags.mako:78
 msgid "Compare"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:383
+#: rhodecode/templates/base/base.mako:384
 #, python-format
 msgid "Show Pull Requests for %s"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:394
-msgid "Artifacts"
-msgstr ""
-
-#: rhodecode/templates/base/base.mako:400
+#: rhodecode/templates/base/base.mako:401
 msgid "Repository Settings"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:406
+#: rhodecode/templates/base/base.mako:407
 msgid "Options"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:411
+#: rhodecode/templates/base/base.mako:412
 msgid "Unlock Repository"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:413
+#: rhodecode/templates/base/base.mako:414
 msgid "Lock Repository"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:466
+#: rhodecode/templates/base/base.mako:467
 msgid "Group Home"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:470
+#: rhodecode/templates/base/base.mako:471
 msgid "You have admin right to this group, and can edit it"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:470
+#: rhodecode/templates/base/base.mako:471
 msgid "Group Settings"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:521
+#: rhodecode/templates/base/base.mako:522
 msgid "This Repository"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:523
+#: rhodecode/templates/base/base.mako:524
 msgid "Create Pull Request"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:527
+#: rhodecode/templates/base/base.mako:528
 msgid "Fork this repository"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:534
+#: rhodecode/templates/base/base.mako:535
 msgid "This Repository Group"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:538
-#: rhodecode/templates/base/base.mako:554
-#: rhodecode/templates/base/base.mako:566
+#: rhodecode/templates/base/base.mako:539
+#: rhodecode/templates/base/base.mako:555
+#: rhodecode/templates/base/base.mako:567
 msgid "New Repository"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:544
-#: rhodecode/templates/base/base.mako:558
-#: rhodecode/templates/base/base.mako:572
+#: rhodecode/templates/base/base.mako:545
+#: rhodecode/templates/base/base.mako:559
+#: rhodecode/templates/base/base.mako:573
 msgid "New Repository Group"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:599
+#: rhodecode/templates/base/base.mako:600
 msgid "Sign in"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:624
+#: rhodecode/templates/base/base.mako:625
 msgid "My personal group"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:630
+#: rhodecode/templates/base/base.mako:631
 #: rhodecode/templates/debug_style/alerts.html:5
 #: rhodecode/templates/debug_style/buttons.html:5
 #: rhodecode/templates/debug_style/code-block.html:6
@@ -9261,62 +9266,62 @@ msgstr ""
 msgid "Style"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:631
+#: rhodecode/templates/base/base.mako:632
 msgid "[Style]"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:648
+#: rhodecode/templates/base/base.mako:649
 msgid "No Bookmarks yet."
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:686
+#: rhodecode/templates/base/base.mako:687
 msgid "Sign Out"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:731
+#: rhodecode/templates/base/base.mako:732
 #: rhodecode/templates/changeset/changeset_file_comment.mako:538
 msgid "dismiss"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:772
+#: rhodecode/templates/base/base.mako:773
 msgid "search / go to..."
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:817
+#: rhodecode/templates/base/base.mako:818
 msgid "Show activity journal"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:818
+#: rhodecode/templates/base/base.mako:819
 #: rhodecode/templates/journal/journal.mako:4
 #: rhodecode/templates/journal/journal.mako:14
 msgid "Journal"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:823
+#: rhodecode/templates/base/base.mako:824
 msgid "Show Public activity journal"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:824
+#: rhodecode/templates/base/base.mako:825
 msgid "Public journal"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:830
+#: rhodecode/templates/base/base.mako:831
 msgid "Show Gists"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:831
+#: rhodecode/templates/base/base.mako:832
 msgid "Gists"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:837
+#: rhodecode/templates/base/base.mako:838
 msgid "Admin settings"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:1154
+#: rhodecode/templates/base/base.mako:1155
 msgid "Keyboard shortcuts"
 msgstr ""
 
-#: rhodecode/templates/base/base.mako:1162
+#: rhodecode/templates/base/base.mako:1163
 msgid "Site-wide shortcuts"
 msgstr ""
 
@@ -9357,7 +9362,7 @@ msgid "Repository Forking"
 msgstr ""
 
 #: rhodecode/templates/base/default_perms_box.mako:65
-msgid "Permission to create root level repository forks. When disabled, users can still fork repositories inside their own repository groups."
+msgid "Permission to create repository forks. Root level forks will only work if repository creation is enabled."
 msgstr ""
 
 #: rhodecode/templates/base/default_perms_box.mako:70
@@ -9418,7 +9423,7 @@ msgstr ""
 #: rhodecode/templates/base/issue_tracker_settings.mako:300
 #: rhodecode/templates/changeset/changeset_file_comment.mako:395
 #: rhodecode/templates/changeset/changeset_file_comment.mako:446
-#: rhodecode/templates/data_table/_dt_elements.mako:456
+#: rhodecode/templates/data_table/_dt_elements.mako:463
 #: rhodecode/templates/files/files_add.mako:59
 #: rhodecode/templates/files/files_edit.mako:61
 msgid "Preview"
@@ -10481,11 +10486,11 @@ msgstr ""
 msgid "Work in progress"
 msgstr ""
 
-#: rhodecode/templates/data_table/_dt_elements.mako:432
+#: rhodecode/templates/data_table/_dt_elements.mako:438
 msgid "Info"
 msgstr ""
 
-#: rhodecode/templates/data_table/_dt_elements.mako:473
+#: rhodecode/templates/data_table/_dt_elements.mako:480
 #, python-format
 msgid "Parsed using %s syntax"
 msgstr ""
@@ -10645,7 +10650,7 @@ msgid "{mention_prefix}{user} left a {comment_type} on commit `{commit_id}` in t
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:54
-#: rhodecode/templates/email_templates/pull_request_comment.mako:63
+#: rhodecode/templates/email_templates/pull_request_comment.mako:62
 msgid "Comment link"
 msgstr ""
 
@@ -10662,26 +10667,26 @@ msgid "Commit message"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:65
-#: rhodecode/templates/email_templates/pull_request_comment.mako:77
+#: rhodecode/templates/email_templates/pull_request_comment.mako:76
 msgid "File: {comment_file} on line {comment_line}"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:69
 #: rhodecode/templates/email_templates/commit_comment.mako:161
-#: rhodecode/templates/email_templates/pull_request_comment.mako:81
-#: rhodecode/templates/email_templates/pull_request_comment.mako:191
+#: rhodecode/templates/email_templates/pull_request_comment.mako:80
+#: rhodecode/templates/email_templates/pull_request_comment.mako:190
 msgid "`TODO` number"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:71
 #: rhodecode/templates/email_templates/commit_comment.mako:163
-#: rhodecode/templates/email_templates/pull_request_comment.mako:83
-#: rhodecode/templates/email_templates/pull_request_comment.mako:193
+#: rhodecode/templates/email_templates/pull_request_comment.mako:82
+#: rhodecode/templates/email_templates/pull_request_comment.mako:192
 msgid "`Note` number"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:104
-#: rhodecode/templates/email_templates/pull_request_comment.mako:124
+#: rhodecode/templates/email_templates/pull_request_comment.mako:123
 msgid "left a"
 msgstr ""
 
@@ -10702,18 +10707,18 @@ msgid "Commit Status"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:153
-#: rhodecode/templates/email_templates/pull_request_comment.mako:183
+#: rhodecode/templates/email_templates/pull_request_comment.mako:182
 #: rhodecode/templates/search/search_path.mako:9
 msgid "File"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:154
-#: rhodecode/templates/email_templates/pull_request_comment.mako:184
+#: rhodecode/templates/email_templates/pull_request_comment.mako:183
 msgid "`{comment_file}` on line {comment_line}"
 msgstr ""
 
 #: rhodecode/templates/email_templates/commit_comment.mako:173
-#: rhodecode/templates/email_templates/pull_request_comment.mako:203
+#: rhodecode/templates/email_templates/pull_request_comment.mako:202
 msgid "Reply"
 msgstr ""
 
@@ -10729,35 +10734,35 @@ msgstr ""
 msgid "{mention_prefix}{user} left a {comment_type} on pull request !{pr_id}: \"{pr_title}\""
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:65
+#: rhodecode/templates/email_templates/pull_request_comment.mako:64
 #: rhodecode/templates/hovercards/hovercard_pull_request.mako:24
 msgid "Pull Request"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:67
+#: rhodecode/templates/email_templates/pull_request_comment.mako:66
 #: rhodecode/templates/email_templates/pull_request_review.mako:45
 #: rhodecode/templates/email_templates/pull_request_update.mako:41
 msgid "Commit flow: {source_ref_type}:{source_ref_name} of {source_repo_url} into {target_ref_type}:{target_ref_name} of {target_repo_url}"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:70
+#: rhodecode/templates/email_templates/pull_request_comment.mako:69
 msgid "{user} submitted pull request !{pr_id} status: *{status}*"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:73
+#: rhodecode/templates/email_templates/pull_request_comment.mako:72
 msgid "{user} submitted pull request !{pr_id} status: *{status} and closed*"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:127
+#: rhodecode/templates/email_templates/pull_request_comment.mako:126
 msgid "{comment_type} on file `{comment_file}` in pull request."
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:129
+#: rhodecode/templates/email_templates/pull_request_comment.mako:128
 msgid "{comment_type} on pull request."
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:134
-#: rhodecode/templates/email_templates/pull_request_comment.mako:164
+#: rhodecode/templates/email_templates/pull_request_comment.mako:133
+#: rhodecode/templates/email_templates/pull_request_comment.mako:163
 #: rhodecode/templates/email_templates/pull_request_review.mako:100
 #: rhodecode/templates/email_templates/pull_request_review.mako:116
 #: rhodecode/templates/email_templates/pull_request_update.mako:104
@@ -10765,26 +10770,26 @@ msgstr ""
 msgid "Pull request"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:153
+#: rhodecode/templates/email_templates/pull_request_comment.mako:152
 msgid "Review Status"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:156
+#: rhodecode/templates/email_templates/pull_request_comment.mako:155
 msgid "Closed pull request with status"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:158
+#: rhodecode/templates/email_templates/pull_request_comment.mako:157
 msgid "Submitted review status"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:173
+#: rhodecode/templates/email_templates/pull_request_comment.mako:172
 #: rhodecode/templates/email_templates/pull_request_review.mako:125
 #: rhodecode/templates/email_templates/pull_request_update.mako:130
 msgid "Commit Flow"
 msgstr ""
 
-#: rhodecode/templates/email_templates/pull_request_comment.mako:175
-#: rhodecode/templates/email_templates/pull_request_comment.mako:177
+#: rhodecode/templates/email_templates/pull_request_comment.mako:174
+#: rhodecode/templates/email_templates/pull_request_comment.mako:176
 #: rhodecode/templates/email_templates/pull_request_review.mako:127
 #: rhodecode/templates/email_templates/pull_request_review.mako:129
 #: rhodecode/templates/email_templates/pull_request_update.mako:132
@@ -11447,12 +11452,12 @@ msgstr ""
 msgid "In pull request description"
 msgstr ""
 
-#: rhodecode/templates/pullrequests/pullrequest_show.mako:838
-#: rhodecode/templates/pullrequests/pullrequest_show.mako:857
+#: rhodecode/templates/pullrequests/pullrequest_show.mako:840
+#: rhodecode/templates/pullrequests/pullrequest_show.mako:860
 msgid "No Ticket data found."
 msgstr ""
 
-#: rhodecode/templates/pullrequests/pullrequest_show.mako:843
+#: rhodecode/templates/pullrequests/pullrequest_show.mako:845
 msgid "In commit messages"
 msgstr ""
 
