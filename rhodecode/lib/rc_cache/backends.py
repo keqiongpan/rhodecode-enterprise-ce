@@ -183,8 +183,11 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
             return False
 
         with self._dbm_file(True) as dbm:
-
-            return filter(cond, dbm.keys())
+            try:
+                return filter(cond, dbm.keys())
+            except Exception:
+                log.error('Failed to fetch DBM keys from DB: %s', self.get_store())
+                raise
 
     def get_store(self):
         return self.filename
