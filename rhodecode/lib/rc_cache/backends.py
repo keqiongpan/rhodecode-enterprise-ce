@@ -286,11 +286,17 @@ class BaseRedisBackend(redis_backend.RedisBackend):
             pipe.execute()
 
     def get_mutex(self, key):
-        u = redis_backend.u
         if self.distributed_lock:
-            lock_key = u('_lock_{0}').format(key)
+            import redis_lock
+            lock_key = redis_backend.u('_lock_{0}').format(key)
             log.debug('Trying to acquire Redis lock for key %s', lock_key)
-            return self.client.lock(lock_key, self.lock_timeout, self.lock_sleep)
+            lock = redis_lock.Lock(
+                redis_client=self.client,
+                name=lock_key,
+                expire=self.lock_timeout,
+                auto_renewal=False,
+            )
+            return lock
         else:
             return None
 
