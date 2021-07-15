@@ -295,6 +295,7 @@ class BaseRedisBackend(redis_backend.RedisBackend):
                 name=lock_key,
                 expire=self.lock_timeout,
                 auto_renewal=False,
+                strict=True,
             )
             return lock
         else:
