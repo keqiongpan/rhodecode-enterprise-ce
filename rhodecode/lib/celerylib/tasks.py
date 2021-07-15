@@ -102,7 +102,7 @@ def send_email(recipients, subject, body='', html_body='', email_config=None,
         # Location of maildir
         # queue_path='',
 
-        default_sender=email_config.get('app_email_from', 'RhodeCode'),
+        default_sender=email_config.get('app_email_from', 'RhodeCode-noreply@rhodecode.com'),
 
         debug=str2bool(email_config.get('smtp_debug')),
         # /usr/sbin/sendmail	Sendmail executable
