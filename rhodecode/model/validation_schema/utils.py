@@ -47,3 +47,10 @@ def convert_to_optgroup(items):
             result.append((value, label))
 
     return result
+
+
+def username_converter(value):
+    for noise in ('/', ',', '*', '"', "'", '<', '>', '(', ')', '[', ']', ';'):
+        value = value.replace(noise, '')
+
+    return value

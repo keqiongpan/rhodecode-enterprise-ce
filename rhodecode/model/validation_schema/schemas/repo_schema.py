@@ -22,7 +22,7 @@ import colander
 import deform.widget
 
 from rhodecode.translation import _
-from rhodecode.model.validation_schema.utils import convert_to_optgroup
+from rhodecode.model.validation_schema.utils import convert_to_optgroup, username_converter
 from rhodecode.model.validation_schema import validators, preparers, types
 
 DEFAULT_LANDING_REF = 'rev:tip'
@@ -55,6 +55,7 @@ def deferred_repo_owner_validator(node, kw):
 
     def repo_owner_validator(node, value):
         from rhodecode.model.db import User
+        value = username_converter(value)
         existing = User.get_by_username(value)
         if not existing:
             msg = _(u'Repo owner with id `{}` does not exists').format(value)
