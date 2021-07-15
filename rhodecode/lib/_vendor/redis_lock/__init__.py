@@ -10,7 +10,7 @@ from redis import StrictRedis
 __version__ = '3.7.0'
 
 loggers = {
-    k: getLogger(".".join((__name__, k)))
+    k: getLogger("rhodecode" + ".".join((__name__, k)))
     for k in [
         "acquire",
         "refresh.thread.start",
