@@ -326,8 +326,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _new_state = {
             'created': PullRequest.STATE_CREATED,
         }.get(self.request.GET.get('force_state'))
+        can_force_state = c.is_super_admin or HasRepoPermissionAny('repository.admin')(c.repo_name)
 
-        if c.is_super_admin and _new_state:
+        if can_force_state and _new_state:
             with pull_request.set_state(PullRequest.STATE_UPDATING, final_state=_new_state):
                 h.flash(
                     _('Pull Request state was force changed to `{}`').format(_new_state),
