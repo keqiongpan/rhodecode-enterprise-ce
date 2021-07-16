@@ -326,8 +326,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
         _new_state = {
             'created': PullRequest.STATE_CREATED,
         }.get(self.request.GET.get('force_state'))
+        can_force_state = c.is_super_admin or HasRepoPermissionAny('repository.admin')(c.repo_name)
 
-        if c.is_super_admin and _new_state:
+        if can_force_state and _new_state:
             with pull_request.set_state(PullRequest.STATE_UPDATING, final_state=_new_state):
                 h.flash(
                     _('Pull Request state was force changed to `{}`').format(_new_state),
@@ -1268,6 +1269,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         c = self.load_default_context()
         redirect_url = None
+        # we do this check as first, because we want to know ASAP in the flow that
+        # pr is updating currently
+        is_state_changing = pull_request.is_state_changing()
 
         if pull_request.is_closed():
             log.debug('update: forbidden because pull request is closed')
@@ -1276,7 +1280,6 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
             return {'response': True,
                     'redirect_url': redirect_url}
 
-        is_state_changing = pull_request.is_state_changing()
         c.pr_broadcast_channel = channelstream.pr_channel(pull_request)
 
         # only owner or admin can update it
@@ -1285,7 +1288,8 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
         if allowed_to_update:
             controls = peppercorn.parse(self.request.POST.items())
-            force_refresh = str2bool(self.request.POST.get('force_refresh'))
+            force_refresh = str2bool(self.request.POST.get('force_refresh', 'false'))
+            do_update_commits = str2bool(self.request.POST.get('update_commits', 'false'))
 
             if 'review_members' in controls:
                 self._update_reviewers(
@@ -1299,7 +1303,7 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
                     pull_request, controls['observer_members'],
                     pull_request.reviewer_data,
                     PullRequestReviewers.ROLE_OBSERVER)
-            elif str2bool(self.request.POST.get('update_commits', 'false')):
+            elif do_update_commits:
                 if is_state_changing:
                     log.debug('commits update: forbidden because pull request is in state %s',
                               pull_request.pull_request_state)
@@ -1352,8 +1356,9 @@ class RepoPullRequestsView(RepoAppView, DataGridAppView):
 
     def _update_commits(self, c, pull_request):
         _ = self.request.translate
+        log.debug('pull-request: running update commits actions')
 
-        @retry(exception=Exception, n_tries=3)
+        @retry(exception=Exception, n_tries=3, delay=2)
         def commits_update():
             return PullRequestModel().update_commits(
                 pull_request, self._rhodecode_db_user)

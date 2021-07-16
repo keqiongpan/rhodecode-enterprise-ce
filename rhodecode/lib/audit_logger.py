@@ -261,7 +261,6 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
         ip_address = safe_unicode(ip_addr)
 
         with sa_session.no_autoflush:
-            update_user_last_activity(sa_session, user_id)
 
             user_log = _store_log(
                 action_name=action_name,
@@ -275,11 +274,15 @@ def store(action, user, action_data=None, user_data=None, ip_addr=None,
             )
 
             sa_session.add(user_log)
+            if commit:
+                sa_session.commit()
+            entry_id = user_log.entry_id or ''
+
+            update_user_last_activity(sa_session, user_id)
 
             if commit:
                 sa_session.commit()
 
-        entry_id = user_log.entry_id or ''
         log.info('AUDIT[%s]: Logging action: `%s` by user:id:%s[%s] ip:%s',
                  entry_id, action_name, user_id, username, ip_address)
 
@@ -295,4 +298,6 @@ def update_user_last_activity(sa_session, user_id):
         log.debug(
             'updated user `%s` last activity to:%s', user_id, _last_activity)
     except Exception:
-        log.exception("Failed last activity update")
+        log.exception("Failed last activity update for user_id: %s", user_id)
+        sa_session.rollback()
+

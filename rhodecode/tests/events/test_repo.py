@@ -20,6 +20,7 @@
 
 import pytest
 
+from rhodecode.events import UserPermissionsChange
 from rhodecode.lib.utils2 import StrictAttributeDict
 from rhodecode.tests.events.conftest import EventCatcher
 
@@ -97,7 +98,7 @@ def test_vcs_repo_push_event_serialize(config_stub, repo_stub, scm_extras, Event
 def test_create_delete_repo_fires_events(backend):
     with EventCatcher() as event_catcher:
         repo = backend.create_repo()
-    assert event_catcher.events_types == [RepoPreCreateEvent, RepoCreateEvent]
+    assert event_catcher.events_types == [RepoPreCreateEvent, RepoCreateEvent, UserPermissionsChange]
 
     with EventCatcher() as event_catcher:
         RepoModel().delete(repo)

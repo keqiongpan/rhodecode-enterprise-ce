@@ -274,11 +274,12 @@
   % if c.state_progressing:
 
     <h2 style="text-align: center">
-        ${_('Cannot show diff when pull request state is changing. Current progress state')}: <span class="tag tag-merge-state-${c.pull_request.state}">${c.pull_request.state}</span>
+        ${_('Cannot show diff when pull request state is changing. Current progress state')}: <span class="tag tag-merge-state-${c.pull_request.state}">${c.pull_request.state}</span><br/>
+        ${_('Consider refreshing the page to check if the status transition was finished')}.
 
-        % if c.is_super_admin:
+        % if c.is_super_admin or h.HasRepoPermissionAny('repository.admin')(c.repo_name):
         <br/>
-        If you think this is an error try <a href="${h.current_route_path(request, force_state='created')}">forced state reset</a> to <span class="tag tag-merge-state-created">created</span> state.
+        ${_('If you think this is an error try ')}<a href="${h.current_route_path(request, force_state='created')}">forced state reset</a> to <span class="tag tag-merge-state-created">created</span> state.
         % endif
     </h2>
 

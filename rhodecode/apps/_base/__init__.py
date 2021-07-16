@@ -119,8 +119,16 @@ class BaseAppView(object):
             request.matched_route.name, self._rhodecode_db_user)
 
     def _maybe_needs_password_change(self, view_name, user_obj):
+
+        dont_check_views = [
+            'channelstream_connect'
+        ]
+        if view_name in dont_check_views:
+            return
+
         log.debug('Checking if user %s needs password change on view %s',
                   user_obj, view_name)
+
         skip_user_views = [
             'logout', 'login',
             'my_account_password', 'my_account_password_update'

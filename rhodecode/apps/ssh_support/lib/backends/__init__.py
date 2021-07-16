@@ -34,6 +34,9 @@ log = logging.getLogger(__name__)
 
 
 class SshWrapper(object):
+    hg_cmd_pat  = re.compile(r'^hg\s+\-R\s+(\S+)\s+serve\s+\-\-stdio$')
+    git_cmd_pat = re.compile(r'^git-(receive-pack|upload-pack)\s\'[/]?(\S+?)(|\.git)\'$')
+    svn_cmd_pat = re.compile(r'^svnserve -t')
 
     def __init__(self, command, connection_info, mode,
                  user, user_id, key_id, shell, ini_path, env):
@@ -90,35 +93,42 @@ class SshWrapper(object):
         return conn
 
     def maybe_translate_repo_uid(self, repo_name):
+        _org_name = repo_name
+        if _org_name.startswith('_'):
+            # remove format of _ID/subrepo
+            _org_name = _org_name.split('/', 1)[0]
+
         if repo_name.startswith('_'):
             from rhodecode.model.repo import RepoModel
+            org_repo_name = repo_name
+            log.debug('translating UID repo %s', org_repo_name)
             by_id_match = RepoModel().get_repo_by_id(repo_name)
             if by_id_match:
                 repo_name = by_id_match.repo_name
-        return repo_name
+                log.debug('translation of UID repo %s got `%s`', org_repo_name, repo_name)
+
+        return repo_name, _org_name
 
     def get_repo_details(self, mode):
         vcs_type = mode if mode in ['svn', 'hg', 'git'] else None
         repo_name = None
 
-        hg_pattern = r'^hg\s+\-R\s+(\S+)\s+serve\s+\-\-stdio$'
-        hg_match = re.match(hg_pattern, self.command)
+        hg_match = self.hg_cmd_pat.match(self.command)
         if hg_match is not None:
             vcs_type = 'hg'
-            repo_name = self.maybe_translate_repo_uid(hg_match.group(1).strip('/'))
+            repo_id = hg_match.group(1).strip('/')
+            repo_name, org_name = self.maybe_translate_repo_uid(repo_id)
             return vcs_type, repo_name, mode
 
-        git_pattern = r'^git-(receive-pack|upload-pack)\s\'[/]?(\S+?)(|\.git)\'$'
-        git_match = re.match(git_pattern, self.command)
+        git_match = self.git_cmd_pat.match(self.command)
         if git_match is not None:
-            vcs_type = 'git'
-            repo_name = self.maybe_translate_repo_uid(git_match.group(2).strip('/'))
             mode = git_match.group(1)
+            vcs_type = 'git'
+            repo_id = git_match.group(2).strip('/')
+            repo_name, org_name = self.maybe_translate_repo_uid(repo_id)
             return vcs_type, repo_name, mode
 
-        svn_pattern = r'^svnserve -t'
-        svn_match = re.match(svn_pattern, self.command)
-
+        svn_match = self.svn_cmd_pat.match(self.command)
         if svn_match is not None:
             vcs_type = 'svn'
             # Repo name should be extracted from the input stream, we're unable to

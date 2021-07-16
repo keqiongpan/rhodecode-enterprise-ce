@@ -1198,14 +1198,20 @@ class PullRequestModel(BaseModel):
                     pull_request=pull_request,
                     revision=commit_id)
 
+        # initial commit
+        Session().commit()
+
+        if pr_has_changes:
             # send update email to users
             try:
                 self.notify_users(pull_request=pull_request, updating_user=updating_user,
                                   ancestor_commit_id=ancestor_commit_id,
                                   commit_changes=commit_changes,
                                   file_changes=file_changes)
+                Session().commit()
             except Exception:
                 log.exception('Failed to send email notification to users')
+                Session().rollback()
 
         log.debug(
             'Updated pull request %s, added_ids: %s, common_ids: %s, '
@@ -1221,7 +1227,7 @@ class PullRequestModel(BaseModel):
             pull_request.pull_request_id, source_ref_id,
             pull_request.source_ref_parts.commit_id,
             pull_request_version.pull_request_version_id)
-        Session().commit()
+
         self.trigger_pull_request_hook(pull_request, pull_request.author, 'update')
 
         return UpdateResponse(

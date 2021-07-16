@@ -127,7 +127,7 @@ class TestPullRequestModel(object):
         Session().commit()
 
         prs = PullRequestModel().get_awaiting_my_review(
-            pull_request.target_repo, user_id=pull_request.author.user_id)
+            pull_request.target_repo.repo_name, user_id=pull_request.author.user_id)
         assert isinstance(prs, list)
         assert len(prs) == 1
 
@@ -138,7 +138,7 @@ class TestPullRequestModel(object):
         Session().commit()
 
         pr_count = PullRequestModel().count_awaiting_my_review(
-            pull_request.target_repo, user_id=pull_request.author.user_id)
+            pull_request.target_repo.repo_name, user_id=pull_request.author.user_id)
         assert pr_count == 1
 
     def test_delete_calls_cleanup_merge(self, pull_request):
