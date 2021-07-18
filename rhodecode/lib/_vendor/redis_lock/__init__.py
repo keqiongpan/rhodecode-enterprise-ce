@@ -10,7 +10,7 @@ from redis import StrictRedis
 __version__ = '3.7.0'
 
 loggers = {
-    k: getLogger("rhodecode" + ".".join((__name__, k)))
+    k: getLogger("rhodecode." + ".".join((__name__, k)))
     for k in [
         "acquire",
         "refresh.thread.start",
@@ -221,10 +221,11 @@ class Lock(object):
         """
         logger = loggers["acquire"]
 
-        logger.debug("Getting %r ...", self._name)
+        logger.debug("Getting acquire on %r ...", self._name)
 
         if self._held:
-            raise AlreadyAcquired("Already acquired from this Lock instance.")
+            owner_id = self.get_owner_id()
+            raise AlreadyAcquired("Already acquired from this Lock instance. Lock id: {}".format(owner_id))
 
         if not blocking and timeout is not None:
             raise TimeoutNotUsable("Timeout cannot be used if blocking=False")

@@ -287,17 +287,16 @@ class BaseRedisBackend(redis_backend.RedisBackend):
 
     def get_mutex(self, key):
         if self.distributed_lock:
-            import redis_lock
             lock_key = redis_backend.u('_lock_{0}').format(key)
             log.debug('Trying to acquire Redis lock for key %s', lock_key)
-            lock = redis_lock.Lock(
-                redis_client=self.client,
-                name=lock_key,
-                expire=self.lock_timeout,
-                auto_renewal=False,
-                strict=True,
-            )
-            return lock
+
+            auto_renewal = True
+            lock_timeout = self.lock_timeout
+            if auto_renewal and not self.lock_timeout:
+                # set default timeout for auto_renewal
+                lock_timeout = 10
+            return get_mutex_lock(self.client, lock_key, lock_timeout,
+                                  auto_renewal=auto_renewal)
         else:
             return None
 
@@ -310,3 +309,34 @@ class RedisPickleBackend(PickleSerializer, BaseRedisBackend):
 class RedisMsgPackBackend(MsgPackSerializer, BaseRedisBackend):
     key_prefix = 'redis_msgpack_backend'
     pass
+
+
+def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
+    import redis_lock
+
+    class _RedisLockWrapper(object):
+        """LockWrapper for redis_lock"""
+
+        def __init__(self):
+            pass
+
+        @property
+        def lock(self):
+            return redis_lock.Lock(
+                redis_client=client,
+                name=lock_key,
+                expire=lock_timeout,
+                auto_renewal=auto_renewal,
+                strict=True,
+            )
+
+        def acquire(self, wait=True):
+            return self.lock.acquire(wait)
+
+        def release(self):
+            try:
+                self.lock.release()
+            except redis_lock.NotAcquired:
+                pass
+
+    return _RedisLockWrapper()
