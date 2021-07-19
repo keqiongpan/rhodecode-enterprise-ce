@@ -72,7 +72,7 @@ class RepoChangelogView(RepoAppView):
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
             raise HTTPNotFound()
 
     def _graph(self, repo, commits, prev_data=None, next_data=None):
@@ -238,14 +238,14 @@ class RepoChangelogView(RepoAppView):
                 f_path=f_path, commit_id=commit_id)
 
         except EmptyRepositoryError as e:
-            h.flash(safe_str(h.escape(e)), category='warning')
+            h.flash(h.escape(safe_str(e)), category='warning')
             raise HTTPFound(
                 h.route_path('repo_summary', repo_name=self.db_repo_name))
         except HTTPFound:
             raise
         except (RepositoryError, CommitDoesNotExistError, Exception) as e:
             log.exception(safe_str(e))
-            h.flash(safe_str(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
 
             if commit_id:
                 # from single commit page, we redirect to main commits

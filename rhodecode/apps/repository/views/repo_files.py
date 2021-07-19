@@ -186,7 +186,7 @@ class RepoFilesView(RepoAppView):
             h.flash(msg, category='error')
             raise HTTPNotFound()
         except RepositoryError as e:
-            h.flash(safe_str(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
             raise HTTPNotFound()
 
     def _get_filenode_or_redirect(self, commit_obj, path):
@@ -206,7 +206,7 @@ class RepoFilesView(RepoAppView):
             raise HTTPNotFound()
         except RepositoryError as e:
             log.warning('Repository error while fetching filenode `%s`. Err:%s', path, e)
-            h.flash(safe_str(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
             raise HTTPNotFound()
 
         return file_node
@@ -733,7 +733,7 @@ class RepoFilesView(RepoAppView):
                                           c.commit.raw_id, f_path)
 
         except RepositoryError as e:
-            h.flash(safe_str(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
             raise HTTPNotFound()
 
         if self.request.environ.get('HTTP_X_PJAX'):
@@ -927,7 +927,7 @@ class RepoFilesView(RepoAppView):
                 _d, _f = ScmModel().get_quick_filter_nodes(repo_name, _commit_id, _f_path)
             except (RepositoryError, CommitDoesNotExistError, Exception) as e:
                 log.exception(safe_str(e))
-                h.flash(safe_str(h.escape(e)), category='error')
+                h.flash(h.escape(safe_str(e)), category='error')
                 raise HTTPFound(h.route_path(
                     'repo_files', repo_name=self.db_repo_name,
                     commit_id='tip', f_path='/'))
@@ -1444,7 +1444,7 @@ class RepoFilesView(RepoAppView):
                       'contain .. in the path'), category='warning')
             raise HTTPFound(default_redirect_url)
         except (NodeError, NodeAlreadyExistsError) as e:
-            h.flash(_(h.escape(e)), category='error')
+            h.flash(h.escape(safe_str(e)), category='error')
         except Exception:
             log.exception('Error occurred during commit')
             h.flash(_('Error occurred during commit'), category='error')
