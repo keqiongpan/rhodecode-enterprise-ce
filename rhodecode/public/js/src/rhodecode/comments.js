@@ -572,7 +572,8 @@ var CommentsController = function() {
            'repo_commit_comment_history_view',
            {
                'repo_name': templateContext.repo_name,
-               'commit_id': comment_id,
+               'commit_id': null, // We don't need to check the commit data here...
+               'comment_id': comment_id,
                'comment_history_id': comment_history_id,
            }
        );
