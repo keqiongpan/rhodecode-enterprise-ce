@@ -33,6 +33,8 @@ from dogpile.cache.backends import redis as redis_backend
 from dogpile.cache.backends.file import NO_VALUE, compat, FileLock
 from dogpile.cache.util import memoized_property
 
+from pyramid.settings import asbool
+
 from rhodecode.lib.memory_lru_dict import LRUDict, LRUDictDebug
 
 
@@ -229,11 +231,11 @@ class BaseRedisBackend(redis_backend.RedisBackend):
     def __init__(self, arguments):
         super(BaseRedisBackend, self).__init__(arguments)
         self._lock_timeout = self.lock_timeout
-        self._lock_auto_renewal = arguments.pop("lock_auto_renewal", False)
+        self._lock_auto_renewal = asbool(arguments.pop("lock_auto_renewal", True))
 
         if self._lock_auto_renewal and not self._lock_timeout:
             # set default timeout for auto_renewal
-            self._lock_timeout = 60
+            self._lock_timeout = 30
 
     def _create_client(self):
         args = {}
