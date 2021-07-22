@@ -224,6 +224,16 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
 
 
 class BaseRedisBackend(redis_backend.RedisBackend):
+    key_prefix = ''
+
+    def __init__(self, arguments):
+        super(BaseRedisBackend, self).__init__(arguments)
+        self._lock_timeout = self.lock_timeout
+        self._lock_auto_renewal = arguments.pop("lock_auto_renewal", False)
+
+        if self._lock_auto_renewal and not self._lock_timeout:
+            # set default timeout for auto_renewal
+            self._lock_timeout = 60
 
     def _create_client(self):
         args = {}
@@ -289,14 +299,8 @@ class BaseRedisBackend(redis_backend.RedisBackend):
         if self.distributed_lock:
             lock_key = redis_backend.u('_lock_{0}').format(key)
             log.debug('Trying to acquire Redis lock for key %s', lock_key)
-
-            auto_renewal = True
-            lock_timeout = self.lock_timeout
-            if auto_renewal and not self.lock_timeout:
-                # set default timeout for auto_renewal
-                lock_timeout = 10
-            return get_mutex_lock(self.client, lock_key, lock_timeout,
-                                  auto_renewal=auto_renewal)
+            return get_mutex_lock(self.client, lock_key, self._lock_timeout,
+                                  auto_renewal=self._lock_auto_renewal)
         else:
             return None
 
