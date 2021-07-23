@@ -323,11 +323,8 @@ def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
     class _RedisLockWrapper(object):
         """LockWrapper for redis_lock"""
 
-        def __init__(self):
-            pass
-
-        @property
-        def lock(self):
+        @classmethod
+        def get_lock(cls):
             return redis_lock.Lock(
                 redis_client=client,
                 name=lock_key,
@@ -336,8 +333,14 @@ def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
                 strict=True,
             )
 
+        def __init__(self):
+            self.lock = self.get_lock()
+
         def acquire(self, wait=True):
-            return self.lock.acquire(wait)
+            try:
+                return self.lock.acquire(wait)
+            except redis_lock.AlreadyAquited:
+                return False
 
         def release(self):
             try:
