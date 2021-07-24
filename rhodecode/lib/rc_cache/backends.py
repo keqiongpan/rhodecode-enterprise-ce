@@ -339,7 +339,7 @@ def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
         def acquire(self, wait=True):
             try:
                 return self.lock.acquire(wait)
-            except redis_lock.AlreadyAquited:
+            except redis_lock.AlreadyAcquired:
                 return False
 
         def release(self):
