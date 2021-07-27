@@ -341,6 +341,9 @@ def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
                 return self.lock.acquire(wait)
             except redis_lock.AlreadyAcquired:
                 return False
+            except redis_lock.AlreadyStarted:
+                # refresh thread exists, but it also means we acquired the lock
+                return True
 
         def release(self):
             try:
