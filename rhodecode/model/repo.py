@@ -125,13 +125,15 @@ class RepoModel(BaseModel):
         :param repo_name:
         :return: repo object if matched else None
         """
-
+        _repo_id = None
         try:
             _repo_id = self._extract_id_from_repo_name(repo_name)
             if _repo_id:
                 return self.get(_repo_id)
         except Exception:
             log.exception('Failed to extract repo_name from URL')
+            if _repo_id:
+                Session().rollback()
 
         return None
 

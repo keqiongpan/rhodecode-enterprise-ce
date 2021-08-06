@@ -261,12 +261,15 @@ def get_or_create_region(region_name, region_namespace=None):
     return region_obj
 
 
-def clear_cache_namespace(cache_region, cache_namespace_uid):
+def clear_cache_namespace(cache_region, cache_namespace_uid, invalidate=False):
     region = get_or_create_region(cache_region, cache_namespace_uid)
     cache_keys = region.backend.list_keys(prefix=cache_namespace_uid)
     num_delete_keys = len(cache_keys)
-    if num_delete_keys:
-        region.delete_multi(cache_keys)
+    if invalidate:
+        region.invalidate(hard=False)
+    else:
+        if num_delete_keys:
+            region.delete_multi(cache_keys)
     return num_delete_keys
 
 

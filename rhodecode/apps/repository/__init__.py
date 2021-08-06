@@ -173,7 +173,7 @@ def includeme(config):
 
     config.add_route(
         name='repo_commit_comment_history_view',
-        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_history_id}/history_view', repo_route=True)
+        pattern='/{repo_name:.*?[^/]}/changeset/{commit_id}/comment/{comment_id}/history_view/{comment_history_id}', repo_route=True)
     config.add_view(
         RepoCommitsView,
         attr='repo_commit_comment_history_view',

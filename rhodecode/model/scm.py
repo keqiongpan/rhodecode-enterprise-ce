@@ -285,7 +285,8 @@ class ScmModel(BaseModel):
             repo.update_commit_cache(config=config, cs_cache=None)
             if delete:
                 cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
-                rc_cache.clear_cache_namespace('cache_repo', cache_namespace_uid)
+                rc_cache.clear_cache_namespace(
+                    'cache_repo', cache_namespace_uid, invalidate=True)
 
     def toggle_following_repo(self, follow_repo_id, user_id):
 

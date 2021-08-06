@@ -289,7 +289,7 @@ function registerRCRoutes() {
     pyroutes.register('repo_commit_comment_create', '/%(repo_name)s/changeset/%(commit_id)s/comment/create', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_comment_delete', '/%(repo_name)s/changeset/%(commit_id)s/comment/%(comment_id)s/delete', ['repo_name', 'commit_id', 'comment_id']);
     pyroutes.register('repo_commit_comment_edit', '/%(repo_name)s/changeset/%(commit_id)s/comment/%(comment_id)s/edit', ['repo_name', 'commit_id', 'comment_id']);
-    pyroutes.register('repo_commit_comment_history_view', '/%(repo_name)s/changeset/%(commit_id)s/comment/%(comment_history_id)s/history_view', ['repo_name', 'commit_id', 'comment_history_id']);
+    pyroutes.register('repo_commit_comment_history_view', '/%(repo_name)s/changeset/%(commit_id)s/comment/%(comment_id)s/history_view/%(comment_history_id)s', ['repo_name', 'commit_id', 'comment_id', 'comment_history_id']);
     pyroutes.register('repo_commit_comment_preview', '/%(repo_name)s/changeset/%(commit_id)s/comment/preview', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_data', '/%(repo_name)s/changeset-data/%(commit_id)s', ['repo_name', 'commit_id']);
     pyroutes.register('repo_commit_download', '/%(repo_name)s/changeset-download/%(commit_id)s', ['repo_name', 'commit_id']);

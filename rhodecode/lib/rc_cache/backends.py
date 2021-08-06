@@ -33,6 +33,8 @@ from dogpile.cache.backends import redis as redis_backend
 from dogpile.cache.backends.file import NO_VALUE, compat, FileLock
 from dogpile.cache.util import memoized_property
 
+from pyramid.settings import asbool
+
 from rhodecode.lib.memory_lru_dict import LRUDict, LRUDictDebug
 
 
@@ -224,6 +226,16 @@ class FileNamespaceBackend(PickleSerializer, file_backend.DBMBackend):
 
 
 class BaseRedisBackend(redis_backend.RedisBackend):
+    key_prefix = ''
+
+    def __init__(self, arguments):
+        super(BaseRedisBackend, self).__init__(arguments)
+        self._lock_timeout = self.lock_timeout
+        self._lock_auto_renewal = asbool(arguments.pop("lock_auto_renewal", True))
+
+        if self._lock_auto_renewal and not self._lock_timeout:
+            # set default timeout for auto_renewal
+            self._lock_timeout = 30
 
     def _create_client(self):
         args = {}
@@ -287,17 +299,10 @@ class BaseRedisBackend(redis_backend.RedisBackend):
 
     def get_mutex(self, key):
         if self.distributed_lock:
-            import redis_lock
             lock_key = redis_backend.u('_lock_{0}').format(key)
             log.debug('Trying to acquire Redis lock for key %s', lock_key)
-            lock = redis_lock.Lock(
-                redis_client=self.client,
-                name=lock_key,
-                expire=self.lock_timeout,
-                auto_renewal=False,
-                strict=True,
-            )
-            return lock
+            return get_mutex_lock(self.client, lock_key, self._lock_timeout,
+                                  auto_renewal=self._lock_auto_renewal)
         else:
             return None
 
@@ -310,3 +315,40 @@ class RedisPickleBackend(PickleSerializer, BaseRedisBackend):
 class RedisMsgPackBackend(MsgPackSerializer, BaseRedisBackend):
     key_prefix = 'redis_msgpack_backend'
     pass
+
+
+def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
+    import redis_lock
+
+    class _RedisLockWrapper(object):
+        """LockWrapper for redis_lock"""
+
+        @classmethod
+        def get_lock(cls):
+            return redis_lock.Lock(
+                redis_client=client,
+                name=lock_key,
+                expire=lock_timeout,
+                auto_renewal=auto_renewal,
+                strict=True,
+            )
+
+        def __init__(self):
+            self.lock = self.get_lock()
+
+        def acquire(self, wait=True):
+            try:
+                return self.lock.acquire(wait)
+            except redis_lock.AlreadyAcquired:
+                return False
+            except redis_lock.AlreadyStarted:
+                # refresh thread exists, but it also means we acquired the lock
+                return True
+
+        def release(self):
+            try:
+                self.lock.release()
+            except redis_lock.NotAcquired:
+                pass
+
+    return _RedisLockWrapper()

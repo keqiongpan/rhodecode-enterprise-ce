@@ -166,6 +166,9 @@ def detect_vcs_request(environ, backends):
         # static files no detection
         '_static',
 
+        # skip ops ping
+        '_admin/ops/ping',
+
         # full channelstream connect should be VCS skipped
         '_admin/channelstream/connect',
     ]

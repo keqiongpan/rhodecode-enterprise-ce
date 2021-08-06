@@ -70,7 +70,7 @@ class RepoCompareView(RepoAppView):
 
         except RepositoryError as e:
             log.exception(safe_str(e))
-            h.flash(safe_str(h.escape(e)), category='warning')
+            h.flash(h.escape(safe_str(e)), category='warning')
             if not partial:
                 raise HTTPFound(
                     h.route_path('repo_summary', repo_name=repo.repo_name))

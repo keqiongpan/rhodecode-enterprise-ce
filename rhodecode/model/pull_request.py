@@ -345,14 +345,14 @@ class PullRequestModel(BaseModel):
         if only_created:
             q = q.filter(PullRequest.pull_request_state == PullRequest.STATE_CREATED)
 
-        if order_by:
-            order_map = {
-                'name_raw': PullRequest.pull_request_id,
-                'id': PullRequest.pull_request_id,
-                'title': PullRequest.title,
-                'updated_on_raw': PullRequest.updated_on,
-                'target_repo': PullRequest.target_repo_id
-            }
+        order_map = {
+            'name_raw': PullRequest.pull_request_id,
+            'id': PullRequest.pull_request_id,
+            'title': PullRequest.title,
+            'updated_on_raw': PullRequest.updated_on,
+            'target_repo': PullRequest.target_repo_id
+        }
+        if order_by and order_by in order_map:
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
             else:
@@ -499,13 +499,13 @@ class PullRequestModel(BaseModel):
                 pull_request_alias.description.ilike(like_expression),
             ))
 
-        if order_by:
-            order_map = {
-                'name_raw': pull_request_alias.pull_request_id,
-                'title': pull_request_alias.title,
-                'updated_on_raw': pull_request_alias.updated_on,
-                'target_repo': pull_request_alias.target_repo_id
-            }
+        order_map = {
+            'name_raw': pull_request_alias.pull_request_id,
+            'title': pull_request_alias.title,
+            'updated_on_raw': pull_request_alias.updated_on,
+            'target_repo': pull_request_alias.target_repo_id
+        }
+        if order_by and order_by in order_map:
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
             else:
@@ -585,13 +585,14 @@ class PullRequestModel(BaseModel):
                 PullRequest.title.ilike(like_expression),
                 PullRequest.description.ilike(like_expression),
             ))
-        if order_by:
-            order_map = {
-                'name_raw': PullRequest.pull_request_id,
-                'title': PullRequest.title,
-                'updated_on_raw': PullRequest.updated_on,
-                'target_repo': PullRequest.target_repo_id
-            }
+
+        order_map = {
+            'name_raw': PullRequest.pull_request_id,
+            'title': PullRequest.title,
+            'updated_on_raw': PullRequest.updated_on,
+            'target_repo': PullRequest.target_repo_id
+        }
+        if order_by and order_by in order_map:
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
             else:
@@ -665,13 +666,13 @@ class PullRequestModel(BaseModel):
                 pull_request_alias.description.ilike(like_expression),
             ))
 
-        if order_by:
-            order_map = {
-                'name_raw': pull_request_alias.pull_request_id,
-                'title': pull_request_alias.title,
-                'updated_on_raw': pull_request_alias.updated_on,
-                'target_repo': pull_request_alias.target_repo_id
-            }
+        order_map = {
+            'name_raw': pull_request_alias.pull_request_id,
+            'title': pull_request_alias.title,
+            'updated_on_raw': pull_request_alias.updated_on,
+            'target_repo': pull_request_alias.target_repo_id
+        }
+        if order_by and order_by in order_map:
             if order_dir == 'asc':
                 q = q.order_by(order_map[order_by].asc())
             else:
