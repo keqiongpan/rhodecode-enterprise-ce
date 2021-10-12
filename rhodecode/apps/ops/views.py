@@ -72,3 +72,23 @@ class OpsView(BaseAppView):
         """
         redirect_to = self.request.GET.get('to') or h.route_path('home')
         raise HTTPFound(redirect_to)
+
+    def ops_healthcheck(self):
+        from rhodecode.lib.system_info import load_system_info
+
+        vcsserver_info = load_system_info('vcs_server')
+        if vcsserver_info:
+            vcsserver_info = vcsserver_info['human_value']
+
+        db_info = load_system_info('database_info')
+        if db_info:
+            db_info = db_info['human_value']
+
+        health_spec = {
+            'caller_ip': self.request.user.ip_addr,
+            'vcsserver': vcsserver_info,
+            'db': db_info,
+        }
+
+        return {'healthcheck': health_spec}
+
