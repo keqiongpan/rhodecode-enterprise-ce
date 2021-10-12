@@ -300,7 +300,6 @@ class BaseRedisBackend(redis_backend.RedisBackend):
     def get_mutex(self, key):
         if self.distributed_lock:
             lock_key = redis_backend.u('_lock_{0}').format(key)
-            log.debug('Trying to acquire Redis lock for key %s', lock_key)
             return get_mutex_lock(self.client, lock_key, self._lock_timeout,
                                   auto_renewal=self._lock_auto_renewal)
         else:
@@ -333,12 +332,22 @@ def get_mutex_lock(client, lock_key, lock_timeout, auto_renewal=False):
                 strict=True,
             )
 
+        def __repr__(self):
+            return "{}:{}".format(self.__class__.__name__, lock_key)
+
+        def __str__(self):
+            return "{}:{}".format(self.__class__.__name__, lock_key)
+
         def __init__(self):
             self.lock = self.get_lock()
+            self.lock_key = lock_key
 
         def acquire(self, wait=True):
+            log.debug('Trying to acquire Redis lock for key %s', self.lock_key)
             try:
-                return self.lock.acquire(wait)
+                acquired = self.lock.acquire(wait)
+                log.debug('Got lock for key %s, %s', self.lock_key, acquired)
+                return acquired
             except redis_lock.AlreadyAcquired:
                 return False
             except redis_lock.AlreadyStarted:
