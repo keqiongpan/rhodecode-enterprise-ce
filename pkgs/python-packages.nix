@@ -1883,7 +1883,7 @@ self: super: {
     };
   };
   "rhodecode-enterprise-ce" = super.buildPythonPackage {
-    name = "rhodecode-enterprise-ce-4.26.0";
+    name = "rhodecode-enterprise-ce-4.27.0";
     buildInputs = [
       self."pytest"
       self."py"
