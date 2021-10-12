@@ -24,6 +24,8 @@ import sys
 import time
 import platform
 import collections
+from functools import wraps
+
 import pkg_resources
 import logging
 import resource
@@ -49,6 +51,26 @@ STATE_ERR = 'error'
 STATE_WARN = 'warning'
 
 STATE_OK_DEFAULT = {'message': '', 'type': STATE_OK}
+
+
+registered_helpers = {}
+
+
+def register_sysinfo(func):
+    """
+    @register_helper
+    def db_check():
+        pass
+
+    db_check == registered_helpers['db_check']
+    """
+    global registered_helpers
+    registered_helpers[func.__name__] = func
+
+    @wraps(func)
+    def _wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return _wrapper
 
 
 # HELPERS
@@ -136,12 +158,14 @@ class SysInfo(object):
 
 
 # SysInfo functions
+@register_sysinfo
 def python_info():
     value = dict(version=' '.join(platform._sys_version()),
                  executable=sys.executable)
     return SysInfoRes(value=value)
 
 
+@register_sysinfo
 def py_modules():
     mods = dict([(p.project_name, {'version': p.version, 'location': p.location})
                  for p in pkg_resources.working_set])
@@ -150,6 +174,7 @@ def py_modules():
     return SysInfoRes(value=value)
 
 
+@register_sysinfo
 def platform_type():
     from rhodecode.lib.utils import safe_unicode, generate_platform_uuid
 
@@ -160,6 +185,7 @@ def platform_type():
     return SysInfoRes(value=value)
 
 
+@register_sysinfo
 def locale_info():
     import locale
 
@@ -175,6 +201,7 @@ def locale_info():
     return SysInfoRes(value=value, human_value=human_value)
 
 
+@register_sysinfo
 def ulimit_info():
     data = collections.OrderedDict([
         ('cpu time (seconds)', get_resource(resource.RLIMIT_CPU)),
@@ -198,6 +225,7 @@ def ulimit_info():
     return SysInfoRes(value=value)
 
 
+@register_sysinfo
 def uptime():
     from rhodecode.lib.helpers import age, time_to_datetime
     from rhodecode.translation import TranslationString
@@ -223,6 +251,7 @@ def uptime():
     return SysInfoRes(value=value, human_value=human_value)
 
 
+@register_sysinfo
 def memory():
     from rhodecode.lib.helpers import format_byte_size_binary
     value = dict(available=0, used=0, used_real=0, cached=0, percent=0,
@@ -262,6 +291,7 @@ def memory():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def machine_load():
     value = {'1_min': _NA, '5_min': _NA, '15_min': _NA, 'text': ''}
     state = STATE_OK_DEFAULT
@@ -284,6 +314,7 @@ def machine_load():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def cpu():
     value = {'cpu': 0, 'cpu_count': 0, 'cpu_usage': []}
     state = STATE_OK_DEFAULT
@@ -302,6 +333,7 @@ def cpu():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def storage():
     from rhodecode.lib.helpers import format_byte_size_binary
     from rhodecode.model.settings import VcsSettingsModel
@@ -337,6 +369,7 @@ def storage():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def storage_inodes():
     from rhodecode.model.settings import VcsSettingsModel
     path = VcsSettingsModel().get_repos_location()
@@ -371,6 +404,7 @@ def storage_inodes():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def storage_archives():
     import rhodecode
     from rhodecode.lib.utils import safe_str
@@ -414,6 +448,7 @@ def storage_archives():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def storage_gist():
     from rhodecode.model.gist import GIST_STORE_LOC
     from rhodecode.model.settings import VcsSettingsModel
@@ -457,6 +492,7 @@ def storage_gist():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def storage_temp():
     import tempfile
     from rhodecode.lib.helpers import format_byte_size_binary
@@ -485,6 +521,7 @@ def storage_temp():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def search_info():
     import rhodecode
     from rhodecode.lib.index import searcher_from_config
@@ -508,6 +545,7 @@ def search_info():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def git_info():
     from rhodecode.lib.vcs.backends import git
     state = STATE_OK_DEFAULT
@@ -521,6 +559,7 @@ def git_info():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def hg_info():
     from rhodecode.lib.vcs.backends import hg
     state = STATE_OK_DEFAULT
@@ -533,6 +572,7 @@ def hg_info():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def svn_info():
     from rhodecode.lib.vcs.backends import svn
     state = STATE_OK_DEFAULT
@@ -545,6 +585,7 @@ def svn_info():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def vcs_backends():
     import rhodecode
     value = rhodecode.CONFIG.get('vcs.backends')
@@ -552,6 +593,7 @@ def vcs_backends():
     return SysInfoRes(value=value, human_value=human_value)
 
 
+@register_sysinfo
 def vcs_server():
     import rhodecode
     from rhodecode.lib.vcs.backends import get_vcsserver_service_data
@@ -595,6 +637,7 @@ def vcs_server():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def vcs_server_config():
     from rhodecode.lib.vcs.backends import get_vcsserver_service_data
     state = STATE_OK_DEFAULT
@@ -612,6 +655,7 @@ def vcs_server_config():
     return SysInfoRes(value=value, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def rhodecode_app_info():
     import rhodecode
     edition = rhodecode.CONFIG.get('rhodecode.edition')
@@ -628,6 +672,7 @@ def rhodecode_app_info():
     return SysInfoRes(value=value, human_value=human_value)
 
 
+@register_sysinfo
 def rhodecode_config():
     import rhodecode
     path = rhodecode.CONFIG.get('__file__')
@@ -683,6 +728,7 @@ def rhodecode_config():
                              'path': path, 'cert_path': cert_path})
 
 
+@register_sysinfo
 def database_info():
     import rhodecode
     from sqlalchemy.engine import url as engine_url
@@ -727,6 +773,7 @@ def database_info():
     return SysInfoRes(value=db_info, state=state, human_value=human_value)
 
 
+@register_sysinfo
 def server_info(environ):
     import rhodecode
     from rhodecode.lib.base import get_server_ip_addr, get_server_port
@@ -741,6 +788,7 @@ def server_info(environ):
     return SysInfoRes(value=value)
 
 
+@register_sysinfo
 def usage_info():
     from rhodecode.model.db import User, Repository
     value = {
@@ -795,3 +843,11 @@ def get_system_info(environ):
         'hg': SysInfo(hg_info)(),
         'svn': SysInfo(svn_info)(),
     }
+
+
+def load_system_info(key):
+    """
+    get_sys_info('vcs_server')
+    get_sys_info('database')
+    """
+    return SysInfo(registered_helpers[key])()

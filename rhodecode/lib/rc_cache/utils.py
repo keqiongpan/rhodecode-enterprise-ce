@@ -122,7 +122,11 @@ class RhodeCodeCacheRegion(CacheRegion):
 
             if not condition:
                 log.debug('Calling un-cached func:%s', user_func.func_name)
-                return user_func(*arg, **kw)
+                start = time.time()
+                result = user_func(*arg, **kw)
+                total = time.time() - start
+                log.debug('un-cached func:%s took %.4fs', user_func.func_name, total)
+                return result
 
             key = key_generator(*arg, **kw)
 

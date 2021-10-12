@@ -43,6 +43,9 @@ class ResultWrapper(object):
 
 def run_task(task, *args, **kwargs):
     log.debug('Got task `%s` for execution', task)
+    if task is None:
+        raise ValueError('Got non-existing task for execution')
+
     if rhodecode.CELERY_ENABLED:
         celery_is_up = False
         try:

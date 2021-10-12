@@ -51,6 +51,14 @@ def admin_routes(config):
         route_name='ops_redirect_test', request_method='GET',
         renderer='json_ext')
 
+    config.add_route(
+        name='ops_healthcheck',
+        pattern='/status')
+    config.add_view(
+        OpsView,
+        attr='ops_healthcheck',
+        route_name='ops_healthcheck', request_method='GET',
+        renderer='json_ext')
 
 def includeme(config):
     config.include(admin_routes, route_prefix=ADMIN_PREFIX + '/ops')

@@ -386,9 +386,7 @@ def beat_check(*args, **kwargs):
     return time.time()
 
 
-@async_task(ignore_result=True)
-def sync_last_update(*args, **kwargs):
-
+def sync_last_update_for_objects(*args, **kwargs):
     skip_repos = kwargs.get('skip_repos')
     if not skip_repos:
         repos = Repository.query() \
@@ -405,3 +403,8 @@ def sync_last_update(*args, **kwargs):
         for root_gr in repo_groups:
             for repo_gr in reversed(root_gr.recursive_groups()):
                 repo_gr.update_commit_cache()
+
+
+@async_task(ignore_result=True)
+def sync_last_update(*args, **kwargs):
+    sync_last_update_for_objects(*args, **kwargs)

@@ -26,6 +26,8 @@ from pyramid.httpexceptions import HTTPFound
 
 from rhodecode.apps._base import BaseAppView
 from rhodecode.lib import helpers as h
+from rhodecode.lib.auth import LoginRequired
+from rhodecode.model.db import UserApiKeys
 
 log = logging.getLogger(__name__)
 
@@ -72,3 +74,24 @@ class OpsView(BaseAppView):
         """
         redirect_to = self.request.GET.get('to') or h.route_path('home')
         raise HTTPFound(redirect_to)
+
+    @LoginRequired(auth_token_access=[UserApiKeys.ROLE_HTTP])
+    def ops_healthcheck(self):
+        from rhodecode.lib.system_info import load_system_info
+
+        vcsserver_info = load_system_info('vcs_server')
+        if vcsserver_info:
+            vcsserver_info = vcsserver_info['human_value']
+
+        db_info = load_system_info('database_info')
+        if db_info:
+            db_info = db_info['human_value']
+
+        health_spec = {
+            'caller_ip': self.request.user.ip_addr,
+            'vcsserver': vcsserver_info,
+            'db': db_info,
+        }
+
+        return {'healthcheck': health_spec}
+
