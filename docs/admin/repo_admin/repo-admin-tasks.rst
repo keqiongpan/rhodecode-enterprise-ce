@@ -102,3 +102,17 @@ the permissions onto *all* repositories and/or repository groups.
    In [4]: for repo_group in RepoGroup.get_all():
        ...:     RepoGroupModel().grant_user_permission(repo_group, user, permission_name)
        ...:     Session().commit()
+
+
+Delete a problematic pull request
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+   :dedent: 1
+
+   In [1]: from rhodecode.model.pull_request import PullRequestModel
+   In [2]: pullrequest_id = 123
+   In [3]: pr = PullRequest.get(pullrequest_id)
+   In [4]: super_admin = User.get_first_super_admin()
+   In [5]: PullRequestModel().delete(pr, super_admin)
+   In [6]: Session().commit()
