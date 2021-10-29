@@ -244,6 +244,7 @@ function registerRCRoutes() {
     pyroutes.register('notifications_show_all', '/_admin/notifications', []);
     pyroutes.register('notifications_update', '/_admin/notifications/%(notification_id)s/update', ['notification_id']);
     pyroutes.register('ops_error_test', '/_admin/ops/error', []);
+    pyroutes.register('ops_healthcheck', '/_admin/ops/status', []);
     pyroutes.register('ops_ping', '/_admin/ops/ping', []);
     pyroutes.register('ops_redirect_test', '/_admin/ops/redirect', []);
     pyroutes.register('plugin_admin_chat', '/_admin/plugin_admin_chat/%(action)s', ['action']);
