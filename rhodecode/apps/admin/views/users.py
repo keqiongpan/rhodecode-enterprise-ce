@@ -311,13 +311,16 @@ class UsersView(UserAppView):
                          available_languages=available_languages,
                          old_data={'user_id': user_id,
                                    'email': c.user.email})()
+
+        c.edit_mode = self.request.POST.get('edit') == '1'
         form_result = {}
         old_values = c.user.get_api_data()
         try:
             form_result = _form.to_python(dict(self.request.POST))
             skip_attrs = ['extern_name']
             # TODO: plugin should define if username can be updated
-            if c.extern_type != "rhodecode":
+
+            if c.extern_type != "rhodecode" and not c.edit_mode:
                 # forbid updating username for external accounts
                 skip_attrs.append('username')
 
@@ -485,6 +488,7 @@ class UsersView(UserAppView):
         c.extern_type = c.user.extern_type
         c.extern_name = c.user.extern_name
         c.perm_user = c.user.AuthUser(ip_addr=self.request.remote_addr)
+        c.edit_mode = self.request.GET.get('edit') == '1'
 
         defaults = c.user.get_dict()
         defaults.update({'language': c.user.user_data.get('language')})

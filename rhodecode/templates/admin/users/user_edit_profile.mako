@@ -12,7 +12,10 @@
         ${h.secure_form(h.route_path('user_update', user_id=c.user.user_id), class_='form', request=request)}
         <% readonly = None %>
         <% disabled = "" %>
-        %if c.extern_type != 'rhodecode':
+        % if c.edit_mode:
+            ${h.hidden('edit', '1')}
+        % endif
+        %if c.extern_type != 'rhodecode' and not c.edit_mode:
             <% readonly = "readonly" %>
             <% disabled = " disabled" %>
             <div class="alert-warning" style="margin:0px 0px 20px 0px; padding: 10px">
@@ -40,6 +43,12 @@
                </div>
                <div class="input">
                     ${h.text('username', class_='%s medium' % disabled, readonly=readonly)}
+                   <br/>
+                   % if c.extern_type != 'rhodecode' and c.is_super_admin:
+                    <p class="help-block">
+                     ${_('Super-admin can edit this field by entering ')} <a href="${h.current_route_path(request, edit=1)}">edit mode</a>
+                    </p>
+                   % endif
                </div>
             </div>
             <div class="field">

@@ -1679,9 +1679,8 @@ def process_patterns(text_string, repo_name, link_format='html', active_entries=
     errors = []
     new_text = text_string
 
-    log.debug('Got %s entries to process', len(active_entries))
+    log.debug('Got %s pattern entries to process', len(active_entries))
     for uid, entry in active_entries.items():
-        log.debug('found issue tracker entry with uid %s', uid)
 
         if not (entry['pat'] and entry['url']):
             log.debug('skipping due to missing data')

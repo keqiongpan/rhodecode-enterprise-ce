@@ -221,7 +221,7 @@ class Lock(object):
         """
         logger = loggers["acquire"]
 
-        logger.debug("Getting acquire on %r ...", self._name)
+        logger.debug("Getting blocking: %s acquire on %r ...", blocking, self._name)
 
         if self._held:
             owner_id = self.get_owner_id()
