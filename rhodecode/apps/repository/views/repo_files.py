@@ -381,7 +381,7 @@ class RepoFilesView(RepoAppView):
         try:
             at_path = commit.get_node(at_path).path or default_at_path
         except Exception:
-            return Response(_('No node at path {} for this repository').format(at_path))
+            return Response(_('No node at path {} for this repository').format(h.escape(at_path)))
 
         # path sha is part of subdir
         path_sha = ''
