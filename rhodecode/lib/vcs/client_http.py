@@ -37,6 +37,8 @@ import requests
 from requests.packages.urllib3.util.retry import Retry
 
 import rhodecode
+from rhodecode.lib import rc_cache
+from rhodecode.lib.rc_cache.utils import compute_key_from_params
 from rhodecode.lib.system_info import get_cert_path
 from rhodecode.lib.vcs import exceptions, CurlSession
 
@@ -127,7 +129,6 @@ class ServiceConnection(object):
     def __getattr__(self, name):
         def f(*args, **kwargs):
             return self._call(name, *args, **kwargs)
-
         return f
 
     @exceptions.map_vcs_exceptions
@@ -149,6 +150,12 @@ class RemoteVCSMaker(object):
 
         self._session_factory = session_factory
         self.backend_type = backend_type
+
+    @classmethod
+    def init_cache_region(cls, repo_id):
+        cache_namespace_uid = 'cache_repo.{}'.format(repo_id)
+        region = rc_cache.get_or_create_region('cache_repo', cache_namespace_uid)
+        return region, cache_namespace_uid
 
     def __call__(self, path, repo_id, config, with_wire=None):
         log.debug('%s RepoMaker call on %s', self.backend_type.upper(), path)
@@ -178,6 +185,8 @@ class RemoteRepo(object):
         self.url = remote_maker.url
         self.stream_url = remote_maker.stream_url
         self._session = remote_maker._session_factory()
+        self._cache_region, self._cache_namespace = \
+            remote_maker.init_cache_region(repo_id)
 
         with_wire = with_wire or {}
 
@@ -233,11 +242,22 @@ class RemoteRepo(object):
         url = self.url
 
         start = time.time()
-        if self._call_with_logging:
-            log.debug('Calling %s@%s with args:%.10240r. wire_context: %s',
-                      url, name, args, context_uid)
 
-        result = _remote_call(url, payload, EXCEPTIONS_MAP, self._session)
+        cache_on = False
+        cache_key = ''
+        if name in ['is_large_file', 'is_binary', 'fctx_size', 'bulk_request']:
+            cache_on = True and rhodecode.CONFIG.get('vcs.methods.cache')
+            cache_key = compute_key_from_params(name, args[0], args[1])
+
+        @self._cache_region.conditional_cache_on_arguments(
+            namespace=self._cache_namespace, condition=cache_on and cache_key)
+        def remote_call(_cache_key):
+            if self._call_with_logging:
+                log.debug('Calling %s@%s with args:%.10240r. wire_context: %s cache_on: %s',
+                          url, name, args, context_uid, cache_on)
+            return _remote_call(url, payload, EXCEPTIONS_MAP, self._session)
+
+        result = remote_call(cache_key)
         if self._call_with_logging:
             log.debug('Call %s@%s took: %.4fs. wire_context: %s',
                       url, name, time.time()-start, context_uid)
