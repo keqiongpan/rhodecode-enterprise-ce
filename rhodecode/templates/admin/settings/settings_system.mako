@@ -62,6 +62,25 @@
     </div>
 </div>
 
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">${_('Env Variables')}</h3>
+    </div>
+    <div class="panel-body">
+        <table>
+            <th></th>
+            <th></th>
+            % for env_key, env_val in c.env_data:
+                <tr>
+                    <td style="vertical-align: top">${env_key}</td>
+                    <td>${env_val}</td>
+                </tr>
+            % endfor
+        </table>
+
+    </div>
+</div>
+
 <script>
     $('#check_for_update').click(function(e){
         $('#update_notice').show();

@@ -20,8 +20,7 @@
 
 import logging
 import urllib2
-
-
+import os
 
 import rhodecode
 from rhodecode.apps._base import BaseAppView
@@ -40,6 +39,40 @@ class AdminSystemInfoSettingsView(BaseAppView):
         c = self._get_local_tmpl_context()
         return c
 
+    def get_env_data(self):
+        black_list = [
+            'NIX_LDFLAGS',
+            'NIX_CFLAGS_COMPILE',
+            'propagatedBuildInputs',
+            'propagatedNativeBuildInputs',
+            'postInstall',
+            'buildInputs',
+            'buildPhase',
+            'preShellHook',
+            'preShellHook',
+            'preCheck',
+            'preBuild',
+            'postShellHook',
+            'postFixup',
+            'postCheck',
+            'nativeBuildInputs',
+            'installPhase',
+            'installCheckPhase',
+            'checkPhase',
+            'configurePhase',
+            'shellHook'
+        ]
+        secret_list = [
+            'RHODECODE_USER_PASS'
+        ]
+
+        for k, v in sorted(os.environ.items()):
+            if k in black_list:
+                continue
+            if k in secret_list:
+                v = '*****'
+            yield k, v
+
     @LoginRequired()
     @HasPermissionAllDecorator('hg.admin')
     def settings_system_info(self):
@@ -55,6 +88,7 @@ class AdminSystemInfoSettingsView(BaseAppView):
         snapshot = str2bool(self.request.params.get('snapshot'))
 
         c.rhodecode_update_url = UpdateModel().get_update_url()
+        c.env_data = self.get_env_data()
         server_info = system_info.get_system_info(self.request.environ)
 
         for key, val in server_info.items():
