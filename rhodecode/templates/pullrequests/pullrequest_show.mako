@@ -564,7 +564,6 @@
                   <input name="select_all_drafts" type="checkbox" onclick="selectDraftComments(event)">
                   </span>
                   <span class="sidebar-heading noselect" onclick="refreshDraftComments(); return false">
-                    <i class="icon-comment icon-draft"></i>
                     ${_('Drafts')}
                   </span>
                   <span class="block-right action_button last-item" onclick="submitDrafts(event)">${_('Submit')}</span>

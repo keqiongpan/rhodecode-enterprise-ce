@@ -66,7 +66,7 @@
               % endif
           % else:
               ## SKIP TODOs we display them in other area
-              % if comment_obj.is_todo:
+              % if comment_obj.is_todo and not comment_obj.draft:
                   <% display = 'none' %>
               % endif
               ## Skip outdated comments
@@ -122,12 +122,21 @@
                             'review_status': (comment_obj.review_status or '')
                       })
 
+                      icon = ''
+
                       if comment_obj.outdated:
-                          icon = 'icon-comment-toggle'
+                          icon += ' icon-comment-toggle'
                       elif comment_obj.is_inline:
-                          icon = 'icon-code'
+                          icon += ' icon-code'
                       else:
-                          icon = 'icon-comment'
+                          icon += ' icon-comment'
+
+                      if comment_obj.draft:
+                          if comment_obj.is_todo:
+                              icon = 'icon-flag-filled icon-draft'
+                          else:
+                              icon = 'icon-comment icon-draft'
+
                   %>
 
                   <i id="commentHovercard${comment_obj.comment_id}"
