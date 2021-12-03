@@ -245,8 +245,9 @@ class RemoteRepo(object):
 
         cache_on = False
         cache_key = ''
-        if name in ['is_large_file', 'is_binary', 'fctx_size', 'bulk_request']:
-            cache_on = True and rhodecode.CONFIG.get('vcs.methods.cache')
+        local_cache =  rhodecode.CONFIG.get('vcs.methods.cache')
+        if local_cache and name in ['is_large_file', 'is_binary', 'fctx_size', 'bulk_request']:
+            cache_on = True
             cache_key = compute_key_from_params(name, args[0], args[1])
 
         @self._cache_region.conditional_cache_on_arguments(
