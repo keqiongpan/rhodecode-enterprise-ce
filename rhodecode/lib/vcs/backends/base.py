@@ -875,6 +875,9 @@ class BaseRepository(object):
     def get_hooks_info(self):
         return self._remote.get_hooks_info()
 
+    def vcsserver_invalidate_cache(self, delete=False):
+        return self._remote.vcsserver_invalidate_cache(delete)
+
 
 class BaseCommit(object):
     """

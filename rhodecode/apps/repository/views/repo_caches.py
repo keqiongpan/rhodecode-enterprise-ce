@@ -66,18 +66,28 @@ class RepoCachesView(RepoAppView):
         _ = self.request.translate
         c = self.load_default_context()
         c.active = 'caches'
+        invalidated = 0
 
         try:
             ScmModel().mark_for_invalidation(self.db_repo_name, delete=True)
-
             Session().commit()
-
-            h.flash(_('Cache invalidation successful'),
-                    category='success')
+            invalidated +=1
         except Exception:
             log.exception("Exception during cache invalidation")
             h.flash(_('An error occurred during cache invalidation'),
                     category='error')
+
+        try:
+            invalidated += 1
+            self.rhodecode_vcs_repo.vcsserver_invalidate_cache(delete=True)
+        except Exception:
+            log.exception("Exception during vcsserver cache invalidation")
+            h.flash(_('An error occurred during vcsserver cache invalidation'),
+                    category='error')
+
+        if invalidated:
+            h.flash(_('Cache invalidation successful. Stages {}/2').format(invalidated),
+                    category='success')
 
         raise HTTPFound(h.route_path(
             'edit_repo_caches', repo_name=self.db_repo_name))
