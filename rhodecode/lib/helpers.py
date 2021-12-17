@@ -337,11 +337,13 @@ def files_breadcrumbs(repo_name, repo_type, commit_id, file_path, landing_ref_na
 
 
 def files_url_data(request):
+    import urllib
     matchdict = request.matchdict
 
     if 'f_path' not in matchdict:
         matchdict['f_path'] = ''
-
+    else:
+        matchdict['f_path'] = urllib.quote(matchdict['f_path'])
     if 'commit_id' not in matchdict:
         matchdict['commit_id'] = 'tip'
 
