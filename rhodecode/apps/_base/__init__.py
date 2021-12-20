@@ -389,6 +389,11 @@ class RepoAppView(BaseAppView):
                 return True
         return False
 
+    def get_commit_preload_attrs(cls):
+        pre_load = ['author', 'branch', 'date', 'message', 'parents',
+                    'obsolete', 'phase', 'hidden']
+        return pre_load
+
 
 class PathFilter(object):
 

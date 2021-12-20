@@ -65,7 +65,8 @@ class RepoSummaryView(RepoAppView):
                 'repo_summary_commits',
                 repo_name=c.rhodecode_db_repo.repo_name, _query=query_params)
 
-        pre_load = ['author', 'branch', 'date', 'message']
+        pre_load = self.get_commit_preload_attrs()
+
         try:
             collection = self.rhodecode_vcs_repo.get_commits(
                 pre_load=pre_load, translate_tags=False)

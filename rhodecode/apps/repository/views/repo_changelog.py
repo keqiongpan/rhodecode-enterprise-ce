@@ -168,11 +168,6 @@ class RepoChangelogView(RepoAppView):
 
         return c
 
-    def _get_preload_attrs(self):
-        pre_load = ['author', 'branch', 'date', 'message', 'parents',
-                    'obsolete', 'phase', 'hidden']
-        return pre_load
-
     @LoginRequired()
     @HasRepoPermissionAnyDecorator(
         'repository.read', 'repository.write', 'repository.admin')
@@ -200,7 +195,7 @@ class RepoChangelogView(RepoAppView):
             self._check_if_valid_branch(branch_name, self.db_repo_name, f_path)
 
         c.changelog_for_path = f_path
-        pre_load = self._get_preload_attrs()
+        pre_load = self.get_commit_preload_attrs()
 
         partial_xhr = self.request.environ.get('HTTP_X_PARTIAL_XHR')
 
@@ -256,6 +251,8 @@ class RepoChangelogView(RepoAppView):
                 raise HTTPFound(
                     h.route_path('repo_summary', repo_name=self.db_repo_name))
 
+
+
         if partial_xhr or self.request.environ.get('HTTP_X_PJAX'):
             # case when loading dynamic file history in file view
             # loading from ajax, we don't want the first result, it's popped
@@ -304,7 +301,7 @@ class RepoChangelogView(RepoAppView):
             return wrap_for_error(
                 safe_str('Branch: {} is not valid'.format(branch_name)))
 
-        pre_load = self._get_preload_attrs()
+        pre_load = self.get_commit_preload_attrs()
 
         if f_path:
             try:
