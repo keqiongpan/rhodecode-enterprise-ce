@@ -343,7 +343,7 @@ def files_url_data(request):
     if 'f_path' not in matchdict:
         matchdict['f_path'] = ''
     else:
-        matchdict['f_path'] = urllib.quote(matchdict['f_path'])
+        matchdict['f_path'] = urllib.quote(safe_str(matchdict['f_path']))
     if 'commit_id' not in matchdict:
         matchdict['commit_id'] = 'tip'
 
