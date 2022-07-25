@@ -36,6 +36,7 @@ from dogpile.cache.util import memoized_property
 from pyramid.settings import asbool
 
 from rhodecode.lib.memory_lru_dict import LRUDict, LRUDictDebug
+from rhodecode.lib.utils import safe_str
 
 
 _default_max_size = 1024
@@ -299,7 +300,7 @@ class BaseRedisBackend(redis_backend.RedisBackend):
 
     def get_mutex(self, key):
         if self.distributed_lock:
-            lock_key = redis_backend.u('_lock_{0}').format(key)
+            lock_key = redis_backend.u('_lock_{0}').format(safe_str(key))
             return get_mutex_lock(self.client, lock_key, self._lock_timeout,
                                   auto_renewal=self._lock_auto_renewal)
         else:
