@@ -467,6 +467,9 @@ class RepoModel(BaseModel):
                 RepoModel().grant_user_permission(
                     repo=cur_repo, user=User.DEFAULT_USER, perm=EMPTY_PERM
                 )
+            if kwargs.get('repo_landing_rev'):
+                landing_rev_val = kwargs['repo_landing_rev']
+                RepoModel().set_landing_rev(cur_repo, landing_rev_val)
 
             # handle extra fields
             for field in filter(lambda k: k.startswith(RepositoryField.PREFIX), kwargs):
@@ -932,6 +935,12 @@ class RepoModel(BaseModel):
         field = RepositoryField.get_by_key_name(field_key, repo)
         if field:
             self.sa.delete(field)
+
+    def set_landing_rev(self, repo, landing_rev_name):
+        if landing_rev_name.startswith('branch:'):
+            landing_rev_name = landing_rev_name.split('branch:')[-1]
+        scm_instance = repo.scm_instance()
+        return scm_instance._remote.set_head_ref(landing_rev_name)
 
     def _create_filesystem_repo(self, repo_name, repo_type, repo_group,
                                 clone_uri=None, repo_store_location=None,
