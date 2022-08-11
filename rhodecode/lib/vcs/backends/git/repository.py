@@ -54,7 +54,7 @@ class GitRepository(BaseRepository):
     """
     Git repository backend.
     """
-    DEFAULT_BRANCH_NAME = 'master'
+    DEFAULT_BRANCH_NAME = os.environ.get('GIT_DEFAULT_BRANCH_NAME') or 'master'
 
     contact = BaseRepository.DEFAULT_CONTACT
 
