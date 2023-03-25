@@ -47,6 +47,7 @@ class SubversionCommit(base.BaseCommit):
     """
 
     def __init__(self, repository, commit_id):
+        commit_id = safe_str(commit_id)
         self.repository = repository
         self.idx = self.repository._get_commit_idx(commit_id)
         self._svn_rev = self.idx + 1
