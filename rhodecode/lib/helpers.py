@@ -815,6 +815,7 @@ local_timezone = tzlocal.get_localzone()
 
 
 def get_timezone(datetime_iso, time_is_local=False):
+    dt = datetime_iso
     tzinfo = '+00:00'
 
     # detect if we have a timezone info, otherwise, add it
@@ -823,12 +824,22 @@ def get_timezone(datetime_iso, time_is_local=False):
         if force_timezone:
             force_timezone = pytz.timezone(force_timezone)
         timezone = force_timezone or local_timezone
-        offset = timezone.localize(datetime_iso).strftime('%z')
+        dt = timezone.localize(datetime_iso)
+
+    if dt and dt.tzinfo:
+        offset = dt.strftime('%z')
         tzinfo = '{}:{}'.format(offset[:-2], offset[-2:])
+
     return tzinfo
 
 
 def age_component(datetime_iso, value=None, time_is_local=False, tooltip=True):
+    if datetime_iso and not time_is_local:
+        if not datetime_iso.tzinfo:
+            datetime_iso = datetime_iso.replace(tzinfo=pytz.utc)
+        if local_timezone:
+            datetime_iso = datetime_iso.astimezone(local_timezone)
+
     title = value or format_date(datetime_iso)
     tzinfo = get_timezone(datetime_iso, time_is_local=time_is_local)
 
